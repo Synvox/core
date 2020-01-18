@@ -49,7 +49,7 @@
     "singleQuote": true,
     "trailingComma": "es5"
   },
-  "name": "core",
+  "name": "@synvox/core",
   "author": "Ryan Allred",
   "module": "dist/core.esm.js",
   "devDependencies": {
