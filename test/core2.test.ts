@@ -723,7 +723,7 @@ it('handles relations', async () => {
     (
       await post('/test/comments', {
         body: 'hey',
-        userId: '2',
+        userId: 2,
       }).catch(e => {
         return e.response;
       })
@@ -733,7 +733,7 @@ it('handles relations', async () => {
   const [newCommentId] = await knex('test.comments')
     .insert({
       body: 'body',
-      userId: '2',
+      userId: 2,
     })
     .returning('id');
 
@@ -752,7 +752,7 @@ it('handles relations', async () => {
   expect(
     (
       await put(`/test/comments/1`, {
-        userId: '2',
+        userId: 2,
       }).catch(e => {
         return e.response;
       })
@@ -852,7 +852,7 @@ it('provides an eventsource endpoint', async () => {
     data: { data: comment },
   } = await post('/test/comments', {
     body: '123',
-    userId: '1',
+    userId: 1,
   });
 
   await new Promise(r => {

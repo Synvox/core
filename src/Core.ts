@@ -17,7 +17,7 @@ import {
 import Table from './Table';
 import { NotFoundError, UnauthorizedError } from './Errors';
 
-const refPlaceholder = '#fake-id#';
+const refPlaceholder = -1;
 
 type TableConfig = ReturnType<typeof Table>;
 
@@ -736,7 +736,9 @@ export default function core(
             handler(async (req, res) => {
               return await write(req, res, table, {
                 ...req.body,
-                id: req.params.id,
+                id: isNaN(Number(req.params.id))
+                  ? req.params.id
+                  : Number(req.params.id),
               });
             })
           );
@@ -827,6 +829,7 @@ function postgresTypesToYupType(type: string): MixedSchema<any> {
     case 'numeric':
     case 'money':
     case 'oid':
+    case 'bigint':
       return number();
     case 'bool':
       return boolean();
