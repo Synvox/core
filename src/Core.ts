@@ -104,12 +104,15 @@ export default function core(
     const result: { [key: string]: any } = {};
 
     for (let { table, column, key } of hasOne) {
+      if (row[column] === null) continue;
       if (row[key] === undefined) result[key] = `${table.path}/${row[column]}`;
       else row[key] = linksFor(table, row[key]);
     }
 
     for (let { table, column, key } of hasMany) {
-      result[key] = `${table.path}?${column}=${row.id}`;
+      if (row[key] === undefined)
+        result[key] = `${table.path}?${column}=${row.id}`;
+      else row[key] = row[key].map((item: any) => linksFor(table, item));
     }
 
     return {
@@ -129,6 +132,16 @@ export default function core(
     return result;
   };
 
+  const filterPrefixGraph = (table: TableConfig, graph: any) => {
+    const result: { [key: string]: any } = {};
+
+    for (let key of Object.keys(graph).filter(key => key in table.columns!)) {
+      result[`${table.tableName}.${key}`] = graph[key];
+    }
+
+    return result;
+  };
+
   {
     const read = async (
       req: Request,
@@ -139,36 +152,52 @@ export default function core(
       const authInstance = authorizer(req, knex);
 
       const includeRelated = async (stmt: QueryBuilder) => {
-        const jsonBuildObject = async (table: TableConfig, ref: Relation) => {
-          const json = `json_build_object(${[
-            ...Object.keys(ref.table.columns!).map(
-              key => `'${key}',${ref.table.tableName}.${key}`
-            ),
-          ].join(',')})`;
-
-          return `case when ${table.tableName}.${ref.column} is null then null else ${json} end`;
-        };
-
         const { include: rawInclude = '' } = req.query;
 
         const include = rawInclude.split(',');
 
         for (let includeTable of include) {
-          const ref = relationsFor(table).hasOne.find(
+          let isOne = true;
+          let ref = relationsFor(table).hasOne.find(
             ref => ref.key === includeTable
           );
 
+          if (!ref) {
+            isOne = false;
+            ref = relationsFor(table).hasMany.find(
+              ref => ref.key === includeTable
+            );
+          }
+
           if (!ref) continue;
 
-          const mixin = await jsonBuildObject(table, ref);
+          let subQuery = query(ref.table).clearSelect();
+          if (isOne) {
+            subQuery
+              .where(
+                `${ref.table.tableName}.id`,
+                knex.ref(`${table.tableName}.${ref.column}`)
+              )
+              .limit(1)
+              .select(`row_to_json(${ref.table.tableName})`);
+          } else {
+            subQuery
+              .where(
+                `${ref.table.tableName}.${ref.column}`,
+                knex.ref(`${table.tableName}.id`)
+              )
+              .limit(100)
+              .select(`row_to_json(${ref.table.tableName})`);
+          }
 
-          stmt
-            .leftJoin(
-              `${ref.table.schemaName}.${ref.table.tableName}`,
-              `${ref.table.tableName}.id`,
-              `${table.tableName}.${ref.column}`
-            )
-            .select(`${mixin} as ${ref.key}`);
+          await ref.table.policy(subQuery, authInstance, 'read');
+
+          //@TODO is this right?
+          if (isOne) {
+            stmt.select(`(${subQuery.toString()}) as ${ref.key}`);
+          } else {
+            stmt.select(`array(${subQuery.toString()}) as ${ref.key}`);
+          }
         }
       };
 
@@ -298,7 +327,7 @@ export default function core(
         }
       }
 
-      stmt.where(filterGraph(table, where));
+      stmt.where(filterPrefixGraph(table, where));
 
       if (many) {
         return paginate(stmt);
@@ -320,7 +349,7 @@ export default function core(
       const stmt = query(table).clearSelect();
       await table.policy(stmt, authInstance, 'read');
 
-      stmt.where(filterGraph(table, filters));
+      stmt.where(filterPrefixGraph(table, filters));
 
       return { data: await stmt.count().then(([{ count }]) => Number(count)) };
     };
@@ -518,7 +547,8 @@ export default function core(
 
             // in case an update now makes this row inaccessible
             const readStmt = query(table, trx);
-            await table.policy(readStmt, authInstance, 'read');
+            await table.policy(readStmt, authInstance, 'update');
+
             const updatedRow = await readStmt
               .where(`${table.tableName}.id`, graph.id)
               .first();

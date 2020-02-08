@@ -1,7 +1,7 @@
 import Knex, { QueryBuilder } from 'knex';
 import { Router } from 'express';
 import { MixedSchema } from 'yup';
-import { Authorizer } from './';
+import { Authorizer } from '.';
 import { transformKey, caseMethods } from './knexHelpers';
 
 export interface TableConfig {
@@ -95,7 +95,10 @@ export default function Table(table: Partial<TableConfig>): TableConfig {
             and kcu.table_schema = ?
             and kcu.table_name = ?
         `,
-        [this.schemaName, this.tableName]
+        [
+          transformKey(this.schemaName, caseMethods.snake),
+          transformKey(this.tableName, caseMethods.snake),
+        ]
       );
 
       const camelize = (str: string) => transformKey(str, caseMethods.camel);
@@ -114,6 +117,9 @@ export default function Table(table: Partial<TableConfig>): TableConfig {
           ]
         )
       );
+
+      if (this.tableName === 'columnEnumValues')
+        console.log(this.tableName, refs, this.relations);
     },
 
     async policy(
