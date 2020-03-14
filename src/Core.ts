@@ -860,6 +860,7 @@ function postgresTypesToYupType(type: string): MixedSchema<any> {
     case 'money':
     case 'oid':
     case 'bigint':
+    case 'integer':
       return number();
     case 'bool':
       return boolean();
