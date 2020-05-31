@@ -7,6 +7,8 @@ import Knex, { QueryBuilder } from 'knex';
 import Core, { knexHelpers, Authorizer } from '../src';
 import { string } from 'yup';
 
+let server: null | ReturnType<typeof createServer> = null;
+
 async function create(
   core: ReturnType<typeof Core>,
   options?: Partial<AxiosRequestConfig>
@@ -14,7 +16,8 @@ async function create(
   const app = express();
   app.use(express.json());
   app.use(core.router);
-  const url = await listen(createServer(app));
+  server = createServer(app);
+  const url = await listen(server);
   return {
     ...axios.create({ ...options, baseURL: url }),
     url,
@@ -57,9 +60,9 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
-  // await knex.raw(`
-  //   drop schema test cascade;
-  // `);
+  await knex.raw(`drop schema test cascade`);
+  await knex.destroy();
+  server?.close();
 });
 
 it(`doesn't recreate the router`, () => {

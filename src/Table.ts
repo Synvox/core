@@ -1,15 +1,19 @@
-import Knex, { QueryBuilder } from 'knex';
+import { promises as fs } from 'fs';
+import path from 'path';
+import pkgDir from 'pkg-dir';
+import Knex, { QueryBuilder, Transaction } from 'knex';
 import { Router } from 'express';
 import { MixedSchema } from 'yup';
 import { Authorizer } from '.';
 import { transformKey, caseMethods } from './knexHelpers';
+import { classify, titleize, underscore, humanize } from 'inflection';
 
 export interface TableConfig {
   tableName: string;
   schemaName: string;
   userIdColumnName: string | undefined;
   tenantIdColumnName: string | undefined;
-  init: (knex: Knex) => Promise<void>;
+  init: (knex: Knex, fromSchemaFile?: boolean) => Promise<void>;
   policy: (
     query: QueryBuilder,
     authorizer: ReturnType<Authorizer>,
@@ -17,7 +21,7 @@ export interface TableConfig {
   ) => Promise<void>;
   tablePath: string;
   path: string;
-  columns: Knex.ColumnInfo | null;
+  columns: { [columnName: string]: Knex.ColumnInfo } | null;
   uniqueColumns: Array<string[]>;
   relations: { [key: string]: string };
   schema: { [columnName: string]: MixedSchema };
@@ -35,6 +39,65 @@ export interface TableConfig {
       authorizer: ReturnType<Authorizer>
     ) => Promise<void>;
   };
+  setters: {
+    [key: string]: (
+      trx: Transaction,
+      value: any,
+      row: any,
+      authorizer: ReturnType<Authorizer>
+    ) => Promise<void>;
+  };
+  pluralForeignKeyMap: {
+    [columnName: string]: string;
+  };
+  afterHook?: (
+    trx: Transaction,
+    row: any,
+    mode: 'insert' | 'update' | 'delete',
+    authorizer: ReturnType<Authorizer>
+  ) => Promise<void>;
+}
+
+let schema: {
+  [key: string]: {
+    className: string;
+    collectionName: string;
+    name: string;
+    columns: { [columnName: string]: Knex.ColumnInfo };
+    uniqueColumns: Array<string[]>;
+    relations: { [key: string]: string };
+    queryModifiers: string[];
+  };
+} = {};
+
+export async function loadSchema() {
+  const schemaPath = path.join((await pkgDir(__dirname))!, '../schema.json');
+  if (Object.keys(schema).length) return schema;
+  const json = await fs.readFile(schemaPath, { encoding: 'utf8' });
+  schema = JSON.parse(json);
+  return schema;
+}
+
+export async function saveSchema() {
+  const schemaPath = path.join((await pkgDir(__dirname))!, '../schema.json');
+
+  function sort<T extends any>(object: T): T {
+    if (typeof object !== 'object') return object;
+
+    if (Array.isArray(object)) return object.map(sort);
+
+    const ordered: any = {};
+    Object.keys(object)
+      .sort()
+      .forEach(function(key) {
+        ordered[key] = object[key];
+      });
+
+    return ordered;
+  }
+
+  await fs.writeFile(schemaPath, JSON.stringify(sort(schema), null, 2));
+  schema = {}; // no longer needed
 }
 
 export default function Table(table: Partial<TableConfig>): TableConfig {
@@ -45,13 +108,29 @@ export default function Table(table: Partial<TableConfig>): TableConfig {
     userIdColumnName: undefined,
     tenantIdColumnName: undefined,
 
-    async init(knex: Knex) {
+    async init(knex: Knex, fromSchemaFile: boolean = false) {
+      const key = `${this.schemaName}.${this.tableName}`;
       if (initialized) return;
       initialized = true;
 
-      this.columns = await knex(this.tableName)
+      if (fromSchemaFile) {
+        const loadedSchema = await loadSchema();
+        if (loadedSchema[key]) {
+          const { columns, uniqueColumns, relations } = loadedSchema[key];
+
+          this.columns = columns;
+          this.uniqueColumns = uniqueColumns;
+          this.relations = relations;
+
+          return;
+        }
+      }
+
+      this.columns = ((await knex(this.tableName)
         .withSchema(this.schemaName)
-        .columnInfo();
+        // pretty sure this is a bug in knex.
+        //columnInfo's type is only for a single column
+        .columnInfo()) as unknown) as { [columnName: string]: Knex.ColumnInfo };
 
       const uniqueConstraints = await knex('pg_catalog.pg_constraint con')
         .join('pg_catalog.pg_class rel', 'rel.oid', 'con.conrelid')
@@ -60,7 +139,7 @@ export default function Table(table: Partial<TableConfig>): TableConfig {
         .where('rel.relname', this.tableName)
         .where('con.contype', 'u')
         .select('con.conkey as indexes')
-        .then(rows => rows.map(r => r.indexes));
+        .then(rows => rows.map(r => r.indexes as number[]));
 
       this.uniqueColumns = uniqueConstraints.map(indexes =>
         indexes.map(
@@ -118,8 +197,19 @@ export default function Table(table: Partial<TableConfig>): TableConfig {
         )
       );
 
-      if (this.tableName === 'columnEnumValues')
-        console.log(this.tableName, refs, this.relations);
+      const className = classify(this.tableName);
+      const collectionName = humanize(underscore(this.tableName, true), true);
+      const name = titleize(underscore(className));
+
+      schema[key] = {
+        className,
+        collectionName,
+        name,
+        columns: this.columns,
+        uniqueColumns: this.uniqueColumns,
+        relations: this.relations,
+        queryModifiers: Object.keys(this.queryModifiers),
+      };
     },
 
     async policy(
@@ -140,12 +230,14 @@ export default function Table(table: Partial<TableConfig>): TableConfig {
     uniqueColumns: [],
     relations: {},
     schema: {},
+    pluralForeignKeyMap: {},
 
     get router() {
       return Router();
     },
     idModifiers: {},
     queryModifiers: {},
+    setters: {},
 
     ...table,
   };

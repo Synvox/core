@@ -14,7 +14,7 @@ import {
   ValidationError,
 } from 'yup';
 
-import Table from './Table';
+import Table, { saveSchema } from './Table';
 import { NotFoundError, UnauthorizedError } from './Errors';
 
 const refPlaceholder = -1;
@@ -27,7 +27,7 @@ type Relation = {
   table: TableConfig;
 };
 
-type ChangeSummary = {
+export type ChangeSummary = {
   paths: Set<string>;
   tenantIds: Set<string>;
 };
@@ -36,6 +36,7 @@ type Id = string | number;
 
 export interface Authorizer {
   (req: Request, knex: Knex): {
+    getToken?: () => string | undefined;
     getUser: () => Promise<any>;
     getTenantIds: () => Promise<Id[]>;
   };
@@ -44,7 +45,11 @@ export interface Authorizer {
 export default function core(
   knex: Knex,
   authorizer: Authorizer,
-  emitter: EventEmitter = new EventEmitter()
+  {
+    emitter = new EventEmitter(),
+  }: {
+    emitter?: EventEmitter;
+  } = {}
 ) {
   const tables: TableConfig[] = [];
   const sseHandlers = new Set<(changeSummary: ChangeSummary) => void>();
@@ -65,34 +70,7 @@ export default function core(
   const relationsFor = (
     table: TableConfig
   ): { hasOne: Relation[]; hasMany: Relation[] } => {
-    if (relationsForCache.get(table)) return relationsForCache.get(table)!;
-
-    const relations = {
-      hasOne: Object.entries(table.relations)
-        .map(([column, tablePath]) => ({
-          column,
-          key: column.replace(/Id$/, ''),
-          table: tables.find(m => m.tablePath === tablePath)!,
-        }))
-        .filter(r => r.table),
-      hasMany: tables
-        .filter(m => m !== table)
-        .map(otherTable => {
-          return Object.entries(otherTable.relations)
-            .filter(([_, tablePath]) => tablePath === table.tablePath)
-            .map(([column]) => ({
-              column,
-              key: otherTable.tableName,
-              table: otherTable,
-            }));
-        })
-        .reduce((a, b) => a.concat(b), [])
-        .filter(r => r.table),
-    };
-
-    relationsForCache.set(table, relations);
-
-    return relations;
+    return relationsForCache.get(table)!;
   };
 
   const linksFor = (table: TableConfig, inputRow: any) => {
@@ -136,7 +114,10 @@ export default function core(
     const result: { [key: string]: any } = {};
 
     for (let key of Object.keys(graph).filter(key => key in table.columns!)) {
-      result[`${table.tableName}.${key}`] = graph[key];
+      let value = graph[key];
+
+      if (table.columns![key].nullable && value === '') value = null;
+      result[`${table.tableName}.${key}`] = value;
     }
 
     return result;
@@ -186,7 +167,7 @@ export default function core(
                 `${ref.table.tableName}.${ref.column}`,
                 knex.ref(`${table.tableName}.id`)
               )
-              .limit(100)
+              .limit(10)
               .select(`row_to_json(${ref.table.tableName})`);
           }
 
@@ -351,7 +332,29 @@ export default function core(
 
       stmt.where(filterPrefixGraph(table, filters));
 
-      return { data: await stmt.count().then(([{ count }]) => Number(count)) };
+      const where = { ...filters };
+
+      if (Object.keys(table.idModifiers).includes(where.id)) {
+        const modifier = table.idModifiers[where.id];
+        await modifier(stmt, authInstance);
+        delete where.id;
+      }
+
+      for (let key of Object.keys(where)) {
+        if (Object.keys(table.queryModifiers).includes(key)) {
+          const modifier = table.queryModifiers[key];
+          await modifier(where[key], stmt, authInstance);
+          delete where[key];
+        }
+      }
+
+      stmt.where(filterPrefixGraph(table, where));
+
+      return {
+        data: await stmt
+          .countDistinct(`${table.tableName}.id`)
+          .then(([{ count }]) => Number(count)),
+      };
     };
 
     const write = async (
@@ -361,6 +364,7 @@ export default function core(
       graph: any
     ) => {
       const authInstance = authorizer(req, knex);
+      const beforeCommitCallbacks: Array<() => Promise<void>> = [];
 
       const validateGraph = async (table: TableConfig, graph: any) => {
         const validate = async (table: TableConfig, graph: any) => {
@@ -433,7 +437,20 @@ export default function core(
           }
 
           try {
-            await getYupSchema().validate(graph, {
+            const schema = await getYupSchema();
+            for (let key in schema.describe().fields) {
+              if (graph[key]) {
+                const validator = (schema.describe().fields as any)[key];
+                if (validator instanceof number) {
+                  graph[key] = Number(graph[key]);
+                }
+                if (validator instanceof date) {
+                  graph[key] = new Date(graph[key]);
+                }
+              }
+            }
+
+            await schema.validate(graph, {
               abortEarly: false,
               strict: true,
             });
@@ -519,7 +536,11 @@ export default function core(
           table: TableConfig,
           graph: any
         ) => {
+          const initialGraph = graph;
           graph = filterGraph(table, graph);
+          if ('updatedAt' in table.columns!) {
+            graph.updatedAt = new Date();
+          }
 
           const stmt = query(table, trx);
           await table.policy(stmt, authInstance, 'update');
@@ -530,20 +551,20 @@ export default function core(
 
           const filteredByChanged = Object.fromEntries(
             Object.entries(graph).filter(
-              ([key, value]) => row[key] !== value && key !== 'id'
+              ([key, value]) =>
+                row[key] !== value && key !== 'id' && key !== 'createdAt'
             )
           );
-
-          if (Object.keys(filteredByChanged).length === 0) return row;
 
           {
             const stmt = query(table, trx);
             await table.policy(stmt, authInstance, 'update');
 
-            await stmt
-              .where(`${table.tableName}.id`, graph.id)
-              .limit(1)
-              .update(filteredByChanged);
+            if (Object.keys(filteredByChanged).length)
+              await stmt
+                .where(`${table.tableName}.id`, graph.id)
+                .limit(1)
+                .update(filteredByChanged);
 
             // in case an update now makes this row inaccessible
             const readStmt = query(table, trx);
@@ -554,6 +575,29 @@ export default function core(
               .first();
 
             if (!updatedRow) throw new UnauthorizedError();
+
+            for (let key in initialGraph) {
+              if (table.setters[key]) {
+                await table.setters[key](
+                  trx,
+                  initialGraph[key],
+                  updatedRow,
+                  authInstance
+                );
+              }
+            }
+
+            if (table.afterHook) {
+              beforeCommitCallbacks.push(() => {
+                return table.afterHook!(
+                  trx,
+                  updatedRow,
+                  'update',
+                  authInstance
+                );
+              });
+            }
+
             return updatedRow;
           }
         };
@@ -563,6 +607,7 @@ export default function core(
           table: TableConfig,
           graph: any
         ) => {
+          const initialGraph = graph;
           graph = filterGraph(table, graph);
 
           const row = await query(table, trx)
@@ -578,6 +623,24 @@ export default function core(
             .first();
 
           if (!updatedRow) throw new UnauthorizedError();
+
+          for (let key in initialGraph) {
+            if (table.setters[key]) {
+              await table.setters[key](
+                trx,
+                initialGraph[key],
+                updatedRow,
+                authInstance
+              );
+            }
+          }
+
+          if (table.afterHook) {
+            beforeCommitCallbacks.push(() => {
+              return table.afterHook!(trx, updatedRow, 'insert', authInstance);
+            });
+          }
+
           return updatedRow;
         };
 
@@ -592,6 +655,12 @@ export default function core(
           const row = await stmt.where(`${table.tableName}.id`, id).first();
 
           if (!row) throw new UnauthorizedError();
+
+          if (table.afterHook) {
+            beforeCommitCallbacks.push(() => {
+              return table.afterHook!(trx, row, 'delete', authInstance);
+            });
+          }
 
           return await query(table, trx)
             .where(`${table.tableName}.id`, id)
@@ -690,9 +759,19 @@ export default function core(
         };
       }
 
+      let trxRef: null | Transaction = null;
+
       const data = await knex.transaction(async trx => {
-        return updateGraph(trx, table, graph, changeSummary);
+        const result = await updateGraph(trx, table, graph, changeSummary);
+        for (let cb of beforeCommitCallbacks) await cb();
+
+        // Needs to emit commit after this function finishes
+        trxRef = trx;
+
+        return result;
       });
+
+      if (trxRef) trxRef!.emit('commit');
 
       emitter.emit('commit', changeSummary);
 
@@ -702,6 +781,9 @@ export default function core(
     return {
       register(tableDef: Partial<TableConfig>) {
         tables.push(Table(tableDef));
+      },
+      emitChange(changeSummary: ChangeSummary) {
+        emitter.emit('commit', changeSummary);
       },
       get router() {
         if (router) return router;
@@ -714,7 +796,45 @@ export default function core(
         ) {
           return async (req: Request, res: Response, next: NextFunction) => {
             if (!initializedModels) {
-              await Promise.all(tables.map(table => table.init(knex)));
+              const fromFile = process.env.NODE_ENV === 'production';
+
+              await Promise.all(
+                tables.map(table => table.init(knex, fromFile))
+              );
+
+              if (!fromFile) await saveSchema();
+              tables.forEach(table => {
+                const relations = {
+                  hasOne: Object.entries(table.relations)
+                    .map(([column, tablePath]) => ({
+                      column,
+                      key: column.replace(/Id$/, ''),
+                      table: tables.find(m => m.tablePath === tablePath)!,
+                    }))
+                    .filter(r => r.table),
+                  hasMany: tables
+                    .filter(m => m !== table)
+                    .map(otherTable => {
+                      return Object.entries(otherTable.relations)
+                        .filter(
+                          ([_, tablePath]) => tablePath === table.tablePath
+                        )
+                        .map(([column]) => {
+                          return {
+                            column,
+                            key: table.pluralForeignKeyMap[column]
+                              ? table.pluralForeignKeyMap[column]
+                              : otherTable.tableName,
+                            table: otherTable,
+                          };
+                        });
+                    })
+                    .reduce((a, b) => a.concat(b), [])
+                    .filter(r => r.table),
+                };
+
+                relationsForCache.set(table, relations);
+              });
 
               initializedModels = true;
             }
@@ -731,7 +851,7 @@ export default function core(
         for (let table of tables) {
           const { path } = table;
 
-          router.use(table.router);
+          router.use(path, table.router);
 
           router.get(
             `${path}/count`,
@@ -743,7 +863,12 @@ export default function core(
           router.get(
             `${path}/:id`,
             handler(async req => {
-              return read(req, table, { id: req.params.id }, false);
+              return read(
+                req,
+                table,
+                { ...req.query, id: req.params.id },
+                false
+              );
             })
           );
 
@@ -863,6 +988,7 @@ function postgresTypesToYupType(type: string): MixedSchema<any> {
     case 'integer':
       return number();
     case 'bool':
+    case 'boolean':
       return boolean();
     case 'json':
     case 'jsonb':
@@ -870,6 +996,8 @@ function postgresTypesToYupType(type: string): MixedSchema<any> {
     case 'date':
     case 'timestamp':
     case 'timestamptz':
+    case 'timestamp with time zone':
+    case 'timestamp without time zone':
       return date();
     default:
       return string();
