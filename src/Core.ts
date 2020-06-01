@@ -36,7 +36,6 @@ type Id = string | number;
 
 export interface Authorizer {
   (req: Request, knex: Knex): {
-    getToken?: () => string | undefined;
     getUser: () => Promise<any>;
     getTenantIds: () => Promise<Id[]>;
   };
@@ -73,7 +72,7 @@ export default function core(
     return relationsForCache.get(table)!;
   };
 
-  const linksFor = (table: TableConfig, inputRow: any) => {
+  const linksFor = (req: Request, table: TableConfig, inputRow: any) => {
     let row = { ...inputRow };
     const relations = relationsFor(table);
 
@@ -83,19 +82,20 @@ export default function core(
 
     for (let { table, column, key } of hasOne) {
       if (row[column] === null) continue;
-      if (row[key] === undefined) result[key] = `${table.path}/${row[column]}`;
-      else row[key] = linksFor(table, row[key]);
+      if (row[key] === undefined)
+        result[key] = `${req.baseUrl}${table.path}/${row[column]}`;
+      else row[key] = linksFor(req, table, row[key]);
     }
 
     for (let { table, column, key } of hasMany) {
       if (row[key] === undefined)
         result[key] = `${table.path}?${column}=${row.id}`;
-      else row[key] = row[key].map((item: any) => linksFor(table, item));
+      else row[key] = row[key].map((item: any) => linksFor(req, table, item));
     }
 
     return {
       ...row,
-      '@url': `${table.path}/${row.id}`,
+      '@url': `${req.baseUrl}${table.path}/${row.id}`,
       '@links': result,
     };
   };
@@ -284,7 +284,7 @@ export default function core(
             '@url': req.url,
             '@links': links,
           },
-          data: results.map((item: any) => linksFor(table, item)),
+          data: results.map((item: any) => linksFor(req, table, item)),
         };
       };
 
@@ -318,7 +318,7 @@ export default function core(
         if (!data) throw new NotFoundError();
 
         return {
-          data: linksFor(table, data),
+          data: linksFor(req, table, data),
         };
       }
     };
@@ -538,9 +538,6 @@ export default function core(
         ) => {
           const initialGraph = graph;
           graph = filterGraph(table, graph);
-          if ('updatedAt' in table.columns!) {
-            graph.updatedAt = new Date();
-          }
 
           const stmt = query(table, trx);
           await table.policy(stmt, authInstance, 'update');
@@ -549,10 +546,17 @@ export default function core(
             .where(`${table.tableName}.id`, graph.id)
             .first();
 
+          graph = { ...row, ...graph };
+
+          if (table.beforeHook) {
+            await table.beforeHook(trx, graph, 'update', authInstance);
+
+            graph = filterGraph(table, graph);
+          }
+
           const filteredByChanged = Object.fromEntries(
             Object.entries(graph).filter(
-              ([key, value]) =>
-                row[key] !== value && key !== 'id' && key !== 'createdAt'
+              ([key, value]) => row[key] !== value && key !== 'id'
             )
           );
 
@@ -610,6 +614,11 @@ export default function core(
           const initialGraph = graph;
           graph = filterGraph(table, graph);
 
+          if (table.beforeHook) {
+            await table.beforeHook(trx, graph, 'insert', authInstance);
+            graph = filterGraph(table, graph);
+          }
+
           const row = await query(table, trx)
             .insert(graph)
             .returning('*')
@@ -655,6 +664,10 @@ export default function core(
           const row = await stmt.where(`${table.tableName}.id`, id).first();
 
           if (!row) throw new UnauthorizedError();
+
+          if (table.beforeHook) {
+            await table.beforeHook(trx, row, 'delete', authInstance);
+          }
 
           if (table.afterHook) {
             beforeCommitCallbacks.push(() => {
@@ -716,7 +729,7 @@ export default function core(
           };
         }
 
-        row = linksFor(table, row);
+        row = linksFor(req, table, row);
 
         for (let { column, key, table: otherTable } of hasMany) {
           const otherGraphs = graph[key];

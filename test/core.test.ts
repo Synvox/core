@@ -6,6 +6,7 @@ import EventSource from 'eventsource';
 import Knex, { QueryBuilder } from 'knex';
 import Core, { knexHelpers, Authorizer } from '../src';
 import { string } from 'yup';
+import withTimestamps from '../src/plugins/withTimestamps';
 
 let server: null | ReturnType<typeof createServer> = null;
 
@@ -59,10 +60,16 @@ beforeEach(async () => {
   `);
 });
 
+afterEach(() => {
+  if (server) {
+    server?.close();
+    server = null;
+  }
+});
+
 afterAll(async () => {
   await knex.raw(`drop schema test cascade`);
   await knex.destroy();
-  server?.close();
 });
 
 it(`doesn't recreate the router`, () => {
@@ -975,4 +982,151 @@ it('reflects endpoints from the database', async () => {
       },
     ],
   });
+});
+
+it('supports plugins like withTimestamp', async () => {
+  await knex.schema.withSchema('test').createTable('users', t => {
+    t.bigIncrements('id').primary();
+    t.string('email')
+      .notNullable()
+      .unique();
+  });
+
+  await knex.schema.withSchema('test').createTable('comments', t => {
+    t.bigIncrements('id').primary();
+    t.bigInteger('user_id').notNullable();
+    t.string('body').notNullable();
+    t.timestamps(true, true);
+    t.foreign('user_id')
+      .references('id')
+      .inTable('test.users');
+  });
+
+  for (let i = 0; i < 2; i++) {
+    await knex('test.users').insert({
+      email: `${i + 1}@abc.com`,
+    });
+
+    const date = new Date('May 1, 2020');
+
+    await knex('test.comments').insert({
+      body: String(i),
+      userId: '1',
+      updatedAt: date,
+      createdAt: date,
+    });
+  }
+
+  const core = Core(knex, auth);
+
+  core.register({
+    schemaName: 'test',
+    tableName: 'users',
+    schema: {
+      email: string().email(),
+    },
+    idModifiers: {
+      me: async (query, { getUser }) => {
+        const user = await getUser();
+        query.where('users.id', user.id);
+      },
+    },
+    async policy(query: QueryBuilder, { getUser }) {
+      const user = await getUser();
+      if (!user) return;
+      query.where('users.id', user.id);
+    },
+  });
+
+  core.register(
+    withTimestamps({
+      schemaName: 'test',
+      tableName: 'comments',
+      tenantIdColumnName: 'userId',
+      queryModifiers: {
+        mine: async (_, query, { getUser }) => {
+          const user = await getUser();
+          query.where('comments.userId', user.id);
+        },
+      },
+      async policy(query: QueryBuilder, { getUser }) {
+        const user = await getUser();
+        if (!user) return;
+        query.where('comments.userId', user.id);
+      },
+    })
+  );
+
+  const { get, put } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  let { data } = await get('/test/comments');
+
+  expect(data).toEqual({
+    data: [
+      {
+        '@links': {
+          user: '/test/users/1',
+        },
+        '@url': '/test/comments/1',
+        body: '0',
+        createdAt: '2020-05-01T06:00:00.000Z',
+        id: 1,
+        updatedAt: '2020-05-01T06:00:00.000Z',
+        userId: 1,
+      },
+      {
+        '@links': {
+          user: '/test/users/1',
+        },
+        '@url': '/test/comments/2',
+        body: '1',
+        createdAt: '2020-05-01T06:00:00.000Z',
+        id: 2,
+        updatedAt: '2020-05-01T06:00:00.000Z',
+        userId: 1,
+      },
+    ],
+    meta: {
+      '@links': {
+        count: '/test/comments/count',
+      },
+      '@url': '/test/comments',
+      hasMore: false,
+      page: 0,
+      perPage: 250,
+    },
+  });
+
+  // since works
+  expect(
+    (await get(`/test/comments?since=${encodeURIComponent('may 2, 2020')}`))
+      .data
+  ).toEqual({
+    data: [],
+    meta: {
+      '@links': {
+        count: '/test/comments/count?since=may%202%2C%202020',
+      },
+      '@url': '/test/comments?since=may%202%2C%202020',
+      hasMore: false,
+      page: 0,
+      perPage: 250,
+    },
+  });
+
+  // make sure updatedAt is updated
+  const beforeUpdate = (await get('/test/comments/1')).data.data;
+
+  await put(`/test/comments/1`, {
+    body: 'hey',
+  });
+
+  const afterUpdate = (await get('/test/comments/1')).data.data;
+
+  expect(beforeUpdate.createdAt).toEqual(afterUpdate.createdAt);
+  expect(beforeUpdate.updatedAt).not.toEqual(afterUpdate.updatedAt);
 });

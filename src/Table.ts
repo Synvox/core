@@ -50,6 +50,12 @@ export interface TableConfig {
   pluralForeignKeyMap: {
     [columnName: string]: string;
   };
+  beforeHook?: (
+    trx: Transaction,
+    row: any,
+    mode: 'insert' | 'update' | 'delete',
+    authorizer: ReturnType<Authorizer>
+  ) => Promise<void>;
   afterHook?: (
     trx: Transaction,
     row: any,
@@ -129,7 +135,7 @@ export default function Table(table: Partial<TableConfig>): TableConfig {
       this.columns = ((await knex(this.tableName)
         .withSchema(this.schemaName)
         // pretty sure this is a bug in knex.
-        //columnInfo's type is only for a single column
+        // columnInfo's type is only for a single column
         .columnInfo()) as unknown) as { [columnName: string]: Knex.ColumnInfo };
 
       const uniqueConstraints = await knex('pg_catalog.pg_constraint con')
