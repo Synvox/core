@@ -11,7 +11,6 @@ import { classify, titleize, underscore, humanize } from 'inflection';
 export interface TableConfig {
   tableName: string;
   schemaName: string;
-  userIdColumnName: string | undefined;
   tenantIdColumnName: string | undefined;
   init: (knex: Knex, fromSchemaFile?: boolean) => Promise<void>;
   policy: (
@@ -25,6 +24,7 @@ export interface TableConfig {
   uniqueColumns: Array<string[]>;
   relations: { [key: string]: string };
   schema: { [columnName: string]: MixedSchema };
+  paranoid: boolean;
   router: Router;
   idModifiers: {
     [name: string]: (
@@ -111,7 +111,6 @@ export default function Table(table: Partial<TableConfig>): TableConfig {
   return {
     tableName: '',
     schemaName: '',
-    userIdColumnName: undefined,
     tenantIdColumnName: undefined,
 
     async init(knex: Knex, fromSchemaFile: boolean = false) {
@@ -137,6 +136,11 @@ export default function Table(table: Partial<TableConfig>): TableConfig {
         // pretty sure this is a bug in knex.
         // columnInfo's type is only for a single column
         .columnInfo()) as unknown) as { [columnName: string]: Knex.ColumnInfo };
+
+      if (table.paranoid && !('deletedAt' in this.columns))
+        throw new Error(
+          'Tried to make a paranoid table without a deletedAt column'
+        );
 
       const uniqueConstraints = await knex('pg_catalog.pg_constraint con')
         .join('pg_catalog.pg_class rel', 'rel.oid', 'con.conrelid')
@@ -179,7 +183,9 @@ export default function Table(table: Partial<TableConfig>): TableConfig {
             and rel_kcu.column_name = 'id'
             and kcu.table_schema = ?
             and kcu.table_name = ?
-        `,
+        `
+          .replace(/\s\s+/g, ' ')
+          .trim(),
         [
           transformKey(this.schemaName, caseMethods.snake),
           transformKey(this.tableName, caseMethods.snake),
@@ -236,6 +242,7 @@ export default function Table(table: Partial<TableConfig>): TableConfig {
     uniqueColumns: [],
     relations: {},
     schema: {},
+    paranoid: false,
     pluralForeignKeyMap: {},
 
     get router() {

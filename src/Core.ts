@@ -62,8 +62,18 @@ export default function core(
     sseHandlers.forEach(handler => handler(changeSummary));
   });
 
-  const query = (table: TableConfig, k: Knex = knex) => {
-    return k(table.tablePath).select(`${table.tableName}.*`);
+  const query = (
+    table: TableConfig,
+    k: Knex = knex,
+    withDeleted: boolean = true
+  ) => {
+    const stmt = k(table.tablePath).select(`${table.tableName}.*`);
+
+    if (table.paranoid) {
+      if (!withDeleted) stmt.where(`${table.tableName}.deletedAt`, null);
+    }
+
+    return stmt;
   };
 
   const relationsFor = (
@@ -130,6 +140,7 @@ export default function core(
       filters: any,
       many: boolean = true
     ) => {
+      const withDeleted = Boolean(filters.withDeleted || !many);
       const authInstance = authorizer(req, knex);
 
       const includeRelated = async (stmt: QueryBuilder) => {
@@ -152,7 +163,7 @@ export default function core(
 
           if (!ref) continue;
 
-          let subQuery = query(ref.table).clearSelect();
+          let subQuery = query(ref.table, knex, withDeleted).clearSelect();
           if (isOne) {
             subQuery
               .where(
@@ -173,7 +184,6 @@ export default function core(
 
           await ref.table.policy(subQuery, authInstance, 'read');
 
-          //@TODO is this right?
           if (isOne) {
             stmt.select(`(${subQuery.toString()}) as ${ref.key}`);
           } else {
@@ -288,7 +298,7 @@ export default function core(
         };
       };
 
-      const stmt = query(table);
+      const stmt = query(table, knex, withDeleted);
       await table.policy(stmt, authInstance, 'read');
       await includeRelated(stmt);
 
@@ -326,8 +336,9 @@ export default function core(
     const count = async (req: Request, table: TableConfig) => {
       const authInstance = authorizer(req, knex);
       const filters = req.query;
+      const withDeleted = Boolean(filters.withDeleted);
 
-      const stmt = query(table).clearSelect();
+      const stmt = query(table, knex, withDeleted).clearSelect();
       await table.policy(stmt, authInstance, 'read');
 
       stmt.where(filterPrefixGraph(table, filters));
@@ -656,7 +667,8 @@ export default function core(
         const del = async (
           trx: Transaction,
           table: TableConfig,
-          id: string
+          id: string,
+          deletedAt: Date = new Date()
         ) => {
           const stmt = query(table, trx);
           await table.policy(stmt, authInstance, 'delete');
@@ -675,9 +687,35 @@ export default function core(
             });
           }
 
-          return await query(table, trx)
-            .where(`${table.tableName}.id`, id)
-            .delete();
+          async function cascade(table: TableConfig) {
+            const { hasMany } = relationsFor(table);
+            for (let relation of hasMany) {
+              if (!relation.table.paranoid) {
+                // @TODO this means a non-paranoid row is looking at a paranoid row
+                // cascading would delete that row too, but we don't want that.
+                continue;
+              }
+
+              const [otherId] = await query(relation.table, trx)
+                .select('id')
+                .where(`${relation.table.tableName}.${relation.column}`, id)
+                .pluck('id');
+
+              await del(trx, relation.table, otherId, deletedAt);
+            }
+          }
+
+          if (table.paranoid) {
+            await query(table, trx)
+              .where({ id })
+              .update({ deletedAt });
+
+            await cascade(table);
+          } else {
+            await query(table, trx)
+              .where(`${table.tableName}.id`, id)
+              .delete();
+          }
         };
 
         changeSummary.paths.add(table.path);

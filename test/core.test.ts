@@ -1130,3 +1130,177 @@ it('supports plugins like withTimestamp', async () => {
   expect(beforeUpdate.createdAt).toEqual(afterUpdate.createdAt);
   expect(beforeUpdate.updatedAt).not.toEqual(afterUpdate.updatedAt);
 });
+
+it('supports paranoid', async () => {
+  await knex.schema.withSchema('test').createTable('users', t => {
+    t.bigIncrements('id').primary();
+    t.string('email')
+      .notNullable()
+      .unique();
+    t.timestamps(true, true);
+    t.timestamp('deleted_at', { useTz: true });
+  });
+
+  await knex.schema.withSchema('test').createTable('comments', t => {
+    t.bigIncrements('id').primary();
+    t.bigInteger('user_id').notNullable();
+    t.string('body').notNullable();
+    t.timestamps(true, true);
+    t.timestamp('deleted_at', { useTz: true });
+    t.foreign('user_id')
+      .references('id')
+      .inTable('test.users');
+  });
+
+  for (let i = 0; i < 2; i++) {
+    await knex('test.users').insert({
+      email: `${i + 1}@abc.com`,
+    });
+
+    const date = new Date('May 1, 2020');
+
+    await knex('test.comments').insert({
+      body: String(i),
+      userId: '1',
+      updatedAt: date,
+      createdAt: date,
+    });
+  }
+
+  const core = Core(knex, auth);
+
+  core.register({
+    schemaName: 'test',
+    tableName: 'users',
+    paranoid: true,
+    schema: {
+      email: string().email(),
+    },
+    idModifiers: {
+      me: async (query, { getUser }) => {
+        const user = await getUser();
+        query.where('users.id', user.id);
+      },
+    },
+    async policy(query: QueryBuilder, { getUser }) {
+      const user = await getUser();
+      if (!user) return;
+      query.where('users.id', user.id);
+    },
+  });
+
+  core.register(
+    withTimestamps({
+      schemaName: 'test',
+      tableName: 'comments',
+      paranoid: true,
+      tenantIdColumnName: 'userId',
+      queryModifiers: {
+        mine: async (_, query, { getUser }) => {
+          const user = await getUser();
+          query.where('comments.userId', user.id);
+        },
+      },
+      async policy(query: QueryBuilder, { getUser }) {
+        const user = await getUser();
+        if (!user) return;
+        query.where('comments.userId', user.id);
+      },
+    })
+  );
+
+  const { get, delete: del } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  let { data } = await get('/test/comments');
+
+  expect(data).toEqual({
+    data: [
+      {
+        '@links': {
+          user: '/test/users/1',
+        },
+        '@url': '/test/comments/1',
+        body: '0',
+        createdAt: '2020-05-01T06:00:00.000Z',
+        deletedAt: null,
+        id: 1,
+        updatedAt: '2020-05-01T06:00:00.000Z',
+        userId: 1,
+      },
+      {
+        '@links': {
+          user: '/test/users/1',
+        },
+        '@url': '/test/comments/2',
+        body: '1',
+        createdAt: '2020-05-01T06:00:00.000Z',
+        deletedAt: null,
+        id: 2,
+        updatedAt: '2020-05-01T06:00:00.000Z',
+        userId: 1,
+      },
+    ],
+    meta: {
+      '@links': {
+        count: '/test/comments/count',
+      },
+      '@url': '/test/comments',
+      hasMore: false,
+      page: 0,
+      perPage: 250,
+    },
+  });
+
+  // make sure updatedAt is updated
+  const beforeUpdate = (await get('/test/comments/1')).data.data;
+
+  await del(`/test/comments/1`);
+
+  const afterUpdate = (await get('/test/comments/1')).data.data;
+
+  expect(beforeUpdate.deletedAt).toEqual(null);
+  expect(beforeUpdate.deletedAt).not.toEqual(afterUpdate.deletedAt);
+
+  let { data: afterData } = await get('/test/comments');
+  expect(afterData).toEqual({
+    data: [
+      {
+        '@links': {
+          user: '/test/users/1',
+        },
+        '@url': '/test/comments/2',
+        body: '1',
+        createdAt: '2020-05-01T06:00:00.000Z',
+        deletedAt: null,
+        id: 2,
+        updatedAt: '2020-05-01T06:00:00.000Z',
+        userId: 1,
+      },
+    ],
+    meta: {
+      '@links': {
+        count: '/test/comments/count',
+      },
+      '@url': '/test/comments',
+      hasMore: false,
+      page: 0,
+      perPage: 250,
+    },
+  });
+
+  // make sure passing withDeleted gives the row
+  let { data: afterDataWithDeleted } = await get(
+    '/test/comments?withDeleted=true'
+  );
+  expect(afterDataWithDeleted.data.length).toEqual(2);
+
+  await del('/test/users/1');
+
+  const comments = await knex('test.comments');
+
+  expect(comments.every(comment => comment.deletedAt !== null)).toBe(true);
+});
