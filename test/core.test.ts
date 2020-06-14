@@ -4,11 +4,10 @@ import express, { Request } from 'express';
 import axios, { AxiosRequestConfig } from 'axios';
 import listen from 'test-listen';
 import Knex, { QueryBuilder } from 'knex';
-import Core, { knexHelpers, Context } from '../src';
+import Core, { knexHelpers, ContextFactory, notifyChange } from '../src';
 import { string } from 'yup';
 import withTimestamps from '../src/plugins/withTimestamps';
 import { ChangeSummary } from 'Core';
-import { notifyChange } from '../src/Core';
 
 let server: null | ReturnType<typeof createServer> = null;
 
@@ -32,7 +31,7 @@ async function create(
   };
 }
 
-const auth: Context<{
+const getContext: ContextFactory<{
   getUser(): Promise<any>;
 }> = (req: Request, knex: Knex) => {
   return {
@@ -76,7 +75,7 @@ afterAll(async () => {
 });
 
 it(`doesn't recreate the router`, () => {
-  const core = Core(knex, auth);
+  const core = Core(knex, getContext);
   expect(core.router).toBe(core.router);
 });
 
@@ -86,7 +85,7 @@ it('reads tables', async () => {
     t.string('email').unique();
   });
 
-  const core = Core(knex, auth);
+  const core = Core(knex, getContext);
 
   core.table({
     schemaName: 'test',
@@ -345,7 +344,7 @@ it('writes tables', async () => {
   let events: ChangeSummary[] = [];
   emitter.on('change', event => events.push(event));
 
-  const core = Core(knex, auth, {
+  const core = Core(knex, getContext, {
     emitter,
   });
 
@@ -483,7 +482,7 @@ it('handles relations', async () => {
   let events: ChangeSummary[] = [];
   emitter.on('change', event => events.push(event));
 
-  const core = Core(knex, auth, {
+  const core = Core(knex, getContext, {
     emitter,
   });
 
@@ -920,7 +919,7 @@ it('reflects endpoints from the database', async () => {
     });
   }
 
-  const core = Core(knex, auth);
+  const core = Core(knex, getContext);
 
   core.table({
     schemaName: 'test',
@@ -1023,7 +1022,7 @@ it('supports plugins like withTimestamp', async () => {
     });
   }
 
-  const core = Core(knex, auth);
+  const core = Core(knex, getContext);
 
   core.table({
     schemaName: 'test',
@@ -1176,7 +1175,7 @@ it('supports paranoid', async () => {
     });
   }
 
-  const core = Core(knex, auth);
+  const core = Core(knex, getContext);
 
   core.table({
     schemaName: 'test',

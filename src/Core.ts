@@ -18,10 +18,10 @@ import { NotFoundError, UnauthorizedError } from './Errors';
 
 const refPlaceholder = -1;
 
-type Relation<AppContext> = {
+type Relation<Context> = {
   column: string;
   key: string;
-  table: Table<AppContext>;
+  table: Table<Context>;
 };
 
 export type Mode = 'insert' | 'read' | 'update' | 'delete';
@@ -45,13 +45,13 @@ export function notifyChange(
   });
 }
 
-export interface Context<AppContext> {
-  (req: Request, knex: Knex): AppContext;
+export interface ContextFactory<Context> {
+  (req: Request, knex: Knex): Context;
 }
 
-export default function core<AppContext>(
+export default function core<Context>(
   knex: Knex,
-  context: Context<AppContext>,
+  getContext: ContextFactory<Context>,
   {
     emitter = new EventEmitter(),
   }: {
@@ -61,7 +61,7 @@ export default function core<AppContext>(
   function trxNotifyCommit(
     trx: Transaction,
     mode: Mode,
-    table: Table<AppContext>,
+    table: Table<Context>,
     row: any
   ) {
     trx.on('commit', () => {
@@ -74,15 +74,15 @@ export default function core<AppContext>(
     });
   }
 
-  const tables: Table<AppContext>[] = [];
+  const tables: Table<Context>[] = [];
   const relationsForCache = new Map<
-    Table<AppContext>,
-    { hasOne: Relation<AppContext>[]; hasMany: Relation<AppContext>[] }
+    Table<Context>,
+    { hasOne: Relation<Context>[]; hasMany: Relation<Context>[] }
   >();
   let router: Router;
 
   const query = (
-    table: Table<AppContext>,
+    table: Table<Context>,
     k: Knex = knex,
     withDeleted: boolean = true
   ) => {
@@ -96,12 +96,12 @@ export default function core<AppContext>(
   };
 
   const relationsFor = (
-    table: Table<AppContext>
-  ): { hasOne: Relation<AppContext>[]; hasMany: Relation<AppContext>[] } => {
+    table: Table<Context>
+  ): { hasOne: Relation<Context>[]; hasMany: Relation<Context>[] } => {
     return relationsForCache.get(table)!;
   };
 
-  const linksFor = (req: Request, table: Table<AppContext>, inputRow: any) => {
+  const linksFor = (req: Request, table: Table<Context>, inputRow: any) => {
     let row = { ...inputRow };
     const relations = relationsFor(table);
 
@@ -129,7 +129,7 @@ export default function core<AppContext>(
     };
   };
 
-  const filterGraph = (table: Table<AppContext>, graph: any) => {
+  const filterGraph = (table: Table<Context>, graph: any) => {
     const result: { [key: string]: any } = {};
 
     for (let key of Object.keys(graph).filter(key => key in table.columns!)) {
@@ -139,7 +139,7 @@ export default function core<AppContext>(
     return result;
   };
 
-  const filterPrefixGraph = (table: Table<AppContext>, graph: any) => {
+  const filterPrefixGraph = (table: Table<Context>, graph: any) => {
     const result: { [key: string]: any } = {};
 
     for (let key of Object.keys(graph).filter(key => key in table.columns!)) {
@@ -155,12 +155,12 @@ export default function core<AppContext>(
   {
     const read = async (
       req: Request,
-      table: Table<AppContext>,
+      table: Table<Context>,
       filters: any,
       many: boolean = true
     ) => {
       const withDeleted = Boolean(filters.withDeleted || !many);
-      const authInstance = context(req, knex);
+      const context = getContext(req, knex);
 
       const includeRelated = async (stmt: QueryBuilder) => {
         const { include: rawInclude = '' } = req.query;
@@ -210,7 +210,7 @@ export default function core<AppContext>(
               .select(`row_to_json(${ref.table.tableName})`);
           }
 
-          await ref.table.policy(subQuery, authInstance, 'read');
+          await ref.table.policy(subQuery, context, 'read');
 
           if (isOne) {
             stmt.select(`(${subQuery.toString()}) as ${ref.key}`);
@@ -327,21 +327,21 @@ export default function core<AppContext>(
       };
 
       const stmt = query(table, knex, withDeleted);
-      await table.policy(stmt, authInstance, 'read');
+      await table.policy(stmt, context, 'read');
       await includeRelated(stmt);
 
       const where = { ...filters };
 
       if (Object.keys(table.idModifiers).includes(where.id)) {
         const modifier = table.idModifiers[where.id];
-        await modifier(stmt, authInstance);
+        await modifier(stmt, context);
         delete where.id;
       }
 
       for (let key of Object.keys(where)) {
         if (Object.keys(table.queryModifiers).includes(key)) {
           const modifier = table.queryModifiers[key];
-          await modifier(where[key], stmt, authInstance);
+          await modifier(where[key], stmt, context);
           delete where[key];
         }
       }
@@ -361,13 +361,13 @@ export default function core<AppContext>(
       }
     };
 
-    const count = async (req: Request, table: Table<AppContext>) => {
-      const authInstance = context(req, knex);
+    const count = async (req: Request, table: Table<Context>) => {
+      const context = getContext(req, knex);
       const filters = req.query;
       const withDeleted = Boolean(filters.withDeleted);
 
       const stmt = query(table, knex, withDeleted).clearSelect();
-      await table.policy(stmt, authInstance, 'read');
+      await table.policy(stmt, context, 'read');
 
       stmt.where(filterPrefixGraph(table, filters));
 
@@ -375,14 +375,14 @@ export default function core<AppContext>(
 
       if (Object.keys(table.idModifiers).includes(where.id)) {
         const modifier = table.idModifiers[where.id];
-        await modifier(stmt, authInstance);
+        await modifier(stmt, context);
         delete where.id;
       }
 
       for (let key of Object.keys(where)) {
         if (Object.keys(table.queryModifiers).includes(key)) {
           const modifier = table.queryModifiers[key];
-          await modifier(where[key], stmt, authInstance);
+          await modifier(where[key], stmt, context);
           delete where[key];
         }
       }
@@ -396,13 +396,13 @@ export default function core<AppContext>(
       };
     };
 
-    const ids = async (req: Request, table: Table<AppContext>) => {
-      const authInstance = context(req, knex);
+    const ids = async (req: Request, table: Table<Context>) => {
+      const context = getContext(req, knex);
       const filters = req.query;
       const withDeleted = Boolean(filters.withDeleted);
 
       const stmt = query(table, knex, withDeleted).clearSelect();
-      await table.policy(stmt, authInstance, 'read');
+      await table.policy(stmt, context, 'read');
 
       stmt.where(filterPrefixGraph(table, filters));
 
@@ -410,14 +410,14 @@ export default function core<AppContext>(
 
       if (Object.keys(table.idModifiers).includes(where.id)) {
         const modifier = table.idModifiers[where.id];
-        await modifier(stmt, authInstance);
+        await modifier(stmt, context);
         delete where.id;
       }
 
       for (let key of Object.keys(where)) {
         if (Object.keys(table.queryModifiers).includes(key)) {
           const modifier = table.queryModifiers[key];
-          await modifier(where[key], stmt, authInstance);
+          await modifier(where[key], stmt, context);
           delete where[key];
         }
       }
@@ -462,14 +462,14 @@ export default function core<AppContext>(
     const write = async (
       req: Request,
       res: Response,
-      table: Table<AppContext>,
+      table: Table<Context>,
       graph: any
     ) => {
-      const authInstance = context(req, knex);
+      const context = getContext(req, knex);
       const beforeCommitCallbacks: Array<() => Promise<void>> = [];
 
-      const validateGraph = async (table: Table<AppContext>, graph: any) => {
-        const validate = async (table: Table<AppContext>, graph: any) => {
+      const validateGraph = async (table: Table<Context>, graph: any) => {
+        const validate = async (table: Table<Context>, graph: any) => {
           const getYupSchema = () => {
             const schema: { [key: string]: MixedSchema } = {};
 
@@ -505,7 +505,7 @@ export default function core<AppContext>(
                     const stmt = query(table);
                     // this policy is in 'read' mode because we are looking
                     // for existence that may break unique constraints
-                    await table.policy(stmt, authInstance, 'read');
+                    await table.policy(stmt, context, 'read');
 
                     if (graph.id) {
                       stmt.whereNot(function() {
@@ -532,7 +532,7 @@ export default function core<AppContext>(
 
           if (graph.id) {
             const stmt = query(table);
-            await table.policy(stmt, authInstance, 'update');
+            await table.policy(stmt, context, 'update');
 
             if (table.tenantIdColumnName && !graph[table.tenantIdColumnName])
               return { [table.tenantIdColumnName]: 'is required' };
@@ -650,19 +650,19 @@ export default function core<AppContext>(
 
       const updateGraph = async (
         trx: Transaction,
-        table: Table<AppContext>,
+        table: Table<Context>,
         graph: any
       ) => {
         const update = async (
           trx: Transaction,
-          table: Table<AppContext>,
+          table: Table<Context>,
           graph: any
         ) => {
           const initialGraph = graph;
           graph = filterGraph(table, graph);
 
           const stmt = query(table, trx);
-          await table.policy(stmt, authInstance, 'update');
+          await table.policy(stmt, context, 'update');
 
           const row = await stmt
             .where(`${table.tableName}.id`, graph.id)
@@ -679,7 +679,7 @@ export default function core<AppContext>(
           graph = { ...row, ...graph };
 
           if (table.beforeHook) {
-            await table.beforeHook(trx, graph, 'update', authInstance);
+            await table.beforeHook(trx, graph, 'update', context);
 
             graph = filterGraph(table, graph);
           }
@@ -692,7 +692,7 @@ export default function core<AppContext>(
 
           {
             const stmt = query(table, trx);
-            await table.policy(stmt, authInstance, 'update');
+            await table.policy(stmt, context, 'update');
 
             if (Object.keys(filteredByChanged).length) {
               await stmt
@@ -715,7 +715,7 @@ export default function core<AppContext>(
 
             // in case an update now makes this row inaccessible
             const readStmt = query(table, trx);
-            await table.policy(readStmt, authInstance, 'update');
+            await table.policy(readStmt, context, 'update');
 
             const updatedRow = await readStmt
               .where(`${table.tableName}.id`, graph.id)
@@ -740,19 +740,14 @@ export default function core<AppContext>(
                   trx,
                   initialGraph[key],
                   updatedRow,
-                  authInstance
+                  context
                 );
               }
             }
 
             if (table.afterHook) {
               beforeCommitCallbacks.push(() => {
-                return table.afterHook!(
-                  trx,
-                  updatedRow,
-                  'update',
-                  authInstance
-                );
+                return table.afterHook!(trx, updatedRow, 'update', context);
               });
             }
 
@@ -762,14 +757,14 @@ export default function core<AppContext>(
 
         const insert = async (
           trx: Transaction,
-          table: Table<AppContext>,
+          table: Table<Context>,
           graph: any
         ) => {
           const initialGraph = graph;
           graph = filterGraph(table, graph);
 
           if (table.beforeHook) {
-            await table.beforeHook(trx, graph, 'insert', authInstance);
+            await table.beforeHook(trx, graph, 'insert', context);
             graph = filterGraph(table, graph);
           }
 
@@ -781,7 +776,7 @@ export default function core<AppContext>(
           trxNotifyCommit(trx, 'insert', table, row);
 
           const stmt = query(table, trx);
-          await table.policy(stmt, authInstance, 'insert');
+          await table.policy(stmt, context, 'insert');
 
           const updatedRow = await stmt
             .where(`${table.tableName}.id`, row.id)
@@ -795,14 +790,14 @@ export default function core<AppContext>(
                 trx,
                 initialGraph[key],
                 updatedRow,
-                authInstance
+                context
               );
             }
           }
 
           if (table.afterHook) {
             beforeCommitCallbacks.push(() => {
-              return table.afterHook!(trx, updatedRow, 'insert', authInstance);
+              return table.afterHook!(trx, updatedRow, 'insert', context);
             });
           }
 
@@ -811,7 +806,7 @@ export default function core<AppContext>(
 
         const del = async (
           trx: Transaction,
-          table: Table<AppContext>,
+          table: Table<Context>,
           graph: any,
           deletedAt: Date = new Date()
         ) => {
@@ -823,7 +818,7 @@ export default function core<AppContext>(
           }
 
           const stmt = query(table, trx);
-          await table.policy(stmt, authInstance, 'delete');
+          await table.policy(stmt, context, 'delete');
 
           if (table.tenantIdColumnName && tenantId !== undefined) {
             stmt.where(
@@ -837,16 +832,16 @@ export default function core<AppContext>(
           if (!row) throw new UnauthorizedError();
 
           if (table.beforeHook) {
-            await table.beforeHook(trx, row, 'delete', authInstance);
+            await table.beforeHook(trx, row, 'delete', context);
           }
 
           if (table.afterHook) {
             beforeCommitCallbacks.push(() => {
-              return table.afterHook!(trx, row, 'delete', authInstance);
+              return table.afterHook!(trx, row, 'delete', context);
             });
           }
 
-          async function cascade(table: Table<AppContext>) {
+          async function cascade(table: Table<Context>) {
             const { hasMany } = relationsFor(table);
             for (let relation of hasMany) {
               if (!relation.table.paranoid) {
@@ -980,7 +975,7 @@ export default function core<AppContext>(
     };
 
     return {
-      table(tableDef: Partial<Table<AppContext>>) {
+      table(tableDef: Partial<Table<Context>>) {
         tables.push(buildTable(tableDef));
       },
       get router() {
