@@ -1,6 +1,5 @@
 import { EventEmitter } from 'events';
 import qs from 'qs';
-import ms from 'ms';
 import Knex, { Transaction, QueryBuilder } from 'knex';
 import { Router, Request, Response, NextFunction } from 'express';
 import setValue from 'set-value';
@@ -14,56 +13,76 @@ import {
   ValidationError,
 } from 'yup';
 
-import Table, { saveSchema } from './Table';
+import buildTable, { saveSchema, Table } from './Table';
 import { NotFoundError, UnauthorizedError } from './Errors';
 
 const refPlaceholder = -1;
 
-type TableConfig = ReturnType<typeof Table>;
-
-type Relation = {
+type Relation<AppContext> = {
   column: string;
   key: string;
-  table: TableConfig;
+  table: Table<AppContext>;
 };
+
+export type Mode = 'insert' | 'read' | 'update' | 'delete';
 
 export type ChangeSummary = {
-  paths: Set<string>;
-  tenantIds: Set<string>;
+  mode: Mode;
+  schemaName: string;
+  tableName: string;
+  row: any;
 };
 
-type Id = string | number;
-
-export interface Authorizer {
-  (req: Request, knex: Knex): {
-    getUser: () => Promise<any>;
-    getTenantIds: () => Promise<Id[]>;
-  };
+export function notifyChange(
+  emitter: EventEmitter,
+  { mode, schemaName, tableName, row }: ChangeSummary
+) {
+  emitter.emit('change', {
+    mode,
+    tableName: tableName,
+    schemaName: schemaName,
+    row,
+  });
 }
 
-export default function core(
+export interface Context<AppContext> {
+  (req: Request, knex: Knex): AppContext;
+}
+
+export default function core<AppContext>(
   knex: Knex,
-  authorizer: Authorizer,
+  context: Context<AppContext>,
   {
     emitter = new EventEmitter(),
   }: {
     emitter?: EventEmitter;
   } = {}
 ) {
-  const tables: TableConfig[] = [];
-  const sseHandlers = new Set<(changeSummary: ChangeSummary) => void>();
+  function trxNotifyCommit(
+    trx: Transaction,
+    mode: Mode,
+    table: Table<AppContext>,
+    row: any
+  ) {
+    trx.on('commit', () => {
+      notifyChange(emitter, {
+        mode,
+        tableName: table.tableName,
+        schemaName: table.schemaName,
+        row,
+      });
+    });
+  }
+
+  const tables: Table<AppContext>[] = [];
   const relationsForCache = new Map<
-    TableConfig,
-    { hasOne: Relation[]; hasMany: Relation[] }
+    Table<AppContext>,
+    { hasOne: Relation<AppContext>[]; hasMany: Relation<AppContext>[] }
   >();
   let router: Router;
 
-  emitter.on('commit', (changeSummary: ChangeSummary) => {
-    sseHandlers.forEach(handler => handler(changeSummary));
-  });
-
   const query = (
-    table: TableConfig,
+    table: Table<AppContext>,
     k: Knex = knex,
     withDeleted: boolean = true
   ) => {
@@ -77,12 +96,12 @@ export default function core(
   };
 
   const relationsFor = (
-    table: TableConfig
-  ): { hasOne: Relation[]; hasMany: Relation[] } => {
+    table: Table<AppContext>
+  ): { hasOne: Relation<AppContext>[]; hasMany: Relation<AppContext>[] } => {
     return relationsForCache.get(table)!;
   };
 
-  const linksFor = (req: Request, table: TableConfig, inputRow: any) => {
+  const linksFor = (req: Request, table: Table<AppContext>, inputRow: any) => {
     let row = { ...inputRow };
     const relations = relationsFor(table);
 
@@ -110,7 +129,7 @@ export default function core(
     };
   };
 
-  const filterGraph = (table: TableConfig, graph: any) => {
+  const filterGraph = (table: Table<AppContext>, graph: any) => {
     const result: { [key: string]: any } = {};
 
     for (let key of Object.keys(graph).filter(key => key in table.columns!)) {
@@ -120,7 +139,7 @@ export default function core(
     return result;
   };
 
-  const filterPrefixGraph = (table: TableConfig, graph: any) => {
+  const filterPrefixGraph = (table: Table<AppContext>, graph: any) => {
     const result: { [key: string]: any } = {};
 
     for (let key of Object.keys(graph).filter(key => key in table.columns!)) {
@@ -136,12 +155,12 @@ export default function core(
   {
     const read = async (
       req: Request,
-      table: TableConfig,
+      table: Table<AppContext>,
       filters: any,
       many: boolean = true
     ) => {
       const withDeleted = Boolean(filters.withDeleted || !many);
-      const authInstance = authorizer(req, knex);
+      const authInstance = context(req, knex);
 
       const includeRelated = async (stmt: QueryBuilder) => {
         const { include: rawInclude = '' } = req.query;
@@ -342,8 +361,8 @@ export default function core(
       }
     };
 
-    const count = async (req: Request, table: TableConfig) => {
-      const authInstance = authorizer(req, knex);
+    const count = async (req: Request, table: Table<AppContext>) => {
+      const authInstance = context(req, knex);
       const filters = req.query;
       const withDeleted = Boolean(filters.withDeleted);
 
@@ -377,8 +396,8 @@ export default function core(
       };
     };
 
-    const ids = async (req: Request, table: TableConfig) => {
-      const authInstance = authorizer(req, knex);
+    const ids = async (req: Request, table: Table<AppContext>) => {
+      const authInstance = context(req, knex);
       const filters = req.query;
       const withDeleted = Boolean(filters.withDeleted);
 
@@ -443,14 +462,14 @@ export default function core(
     const write = async (
       req: Request,
       res: Response,
-      table: TableConfig,
+      table: Table<AppContext>,
       graph: any
     ) => {
-      const authInstance = authorizer(req, knex);
+      const authInstance = context(req, knex);
       const beforeCommitCallbacks: Array<() => Promise<void>> = [];
 
-      const validateGraph = async (table: TableConfig, graph: any) => {
-        const validate = async (table: TableConfig, graph: any) => {
+      const validateGraph = async (table: Table<AppContext>, graph: any) => {
+        const validate = async (table: Table<AppContext>, graph: any) => {
           const getYupSchema = () => {
             const schema: { [key: string]: MixedSchema } = {};
 
@@ -631,13 +650,12 @@ export default function core(
 
       const updateGraph = async (
         trx: Transaction,
-        table: TableConfig,
-        graph: any,
-        changeSummary: ChangeSummary
+        table: Table<AppContext>,
+        graph: any
       ) => {
         const update = async (
           trx: Transaction,
-          table: TableConfig,
+          table: Table<AppContext>,
           graph: any
         ) => {
           const initialGraph = graph;
@@ -676,7 +694,7 @@ export default function core(
             const stmt = query(table, trx);
             await table.policy(stmt, authInstance, 'update');
 
-            if (Object.keys(filteredByChanged).length)
+            if (Object.keys(filteredByChanged).length) {
               await stmt
                 .where(`${table.tableName}.id`, graph.id)
                 .modify(function() {
@@ -692,6 +710,8 @@ export default function core(
                 })
                 .limit(1)
                 .update(filteredByChanged);
+              trxNotifyCommit(trx, 'update', table, row);
+            }
 
             // in case an update now makes this row inaccessible
             const readStmt = query(table, trx);
@@ -742,7 +762,7 @@ export default function core(
 
         const insert = async (
           trx: Transaction,
-          table: TableConfig,
+          table: Table<AppContext>,
           graph: any
         ) => {
           const initialGraph = graph;
@@ -757,6 +777,8 @@ export default function core(
             .insert(graph)
             .returning('*')
             .then(([row]) => row);
+
+          trxNotifyCommit(trx, 'insert', table, row);
 
           const stmt = query(table, trx);
           await table.policy(stmt, authInstance, 'insert');
@@ -789,7 +811,7 @@ export default function core(
 
         const del = async (
           trx: Transaction,
-          table: TableConfig,
+          table: Table<AppContext>,
           graph: any,
           deletedAt: Date = new Date()
         ) => {
@@ -824,7 +846,7 @@ export default function core(
             });
           }
 
-          async function cascade(table: TableConfig) {
+          async function cascade(table: Table<AppContext>) {
             const { hasMany } = relationsFor(table);
             for (let relation of hasMany) {
               if (!relation.table.paranoid) {
@@ -860,9 +882,7 @@ export default function core(
 
           const delStmt = query(table, trx).where(`${table.tableName}.id`, id);
 
-          if (table.tenantIdColumnName && row) {
-            changeSummary.tenantIds.add(row[table.tenantIdColumnName]);
-          }
+          trxNotifyCommit(trx, 'delete', table, row);
 
           if (table.tenantIdColumnName && tenantId !== undefined) {
             delStmt.where(
@@ -879,8 +899,6 @@ export default function core(
           }
         };
 
-        changeSummary.paths.add(table.path);
-
         if (graph._delete) {
           await del(trx, table, graph);
           return null;
@@ -894,12 +912,7 @@ export default function core(
           const otherGraph = graph[key];
           if (otherGraph === undefined) continue;
 
-          const otherRow = await updateGraph(
-            trx,
-            otherTable,
-            otherGraph,
-            changeSummary
-          );
+          const otherRow = await updateGraph(trx, otherTable, otherGraph);
 
           if (otherRow && otherRow.id) {
             graph[column] = otherRow.id;
@@ -929,29 +942,16 @@ export default function core(
           row[key] = [];
 
           for (let otherGraph of otherGraphs) {
-            const otherRow = await updateGraph(
-              trx,
-              otherTable,
-              {
-                ...otherGraph,
-                [column]: row.id,
-              },
-              changeSummary
-            );
+            const otherRow = await updateGraph(trx, otherTable, {
+              ...otherGraph,
+              [column]: row.id,
+            });
 
             if (otherRow) row[key].push(otherRow);
           }
         }
 
-        if (table.tenantIdColumnName)
-          changeSummary.tenantIds.add(row[table.tenantIdColumnName]);
-
         return row;
-      };
-
-      const changeSummary: ChangeSummary = {
-        paths: new Set(),
-        tenantIds: new Set(),
       };
 
       const errors = await validateGraph(table, graph);
@@ -965,7 +965,7 @@ export default function core(
       let trxRef: null | Transaction = null;
 
       const data = await knex.transaction(async trx => {
-        const result = await updateGraph(trx, table, graph, changeSummary);
+        const result = await updateGraph(trx, table, graph);
         for (let cb of beforeCommitCallbacks) await cb();
 
         // Needs to emit commit after this function finishes
@@ -976,17 +976,12 @@ export default function core(
 
       if (trxRef) trxRef!.emit('commit');
 
-      emitter.emit('commit', changeSummary);
-
       return { data };
     };
 
     return {
-      register(tableDef: Partial<TableConfig>) {
-        tables.push(Table(tableDef));
-      },
-      emitChange(changeSummary: ChangeSummary) {
-        emitter.emit('commit', changeSummary);
+      table(tableDef: Partial<Table<AppContext>>) {
+        tables.push(buildTable(tableDef));
       },
       get router() {
         if (router) return router;
@@ -1125,51 +1120,6 @@ export default function core(
             })
           );
         }
-
-        router.get('/sse', async (req, res) => {
-          res.writeHead(200, {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            Connection: 'keep-alive',
-          });
-          res.write('\n');
-
-          const tenantIds = await authorizer(req, knex).getTenantIds();
-
-          const handler = (changeSummary: ChangeSummary) => {
-            if (
-              !Array.from(changeSummary.tenantIds).some(tenantId =>
-                tenantIds.includes(tenantId)
-              )
-            ) {
-              return;
-            }
-
-            const batch =
-              [
-                `id: ${Date.now()}`,
-                'event: update',
-                `data: ${JSON.stringify({
-                  paths: Array.from(changeSummary.paths),
-                })}`,
-              ].join('\n') + '\n\n';
-
-            res.write(batch);
-          };
-
-          const interval = setInterval(() => {
-            res.write(':\n\n');
-          }, ms('10s'));
-
-          const onEnd = () => {
-            sseHandlers.delete(handler);
-            clearInterval(interval);
-          };
-
-          sseHandlers.add(handler);
-          req.on('end', onEnd);
-          req.on('close', onEnd);
-        });
 
         return router;
       },

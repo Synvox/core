@@ -4,19 +4,20 @@ import pkgDir from 'pkg-dir';
 import Knex, { QueryBuilder, Transaction } from 'knex';
 import { Router } from 'express';
 import { MixedSchema } from 'yup';
-import { Authorizer } from '.';
+import { Context } from '.';
 import { transformKey, caseMethods } from './knexHelpers';
 import { classify, titleize, underscore, humanize } from 'inflection';
+import { Mode } from 'Core';
 
-export interface TableConfig {
+export interface Table<T> {
   tableName: string;
   schemaName: string;
   tenantIdColumnName: string | undefined;
   init: (knex: Knex, fromSchemaFile?: boolean) => Promise<void>;
   policy: (
     query: QueryBuilder,
-    authorizer: ReturnType<Authorizer>,
-    mode: 'insert' | 'read' | 'update' | 'delete'
+    context: ReturnType<Context<T>>,
+    mode: Mode
   ) => Promise<void>;
   tablePath: string;
   path: string;
@@ -29,14 +30,14 @@ export interface TableConfig {
   idModifiers: {
     [name: string]: (
       query: QueryBuilder,
-      authorizer: ReturnType<Authorizer>
+      context: ReturnType<Context<T>>
     ) => Promise<void>;
   };
   queryModifiers: {
     [name: string]: (
       value: any,
       query: QueryBuilder,
-      authorizer: ReturnType<Authorizer>
+      context: ReturnType<Context<T>>
     ) => Promise<void>;
   };
   setters: {
@@ -44,7 +45,7 @@ export interface TableConfig {
       trx: Transaction,
       value: any,
       row: any,
-      authorizer: ReturnType<Authorizer>
+      context: ReturnType<Context<T>>
     ) => Promise<void>;
   };
   pluralForeignKeyMap: {
@@ -54,13 +55,13 @@ export interface TableConfig {
     trx: Transaction,
     row: any,
     mode: 'insert' | 'update' | 'delete',
-    authorizer: ReturnType<Authorizer>
+    context: ReturnType<Context<T>>
   ) => Promise<void>;
   afterHook?: (
     trx: Transaction,
     row: any,
     mode: 'insert' | 'update' | 'delete',
-    authorizer: ReturnType<Authorizer>
+    context: ReturnType<Context<T>>
   ) => Promise<void>;
 }
 
@@ -106,8 +107,9 @@ export async function saveSchema() {
   schema = {}; // no longer needed
 }
 
-export default function Table(table: Partial<TableConfig>): TableConfig {
+export default function buildTable<T>(table: Partial<Table<T>>): Table<T> {
   let initialized = false;
+
   return {
     tableName: '',
     schemaName: '',
@@ -226,8 +228,8 @@ export default function Table(table: Partial<TableConfig>): TableConfig {
 
     async policy(
       _query: QueryBuilder,
-      _authorizer: ReturnType<Authorizer>,
-      _mode: 'insert' | 'read' | 'update' | 'delete'
+      _context: ReturnType<Context<unknown>>,
+      _mode: Mode
     ) {},
 
     get tablePath() {
@@ -238,16 +240,16 @@ export default function Table(table: Partial<TableConfig>): TableConfig {
       return '/' + [this.schemaName, this.tableName].filter(Boolean).join('/');
     },
 
+    get router() {
+      return Router();
+    },
+
     columns: null,
     uniqueColumns: [],
     relations: {},
     schema: {},
     paranoid: false,
     pluralForeignKeyMap: {},
-
-    get router() {
-      return Router();
-    },
     idModifiers: {},
     queryModifiers: {},
     setters: {},

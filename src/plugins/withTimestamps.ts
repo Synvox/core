@@ -1,4 +1,4 @@
-import { TableConfig } from '../Table';
+import { Table } from '../Table';
 
 /**
  * Updates created_at and updated_at timestamps on update and insert
@@ -7,9 +7,9 @@ import { TableConfig } from '../Table';
  *     core.register(withTimestamps({ ... table config ... }))
  * @param table
  */
-export default function withTimestamps(
-  table: Partial<TableConfig>
-): Partial<TableConfig> {
+export default function withTimestamps<T>(
+  table: Partial<Table<T>>
+): Partial<Table<T>> {
   return {
     ...table,
     queryModifiers: {

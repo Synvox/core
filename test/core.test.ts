@@ -1,12 +1,14 @@
 import { createServer } from 'http';
+import { EventEmitter } from 'events';
 import express, { Request } from 'express';
 import axios, { AxiosRequestConfig } from 'axios';
 import listen from 'test-listen';
-import EventSource from 'eventsource';
 import Knex, { QueryBuilder } from 'knex';
-import Core, { knexHelpers, Authorizer } from '../src';
+import Core, { knexHelpers, Context } from '../src';
 import { string } from 'yup';
 import withTimestamps from '../src/plugins/withTimestamps';
+import { ChangeSummary } from 'Core';
+import { notifyChange } from '../src/Core';
 
 let server: null | ReturnType<typeof createServer> = null;
 
@@ -30,7 +32,9 @@ async function create(
   };
 }
 
-const auth: Authorizer = (req: Request, knex: Knex) => {
+const auth: Context<{
+  getUser(): Promise<any>;
+}> = (req: Request, knex: Knex) => {
   return {
     async getUser() {
       const { impersonate = undefined } = { ...req.headers, ...req.query };
@@ -40,12 +44,6 @@ const auth: Authorizer = (req: Request, knex: Knex) => {
           .where('id', impersonate)
           .first();
       } else return null;
-    },
-    async getTenantIds() {
-      const user = await this.getUser();
-      if (!user) return [];
-
-      return [user.id];
     },
   };
 };
@@ -90,7 +88,7 @@ it('reads tables', async () => {
 
   const core = Core(knex, auth);
 
-  core.register({
+  core.table({
     schemaName: 'test',
     tableName: 'users',
   });
@@ -343,9 +341,15 @@ it('writes tables', async () => {
     });
   }
 
-  const core = Core(knex, auth);
+  const emitter = new EventEmitter();
+  let events: ChangeSummary[] = [];
+  emitter.on('change', event => events.push(event));
 
-  core.register({
+  const core = Core(knex, auth, {
+    emitter,
+  });
+
+  core.table({
     schemaName: 'test',
     tableName: 'users',
     schema: {
@@ -371,6 +375,10 @@ it('writes tables', async () => {
     },
   });
 
+  expect(events.length).toBe(1);
+  expect(events[0].mode).toBe('insert');
+  events = [];
+
   // insert duplicate user
   expect(
     (
@@ -379,6 +387,9 @@ it('writes tables', async () => {
       }).catch(e => e.response)
     ).data
   ).toStrictEqual({ errors: { email: 'is already in use' } });
+
+  expect(events.length).toBe(0);
+  events = [];
 
   // update that user
   expect(
@@ -395,6 +406,10 @@ it('writes tables', async () => {
       id: 11,
     },
   });
+
+  expect(events.length).toBe(1);
+  expect(events[0].mode).toBe('update');
+  events = [];
 
   // update that user (to the same values, which doesn't trigger another sql update)
   expect(
@@ -416,6 +431,10 @@ it('writes tables', async () => {
   expect((await del('/test/users/11')).data).toStrictEqual({
     data: null,
   });
+
+  expect(events.length).toBe(1);
+  expect(events[0].mode).toBe('delete');
+  events = [];
 
   // insert bad email user
   expect(
@@ -460,16 +479,22 @@ it('handles relations', async () => {
     });
   }
 
-  const core = Core(knex, auth);
+  const emitter = new EventEmitter();
+  let events: ChangeSummary[] = [];
+  emitter.on('change', event => events.push(event));
 
-  core.register({
+  const core = Core(knex, auth, {
+    emitter,
+  });
+
+  core.table({
     schemaName: 'test',
     tableName: 'users',
     schema: {
       email: string().email(),
     },
     idModifiers: {
-      me: async (query, { getUser }) => {
+      me: async (query: QueryBuilder, { getUser }) => {
         const user = await getUser();
         query.where('users.id', user.id);
       },
@@ -481,12 +506,12 @@ it('handles relations', async () => {
     },
   });
 
-  core.register({
+  core.table({
     schemaName: 'test',
     tableName: 'comments',
     tenantIdColumnName: 'userId',
     queryModifiers: {
-      mine: async (_, query, { getUser }) => {
+      mine: async (_: string, query: QueryBuilder, { getUser }) => {
         const user = await getUser();
         query.where('comments.userId', user.id);
       },
@@ -692,6 +717,12 @@ it('handles relations', async () => {
     },
   });
 
+  expect(events.length).toBe(3);
+  expect(events[0].mode).toBe('insert');
+  expect(events[1].mode).toBe('insert');
+  expect(events[2].mode).toBe('insert');
+  events = [];
+
   // create from has one
   expect(
     (
@@ -728,6 +759,11 @@ it('handles relations', async () => {
     },
   });
 
+  expect(events.length).toBe(2);
+  expect(events[0].mode).toBe('insert');
+  expect(events[1].mode).toBe('insert');
+  events = [];
+
   // create from has one but with a validation error
   expect(
     (
@@ -751,6 +787,9 @@ it('handles relations', async () => {
       user: { email: 'is already in use' },
     },
   });
+
+  expect(events.length).toBe(0);
+  events = [];
 
   // create from has many with a validation error
   expect(
@@ -800,12 +839,25 @@ it('handles relations', async () => {
     ).status
   ).toStrictEqual(401);
 
+  expect(events.length).toBe(0);
+  events = [];
+
   const [newCommentId] = await knex('test.comments')
     .insert({
       body: 'body',
       userId: 2,
     })
     .returning('id');
+
+  notifyChange(emitter, {
+    mode: 'insert',
+    schemaName: 'test',
+    tableName: 'comments',
+    row: { id: newCommentId },
+  });
+
+  expect(events.length).toBe(1);
+  events = [];
 
   // cannot edit outside this user's policy
   expect(
@@ -840,114 +892,6 @@ it('handles relations', async () => {
   ).toStrictEqual(401);
 });
 
-it('provides an eventsource endpoint', async () => {
-  await knex.schema.withSchema('test').createTable('users', t => {
-    t.bigIncrements('id').primary();
-    t.string('email')
-      .notNullable()
-      .unique();
-  });
-
-  await knex.schema.withSchema('test').createTable('comments', t => {
-    t.bigIncrements('id').primary();
-    t.bigInteger('user_id').notNullable();
-    t.string('body').notNullable();
-    t.foreign('user_id')
-      .references('id')
-      .inTable('test.users');
-  });
-
-  for (let i = 0; i < 10; i++) {
-    await knex('test.users').insert({
-      email: `${i + 1}@abc.com`,
-    });
-
-    await knex('test.comments').insert({
-      body: String(i),
-      userId: '1',
-    });
-  }
-
-  const core = Core(knex, auth);
-
-  core.register({
-    schemaName: 'test',
-    tableName: 'users',
-    schema: {
-      email: string().email(),
-    },
-    idModifiers: {
-      me: async (query, { getUser }) => {
-        const user = await getUser();
-        query.where('users.id', user.id);
-      },
-    },
-    async policy(query: QueryBuilder, { getUser }) {
-      const user = await getUser();
-      if (!user) return;
-      query.where('users.id', user.id);
-    },
-  });
-
-  core.register({
-    schemaName: 'test',
-    tableName: 'comments',
-    tenantIdColumnName: 'userId',
-    queryModifiers: {
-      mine: async (_, query, { getUser }) => {
-        const user = await getUser();
-        query.where('comments.userId', user.id);
-      },
-    },
-    async policy(query: QueryBuilder, { getUser }) {
-      const user = await getUser();
-      if (!user) return;
-      query.where('comments.userId', user.id);
-    },
-  });
-
-  const { post, url, delete: del } = await create(core, {
-    headers: {
-      impersonate: '1',
-    },
-  });
-
-  const eventSource = new EventSource(`${url}/sse?impersonate=1`);
-
-  let message: any = null;
-  eventSource.addEventListener('update', (m: any) => {
-    message = m;
-  });
-
-  const {
-    data: { data: comment },
-  } = await post('/test/comments', {
-    body: '123',
-    userId: 1,
-  });
-
-  await new Promise(r => {
-    const int = setInterval(() => {
-      if (message !== null) {
-        clearInterval(int);
-        expect(message.data).toBe('{"paths":["/test/comments"]}');
-        message = null;
-        r();
-      }
-    }, 100);
-  });
-
-  await del(`/test/comments/${comment.id}?userId=1`);
-
-  eventSource.close();
-
-  // this is to verify the 'end' callbacks are fired and noted in
-  // coverage.
-  await new Promise(r => {
-    setTimeout(r, 1000);
-  });
-});
-
 it('reflects endpoints from the database', async () => {
   await knex.schema.withSchema('test').createTable('users', t => {
     t.bigIncrements('id').primary();
@@ -978,7 +922,7 @@ it('reflects endpoints from the database', async () => {
 
   const core = Core(knex, auth);
 
-  core.register({
+  core.table({
     schemaName: 'test',
     tableName: 'users',
     schema: {
@@ -997,7 +941,7 @@ it('reflects endpoints from the database', async () => {
     },
   });
 
-  core.register({
+  core.table({
     schemaName: 'test',
     tableName: 'comments',
     tenantIdColumnName: 'userId',
@@ -1081,7 +1025,7 @@ it('supports plugins like withTimestamp', async () => {
 
   const core = Core(knex, auth);
 
-  core.register({
+  core.table({
     schemaName: 'test',
     tableName: 'users',
     schema: {
@@ -1100,7 +1044,7 @@ it('supports plugins like withTimestamp', async () => {
     },
   });
 
-  core.register(
+  core.table(
     withTimestamps({
       schemaName: 'test',
       tableName: 'comments',
@@ -1234,7 +1178,7 @@ it('supports paranoid', async () => {
 
   const core = Core(knex, auth);
 
-  core.register({
+  core.table({
     schemaName: 'test',
     tableName: 'users',
     paranoid: true,
@@ -1254,7 +1198,7 @@ it('supports paranoid', async () => {
     },
   });
 
-  core.register(
+  core.table(
     withTimestamps({
       schemaName: 'test',
       tableName: 'comments',

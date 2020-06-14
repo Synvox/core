@@ -1,18 +1,10 @@
-import core, { Authorizer } from './Core';
+import core, { Context } from './Core';
 import { NotFoundError } from './Errors';
-import Table, { TableConfig } from './Table';
+import { Table } from './Table';
 import knexHelpers from './knexHelpers';
 
 import withTimestamps from './plugins/withTimestamps';
 
 export default core;
 
-export {
-  core,
-  Authorizer,
-  NotFoundError,
-  Table,
-  TableConfig,
-  knexHelpers,
-  withTimestamps,
-};
+export { core, Context, NotFoundError, Table, knexHelpers, withTimestamps };
