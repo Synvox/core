@@ -17,6 +17,11 @@ async function create(
   const app = express();
   app.use(express.json());
   app.use(core.router);
+  // for debugging failures
+  // app.use(function(error: any, _req: any, _res: any, next: any) {
+  //   console.log(error);
+  //   next(error);
+  // });
   server = createServer(app);
   const url = await listen(server);
   return {
@@ -479,6 +484,7 @@ it('handles relations', async () => {
   core.register({
     schemaName: 'test',
     tableName: 'comments',
+    tenantIdColumnName: 'userId',
     queryModifiers: {
       mine: async (_, query, { getUser }) => {
         const user = await getUser();
@@ -806,6 +812,7 @@ it('handles relations', async () => {
     (
       await put(`/test/comments/${newCommentId}`, {
         body: 'hey',
+        userId: 2,
       }).catch(e => {
         return e.response;
       })
@@ -826,7 +833,7 @@ it('handles relations', async () => {
   // cannot edit outside this user's policy
   expect(
     (
-      await del(`/test/comments/${newCommentId}`).catch(e => {
+      await del(`/test/comments/${newCommentId}?userId=2`).catch(e => {
         return e.response;
       })
     ).status
@@ -930,7 +937,7 @@ it('provides an eventsource endpoint', async () => {
     }, 100);
   });
 
-  await del(`/test/comments/${comment.id}`);
+  await del(`/test/comments/${comment.id}?userId=1`);
 
   eventSource.close();
 
@@ -1180,6 +1187,7 @@ it('supports plugins like withTimestamp', async () => {
 
   await put(`/test/comments/1`, {
     body: 'hey',
+    userId: 1,
   });
 
   const afterUpdate = (await get('/test/comments/1')).data.data;
@@ -1316,7 +1324,7 @@ it('supports paranoid', async () => {
   // make sure updatedAt is updated
   const beforeUpdate = (await get('/test/comments/1')).data.data;
 
-  await del(`/test/comments/1`);
+  await del(`/test/comments/1?userId=1`);
 
   const afterUpdate = (await get('/test/comments/1')).data.data;
 
@@ -1357,7 +1365,7 @@ it('supports paranoid', async () => {
   );
   expect(afterDataWithDeleted.data.length).toEqual(2);
 
-  await del('/test/users/1');
+  await del('/test/users/1?userId=1');
 
   const comments = await knex('test.comments');
 

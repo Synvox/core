@@ -164,6 +164,15 @@ export default function core(
           if (!ref) continue;
 
           let subQuery = query(ref.table, knex, withDeleted).clearSelect();
+
+          // make sure tenant ids are forwarded to subQueries where possible
+          if (table.tenantIdColumnName && ref!.table.tenantIdColumnName) {
+            subQuery.where(
+              `${ref!.table.tenantIdColumnName}`,
+              `${table.tenantIdColumnName}`
+            );
+          }
+
           if (isOne) {
             subQuery
               .where(
@@ -480,7 +489,15 @@ export default function core(
                     await table.policy(stmt, authInstance, 'read');
 
                     if (graph.id) {
-                      stmt.whereNot(`${table.tableName}.id`, graph.id);
+                      stmt.whereNot(function() {
+                        this.where(`${table.tableName}.id`, graph.id);
+                        if (table.tenantIdColumnName) {
+                          this.where(
+                            `${table.tableName}.${table.tenantIdColumnName}`,
+                            graph[table.tenantIdColumnName]
+                          );
+                        }
+                      });
                     }
 
                     const existingRow = await stmt.where(where).first();
@@ -498,8 +515,18 @@ export default function core(
             const stmt = query(table);
             await table.policy(stmt, authInstance, 'update');
 
+            if (table.tenantIdColumnName && !graph[table.tenantIdColumnName])
+              return { [table.tenantIdColumnName]: 'is required' };
+
             const existing = await stmt
               .where(`${table.tableName}.id`, graph.id)
+              .modify(function() {
+                if (table.tenantIdColumnName)
+                  this.where(
+                    table.tenantIdColumnName,
+                    graph[table.tenantIdColumnName]
+                  );
+              })
               .first();
 
             if (!existing) throw new UnauthorizedError();
@@ -553,6 +580,9 @@ export default function core(
         };
 
         if (graph._delete) {
+          if (table.tenantIdColumnName && !graph[table.tenantIdColumnName])
+            return { [table.tenantIdColumnName]: 'is required' };
+
           return;
         }
 
@@ -618,6 +648,14 @@ export default function core(
 
           const row = await stmt
             .where(`${table.tableName}.id`, graph.id)
+            .modify(function() {
+              if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
+                this.where(
+                  `${table.tableName}.${table.tenantIdColumnName}`,
+                  graph[table.tenantIdColumnName]
+                );
+              }
+            })
             .first();
 
           graph = { ...row, ...graph };
@@ -641,6 +679,17 @@ export default function core(
             if (Object.keys(filteredByChanged).length)
               await stmt
                 .where(`${table.tableName}.id`, graph.id)
+                .modify(function() {
+                  if (
+                    table.tenantIdColumnName &&
+                    graph[table.tenantIdColumnName]
+                  ) {
+                    this.where(
+                      `${table.tableName}.${table.tenantIdColumnName}`,
+                      graph[table.tenantIdColumnName]
+                    );
+                  }
+                })
                 .limit(1)
                 .update(filteredByChanged);
 
@@ -650,6 +699,17 @@ export default function core(
 
             const updatedRow = await readStmt
               .where(`${table.tableName}.id`, graph.id)
+              .modify(function() {
+                if (
+                  table.tenantIdColumnName &&
+                  graph[table.tenantIdColumnName]
+                ) {
+                  this.where(
+                    `${table.tableName}.${table.tenantIdColumnName}`,
+                    graph[table.tenantIdColumnName]
+                  );
+                }
+              })
               .first();
 
             if (!updatedRow) throw new UnauthorizedError();
@@ -730,11 +790,25 @@ export default function core(
         const del = async (
           trx: Transaction,
           table: TableConfig,
-          id: string,
+          graph: any,
           deletedAt: Date = new Date()
         ) => {
+          const { id } = graph;
+          let tenantId: string | undefined = undefined;
+
+          if (table.tenantIdColumnName) {
+            tenantId = graph[table.tenantIdColumnName] || undefined;
+          }
+
           const stmt = query(table, trx);
           await table.policy(stmt, authInstance, 'delete');
+
+          if (table.tenantIdColumnName && tenantId !== undefined) {
+            stmt.where(
+              `${table.tableName}.${table.tenantIdColumnName}`,
+              tenantId
+            );
+          }
 
           const row = await stmt.where(`${table.tableName}.id`, id).first();
 
@@ -762,38 +836,53 @@ export default function core(
               const [otherId] = await query(relation.table, trx)
                 .select('id')
                 .where(`${relation.table.tableName}.${relation.column}`, id)
+                .modify(function() {
+                  if (
+                    relation.table.tenantIdColumnName &&
+                    tenantId !== undefined
+                  ) {
+                    this.where(
+                      `${relation.table.tableName}.${relation.table.tenantIdColumnName}`,
+                      tenantId
+                    );
+                  }
+                })
                 .pluck('id');
 
-              await del(trx, relation.table, otherId, deletedAt);
+              const otherGraph: any = { id: otherId };
+              if (relation.table.tenantIdColumnName) {
+                otherGraph[relation.table.tenantIdColumnName] = tenantId;
+              }
+
+              await del(trx, relation.table, otherGraph, deletedAt);
             }
           }
 
-          if (table.paranoid) {
-            await query(table, trx)
-              .where({ id })
-              .update({ deletedAt });
+          const delStmt = query(table, trx).where(`${table.tableName}.id`, id);
 
+          if (table.tenantIdColumnName && row) {
+            changeSummary.tenantIds.add(row[table.tenantIdColumnName]);
+          }
+
+          if (table.tenantIdColumnName && tenantId !== undefined) {
+            delStmt.where(
+              `${table.tableName}.${table.tenantIdColumnName}`,
+              tenantId
+            );
+          }
+
+          if (table.paranoid) {
+            await delStmt.update({ deletedAt });
             await cascade(table);
           } else {
-            await query(table, trx)
-              .where(`${table.tableName}.id`, id)
-              .delete();
+            await delStmt.delete();
           }
         };
 
         changeSummary.paths.add(table.path);
 
         if (graph._delete) {
-          const stmt = query(table, trx);
-          await table.policy(stmt, authInstance, 'delete');
-
-          const row = await stmt
-            .where(`${table.tableName}.id`, graph.id)
-            .first();
-
-          if (table.tenantIdColumnName)
-            changeSummary.tenantIds.add(row[table.tenantIdColumnName]);
-          await del(trx, table, graph.id);
+          await del(trx, table, graph);
           return null;
         }
 
@@ -1022,9 +1111,16 @@ export default function core(
           router.delete(
             `${path}/:id`,
             handler(async (req, res) => {
+              const tenantId = table.tenantIdColumnName
+                ? req.query[table.tenantIdColumnName]
+                : undefined;
+
               return await write(req, res, table, {
                 id: req.params.id,
                 _delete: true,
+                ...(tenantId !== undefined
+                  ? { [table.tenantIdColumnName!]: tenantId }
+                  : {}),
               });
             })
           );
