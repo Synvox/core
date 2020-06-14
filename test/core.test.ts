@@ -96,10 +96,10 @@ it('reads tables', async () => {
   expect((await get('/test/users')).data).toStrictEqual({
     meta: {
       page: 0,
-      perPage: 250,
+      limit: 50,
       hasMore: false,
       '@url': '/test/users',
-      '@links': { count: '/test/users/count' },
+      '@links': { count: '/test/users/count', ids: '/test/users/ids' },
     },
     data: [],
   });
@@ -114,10 +114,10 @@ it('reads tables', async () => {
   expect((await get('/test/users')).data).toStrictEqual({
     meta: {
       page: 0,
-      perPage: 250,
+      limit: 50,
       hasMore: false,
       '@url': '/test/users',
-      '@links': { count: '/test/users/count' },
+      '@links': { count: '/test/users/count', ids: '/test/users/ids' },
     },
     data: Array.from({ length: 10 }, (_, index) => ({
       '@links': {},
@@ -131,11 +131,12 @@ it('reads tables', async () => {
   expect((await get('/test/users?limit=1&page=1')).data).toStrictEqual({
     meta: {
       page: 1,
-      perPage: 1,
+      limit: 1,
       hasMore: true,
       '@url': '/test/users?limit=1&page=1',
       '@links': {
         count: '/test/users/count?limit=1&page=1',
+        ids: '/test/users/ids?limit=1&page=1',
         nextPage: '/test/users?limit=1&page=2',
         previousPage: '/test/users?limit=1&page=0',
       },
@@ -154,11 +155,12 @@ it('reads tables', async () => {
   expect((await get('/test/users?limit=1')).data).toStrictEqual({
     meta: {
       page: 0,
-      perPage: 1,
+      limit: 1,
       hasMore: true,
       '@url': '/test/users?limit=1',
       '@links': {
         count: '/test/users/count?limit=1',
+        ids: '/test/users/ids?limit=1',
         nextPage: '/test/users?limit=1&lastId=1',
       },
     },
@@ -176,10 +178,11 @@ it('reads tables', async () => {
   expect((await get('/test/users?limit=1&lastId=1')).data).toStrictEqual({
     meta: {
       page: 0,
-      perPage: 1,
+      limit: 1,
       hasMore: true,
       '@url': '/test/users?limit=1&lastId=1',
       '@links': {
+        ids: '/test/users/ids?limit=1&lastId=1',
         count: '/test/users/count?limit=1&lastId=1',
         nextPage: '/test/users?limit=1&lastId=2',
       },
@@ -200,10 +203,11 @@ it('reads tables', async () => {
   ).toStrictEqual({
     meta: {
       page: 1,
-      perPage: 1,
+      limit: 1,
       hasMore: true,
       '@url': '/test/users?limit=1&page=1&sort=email.asc',
       '@links': {
+        ids: '/test/users/ids?limit=1&page=1&sort=email.asc',
         count: '/test/users/count?limit=1&page=1&sort=email.asc',
         nextPage: '/test/users?limit=1&page=2&sort=email.asc',
         previousPage: '/test/users?limit=1&page=0&sort=email.asc',
@@ -225,11 +229,12 @@ it('reads tables', async () => {
   ).toStrictEqual({
     meta: {
       page: 0,
-      perPage: 1,
+      limit: 1,
       hasMore: true,
       '@url': '/test/users?limit=1&lastId=1&sort=email',
       '@links': {
         count: '/test/users/count?limit=1&lastId=1&sort=email',
+        ids: '/test/users/ids?limit=1&lastId=1&sort=email',
         nextPage: '/test/users?limit=1&lastId=2&sort=email',
       },
     },
@@ -257,10 +262,13 @@ it('reads tables', async () => {
   expect((await get('/test/users?id=5')).data).toStrictEqual({
     meta: {
       page: 0,
-      perPage: 250,
+      limit: 50,
       hasMore: false,
       '@url': '/test/users?id=5',
-      '@links': { count: '/test/users/count?id=5' },
+      '@links': {
+        count: '/test/users/count?id=5',
+        ids: '/test/users/ids?id=5',
+      },
     },
     data: [
       {
@@ -279,6 +287,40 @@ it('reads tables', async () => {
   expect((await get('/test/users/count')).data).toStrictEqual({ data: 10 });
   expect((await get('/test/users/count?id=1')).data).toStrictEqual({
     data: 1,
+  });
+
+  for (let i = 10; i < 2000; i++) {
+    await knex('test.users').insert({
+      email: `${i + 1}@abc.com`,
+    });
+  }
+
+  // get ids
+  expect((await get('/test/users/ids?limit=1000')).data).toStrictEqual({
+    meta: {
+      '@links': {
+        nextPage: '/test/users/ids?limit=1000&page=1',
+      },
+      '@url': '/test/users/ids?limit=1000',
+      hasMore: true,
+      page: 0,
+      limit: 1000,
+    },
+    data: Array.from({ length: 1000 }).map((_, index) => index + 1),
+  });
+
+  expect((await get('/test/users/ids?page=1&limit=1000')).data).toStrictEqual({
+    meta: {
+      '@links': {
+        nextPage: '/test/users/ids?page=2&limit=1000',
+        previousPage: '/test/users/ids?page=0&limit=1000',
+      },
+      '@url': '/test/users/ids?page=1&limit=1000',
+      hasMore: true,
+      page: 1,
+      limit: 1000,
+    },
+    data: Array.from({ length: 1000 }).map((_, index) => 1000 + index + 1),
   });
 });
 
@@ -470,10 +512,13 @@ it('handles relations', async () => {
   expect((await get('/test/users?id=me')).data).toStrictEqual({
     meta: {
       page: 0,
-      perPage: 250,
+      limit: 50,
       hasMore: false,
       '@url': '/test/users?id=me',
-      '@links': { count: '/test/users/count?id=me' },
+      '@links': {
+        count: '/test/users/count?id=me',
+        ids: '/test/users/ids?id=me',
+      },
     },
     data: [
       {
@@ -492,10 +537,13 @@ it('handles relations', async () => {
   ).toStrictEqual({
     meta: {
       page: 0,
-      perPage: 250,
+      limit: 50,
       hasMore: false,
       '@url': '/test/comments?userId=1&include=user',
-      '@links': { count: '/test/comments/count?userId=1&include=user' },
+      '@links': {
+        count: '/test/comments/count?userId=1&include=user',
+        ids: '/test/comments/ids?userId=1&include=user',
+      },
     },
     data: Array.from({ length: 10 }, (_, index) => ({
       '@links': {},
@@ -517,10 +565,13 @@ it('handles relations', async () => {
   expect((await get('/test/comments?mine&include=user')).data).toStrictEqual({
     meta: {
       page: 0,
-      perPage: 250,
+      limit: 50,
       hasMore: false,
       '@url': '/test/comments?mine&include=user',
-      '@links': { count: '/test/comments/count?mine=&include=user' },
+      '@links': {
+        count: '/test/comments/count?mine=&include=user',
+        ids: '/test/comments/ids?mine=&include=user',
+      },
     },
     data: Array.from({ length: 10 }, (_, index) => ({
       '@links': {},
@@ -542,10 +593,13 @@ it('handles relations', async () => {
   expect((await get('/test/comments?userId=1')).data).toStrictEqual({
     meta: {
       page: 0,
-      perPage: 250,
+      limit: 50,
       hasMore: false,
       '@url': '/test/comments?userId=1',
-      '@links': { count: '/test/comments/count?userId=1' },
+      '@links': {
+        count: '/test/comments/count?userId=1',
+        ids: '/test/comments/ids?userId=1',
+      },
     },
     data: Array.from({ length: 10 }, (_, index) => ({
       '@links': {
@@ -561,10 +615,10 @@ it('handles relations', async () => {
   expect((await get('/test/users')).data).toStrictEqual({
     meta: {
       page: 0,
-      perPage: 250,
+      limit: 50,
       hasMore: false,
       '@url': '/test/users',
-      '@links': { count: '/test/users/count' },
+      '@links': { count: '/test/users/count', ids: '/test/users/ids' },
     },
     data: [
       {
@@ -964,11 +1018,12 @@ it('reflects endpoints from the database', async () => {
   expect(data).toEqual({
     meta: {
       page: 0,
-      perPage: 250,
+      limit: 50,
       hasMore: false,
       '@url': '/test/users',
       '@links': {
         count: '/test/users/count',
+        ids: '/test/users/ids',
       },
     },
     data: [
@@ -1093,11 +1148,12 @@ it('supports plugins like withTimestamp', async () => {
     meta: {
       '@links': {
         count: '/test/comments/count',
+        ids: '/test/comments/ids',
       },
       '@url': '/test/comments',
       hasMore: false,
       page: 0,
-      perPage: 250,
+      limit: 50,
     },
   });
 
@@ -1110,11 +1166,12 @@ it('supports plugins like withTimestamp', async () => {
     meta: {
       '@links': {
         count: '/test/comments/count?since=may%202%2C%202020',
+        ids: '/test/comments/ids?since=may%202%2C%202020',
       },
       '@url': '/test/comments?since=may%202%2C%202020',
       hasMore: false,
       page: 0,
-      perPage: 250,
+      limit: 50,
     },
   });
 
@@ -1247,11 +1304,12 @@ it('supports paranoid', async () => {
     meta: {
       '@links': {
         count: '/test/comments/count',
+        ids: '/test/comments/ids',
       },
       '@url': '/test/comments',
       hasMore: false,
       page: 0,
-      perPage: 250,
+      limit: 50,
     },
   });
 
@@ -1284,11 +1342,12 @@ it('supports paranoid', async () => {
     meta: {
       '@links': {
         count: '/test/comments/count',
+        ids: '/test/comments/ids',
       },
       '@url': '/test/comments',
       hasMore: false,
       page: 0,
-      perPage: 250,
+      limit: 50,
     },
   });
 

@@ -87,7 +87,7 @@ export async function loadSchema() {
 export async function saveSchema() {
   const schemaPath = path.join((await pkgDir(__dirname))!, '../schema.json');
 
-  function sort<T extends any>(object: T): T {
+  function sort(object: any): any {
     if (typeof object !== 'object') return object;
 
     if (Array.isArray(object)) return object.map(sort);

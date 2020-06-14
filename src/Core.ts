@@ -196,10 +196,7 @@ export default function core(
         const path = req.url.split('?').shift();
         const { sort } = req.query;
         const page = Number(req.query.page || 0);
-        const limit = Math.max(
-          0,
-          Math.min(250, Number(req.query.limit) || 250)
-        );
+        const limit = Math.max(0, Math.min(250, Number(req.query.limit) || 50));
 
         const sorts: { column: string; order: 'asc' | 'desc' }[] = [];
         if (sort) {
@@ -284,12 +281,15 @@ export default function core(
           count: `${path}/count${
             Object.keys(req.query).length > 0 ? '?' : ''
           }${qs.stringify(req.query)}`,
+          ids: `${path}/ids${
+            Object.keys(req.query).length > 0 ? '?' : ''
+          }${qs.stringify(req.query)}`,
         };
 
         return {
           meta: {
             page,
-            perPage: limit,
+            limit,
             hasMore: results.length >= limit,
             '@url': req.url,
             '@links': links,
@@ -365,6 +365,69 @@ export default function core(
         data: await stmt
           .countDistinct(`${table.tableName}.id`)
           .then(([{ count }]) => Number(count)),
+      };
+    };
+
+    const ids = async (req: Request, table: TableConfig) => {
+      const authInstance = authorizer(req, knex);
+      const filters = req.query;
+      const withDeleted = Boolean(filters.withDeleted);
+
+      const stmt = query(table, knex, withDeleted).clearSelect();
+      await table.policy(stmt, authInstance, 'read');
+
+      stmt.where(filterPrefixGraph(table, filters));
+
+      const where = { ...filters };
+
+      if (Object.keys(table.idModifiers).includes(where.id)) {
+        const modifier = table.idModifiers[where.id];
+        await modifier(stmt, authInstance);
+        delete where.id;
+      }
+
+      for (let key of Object.keys(where)) {
+        if (Object.keys(table.queryModifiers).includes(key)) {
+          const modifier = table.queryModifiers[key];
+          await modifier(where[key], stmt, authInstance);
+          delete where[key];
+        }
+      }
+
+      stmt.where(filterPrefixGraph(table, where));
+
+      const page = Number(req.query.page || 0);
+      const limit = Math.max(
+        0,
+        Math.min(100000, Number(req.query.limit) || 1000)
+      );
+
+      stmt.offset(page * limit);
+      stmt.limit(limit);
+      const results = await stmt.pluck(`${table.tableName}.id`);
+
+      return {
+        meta: {
+          page,
+          limit,
+          hasMore: results.length >= limit,
+          '@url': req.url,
+          '@links': {
+            ...(results.length >= limit && {
+              nextPage: `${req.path}?${qs.stringify({
+                ...req.query,
+                page: page + 1,
+              })}`,
+            }),
+            ...(page !== 0 && {
+              previousPage: `${req.path}?${qs.stringify({
+                ...req.query,
+                page: page - 1,
+              })}`,
+            }),
+          },
+        },
+        data: results,
       };
     };
 
@@ -908,6 +971,13 @@ export default function core(
             `${path}/count`,
             handler(async req => {
               return count(req, table);
+            })
+          );
+
+          router.get(
+            `${path}/ids`,
+            handler(async req => {
+              return ids(req, table);
             })
           );
 
