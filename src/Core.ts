@@ -711,47 +711,47 @@ export default function core<Context>(
                 .limit(1)
                 .update(filteredByChanged);
               trxNotifyCommit(trx, 'update', table, row);
-            }
 
-            // in case an update now makes this row inaccessible
-            const readStmt = query(table, trx);
-            await table.policy(readStmt, context, 'update');
+              // in case an update now makes this row inaccessible
+              const readStmt = query(table, trx);
+              await table.policy(readStmt, context, 'update');
 
-            const updatedRow = await readStmt
-              .where(`${table.tableName}.id`, graph.id)
-              .modify(function() {
-                if (
-                  table.tenantIdColumnName &&
-                  graph[table.tenantIdColumnName]
-                ) {
-                  this.where(
-                    `${table.tableName}.${table.tenantIdColumnName}`,
+              const updatedRow = await readStmt
+                .where(`${table.tableName}.id`, graph.id)
+                .modify(function() {
+                  if (
+                    table.tenantIdColumnName &&
                     graph[table.tenantIdColumnName]
+                  ) {
+                    this.where(
+                      `${table.tableName}.${table.tenantIdColumnName}`,
+                      graph[table.tenantIdColumnName]
+                    );
+                  }
+                })
+                .first();
+
+              if (!updatedRow) throw new UnauthorizedError();
+
+              for (let key in initialGraph) {
+                if (table.setters[key]) {
+                  await table.setters[key](
+                    trx,
+                    initialGraph[key],
+                    updatedRow,
+                    context
                   );
                 }
-              })
-              .first();
-
-            if (!updatedRow) throw new UnauthorizedError();
-
-            for (let key in initialGraph) {
-              if (table.setters[key]) {
-                await table.setters[key](
-                  trx,
-                  initialGraph[key],
-                  updatedRow,
-                  context
-                );
               }
-            }
 
-            if (table.afterHook) {
-              beforeCommitCallbacks.push(() => {
-                return table.afterHook!(trx, updatedRow, 'update', context);
-              });
-            }
+              if (table.afterHook) {
+                beforeCommitCallbacks.push(() => {
+                  return table.afterHook!(trx, updatedRow, 'update', context);
+                });
+              }
 
-            return updatedRow;
+              return updatedRow;
+            } else return row;
           }
         };
 

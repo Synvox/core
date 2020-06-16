@@ -4,7 +4,7 @@ import pkgDir from 'pkg-dir';
 import Knex, { QueryBuilder, Transaction } from 'knex';
 import { Router } from 'express';
 import { MixedSchema } from 'yup';
-import { Context } from '.';
+import { ContextFactory } from '.';
 import { transformKey, caseMethods } from './knexHelpers';
 import { classify, titleize, underscore, humanize } from 'inflection';
 import { Mode } from 'Core';
@@ -16,7 +16,7 @@ export interface Table<T> {
   init: (knex: Knex, fromSchemaFile?: boolean) => Promise<void>;
   policy: (
     query: QueryBuilder,
-    context: ReturnType<Context<T>>,
+    context: ReturnType<ContextFactory<T>>,
     mode: Mode
   ) => Promise<void>;
   tablePath: string;
@@ -30,14 +30,14 @@ export interface Table<T> {
   idModifiers: {
     [name: string]: (
       query: QueryBuilder,
-      context: ReturnType<Context<T>>
+      context: ReturnType<ContextFactory<T>>
     ) => Promise<void>;
   };
   queryModifiers: {
     [name: string]: (
       value: any,
       query: QueryBuilder,
-      context: ReturnType<Context<T>>
+      context: ReturnType<ContextFactory<T>>
     ) => Promise<void>;
   };
   setters: {
@@ -45,7 +45,7 @@ export interface Table<T> {
       trx: Transaction,
       value: any,
       row: any,
-      context: ReturnType<Context<T>>
+      context: ReturnType<ContextFactory<T>>
     ) => Promise<void>;
   };
   pluralForeignKeyMap: {
@@ -55,13 +55,13 @@ export interface Table<T> {
     trx: Transaction,
     row: any,
     mode: 'insert' | 'update' | 'delete',
-    context: ReturnType<Context<T>>
+    context: ReturnType<ContextFactory<T>>
   ) => Promise<void>;
   afterHook?: (
     trx: Transaction,
     row: any,
     mode: 'insert' | 'update' | 'delete',
-    context: ReturnType<Context<T>>
+    context: ReturnType<ContextFactory<T>>
   ) => Promise<void>;
 }
 
@@ -228,7 +228,7 @@ export default function buildTable<T>(table: Partial<Table<T>>): Table<T> {
 
     async policy(
       _query: QueryBuilder,
-      _context: ReturnType<Context<unknown>>,
+      _context: ReturnType<ContextFactory<unknown>>,
       _mode: Mode
     ) {},
 

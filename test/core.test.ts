@@ -34,18 +34,25 @@ async function create(
 const getContext: ContextFactory<{
   getUser(): Promise<any>;
 }> = (req: Request, knex: Knex) => {
+  let user: any = null;
   return {
     async getUser() {
+      if (user) return user;
       const { impersonate = undefined } = { ...req.headers, ...req.query };
 
       if (impersonate) {
-        return await knex('test.users')
+        user = await knex('test.users')
           .where('id', impersonate)
           .first();
+        return user;
       } else return null;
     },
   };
 };
+
+let queries: string[] = [];
+const lastQuery = () => queries[queries.length - 1];
+const clearQueries = () => (queries = []);
 
 const knex = Knex({
   client: 'pg',
@@ -53,6 +60,12 @@ const knex = Knex({
     database: process.env.USER,
   },
   ...knexHelpers,
+  debug: true,
+  log: {
+    debug: message => {
+      queries.push(message.sql);
+    },
+  },
 });
 
 beforeEach(async () => {
@@ -63,6 +76,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  clearQueries();
   if (server) {
     server?.close();
     server = null;
@@ -113,6 +127,7 @@ it('reads tables', async () => {
     });
   }
 
+  clearQueries();
   expect((await get('/test/users')).data).toStrictEqual({
     meta: {
       page: 0,
@@ -128,8 +143,13 @@ it('reads tables', async () => {
       email: `${index + 1}@abc.com`,
     })),
   });
+  expect(queries.length).toBe(1);
+  expect(lastQuery()).toBe(
+    'select users.* from test.users order by users.id asc limit ?'
+  );
 
   // read paginated
+  clearQueries();
   expect((await get('/test/users?limit=1&page=1')).data).toStrictEqual({
     meta: {
       page: 1,
@@ -152,8 +172,13 @@ it('reads tables', async () => {
       },
     ],
   });
+  expect(queries.length).toBe(1);
+  expect(lastQuery()).toBe(
+    'select users.* from test.users order by users.id asc limit ? offset ?'
+  );
 
   // check for keyset pagination link
+  clearQueries();
   expect((await get('/test/users?limit=1')).data).toStrictEqual({
     meta: {
       page: 0,
@@ -175,8 +200,13 @@ it('reads tables', async () => {
       },
     ],
   });
+  expect(queries.length).toBe(1);
+  expect(lastQuery()).toBe(
+    'select users.* from test.users order by users.id asc limit ?'
+  );
 
   // use pagination link
+  clearQueries();
   expect((await get('/test/users?limit=1&lastId=1')).data).toStrictEqual({
     meta: {
       page: 0,
@@ -198,8 +228,13 @@ it('reads tables', async () => {
       },
     ],
   });
+  expect(queries.length).toBe(1);
+  expect(lastQuery()).toBe(
+    'select users.* from test.users inner join test.users as prev on prev.id = ? where ((users.id > prev.id)) order by users.id asc limit ?'
+  );
 
   // read paginated (sorted)
+  clearQueries();
   expect(
     (await get('/test/users?limit=1&page=1&sort=email.asc')).data
   ).toStrictEqual({
@@ -224,8 +259,13 @@ it('reads tables', async () => {
       },
     ],
   });
+  expect(queries.length).toBe(1);
+  expect(lastQuery()).toBe(
+    'select users.* from test.users order by users.email asc limit ? offset ?'
+  );
 
   // read paginated by keyset (sorted)
+  clearQueries();
   expect(
     (await get('/test/users?limit=1&lastId=1&sort=email')).data
   ).toStrictEqual({
@@ -249,8 +289,13 @@ it('reads tables', async () => {
       },
     ],
   });
+  expect(queries.length).toBe(1);
+  expect(lastQuery()).toBe(
+    'select users.* from test.users inner join test.users as prev on prev.id = ? where ((users.email > prev.email)) order by users.email asc limit ?'
+  );
 
   // get by id
+  clearQueries();
   expect((await get('/test/users/5')).data).toStrictEqual({
     data: {
       '@links': {},
@@ -259,8 +304,13 @@ it('reads tables', async () => {
       email: '5@abc.com',
     },
   });
+  expect(queries.length).toBe(1);
+  expect(lastQuery()).toBe(
+    'select users.* from test.users where users.id = ? limit ?'
+  );
 
   // get by query param
+  clearQueries();
   expect((await get('/test/users?id=5')).data).toStrictEqual({
     meta: {
       page: 0,
@@ -281,12 +331,27 @@ it('reads tables', async () => {
       },
     ],
   });
+  expect(queries.length).toBe(1);
+  expect(lastQuery()).toBe(
+    'select users.* from test.users where users.id = ? order by users.id asc limit ?'
+  );
 
   // Get a 404
+  clearQueries();
   expect(await get('/test/users/11').catch(e => e.response.status)).toBe(404);
+  expect(queries.length).toBe(1);
+  expect(lastQuery()).toBe(
+    'select users.* from test.users where users.id = ? limit ?'
+  );
 
+  clearQueries();
   // Get a count
   expect((await get('/test/users/count')).data).toStrictEqual({ data: 10 });
+
+  expect(queries.length).toBe(1);
+  expect(lastQuery()).toBe('select count(distinct users.id) from test.users');
+  clearQueries();
+
   expect((await get('/test/users/count?id=1')).data).toStrictEqual({
     data: 1,
   });
@@ -296,6 +361,8 @@ it('reads tables', async () => {
       email: `${i + 1}@abc.com`,
     });
   }
+
+  clearQueries();
 
   // get ids
   expect((await get('/test/users/ids?limit=1000')).data).toStrictEqual({
@@ -311,6 +378,10 @@ it('reads tables', async () => {
     data: Array.from({ length: 1000 }).map((_, index) => index + 1),
   });
 
+  expect(queries.length).toBe(1);
+  expect(lastQuery()).toBe('select users.id from test.users limit ?');
+  clearQueries();
+
   expect((await get('/test/users/ids?page=1&limit=1000')).data).toStrictEqual({
     meta: {
       '@links': {
@@ -324,6 +395,8 @@ it('reads tables', async () => {
     },
     data: Array.from({ length: 1000 }).map((_, index) => 1000 + index + 1),
   });
+
+  expect(lastQuery()).toBe('select users.id from test.users limit ? offset ?');
 });
 
 it('writes tables', async () => {
@@ -356,9 +429,12 @@ it('writes tables', async () => {
     },
   });
 
-  const { post, put, delete: del } = await create(core);
+  const { get, post, put, delete: del } = await create(core);
+
+  await get('/test/users');
 
   // insert user
+  clearQueries();
   expect(
     (
       await post('/test/users', {
@@ -373,12 +449,19 @@ it('writes tables', async () => {
       id: 11,
     },
   });
+  expect(queries.length).toBe(3);
+  expect(queries).toStrictEqual([
+    'select users.* from test.users where email = ? limit ?',
+    'insert into test.users (email) values (?) returning *',
+    'select users.* from test.users where users.id = ? limit ?',
+  ]);
 
   expect(events.length).toBe(1);
   expect(events[0].mode).toBe('insert');
   events = [];
 
   // insert duplicate user
+  clearQueries();
   expect(
     (
       await post('/test/users', {
@@ -386,11 +469,16 @@ it('writes tables', async () => {
       }).catch(e => e.response)
     ).data
   ).toStrictEqual({ errors: { email: 'is already in use' } });
+  expect(queries.length).toBe(1);
+  expect(lastQuery()).toBe(
+    'select users.* from test.users where email = ? limit ?'
+  );
 
   expect(events.length).toBe(0);
   events = [];
 
   // update that user
+  clearQueries();
   expect(
     (
       await put('/test/users/11', {
@@ -405,12 +493,21 @@ it('writes tables', async () => {
       id: 11,
     },
   });
+  expect(queries.length).toBe(5);
+  expect(queries).toStrictEqual([
+    'select users.* from test.users where users.id = ? limit ?', // get row
+    'select users.* from test.users where not (users.id = ?) and email = ? limit ?', // get possible duplicates
+    'select users.* from test.users where users.id = ? limit ?', // get row (in transaction)
+    'update test.users set email = ? where users.id = ?', // update
+    'select users.* from test.users where users.id = ? limit ?', // make sure row is still editable
+  ]);
 
   expect(events.length).toBe(1);
   expect(events[0].mode).toBe('update');
   events = [];
 
   // update that user (to the same values, which doesn't trigger another sql update)
+  clearQueries();
   expect(
     (
       await put('/test/users/11', {
@@ -425,17 +522,31 @@ it('writes tables', async () => {
       id: 11,
     },
   });
+  expect(queries).toStrictEqual([
+    'select users.* from test.users where users.id = ? limit ?',
+    'select users.* from test.users where not (users.id = ?) and email = ? limit ?', // check for duplicate
+    'select users.* from test.users where users.id = ? limit ?', // get in transaction
+    // abort because nothing actually changed
+  ]);
+  expect(queries.length).toBe(3);
 
   // delete that user
+  clearQueries();
   expect((await del('/test/users/11')).data).toStrictEqual({
     data: null,
   });
+  expect(queries).toStrictEqual([
+    'select users.* from test.users where users.id = ? limit ?',
+    'delete from test.users where users.id = ?',
+  ]);
+  expect(queries.length).toBe(2);
 
   expect(events.length).toBe(1);
   expect(events[0].mode).toBe('delete');
   events = [];
 
   // insert bad email user
+  clearQueries();
   expect(
     (
       await post('/test/users', {
@@ -443,11 +554,14 @@ it('writes tables', async () => {
       }).catch(e => e.response)
     ).data
   ).toStrictEqual({ errors: { email: 'must be a valid email' } });
+  expect(events.length).toBe(0);
 
   // insert without email
+  clearQueries();
   expect(
     (await post('/test/users', { email: null }).catch(e => e.response)).data
   ).toStrictEqual({ errors: { email: 'is required' } });
+  expect(events.length).toBe(0);
 });
 
 it('handles relations', async () => {
@@ -562,6 +676,7 @@ it('handles relations', async () => {
     ],
   });
 
+  clearQueries();
   expect(
     (await get('/test/comments?userId=1&include=user')).data
   ).toStrictEqual({
@@ -591,7 +706,13 @@ it('handles relations', async () => {
       },
     })),
   });
+  expect(queries).toEqual([
+    'select * from test.users where id = ? limit ?',
+    'select comments.*, (select row_to_json(users) from test.users where users.id = comments.user_id and users.id = 1 limit 1) as user from test.comments where comments.user_id = ? and comments.user_id = ? order by comments.id asc limit ?',
+  ]);
+  expect(queries.length).toBe(2);
 
+  clearQueries();
   expect((await get('/test/comments?mine&include=user')).data).toStrictEqual({
     meta: {
       page: 0,
@@ -619,7 +740,9 @@ it('handles relations', async () => {
       },
     })),
   });
+  expect(queries.length).toBe(2);
 
+  clearQueries();
   expect((await get('/test/comments?userId=1')).data).toStrictEqual({
     meta: {
       page: 0,
@@ -641,7 +764,9 @@ it('handles relations', async () => {
       body: String(index),
     })),
   });
+  expect(queries.length).toBe(2);
 
+  clearQueries();
   expect((await get('/test/users')).data).toStrictEqual({
     meta: {
       page: 0,
@@ -661,8 +786,10 @@ it('handles relations', async () => {
       },
     ],
   });
+  expect(queries.length).toBe(2);
 
   // create from has many
+  clearQueries();
   expect(
     (
       await post(
@@ -715,6 +842,7 @@ it('handles relations', async () => {
       id: 11,
     },
   });
+  expect(queries.length).toBe(7);
 
   expect(events.length).toBe(3);
   expect(events[0].mode).toBe('insert');
@@ -723,6 +851,7 @@ it('handles relations', async () => {
   events = [];
 
   // create from has one
+  clearQueries();
   expect(
     (
       await post(
@@ -757,6 +886,7 @@ it('handles relations', async () => {
       userId: 12,
     },
   });
+  expect(queries.length).toBe(5);
 
   expect(events.length).toBe(2);
   expect(events[0].mode).toBe('insert');
@@ -764,6 +894,7 @@ it('handles relations', async () => {
   events = [];
 
   // create from has one but with a validation error
+  clearQueries();
   expect(
     (
       await post(
@@ -786,11 +917,12 @@ it('handles relations', async () => {
       user: { email: 'is already in use' },
     },
   });
-
+  expect(queries.length).toBe(1);
   expect(events.length).toBe(0);
   events = [];
 
   // create from has many with a validation error
+  clearQueries();
   expect(
     (
       await post(
@@ -825,8 +957,11 @@ it('handles relations', async () => {
       ],
     },
   });
+  expect(queries.length).toBe(1);
 
   // cannot create outside this user's policy
+
+  clearQueries();
   expect(
     (
       await post('/test/comments', {
@@ -837,6 +972,7 @@ it('handles relations', async () => {
       })
     ).status
   ).toStrictEqual(401);
+  expect(queries.length).toBe(3);
 
   expect(events.length).toBe(0);
   events = [];
@@ -859,6 +995,7 @@ it('handles relations', async () => {
   events = [];
 
   // cannot edit outside this user's policy
+  clearQueries();
   expect(
     (
       await put(`/test/comments/${newCommentId}`, {
@@ -869,8 +1006,10 @@ it('handles relations', async () => {
       })
     ).status
   ).toStrictEqual(401);
+  expect(queries.length).toBe(2);
 
   // cannot change an item to be outside this user's policy
+  clearQueries();
   expect(
     (
       await put(`/test/comments/1`, {
@@ -880,8 +1019,10 @@ it('handles relations', async () => {
       })
     ).status
   ).toStrictEqual(401);
+  expect(queries.length).toBe(2);
 
   // cannot edit outside this user's policy
+  clearQueries();
   expect(
     (
       await del(`/test/comments/${newCommentId}?userId=2`).catch(e => {
@@ -889,6 +1030,7 @@ it('handles relations', async () => {
       })
     ).status
   ).toStrictEqual(401);
+  expect(queries.length).toBe(2);
 });
 
 it('reflects endpoints from the database', async () => {
