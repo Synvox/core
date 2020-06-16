@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import qs from 'qs';
 import Knex, { Transaction, QueryBuilder } from 'knex';
-import { Router, Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction, Express } from 'express';
 import setValue from 'set-value';
 import {
   object,
@@ -45,6 +45,20 @@ export function notifyChange(
   });
 }
 
+const wrap = (
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<any>
+) => async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await fn(req, res, next);
+    if (result !== undefined) {
+      res.send(result);
+      res.end();
+    }
+  } catch (e) {
+    next(e);
+  }
+};
+
 export interface ContextFactory<Context> {
   (req: Request, knex: Knex): Context;
 }
@@ -79,7 +93,6 @@ export default function core<Context>(
     Table<Context>,
     { hasOne: Relation<Context>[]; hasMany: Relation<Context>[] }
   >();
-  let router: Router;
 
   const query = (
     table: Table<Context>,
@@ -974,95 +987,83 @@ export default function core<Context>(
       return { data };
     };
 
-    return {
+    let initializedModels = false;
+    const app: Express & {
+      table: (tableDef: Partial<Table<Context>>) => void;
+    } = Object.assign(express(), {
       table(tableDef: Partial<Table<Context>>) {
+        if (initializedModels) {
+          throw new Error(
+            'Tables already initialized. Cannot register ' + tableDef.tableName
+          );
+        }
         tables.push(buildTable(tableDef));
       },
-      get router() {
-        if (router) return router;
-        router = Router();
+    });
 
-        let initializedModels = false;
+    app.use(
+      wrap(async (_req, _res, next) => {
+        if (initializedModels) return next();
+        const fromFile = process.env.NODE_ENV === 'production';
 
-        function handler(
-          handlerFn: (req: Request, res: Response) => Promise<any>
-        ) {
-          return async (req: Request, res: Response, next: NextFunction) => {
-            if (!initializedModels) {
-              const fromFile = process.env.NODE_ENV === 'production';
+        await Promise.all(tables.map(table => table.init(knex, fromFile)));
 
-              await Promise.all(
-                tables.map(table => table.init(knex, fromFile))
-              );
-
-              if (!fromFile) await saveSchema();
-              tables.forEach(table => {
-                const relations = {
-                  hasOne: Object.entries(table.relations)
-                    .map(([column, tablePath]) => ({
+        if (!fromFile) await saveSchema();
+        tables.forEach(table => {
+          const relations = {
+            hasOne: Object.entries(table.relations)
+              .map(([column, tablePath]) => ({
+                column,
+                key: column.replace(/Id$/, ''),
+                table: tables.find(m => m.tablePath === tablePath)!,
+              }))
+              .filter(r => r.table),
+            hasMany: tables
+              .filter(m => m !== table)
+              .map(otherTable => {
+                return Object.entries(otherTable.relations)
+                  .filter(([_, tablePath]) => tablePath === table.tablePath)
+                  .map(([column]) => {
+                    return {
                       column,
-                      key: column.replace(/Id$/, ''),
-                      table: tables.find(m => m.tablePath === tablePath)!,
-                    }))
-                    .filter(r => r.table),
-                  hasMany: tables
-                    .filter(m => m !== table)
-                    .map(otherTable => {
-                      return Object.entries(otherTable.relations)
-                        .filter(
-                          ([_, tablePath]) => tablePath === table.tablePath
-                        )
-                        .map(([column]) => {
-                          return {
-                            column,
-                            key: table.pluralForeignKeyMap[column]
-                              ? table.pluralForeignKeyMap[column]
-                              : otherTable.tableName,
-                            table: otherTable,
-                          };
-                        });
-                    })
-                    .reduce((a, b) => a.concat(b), [])
-                    .filter(r => r.table),
-                };
-
-                relationsForCache.set(table, relations);
-              });
-
-              initializedModels = true;
-            }
-
-            return handlerFn(req, res)
-              .then((result: any) => {
-                res.json(result);
-                res.end();
+                      key: table.pluralForeignKeyMap[column]
+                        ? table.pluralForeignKeyMap[column]
+                        : otherTable.tableName,
+                      table: otherTable,
+                    };
+                  });
               })
-              .catch(next);
+              .reduce((a, b) => a.concat(b), [])
+              .filter(r => r.table),
           };
-        }
+
+          relationsForCache.set(table, relations);
+        });
+
+        initializedModels = true;
 
         for (let table of tables) {
           const { path } = table;
 
-          router.use(path, table.router);
+          app.use(path, table.router);
 
-          router.get(
+          app.get(
             `${path}/count`,
-            handler(async req => {
+            wrap(async req => {
               return count(req, table);
             })
           );
 
-          router.get(
+          app.get(
             `${path}/ids`,
-            handler(async req => {
+            wrap(async req => {
               return ids(req, table);
             })
           );
 
-          router.get(
+          app.get(
             `${path}/:id`,
-            handler(async req => {
+            wrap(async req => {
               return read(
                 req,
                 table,
@@ -1072,23 +1073,23 @@ export default function core<Context>(
             })
           );
 
-          router.get(
+          app.get(
             path,
-            handler(async req => {
+            wrap(async req => {
               return read(req, table, req.query);
             })
           );
 
-          router.post(
+          app.post(
             path,
-            handler(async (req, res) => {
+            wrap(async (req, res) => {
               return await write(req, res, table, req.body);
             })
           );
 
-          router.put(
+          app.put(
             `${path}/:id`,
-            handler(async (req, res) => {
+            wrap(async (req, res) => {
               return await write(req, res, table, {
                 ...req.body,
                 id: isNaN(Number(req.params.id))
@@ -1098,9 +1099,9 @@ export default function core<Context>(
             })
           );
 
-          router.delete(
+          app.delete(
             `${path}/:id`,
-            handler(async (req, res) => {
+            wrap(async (req, res) => {
               const tenantId = table.tenantIdColumnName
                 ? req.query[table.tenantIdColumnName]
                 : undefined;
@@ -1116,9 +1117,11 @@ export default function core<Context>(
           );
         }
 
-        return router;
-      },
-    };
+        next();
+      })
+    );
+
+    return app;
   }
 }
 

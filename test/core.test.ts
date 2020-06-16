@@ -17,7 +17,7 @@ async function create(
 ) {
   const app = express();
   app.use(express.json());
-  app.use(core.router);
+  app.use(core);
   // for debugging failures
   // app.use(function(error: any, _req: any, _res: any, next: any) {
   //   console.log(error);
@@ -88,11 +88,6 @@ afterAll(async () => {
   await knex.destroy();
 });
 
-it(`doesn't recreate the router`, () => {
-  const core = Core(knex, getContext);
-  expect(core.router).toBe(core.router);
-});
-
 it('reads tables', async () => {
   await knex.schema.withSchema('test').createTable('users', t => {
     t.bigIncrements('id').primary();
@@ -119,6 +114,11 @@ it('reads tables', async () => {
     },
     data: [],
   });
+
+  // adding tables after the first request throws
+  expect(() => {
+    core.table({ tableName: 'derp' });
+  }).toThrow();
 
   // read many
   for (let i = 0; i < 10; i++) {
@@ -713,6 +713,26 @@ it('handles relations', async () => {
   expect(queries.length).toBe(2);
 
   clearQueries();
+  expect((await get('/test/users/me?include=comments')).data).toStrictEqual({
+    data: {
+      '@links': {},
+      '@url': '/test/users/1',
+      email: '1@abc.com',
+      id: 1,
+      comments: Array.from({ length: 10 }, (_, index) => ({
+        '@links': {
+          user: '/test/users/1',
+        },
+        '@url': `/test/comments/${index + 1}`,
+        id: index + 1,
+        userId: 1,
+        body: String(index),
+      })),
+    },
+  });
+  expect(queries.length).toBe(2);
+
+  clearQueries();
   expect((await get('/test/comments?mine&include=user')).data).toStrictEqual({
     meta: {
       page: 0,
@@ -739,6 +759,12 @@ it('handles relations', async () => {
         id: 1,
       },
     })),
+  });
+  expect(queries.length).toBe(2);
+
+  clearQueries();
+  expect((await get('/test/comments/count?mine')).data).toStrictEqual({
+    data: 10,
   });
   expect(queries.length).toBe(2);
 
