@@ -1,8 +1,7 @@
-import core, { ContextFactory, notifyChange } from './Core';
+import core, { ContextFactory, notifyChange, ChangeSummary } from './Core';
 import { NotFoundError } from './Errors';
 import { Table } from './Table';
 import knexHelpers from './knexHelpers';
-
 import withTimestamps from './plugins/withTimestamps';
 
 export default core;
@@ -15,4 +14,5 @@ export {
   knexHelpers,
   withTimestamps,
   notifyChange,
+  ChangeSummary,
 };

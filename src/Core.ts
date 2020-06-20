@@ -15,6 +15,7 @@ import {
 
 import buildTable, { saveSchema, Table } from './Table';
 import { NotFoundError, UnauthorizedError } from './Errors';
+import sse from './sse';
 
 const refPlaceholder = -1;
 
@@ -60,7 +61,7 @@ const wrap = (
 };
 
 export interface ContextFactory<Context> {
-  (req: Request, knex: Knex): Context;
+  (req: Request): Context;
 }
 
 export default function core<Context>(
@@ -173,7 +174,7 @@ export default function core<Context>(
       many: boolean = true
     ) => {
       const withDeleted = Boolean(filters.withDeleted || !many);
-      const context = getContext(req, knex);
+      const context = getContext(req);
 
       const includeRelated = async (stmt: QueryBuilder) => {
         const { include: rawInclude = '' } = req.query;
@@ -375,7 +376,7 @@ export default function core<Context>(
     };
 
     const count = async (req: Request, table: Table<Context>) => {
-      const context = getContext(req, knex);
+      const context = getContext(req);
       const filters = req.query;
       const withDeleted = Boolean(filters.withDeleted);
 
@@ -410,7 +411,7 @@ export default function core<Context>(
     };
 
     const ids = async (req: Request, table: Table<Context>) => {
-      const context = getContext(req, knex);
+      const context = getContext(req);
       const filters = req.query;
       const withDeleted = Boolean(filters.withDeleted);
 
@@ -478,7 +479,7 @@ export default function core<Context>(
       table: Table<Context>,
       graph: any
     ) => {
-      const context = getContext(req, knex);
+      const context = getContext(req);
       const beforeCommitCallbacks: Array<() => Promise<void>> = [];
 
       const validateGraph = async (table: Table<Context>, graph: any) => {
@@ -516,9 +517,8 @@ export default function core<Context>(
                     );
 
                     const stmt = query(table);
-                    // this policy is in 'read' mode because we are looking
-                    // for existence that may break unique constraints
-                    await table.policy(stmt, context, 'read');
+                    // There is no policy check here so rows that conflict
+                    // that are not visible to the user
 
                     if (graph.id) {
                       stmt.whereNot(function() {
@@ -987,9 +987,17 @@ export default function core<Context>(
       return { data };
     };
 
+    type ShouldTypeBeSent = (
+      event: ChangeSummary,
+      context: Context
+    ) => Promise<boolean>;
+
     let initializedModels = false;
     const app: Express & {
       table: (tableDef: Partial<Table<Context>>) => void;
+      sse: (
+        shouldEventBeSent: ShouldTypeBeSent
+      ) => (req: Request, res: Response) => Promise<void>;
     } = Object.assign(express(), {
       table(tableDef: Partial<Table<Context>>) {
         if (initializedModels) {
@@ -998,6 +1006,9 @@ export default function core<Context>(
           );
         }
         tables.push(buildTable(tableDef));
+      },
+      sse(shouldEventBeSent: ShouldTypeBeSent) {
+        return sse(emitter, getContext, shouldEventBeSent);
       },
     });
 

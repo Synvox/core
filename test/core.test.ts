@@ -1,28 +1,37 @@
 import { createServer } from 'http';
 import { EventEmitter } from 'events';
-import express, { Request } from 'express';
+import express, { Request, Application } from 'express';
 import axios, { AxiosRequestConfig } from 'axios';
 import listen from 'test-listen';
+import EventSource from 'eventsource';
 import Knex, { QueryBuilder } from 'knex';
-import Core, { knexHelpers, ContextFactory, notifyChange } from '../src';
 import { string } from 'yup';
-import withTimestamps from '../src/plugins/withTimestamps';
-import { ChangeSummary } from 'Core';
+import Core, {
+  knexHelpers,
+  ContextFactory,
+  notifyChange,
+  withTimestamps,
+  ChangeSummary,
+} from '../src';
 
 let server: null | ReturnType<typeof createServer> = null;
 
 async function create(
   core: ReturnType<typeof Core>,
-  options?: Partial<AxiosRequestConfig>
+  options?: Partial<AxiosRequestConfig>,
+  middlewareHook?: (app: Application) => void
 ) {
   const app = express();
   app.use(express.json());
+  if (middlewareHook) middlewareHook(app);
   app.use(core);
+
   // for debugging failures
   // app.use(function(error: any, _req: any, _res: any, next: any) {
   //   console.log(error);
   //   next(error);
   // });
+
   server = createServer(app);
   const url = await listen(server);
   return {
@@ -33,7 +42,7 @@ async function create(
 
 const getContext: ContextFactory<{
   getUser(): Promise<any>;
-}> = (req: Request, knex: Knex) => {
+}> = (req: Request) => {
   let user: any = null;
   return {
     async getUser() {
@@ -1481,4 +1490,120 @@ it('supports paranoid', async () => {
   const comments = await knex('test.comments');
 
   expect(comments.every(comment => comment.deletedAt !== null)).toBe(true);
+});
+
+it('provides an eventsource endpoint', async () => {
+  await knex.schema.withSchema('test').createTable('users', t => {
+    t.bigIncrements('id').primary();
+    t.string('email')
+      .notNullable()
+      .unique();
+  });
+
+  await knex.schema.withSchema('test').createTable('comments', t => {
+    t.bigIncrements('id').primary();
+    t.bigInteger('user_id').notNullable();
+    t.string('body').notNullable();
+    t.foreign('user_id')
+      .references('id')
+      .inTable('test.users');
+  });
+
+  for (let i = 0; i < 10; i++) {
+    await knex('test.users').insert({
+      email: `${i + 1}@abc.com`,
+    });
+
+    await knex('test.comments').insert({
+      body: String(i),
+      userId: '1',
+    });
+  }
+
+  const emitter = new EventEmitter();
+  const core = Core(knex, getContext, { emitter });
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'users',
+    schema: {
+      email: string().email(),
+    },
+    idModifiers: {
+      me: async (query, { getUser }) => {
+        const user = await getUser();
+        query.where('users.id', user.id);
+      },
+    },
+    async policy(query: QueryBuilder, { getUser }) {
+      const user = await getUser();
+      if (!user) return;
+      query.where('users.id', user.id);
+    },
+  });
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'comments',
+    tenantIdColumnName: 'userId',
+    queryModifiers: {
+      mine: async (_, query, { getUser }) => {
+        const user = await getUser();
+        query.where('comments.userId', user.id);
+      },
+    },
+    async policy(query: QueryBuilder, { getUser }) {
+      const user = await getUser();
+      if (!user) return;
+      query.where('comments.userId', user.id);
+    },
+  });
+
+  const { post, url } = await create(
+    core,
+    {
+      headers: {
+        impersonate: '1',
+      },
+    },
+    app => {
+      app.get(
+        '/sse',
+        core.sse(async () => true)
+      );
+    }
+  );
+
+  const eventSource = new EventSource(`${url}/sse?impersonate=1`);
+
+  let message: any = null;
+  eventSource.addEventListener('update', (m: any) => {
+    message = m;
+  });
+
+  await post('/test/comments', {
+    body: '123',
+    userId: 1,
+  });
+
+  await new Promise(r => {
+    const int = setInterval(() => {
+      if (message !== null) {
+        clearInterval(int);
+        expect(message.data).toBe(
+          '{"mode":"insert","tableName":"comments","schemaName":"test","row":{"id":11,"userId":1,"body":"123"}}'
+        );
+        message = null;
+        r();
+      }
+    }, 100);
+  });
+
+  eventSource.close();
+
+  // this is to verify the 'end' callbacks are fired and noted in
+  // coverage.
+  await new Promise(r => {
+    setTimeout(r, 1000);
+  });
 });
