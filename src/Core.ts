@@ -69,8 +69,13 @@ export default function core<Context>(
   getContext: ContextFactory<Context>,
   {
     emitter = new EventEmitter(),
+    schemaPath = null,
+    loadSchemaFromFile = process.env.NODE_ENV === 'production' &&
+      Boolean(schemaPath),
   }: {
     emitter?: EventEmitter;
+    schemaPath?: string | null;
+    loadSchemaFromFile?: boolean;
   } = {}
 ) {
   function trxNotifyCommit(
@@ -1015,11 +1020,16 @@ export default function core<Context>(
     app.use(
       wrap(async (_req, _res, next) => {
         if (initializedModels) return next();
-        const fromFile = process.env.NODE_ENV === 'production';
 
-        await Promise.all(tables.map(table => table.init(knex, fromFile)));
+        await Promise.all(
+          tables.map(table =>
+            table.init(knex, loadSchemaFromFile ? schemaPath : null)
+          )
+        );
 
-        if (!fromFile) await saveSchema();
+        if (process.env.NODE_ENV !== 'production' && schemaPath)
+          await saveSchema(schemaPath);
+
         tables.forEach(table => {
           const relations = {
             hasOne: Object.entries(table.relations)

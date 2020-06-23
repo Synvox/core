@@ -1,4 +1,5 @@
 import { createServer } from 'http';
+import path from 'path';
 import { EventEmitter } from 'events';
 import express, { Request, Application } from 'express';
 import axios, { AxiosRequestConfig } from 'axios';
@@ -21,6 +22,11 @@ async function create(
   options?: Partial<AxiosRequestConfig>,
   middlewareHook?: (app: Application) => void
 ) {
+  if (server) {
+    server?.close();
+    server = null;
+  }
+
   const app = express();
   app.use(express.json());
   if (middlewareHook) middlewareHook(app);
@@ -1606,4 +1612,55 @@ it('provides an eventsource endpoint', async () => {
   await new Promise(r => {
     setTimeout(r, 1000);
   });
+});
+
+it('saves schema', async () => {
+  await knex.schema.withSchema('test').createTable('users', t => {
+    t.bigIncrements('id').primary();
+    t.string('email')
+      .notNullable()
+      .unique();
+    t.timestamps(true, true);
+    t.timestamp('deleted_at', { useTz: true });
+  });
+
+  const core = Core(knex, getContext, {
+    schemaPath: path.join(__dirname, './__test_schema.json'),
+  });
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'users',
+  });
+
+  const { get } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  await get('/test/users');
+
+  queries = [];
+
+  const core2 = Core(knex, getContext, {
+    schemaPath: path.join(__dirname, './__test_schema.json'),
+    loadSchemaFromFile: true,
+  });
+
+  core2.table({
+    schemaName: 'test',
+    tableName: 'users',
+  });
+
+  const { get: get2 } = await create(core2, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  await get2('/test/users');
+  expect(queries).toEqual([
+    'select users.* from test.users order by users.id asc limit ?',
+  ]);
 });

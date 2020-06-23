@@ -1,6 +1,4 @@
 import { promises as fs } from 'fs';
-import path from 'path';
-import pkgDir from 'pkg-dir';
 import Knex, { QueryBuilder, Transaction } from 'knex';
 import { Router } from 'express';
 import { MixedSchema } from 'yup';
@@ -13,7 +11,7 @@ export interface Table<T> {
   tableName: string;
   schemaName: string;
   tenantIdColumnName: string | undefined;
-  init: (knex: Knex, fromSchemaFile?: boolean) => Promise<void>;
+  init: (knex: Knex, schemaPath?: string | null) => Promise<void>;
   policy: (
     query: QueryBuilder,
     context: ReturnType<ContextFactory<T>>,
@@ -77,17 +75,14 @@ let schema: {
   };
 } = {};
 
-export async function loadSchema() {
-  const schemaPath = path.join((await pkgDir(__dirname))!, '../schema.json');
+export async function loadSchema(filePath: string) {
   if (Object.keys(schema).length) return schema;
-  const json = await fs.readFile(schemaPath, { encoding: 'utf8' });
+  const json = await fs.readFile(filePath, { encoding: 'utf8' });
   schema = JSON.parse(json);
   return schema;
 }
 
-export async function saveSchema() {
-  const schemaPath = path.join((await pkgDir(__dirname))!, '../schema.json');
-
+export async function saveSchema(filePath: string) {
   function sort(object: any): any {
     if (typeof object !== 'object') return object;
 
@@ -103,7 +98,7 @@ export async function saveSchema() {
     return ordered;
   }
 
-  await fs.writeFile(schemaPath, JSON.stringify(sort(schema), null, 2));
+  await fs.writeFile(filePath, JSON.stringify(sort(schema), null, 2));
   schema = {}; // no longer needed
 }
 
@@ -115,13 +110,13 @@ export default function buildTable<T>(table: Partial<Table<T>>): Table<T> {
     schemaName: '',
     tenantIdColumnName: undefined,
 
-    async init(knex: Knex, fromSchemaFile: boolean = false) {
+    async init(knex: Knex, schemaPath: string | null = null) {
       const key = `${this.schemaName}.${this.tableName}`;
       if (initialized) return;
       initialized = true;
 
-      if (fromSchemaFile) {
-        const loadedSchema = await loadSchema();
+      if (schemaPath) {
+        const loadedSchema = await loadSchema(schemaPath);
         if (loadedSchema[key]) {
           const { columns, uniqueColumns, relations } = loadedSchema[key];
 
