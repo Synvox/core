@@ -13,7 +13,7 @@ import {
   ValidationError,
 } from 'yup';
 
-import buildTable, { saveSchema, Table } from './Table';
+import buildTable, { saveSchema, Table, saveTsTypes } from './Table';
 import { NotFoundError, UnauthorizedError } from './Errors';
 import sse from './sse';
 
@@ -70,11 +70,13 @@ export default function core<Context>(
   {
     emitter = new EventEmitter(),
     schemaPath = null,
+    typescriptOutputPath = null,
     loadSchemaFromFile = process.env.NODE_ENV === 'production' &&
       Boolean(schemaPath),
   }: {
     emitter?: EventEmitter;
     schemaPath?: string | null;
+    typescriptOutputPath?: string | null;
     loadSchemaFromFile?: boolean;
   } = {}
 ) {
@@ -1027,8 +1029,13 @@ export default function core<Context>(
           )
         );
 
-        if (process.env.NODE_ENV !== 'production' && schemaPath)
+        if (process.env.NODE_ENV !== 'production' && schemaPath) {
           await saveSchema(schemaPath);
+        }
+
+        if (process.env.NODE_ENV !== 'production' && typescriptOutputPath) {
+          await saveTsTypes(typescriptOutputPath);
+        }
 
         tables.forEach(table => {
           const relations = {

@@ -4,3 +4,4 @@ node_modules
 dist
 coverage
 __test_schema.json
+__ts_out.ts

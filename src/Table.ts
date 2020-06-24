@@ -4,7 +4,13 @@ import { Router } from 'express';
 import { MixedSchema } from 'yup';
 import { ContextFactory } from '.';
 import { transformKey, caseMethods } from './knexHelpers';
-import { classify, titleize, underscore, humanize } from 'inflection';
+import {
+  classify,
+  titleize,
+  underscore,
+  humanize,
+  singularize,
+} from 'inflection';
 import { Mode } from 'Core';
 
 export interface Table<T> {
@@ -63,17 +69,25 @@ export interface Table<T> {
   ) => Promise<void>;
 }
 
-let schema: {
-  [key: string]: {
-    className: string;
-    collectionName: string;
-    name: string;
-    columns: { [columnName: string]: Knex.ColumnInfo };
-    uniqueColumns: Array<string[]>;
-    relations: { [key: string]: string };
-    queryModifiers: string[];
-  };
-} = {};
+export type TableEntry = {
+  schemaName: string;
+  tableName: string;
+  tablePath: string;
+  className: string;
+  collectionName: string;
+  name: string;
+  columns: { [columnName: string]: Knex.ColumnInfo };
+  uniqueColumns: Array<string[]>;
+  relations: { [key: string]: string };
+  queryModifiers: string[];
+  pluralForeignKeyMap: { [key: string]: string };
+};
+
+export type Schema = {
+  [path: string]: TableEntry;
+};
+
+let schema: Schema = {};
 
 export async function loadSchema(filePath: string) {
   if (Object.keys(schema).length) return schema;
@@ -211,6 +225,9 @@ export default function buildTable<T>(table: Partial<Table<T>>): Table<T> {
       const name = titleize(underscore(className));
 
       schema[key] = {
+        schemaName: this.schemaName,
+        tableName: this.tableName,
+        tablePath: key,
         className,
         collectionName,
         name,
@@ -218,6 +235,7 @@ export default function buildTable<T>(table: Partial<Table<T>>): Table<T> {
         uniqueColumns: this.uniqueColumns,
         relations: this.relations,
         queryModifiers: Object.keys(this.queryModifiers),
+        pluralForeignKeyMap: this.pluralForeignKeyMap,
       };
     },
 
@@ -251,4 +269,150 @@ export default function buildTable<T>(table: Partial<Table<T>>): Table<T> {
 
     ...table,
   };
+}
+
+function postgresTypesToJSONTsTypes(type: string) {
+  /* istanbul ignore next */
+  switch (type) {
+    case 'bpchar':
+    case 'char':
+    case 'varchar':
+    case 'text':
+    case 'citext':
+    case 'uuid':
+    case 'bytea':
+    case 'inet':
+    case 'time':
+    case 'timetz':
+    case 'interval':
+    case 'name':
+    case 'character varying':
+    case 'timestamp with time zone':
+    case 'timestamp without time zone':
+    case 'date':
+    case 'timestamp':
+    case 'timestamptz':
+      return 'string';
+    case 'int2':
+    case 'int4':
+    case 'int8':
+    case 'float4':
+    case 'float8':
+    case 'numeric':
+    case 'money':
+    case 'oid':
+    case 'bigint':
+    case 'int':
+      return 'number';
+    case 'bool':
+      return 'boolean';
+    case 'json':
+    case 'jsonb':
+      return 'object';
+    default:
+      return 'any';
+  }
+}
+
+export async function saveTsTypes(path: string) {
+  const schemas: {
+    [schemaName: string]: {
+      [tableName: string]: TableEntry;
+    };
+  } = {};
+
+  Object.values(schema).forEach((table: TableEntry) => {
+    schemas[table.schemaName] = schemas[table.schemaName] || {};
+    schemas[table.schemaName][table.tableName] =
+      schemas[table.schemaName][table.tableName] || {};
+
+    schemas[table.schemaName][table.tableName] = table;
+  });
+
+  let types = `
+export type Collection<T> = {
+  meta: {
+    page: number;
+    limit: number;
+    hasMore: boolean;
+    '@url': string;
+    '@links': {
+      count: string;
+      ids: string;
+      previousPage?: string;
+      nextPage?: string;
+    };
+  };
+  data: T[];
+};`.trim();
+  types += '\n\n';
+  for (let schemaName in schemas) {
+    types += `export namespace ${transformKey(
+      schemaName,
+      caseMethods.pascal
+    )} {\n`;
+    for (let tableName in schemas[schemaName]) {
+      types += `  export type ${transformKey(
+        singularize(tableName),
+        caseMethods.pascal
+      )} = {\n`;
+
+      const table = schemas[schemaName][tableName];
+      const { relations, columns } = table;
+
+      const relationMaps = {
+        hasOne: Object.entries(relations)
+          .map(([column, tablePath]) => ({
+            column,
+            key: column.replace(/Id$/, ''),
+            table: Object.values(schema).find(m => m.tablePath === tablePath)!,
+          }))
+          .filter(r => r.table),
+        hasMany: Object.values(schema)
+          .filter(m => m !== table)
+          .map(otherTable => {
+            return Object.entries(otherTable.relations)
+              .filter(([_, tablePath]) => tablePath === table.tablePath)
+              .map(([column]) => {
+                return {
+                  column,
+                  key: table.pluralForeignKeyMap[column]
+                    ? table.pluralForeignKeyMap[column]
+                    : otherTable.tableName,
+                  table: otherTable,
+                };
+              });
+          })
+          .reduce((a, b) => a.concat(b), [])
+          .filter(r => r.table),
+      };
+
+      for (let columnName in columns) {
+        const column = columns[columnName];
+        let dataType = postgresTypesToJSONTsTypes(column.type);
+        if (column.nullable) dataType += ' | null';
+        types += `    ${columnName}: ${dataType};\n`;
+      }
+
+      types += `    '@url': string;\n`;
+      types += `    '@links': {\n`;
+
+      const { hasOne, hasMany } = relationMaps;
+
+      for (let { column, key } of hasOne) {
+        types += `      ${key}${columns[column].nullable ? '?' : ''}: string`;
+        types += ';\n';
+      }
+
+      for (let { key } of hasMany) {
+        types += `      ${key}: string;\n`;
+      }
+
+      types += `    };\n`;
+      types += `  };\n`;
+    }
+    types += '}\n\n';
+  }
+
+  await fs.writeFile(path, types);
 }

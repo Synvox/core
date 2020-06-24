@@ -16,6 +16,9 @@ export const caseMethods = {
   snake(word: string, index: number) {
     return index === 0 ? word : '_' + word;
   },
+  pascal(word: string, _index: number) {
+    return word[0].toUpperCase() + word.slice(1);
+  },
 };
 
 export function transformKey(

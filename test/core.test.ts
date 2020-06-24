@@ -1,5 +1,6 @@
 import { createServer } from 'http';
 import path from 'path';
+import { promises as fs } from 'fs';
 import { EventEmitter } from 'events';
 import express, { Request, Application } from 'express';
 import axios, { AxiosRequestConfig } from 'axios';
@@ -1663,4 +1664,38 @@ it('saves schema', async () => {
   expect(queries).toEqual([
     'select users.* from test.users order by users.id asc limit ?',
   ]);
+});
+
+it('saves typescript types', async () => {
+  await knex.schema.withSchema('test').createTable('users', t => {
+    t.bigIncrements('id').primary();
+    t.string('email')
+      .notNullable()
+      .unique();
+    t.timestamps(true, true);
+    t.timestamp('deleted_at', { useTz: true });
+  });
+
+  const tsPath = path.join(__dirname, './__ts_out.ts');
+
+  const core = Core(knex, getContext, {
+    typescriptOutputPath: tsPath,
+  });
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'users',
+  });
+
+  const { get } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  await get('/test/users');
+
+  const out = await fs.readFile(tsPath, { encoding: 'utf-8' });
+
+  expect(out.trim()).toMatchSnapshot();
 });
