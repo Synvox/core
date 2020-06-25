@@ -69,6 +69,8 @@ export interface Table<T> {
   ) => Promise<void>;
 }
 
+export type PartialTable<T> = { tableName: string } & Partial<Table<T>>;
+
 export type TableEntry = {
   schemaName: string;
   tableName: string;
@@ -116,9 +118,7 @@ export async function saveSchema(filePath: string) {
   schema = {}; // no longer needed
 }
 
-export default function buildTable<T>(
-  table: Partial<Table<T>> & { tableName: string }
-): Table<T> {
+export default function buildTable<T>(table: PartialTable<T>): Table<T> {
   let initialized = false;
 
   return {

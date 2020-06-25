@@ -13,7 +13,12 @@ import {
   ValidationError,
 } from 'yup';
 
-import buildTable, { saveSchema, Table, saveTsTypes } from './Table';
+import buildTable, {
+  saveSchema,
+  Table,
+  saveTsTypes,
+  PartialTable,
+} from './Table';
 import { NotFoundError, UnauthorizedError } from './Errors';
 import sse from './sse';
 
@@ -1001,12 +1006,12 @@ export default function core<Context>(
 
     let initializedModels = false;
     const app: Express & {
-      table: (tableDef: Partial<Table<Context>>) => void;
+      table: (tableDef: PartialTable<Context>) => void;
       sse: (
         shouldEventBeSent: ShouldTypeBeSent
       ) => (req: Request, res: Response) => Promise<void>;
     } = Object.assign(express(), {
-      table(tableDef: Partial<Table<Context>>) {
+      table(tableDef: PartialTable<Context>) {
         if (initializedModels) {
           throw new Error(
             'Tables already initialized. Cannot register ' + tableDef.tableName

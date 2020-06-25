@@ -1,4 +1,4 @@
-import { Table } from '../Table';
+import { PartialTable } from '../Table';
 
 /**
  * Updates created_at and updated_at timestamps on update and insert
@@ -8,8 +8,8 @@ import { Table } from '../Table';
  * @param table
  */
 export default function withTimestamps<T>(
-  table: Partial<Table<T>>
-): Partial<Table<T>> {
+  table: PartialTable<T>
+): PartialTable<T> {
   return {
     ...table,
     queryModifiers: {
