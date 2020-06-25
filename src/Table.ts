@@ -116,15 +116,18 @@ export async function saveSchema(filePath: string) {
   schema = {}; // no longer needed
 }
 
-export default function buildTable<T>(table: Partial<Table<T>>): Table<T> {
+export default function buildTable<T>(
+  table: Partial<Table<T>> & { tableName: string }
+): Table<T> {
   let initialized = false;
 
   return {
-    tableName: '',
     schemaName: '',
     tenantIdColumnName: undefined,
 
     async init(knex: Knex, schemaPath: string | null = null) {
+      this.schemaName = this.schemaName || 'public';
+
       const key = `${this.schemaName}.${this.tableName}`;
       if (initialized) return;
       initialized = true;
@@ -250,7 +253,12 @@ export default function buildTable<T>(table: Partial<Table<T>>): Table<T> {
     },
 
     get path() {
-      return '/' + [this.schemaName, this.tableName].filter(Boolean).join('/');
+      return (
+        '/' +
+        [this.schemaName === 'public' ? null : this.schemaName, this.tableName]
+          .filter(Boolean)
+          .join('/')
+      );
     },
 
     get router() {

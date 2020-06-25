@@ -88,6 +88,7 @@ beforeEach(async () => {
   await knex.raw(`
     drop schema if exists test cascade;
     create schema test;
+    drop table if exists public.test_table;
   `);
 });
 
@@ -1676,7 +1677,7 @@ it('saves typescript types', async () => {
     t.timestamp('deleted_at', { useTz: true });
   });
 
-  const tsPath = path.join(__dirname, './__ts_out.ts');
+  const tsPath = path.join(__dirname, './__ts_out');
 
   const core = Core(knex, getContext, {
     typescriptOutputPath: tsPath,
@@ -1698,4 +1699,43 @@ it('saves typescript types', async () => {
   const out = await fs.readFile(tsPath, { encoding: 'utf-8' });
 
   expect(out.trim()).toMatchSnapshot();
+});
+
+it('handles tables in the public schema', async () => {
+  await knex.schema.createTable('test_table', t => {
+    t.bigIncrements('id').primary();
+    t.string('email')
+      .notNullable()
+      .unique();
+    t.timestamps(true, true);
+    t.timestamp('deleted_at', { useTz: true });
+  });
+
+  const core = Core(knex, getContext);
+
+  core.table({
+    tableName: 'testTable',
+  });
+
+  const { get } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  const { data: out } = await get('/testTable');
+
+  expect(out).toEqual({
+    data: [],
+    meta: {
+      '@links': {
+        count: '/testTable/count',
+        ids: '/testTable/ids',
+      },
+      '@url': '/testTable',
+      hasMore: false,
+      limit: 50,
+      page: 0,
+    },
+  });
 });
