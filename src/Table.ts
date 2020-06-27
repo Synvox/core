@@ -2,7 +2,7 @@ import { promises as fs } from 'fs';
 import Knex, { QueryBuilder, Transaction } from 'knex';
 import { Router } from 'express';
 import { MixedSchema } from 'yup';
-import { ContextFactory } from '.';
+import { ContextFactory, Mode } from '.';
 import { transformKey, caseMethods } from './knexHelpers';
 import {
   classify,
@@ -11,7 +11,6 @@ import {
   humanize,
   singularize,
 } from 'inflection';
-import { Mode } from 'Core';
 
 export interface Table<T> {
   tableName: string;

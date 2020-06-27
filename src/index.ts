@@ -1,4 +1,9 @@
-import core, { ContextFactory, notifyChange, ChangeSummary } from './Core';
+import core, {
+  ContextFactory,
+  notifyChange,
+  ChangeSummary,
+  Mode,
+} from './Core';
 import { NotFoundError } from './Errors';
 import { Table } from './Table';
 import knexHelpers from './knexHelpers';
@@ -15,4 +20,5 @@ export {
   withTimestamps,
   notifyChange,
   ChangeSummary,
+  Mode,
 };

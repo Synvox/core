@@ -12,7 +12,6 @@ import {
   MixedSchema,
   ValidationError,
 } from 'yup';
-
 import buildTable, {
   saveSchema,
   Table,
@@ -66,7 +65,7 @@ const wrap = (
 };
 
 export interface ContextFactory<Context> {
-  (req: Request): Context;
+  (req: Request, res: Response): Context;
 }
 
 export default function core<Context>(
@@ -181,12 +180,13 @@ export default function core<Context>(
   {
     const read = async (
       req: Request,
+      res: Response,
       table: Table<Context>,
       filters: any,
       many: boolean = true
     ) => {
       const withDeleted = Boolean(filters.withDeleted || !many);
-      const context = getContext(req);
+      const context = getContext(req, res);
 
       const includeRelated = async (stmt: QueryBuilder) => {
         const { include: rawInclude = '' } = req.query;
@@ -275,7 +275,7 @@ export default function core<Context>(
               knex.raw('?', req.query.lastId)
             )
             .where(function() {
-              sorts.map((sort, index) => {
+              sorts.forEach((sort, index) => {
                 this.orWhere(function() {
                   sorts
                     .slice(0, index)
@@ -387,8 +387,12 @@ export default function core<Context>(
       }
     };
 
-    const count = async (req: Request, table: Table<Context>) => {
-      const context = getContext(req);
+    const count = async (
+      req: Request,
+      res: Response,
+      table: Table<Context>
+    ) => {
+      const context = getContext(req, res);
       const filters = req.query;
       const withDeleted = Boolean(filters.withDeleted);
 
@@ -422,8 +426,8 @@ export default function core<Context>(
       };
     };
 
-    const ids = async (req: Request, table: Table<Context>) => {
-      const context = getContext(req);
+    const ids = async (req: Request, res: Response, table: Table<Context>) => {
+      const context = getContext(req, res);
       const filters = req.query;
       const withDeleted = Boolean(filters.withDeleted);
 
@@ -491,7 +495,7 @@ export default function core<Context>(
       table: Table<Context>,
       graph: any
     ) => {
-      const context = getContext(req);
+      const context = getContext(req, res);
       const beforeCommitCallbacks: Array<() => Promise<void>> = [];
 
       const validateGraph = async (table: Table<Context>, graph: any) => {
@@ -509,6 +513,7 @@ export default function core<Context>(
               if (!(info.nullable || info.defaultValue)) {
                 type = type.test(
                   'is-null',
+                  // eslint-disable-next-line no-template-curly-in-string
                   '${path} is required',
                   value => value !== null && value !== undefined
                 );
@@ -521,6 +526,7 @@ export default function core<Context>(
               for (let column of columns) {
                 schema[column] = schema[column].test(
                   'unique',
+                  // eslint-disable-next-line no-template-curly-in-string
                   '${path} is already in use',
                   async function test() {
                     const { parent } = this;
@@ -1082,23 +1088,24 @@ export default function core<Context>(
 
           app.get(
             `${path}/count`,
-            wrap(async req => {
-              return count(req, table);
+            wrap(async (req, res) => {
+              return count(req, res, table);
             })
           );
 
           app.get(
             `${path}/ids`,
-            wrap(async req => {
-              return ids(req, table);
+            wrap(async (req, res) => {
+              return ids(req, res, table);
             })
           );
 
           app.get(
             `${path}/:id`,
-            wrap(async req => {
+            wrap(async (req, res) => {
               return read(
                 req,
+                res,
                 table,
                 { ...req.query, id: req.params.id },
                 false
@@ -1108,8 +1115,8 @@ export default function core<Context>(
 
           app.get(
             path,
-            wrap(async req => {
-              return read(req, table, req.query);
+            wrap(async (req, res) => {
+              return read(req, res, table, req.query);
             })
           );
 

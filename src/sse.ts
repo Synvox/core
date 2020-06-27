@@ -24,7 +24,7 @@ export default function sse<Context>(
     });
     res.write('\n');
 
-    const context = getContext(req);
+    const context = getContext(req, res);
 
     const handler = async (changeSummary: ChangeSummary) => {
       if (!(await shouldEventBeSent(changeSummary, context))) {
