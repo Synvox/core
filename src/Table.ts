@@ -25,6 +25,8 @@ export interface Table<T> {
   tablePath: string;
   path: string;
   columns: { [columnName: string]: Knex.ColumnInfo } | null;
+  readOnlyColumns: string[];
+  hiddenColumns: string[];
   uniqueColumns: Array<string[]>;
   relations: { [key: string]: string };
   schema: { [columnName: string]: MixedSchema };
@@ -54,13 +56,13 @@ export interface Table<T> {
   pluralForeignKeyMap: {
     [columnName: string]: string;
   };
-  beforeHook?: (
+  beforeUpdate?: (
     trx: Transaction,
     row: any,
     mode: 'insert' | 'update' | 'delete',
     context: ReturnType<ContextFactory<T>>
   ) => Promise<void>;
-  afterHook?: (
+  afterUpdate?: (
     trx: Transaction,
     row: any,
     mode: 'insert' | 'update' | 'delete',
@@ -273,6 +275,8 @@ export default function buildTable<T>(table: PartialTable<T>): Table<T> {
     idModifiers: {},
     queryModifiers: {},
     setters: {},
+    readOnlyColumns: [],
+    hiddenColumns: [],
 
     ...table,
   };

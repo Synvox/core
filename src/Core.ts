@@ -126,7 +126,11 @@ export default function core<Context>(
     return relationsForCache.get(table)!;
   };
 
-  const linksFor = (req: Request, table: Table<Context>, inputRow: any) => {
+  const processTableRow = (
+    req: Request,
+    table: Table<Context>,
+    inputRow: any
+  ) => {
     let row = { ...inputRow };
     const relations = relationsFor(table);
 
@@ -138,17 +142,27 @@ export default function core<Context>(
       if (row[column] === null) continue;
       if (row[key] === undefined)
         result[key] = `${req.baseUrl}${table.path}/${row[column]}`;
-      else row[key] = linksFor(req, table, row[key]);
+      else row[key] = processTableRow(req, table, row[key]);
     }
 
     for (let { table, column, key } of hasMany) {
       if (row[key] === undefined)
         result[key] = `${table.path}?${column}=${row.id}`;
-      else row[key] = row[key].map((item: any) => linksFor(req, table, item));
+      else
+        row[key] = row[key].map((item: any) =>
+          processTableRow(req, table, item)
+        );
+    }
+
+    let outputRow: any = {};
+    for (let key in row) {
+      if (row.hasOwnProperty(key) && !table.hiddenColumns.includes(key)) {
+        outputRow[key] = row[key];
+      }
     }
 
     return {
-      ...row,
+      ...outputRow,
       '@url': `${req.baseUrl}${table.path}/${row.id}`,
       '@links': result,
     };
@@ -158,13 +172,15 @@ export default function core<Context>(
     const result: { [key: string]: any } = {};
 
     for (let key of Object.keys(graph).filter(key => key in table.columns!)) {
-      result[key] = graph[key];
+      if (!table.readOnlyColumns.includes(key)) {
+        result[key] = graph[key];
+      }
     }
 
     return result;
   };
 
-  const filterPrefixGraph = (table: Table<Context>, graph: any) => {
+  const getWhereFiltersForTable = (table: Table<Context>, graph: any) => {
     const result: { [key: string]: any } = {};
 
     for (let key of Object.keys(graph).filter(key => key in table.columns!)) {
@@ -348,7 +364,7 @@ export default function core<Context>(
             '@url': req.url,
             '@links': links,
           },
-          data: results.map((item: any) => linksFor(req, table, item)),
+          data: results.map((item: any) => processTableRow(req, table, item)),
         };
       };
 
@@ -372,7 +388,7 @@ export default function core<Context>(
         }
       }
 
-      stmt.where(filterPrefixGraph(table, where));
+      stmt.where(getWhereFiltersForTable(table, where));
 
       if (many) {
         return paginate(stmt);
@@ -382,7 +398,7 @@ export default function core<Context>(
         if (!data) throw new NotFoundError();
 
         return {
-          data: linksFor(req, table, data),
+          data: processTableRow(req, table, data),
         };
       }
     };
@@ -399,7 +415,7 @@ export default function core<Context>(
       const stmt = query(table, knex, withDeleted).clearSelect();
       await table.policy(stmt, context, 'read');
 
-      stmt.where(filterPrefixGraph(table, filters));
+      stmt.where(getWhereFiltersForTable(table, filters));
 
       const where = { ...filters };
 
@@ -417,7 +433,7 @@ export default function core<Context>(
         }
       }
 
-      stmt.where(filterPrefixGraph(table, where));
+      stmt.where(getWhereFiltersForTable(table, where));
 
       return {
         data: await stmt
@@ -434,7 +450,7 @@ export default function core<Context>(
       const stmt = query(table, knex, withDeleted).clearSelect();
       await table.policy(stmt, context, 'read');
 
-      stmt.where(filterPrefixGraph(table, filters));
+      stmt.where(getWhereFiltersForTable(table, filters));
 
       const where = { ...filters };
 
@@ -452,7 +468,7 @@ export default function core<Context>(
         }
       }
 
-      stmt.where(filterPrefixGraph(table, where));
+      stmt.where(getWhereFiltersForTable(table, where));
 
       const page = Number(req.query.page || 0);
       const limit = Math.max(
@@ -709,8 +725,8 @@ export default function core<Context>(
 
           graph = { ...row, ...graph };
 
-          if (table.beforeHook) {
-            await table.beforeHook(trx, graph, 'update', context);
+          if (table.beforeUpdate) {
+            await table.beforeUpdate(trx, graph, 'update', context);
 
             graph = filterGraph(table, graph);
           }
@@ -775,9 +791,9 @@ export default function core<Context>(
                 }
               }
 
-              if (table.afterHook) {
+              if (table.afterUpdate) {
                 beforeCommitCallbacks.push(() => {
-                  return table.afterHook!(trx, updatedRow, 'update', context);
+                  return table.afterUpdate!(trx, updatedRow, 'update', context);
                 });
               }
 
@@ -794,8 +810,8 @@ export default function core<Context>(
           const initialGraph = graph;
           graph = filterGraph(table, graph);
 
-          if (table.beforeHook) {
-            await table.beforeHook(trx, graph, 'insert', context);
+          if (table.beforeUpdate) {
+            await table.beforeUpdate(trx, graph, 'insert', context);
             graph = filterGraph(table, graph);
           }
 
@@ -826,9 +842,9 @@ export default function core<Context>(
             }
           }
 
-          if (table.afterHook) {
+          if (table.afterUpdate) {
             beforeCommitCallbacks.push(() => {
-              return table.afterHook!(trx, updatedRow, 'insert', context);
+              return table.afterUpdate!(trx, updatedRow, 'insert', context);
             });
           }
 
@@ -862,13 +878,13 @@ export default function core<Context>(
 
           if (!row) throw new UnauthorizedError();
 
-          if (table.beforeHook) {
-            await table.beforeHook(trx, row, 'delete', context);
+          if (table.beforeUpdate) {
+            await table.beforeUpdate(trx, row, 'delete', context);
           }
 
-          if (table.afterHook) {
+          if (table.afterUpdate) {
             beforeCommitCallbacks.push(() => {
-              return table.afterHook!(trx, row, 'delete', context);
+              return table.afterUpdate!(trx, row, 'delete', context);
             });
           }
 
@@ -958,7 +974,7 @@ export default function core<Context>(
           };
         }
 
-        row = linksFor(req, table, row);
+        row = processTableRow(req, table, row);
 
         for (let { column, key, table: otherTable } of hasMany) {
           const otherGraphs = graph[key];

@@ -109,6 +109,7 @@ it('reads tables', async () => {
   await knex.schema.withSchema('test').createTable('users', t => {
     t.bigIncrements('id').primary();
     t.string('email').unique();
+    t.string('hidden');
   });
 
   const core = Core(knex, getContext);
@@ -116,6 +117,7 @@ it('reads tables', async () => {
   core.table({
     schemaName: 'test',
     tableName: 'users',
+    hiddenColumns: ['hidden'],
   });
 
   const { get } = await create(core);
@@ -141,6 +143,7 @@ it('reads tables', async () => {
   for (let i = 0; i < 10; i++) {
     await knex('test.users').insert({
       email: `${i + 1}@abc.com`,
+      hidden: 'abc123',
     });
   }
 
@@ -422,6 +425,7 @@ it('writes tables', async () => {
     t.string('email')
       .notNullable()
       .unique();
+    t.string('readonly').defaultTo('static');
   });
 
   for (let i = 0; i < 10; i++) {
@@ -444,6 +448,7 @@ it('writes tables', async () => {
     schema: {
       email: string().email(),
     },
+    readOnlyColumns: ['readonly'],
   });
 
   const { get, post, put, delete: del } = await create(core);
@@ -456,6 +461,7 @@ it('writes tables', async () => {
     (
       await post('/test/users', {
         email: 'my-email-here@something.com',
+        readonly: 'derp',
       })
     ).data
   ).toStrictEqual({
@@ -463,6 +469,7 @@ it('writes tables', async () => {
       '@links': {},
       '@url': '/test/users/11',
       email: 'my-email-here@something.com',
+      readonly: 'static',
       id: 11,
     },
   });
@@ -508,6 +515,7 @@ it('writes tables', async () => {
       '@url': '/test/users/11',
       email: 'updated@email.com',
       id: 11,
+      readonly: 'static',
     },
   });
   expect(queries.length).toBe(5);
@@ -537,6 +545,7 @@ it('writes tables', async () => {
       '@url': '/test/users/11',
       email: 'updated@email.com',
       id: 11,
+      readonly: 'static',
     },
   });
   expect(queries).toStrictEqual([

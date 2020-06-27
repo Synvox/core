@@ -21,8 +21,9 @@ export default function withTimestamps<T>(
       },
       ...table.queryModifiers,
     },
-    beforeHook: async (trx, row, mode, authorizer) => {
-      if (table.beforeHook) await table.beforeHook(trx, row, mode, authorizer);
+    beforeUpdate: async (trx, row, mode, authorizer) => {
+      if (table.beforeUpdate)
+        await table.beforeUpdate(trx, row, mode, authorizer);
 
       row.updatedAt = new Date();
 
