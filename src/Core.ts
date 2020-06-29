@@ -252,7 +252,7 @@ export default function core<Context>(
               .select(`row_to_json(${ref.table.tableName})`);
           }
 
-          await ref.table.policy(subQuery, context, 'read');
+          await ref.table.policy.call(table, subQuery, context, 'read');
 
           if (isOne) {
             stmt.select(`(${subQuery.toString()}) as ${ref.key}`);
@@ -369,21 +369,21 @@ export default function core<Context>(
       };
 
       const stmt = query(table, knex, withDeleted);
-      await table.policy(stmt, context, 'read');
+      await table.policy.call(table, stmt, context, 'read');
       await includeRelated(stmt);
 
       const where = { ...filters };
 
       if (Object.keys(table.idModifiers).includes(where.id)) {
         const modifier = table.idModifiers[where.id];
-        await modifier(stmt, context);
+        await modifier.call(table, stmt, context);
         delete where.id;
       }
 
       for (let key of Object.keys(where)) {
         if (Object.keys(table.queryModifiers).includes(key)) {
           const modifier = table.queryModifiers[key];
-          await modifier(where[key], stmt, context);
+          await modifier.call(table, where[key], stmt, context);
           delete where[key];
         }
       }
@@ -413,7 +413,7 @@ export default function core<Context>(
       const withDeleted = Boolean(filters.withDeleted);
 
       const stmt = query(table, knex, withDeleted).clearSelect();
-      await table.policy(stmt, context, 'read');
+      await table.policy.call(table, stmt, context, 'read');
 
       stmt.where(getWhereFiltersForTable(table, filters));
 
@@ -421,14 +421,14 @@ export default function core<Context>(
 
       if (Object.keys(table.idModifiers).includes(where.id)) {
         const modifier = table.idModifiers[where.id];
-        await modifier(stmt, context);
+        await modifier.call(table, stmt, context);
         delete where.id;
       }
 
       for (let key of Object.keys(where)) {
         if (Object.keys(table.queryModifiers).includes(key)) {
           const modifier = table.queryModifiers[key];
-          await modifier(where[key], stmt, context);
+          await modifier.call(table, where[key], stmt, context);
           delete where[key];
         }
       }
@@ -448,7 +448,7 @@ export default function core<Context>(
       const withDeleted = Boolean(filters.withDeleted);
 
       const stmt = query(table, knex, withDeleted).clearSelect();
-      await table.policy(stmt, context, 'read');
+      await table.policy.call(table, stmt, context, 'read');
 
       stmt.where(getWhereFiltersForTable(table, filters));
 
@@ -456,14 +456,14 @@ export default function core<Context>(
 
       if (Object.keys(table.idModifiers).includes(where.id)) {
         const modifier = table.idModifiers[where.id];
-        await modifier(stmt, context);
+        await modifier.call(table, stmt, context);
         delete where.id;
       }
 
       for (let key of Object.keys(where)) {
         if (Object.keys(table.queryModifiers).includes(key)) {
           const modifier = table.queryModifiers[key];
-          await modifier(where[key], stmt, context);
+          await modifier.call(table, where[key], stmt, context);
           delete where[key];
         }
       }
@@ -579,7 +579,7 @@ export default function core<Context>(
 
           if (graph.id) {
             const stmt = query(table);
-            await table.policy(stmt, context, 'update');
+            await table.policy.call(table, stmt, context, 'update');
 
             if (table.tenantIdColumnName && !graph[table.tenantIdColumnName])
               return { [table.tenantIdColumnName]: 'is required' };
@@ -709,7 +709,7 @@ export default function core<Context>(
           graph = filterGraph(table, graph);
 
           const stmt = query(table, trx);
-          await table.policy(stmt, context, 'update');
+          await table.policy.call(table, stmt, context, 'update');
 
           const row = await stmt
             .where(`${table.tableName}.id`, graph.id)
@@ -739,7 +739,7 @@ export default function core<Context>(
 
           {
             const stmt = query(table, trx);
-            await table.policy(stmt, context, 'update');
+            await table.policy.call(table, stmt, context, 'update');
 
             if (Object.keys(filteredByChanged).length) {
               await stmt
@@ -761,7 +761,7 @@ export default function core<Context>(
 
               // in case an update now makes this row inaccessible
               const readStmt = query(table, trx);
-              await table.policy(readStmt, context, 'update');
+              await table.policy.call(table, readStmt, context, 'update');
 
               const updatedRow = await readStmt
                 .where(`${table.tableName}.id`, graph.id)
@@ -823,7 +823,7 @@ export default function core<Context>(
           trxNotifyCommit(trx, 'insert', table, row);
 
           const stmt = query(table, trx);
-          await table.policy(stmt, context, 'insert');
+          await table.policy.call(table, stmt, context, 'insert');
 
           const updatedRow = await stmt
             .where(`${table.tableName}.id`, row.id)
@@ -865,7 +865,7 @@ export default function core<Context>(
           }
 
           const stmt = query(table, trx);
-          await table.policy(stmt, context, 'delete');
+          await table.policy.call(table, stmt, context, 'delete');
 
           if (table.tenantIdColumnName && tenantId !== undefined) {
             stmt.where(
