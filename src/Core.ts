@@ -252,7 +252,7 @@ export default function core<Context>(
               .select(`row_to_json(${ref.table.tableName})`);
           }
 
-          await ref.table.policy.call(table, subQuery, context, 'read');
+          await ref.table.policy.call(ref.table, subQuery, context, 'read');
 
           if (isOne) {
             stmt.select(`(${subQuery.toString()}) as ${ref.key}`);
