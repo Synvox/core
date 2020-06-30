@@ -77,11 +77,13 @@ export default function core<Context>(
     typescriptOutputPath = null,
     loadSchemaFromFile = process.env.NODE_ENV === 'production' &&
       Boolean(schemaPath),
+    origin = '',
   }: {
     emitter?: EventEmitter;
     schemaPath?: string | null;
     typescriptOutputPath?: string | null;
     loadSchemaFromFile?: boolean;
+    origin?: string;
   } = {}
 ) {
   function trxNotifyCommit(
@@ -141,13 +143,13 @@ export default function core<Context>(
     for (let { table, column, key } of hasOne) {
       if (row[column] === null) continue;
       if (row[key] === undefined)
-        result[key] = `${req.baseUrl}${table.path}/${row[column]}`;
+        result[key] = `${origin}${req.baseUrl}${table.path}/${row[column]}`;
       else row[key] = processTableRow(req, table, row[key]);
     }
 
     for (let { table, column, key } of hasMany) {
       if (row[key] === undefined)
-        result[key] = `${table.path}?${column}=${row.id}`;
+        result[key] = `${origin}${table.path}?${column}=${row.id}`;
       else
         row[key] = row[key].map((item: any) =>
           processTableRow(req, table, item)
@@ -163,7 +165,7 @@ export default function core<Context>(
 
     return {
       ...outputRow,
-      '@url': `${req.baseUrl}${table.path}/${row.id}`,
+      '@url': `${origin}${req.baseUrl}${table.path}/${row.id}`,
       '@links': result,
     };
   };
@@ -328,7 +330,7 @@ export default function core<Context>(
           ...(!req.query.page
             ? {
                 ...(results.length >= limit && {
-                  nextPage: `${path}?${qs.stringify({
+                  nextPage: `${origin}${path}?${qs.stringify({
                     ...req.query,
                     lastId: results[results.length - 1].id,
                   })}`,
@@ -336,22 +338,22 @@ export default function core<Context>(
               }
             : {
                 ...(results.length >= limit && {
-                  nextPage: `${path}?${qs.stringify({
+                  nextPage: `${origin}${path}?${qs.stringify({
                     ...req.query,
                     page: page + 1,
                   })}`,
                 }),
                 ...(page !== 0 && {
-                  previousPage: `${path}?${qs.stringify({
+                  previousPage: `${origin}${path}?${qs.stringify({
                     ...req.query,
                     page: page - 1,
                   })}`,
                 }),
               }),
-          count: `${path}/count${
+          count: `${origin}${path}/count${
             Object.keys(req.query).length > 0 ? '?' : ''
           }${qs.stringify(req.query)}`,
-          ids: `${path}/ids${
+          ids: `${origin}${path}/ids${
             Object.keys(req.query).length > 0 ? '?' : ''
           }${qs.stringify(req.query)}`,
         };
@@ -361,7 +363,7 @@ export default function core<Context>(
             page,
             limit,
             hasMore: results.length >= limit,
-            '@url': req.url,
+            '@url': `${origin}${req.url}`,
             '@links': links,
           },
           data: results.map((item: any) => processTableRow(req, table, item)),
@@ -485,16 +487,16 @@ export default function core<Context>(
           page,
           limit,
           hasMore: results.length >= limit,
-          '@url': req.url,
+          '@url': `${origin}${req.url}`,
           '@links': {
             ...(results.length >= limit && {
-              nextPage: `${req.path}?${qs.stringify({
+              nextPage: `${origin}${req.path}?${qs.stringify({
                 ...req.query,
                 page: page + 1,
               })}`,
             }),
             ...(page !== 0 && {
-              previousPage: `${req.path}?${qs.stringify({
+              previousPage: `${origin}${req.path}?${qs.stringify({
                 ...req.query,
                 page: page - 1,
               })}`,
