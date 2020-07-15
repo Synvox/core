@@ -437,6 +437,15 @@ export default function core<Context>(
 
       stmt.where(getWhereFiltersForTable(table, where));
 
+      const page = Number(req.query.page || 0);
+      const limit = Math.max(
+        0,
+        Math.min(100000, Number(req.query.limit) || 1000)
+      );
+
+      if (req.query.page) stmt.offset(page * limit);
+      if (req.query.limit) stmt.limit(limit);
+
       return {
         data: await stmt
           .countDistinct(`${table.tableName}.id`)

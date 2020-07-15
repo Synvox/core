@@ -90,6 +90,21 @@ export type Schema = {
   [path: string]: TableEntry;
 };
 
+function sortObject(object: any): any {
+  if (typeof object !== 'object') return object;
+
+  if (Array.isArray(object)) return object.map(sortObject);
+
+  const ordered: any = {};
+  Object.keys(object)
+    .sort()
+    .forEach(function(key) {
+      ordered[key] = object[key];
+    });
+
+  return ordered;
+}
+
 let schema: Schema = {};
 
 export async function loadSchema(filePath: string) {
@@ -100,22 +115,7 @@ export async function loadSchema(filePath: string) {
 }
 
 export async function saveSchema(filePath: string) {
-  function sort(object: any): any {
-    if (typeof object !== 'object') return object;
-
-    if (Array.isArray(object)) return object.map(sort);
-
-    const ordered: any = {};
-    Object.keys(object)
-      .sort()
-      .forEach(function(key) {
-        ordered[key] = object[key];
-      });
-
-    return ordered;
-  }
-
-  await fs.writeFile(filePath, JSON.stringify(sort(schema), null, 2));
+  await fs.writeFile(filePath, JSON.stringify(sortObject(schema), null, 2));
   schema = {}; // no longer needed
 }
 
@@ -326,13 +326,15 @@ function postgresTypesToJSONTsTypes(type: string) {
 }
 
 export async function saveTsTypes(path: string) {
-  const schemas: {
+  const sortedSchema = sortObject(schema) as Schema;
+
+  let schemas: {
     [schemaName: string]: {
       [tableName: string]: TableEntry;
     };
   } = {};
 
-  Object.values(schema).forEach((table: TableEntry) => {
+  Object.values(sortedSchema).forEach((table: TableEntry) => {
     schemas[table.schemaName] = schemas[table.schemaName] || {};
     schemas[table.schemaName][table.tableName] =
       schemas[table.schemaName][table.tableName] || {};

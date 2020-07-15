@@ -1085,6 +1085,122 @@ it('handles relations', async () => {
   expect(queries.length).toBe(2);
 });
 
+it('handles nullable relations', async () => {
+  await knex.schema.withSchema('test').createTable('users', t => {
+    t.bigIncrements('id').primary();
+    t.string('email')
+      .notNullable()
+      .unique();
+  });
+
+  await knex.schema.withSchema('test').createTable('comments', t => {
+    t.bigIncrements('id').primary();
+    t.bigInteger('user_id').notNullable();
+    t.bigInteger('reply_to_comment_id');
+    t.string('body').notNullable();
+    t.foreign('user_id')
+      .references('id')
+      .inTable('test.users');
+  });
+
+  await knex.schema.withSchema('test').alterTable('comments', t => {
+    t.foreign('reply_to_comment_id')
+      .references('id')
+      .inTable('test.comments');
+  });
+
+  for (let i = 0; i < 10; i++) {
+    await knex('test.users').insert({
+      email: `${i + 1}@abc.com`,
+    });
+
+    await knex('test.comments').insert({
+      body: String(i),
+      userId: '1',
+    });
+  }
+
+  await knex('test.comments')
+    .where('id', 1)
+    .update({
+      replyToCommentId: 5,
+    });
+
+  const core = Core(knex, getContext);
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'users',
+    schema: {
+      email: string().email(),
+    },
+    idModifiers: {
+      me: async (query: QueryBuilder, { getUser }) => {
+        const user = await getUser();
+        query.where('users.id', user.id);
+      },
+    },
+    async policy(query: QueryBuilder, { getUser }) {
+      const user = await getUser();
+      if (!user) return;
+      query.where('users.id', user.id);
+    },
+  });
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'comments',
+    tenantIdColumnName: 'userId',
+    queryModifiers: {
+      mine: async (_: string, query: QueryBuilder, { getUser }) => {
+        const user = await getUser();
+        query.where('comments.userId', user.id);
+      },
+    },
+    async policy(query: QueryBuilder, { getUser }) {
+      const user = await getUser();
+      if (!user) return;
+      query.where('comments.userId', user.id);
+    },
+  });
+
+  const { get } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  clearQueries();
+  expect((await get('/test/comments?userId=1&include=user')).data).toEqual({
+    meta: {
+      page: 0,
+      limit: 50,
+      hasMore: false,
+      '@url': '/test/comments?userId=1&include=user',
+      '@links': {
+        count: '/test/comments/count?userId=1&include=user',
+        ids: '/test/comments/ids?userId=1&include=user',
+      },
+    },
+    data: Array.from({ length: 10 }, (_, index) => ({
+      '@links': index + 1 === 1 ? { replyToComment: '/test/comments/5' } : {},
+      '@url': `/test/comments/${index + 1}`,
+      id: index + 1,
+      replyToCommentId: index + 1 === 1 ? 5 : null,
+      userId: 1,
+      body: String(index),
+      user: {
+        '@links': {
+          comments: '/test/comments?userId=1',
+        },
+        '@url': '/test/users/1',
+        email: '1@abc.com',
+        id: 1,
+      },
+    })),
+  });
+});
+
 it('reflects endpoints from the database', async () => {
   await knex.schema.withSchema('test').createTable('users', t => {
     t.bigIncrements('id').primary();
@@ -1319,6 +1435,46 @@ it('supports plugins like withTimestamp', async () => {
     },
   });
 
+  // passing an invalid since is ignored
+  expect(
+    (await get(`/test/comments?since=${encodeURIComponent('trash')}`)).data
+  ).toEqual({
+    data: [
+      {
+        '@links': {
+          user: '/test/users/1',
+        },
+        '@url': '/test/comments/1',
+        body: '0',
+        createdAt: '2020-05-01T06:00:00.000Z',
+        id: 1,
+        updatedAt: '2020-05-01T06:00:00.000Z',
+        userId: 1,
+      },
+      {
+        '@links': {
+          user: '/test/users/1',
+        },
+        '@url': '/test/comments/2',
+        body: '1',
+        createdAt: '2020-05-01T06:00:00.000Z',
+        id: 2,
+        updatedAt: '2020-05-01T06:00:00.000Z',
+        userId: 1,
+      },
+    ],
+    meta: {
+      '@links': {
+        count: '/test/comments/count?since=trash',
+        ids: '/test/comments/ids?since=trash',
+      },
+      '@url': '/test/comments?since=trash',
+      hasMore: false,
+      page: 0,
+      limit: 50,
+    },
+  });
+
   // make sure updatedAt is updated
   const beforeUpdate = (await get('/test/comments/1')).data.data;
 
@@ -1411,7 +1567,7 @@ it('supports paranoid', async () => {
     })
   );
 
-  const { get, delete: del } = await create(core, {
+  const { get, delete: del, post } = await create(core, {
     headers: {
       impersonate: '1',
     },
@@ -1507,6 +1663,29 @@ it('supports paranoid', async () => {
   const comments = await knex('test.comments');
 
   expect(comments.every(comment => comment.deletedAt !== null)).toBe(true);
+
+  const {
+    data: { data: created },
+  } = await post('/test/comments', {
+    body: 'thing',
+    userId: 1,
+  });
+
+  expect(created).toEqual({
+    '@links': {
+      user: '/test/users/1',
+    },
+    '@url': '/test/comments/3',
+    body: 'thing',
+    createdAt: created.createdAt,
+    deletedAt: null,
+    id: 3,
+    updatedAt: created.updatedAt,
+    userId: 1,
+  });
+
+  expect(created.createdAt).not.toBe(null);
+  expect(created.updatedAt).not.toBe(null);
 });
 
 it('provides an eventsource endpoint', async () => {
@@ -1686,6 +1865,15 @@ it('saves typescript types', async () => {
     t.timestamp('deleted_at', { useTz: true });
   });
 
+  await knex.schema.withSchema('test').createTable('comments', t => {
+    t.bigIncrements('id').primary();
+    t.bigInteger('user_id').notNullable();
+    t.string('body').notNullable();
+    t.foreign('user_id')
+      .references('id')
+      .inTable('test.users');
+  });
+
   const tsPath = path.join(__dirname, './__ts_out');
 
   const core = Core(knex, getContext, {
@@ -1695,6 +1883,11 @@ it('saves typescript types', async () => {
   core.table({
     schemaName: 'test',
     tableName: 'users',
+  });
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'comments',
   });
 
   const { get } = await create(core, {
