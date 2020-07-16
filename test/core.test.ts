@@ -704,16 +704,16 @@ it('handles relations', async () => {
 
   clearQueries();
   expect(
-    (await get('/test/comments?userId=1&include=user')).data
+    (await get('/test/comments?userId=1&include[]=user')).data
   ).toStrictEqual({
     meta: {
       page: 0,
       limit: 50,
       hasMore: false,
-      '@url': '/test/comments?userId=1&include=user',
+      '@url': '/test/comments?userId=1&include[]=user',
       '@links': {
-        count: '/test/comments/count?userId=1&include=user',
-        ids: '/test/comments/ids?userId=1&include=user',
+        count: '/test/comments/count?userId=1&include[]=user',
+        ids: '/test/comments/ids?userId=1&include[]=user',
       },
     },
     data: Array.from({ length: 10 }, (_, index) => ({
@@ -739,7 +739,7 @@ it('handles relations', async () => {
   expect(queries.length).toBe(2);
 
   clearQueries();
-  expect((await get('/test/users/me?include=comments')).data).toStrictEqual({
+  expect((await get('/test/users/me?include[]=comments')).data).toStrictEqual({
     data: {
       '@links': {},
       '@url': '/test/users/1',
@@ -759,15 +759,15 @@ it('handles relations', async () => {
   expect(queries.length).toBe(2);
 
   clearQueries();
-  expect((await get('/test/comments?mine&include=user')).data).toStrictEqual({
+  expect((await get('/test/comments?mine&include[]=user')).data).toStrictEqual({
     meta: {
       page: 0,
       limit: 50,
       hasMore: false,
-      '@url': '/test/comments?mine&include=user',
+      '@url': '/test/comments?mine&include[]=user',
       '@links': {
-        count: '/test/comments/count?mine=&include=user',
-        ids: '/test/comments/ids?mine=&include=user',
+        count: '/test/comments/count?mine=&include[]=user',
+        ids: '/test/comments/ids?mine=&include[]=user',
       },
     },
     data: Array.from({ length: 10 }, (_, index) => ({
@@ -1171,15 +1171,15 @@ it('handles nullable relations', async () => {
   });
 
   clearQueries();
-  expect((await get('/test/comments?userId=1&include=user')).data).toEqual({
+  expect((await get('/test/comments?userId=1&include[]=user')).data).toEqual({
     meta: {
       page: 0,
       limit: 50,
       hasMore: false,
-      '@url': '/test/comments?userId=1&include=user',
+      '@url': '/test/comments?userId=1&include[]=user',
       '@links': {
-        count: '/test/comments/count?userId=1&include=user',
-        ids: '/test/comments/ids?userId=1&include=user',
+        count: '/test/comments/count?userId=1&include[]=user',
+        ids: '/test/comments/ids?userId=1&include[]=user',
       },
     },
     data: Array.from({ length: 10 }, (_, index) => ({
@@ -1935,6 +1935,61 @@ it('handles tables in the public schema', async () => {
         ids: '/testTable/ids',
       },
       '@url': '/testTable',
+      hasMore: false,
+      limit: 50,
+      page: 0,
+    },
+  });
+});
+
+it('handles getters', async () => {
+  await knex.schema.withSchema('test').createTable('users', t => {
+    t.bigIncrements('id').primary();
+    t.string('email')
+      .notNullable()
+      .unique();
+  });
+
+  const core = Core(knex, getContext);
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'users',
+    getters: {
+      async avatar(row) {
+        return row.email ? `http://avatar.io/${row.email}` : undefined;
+      },
+    },
+  });
+
+  const { get } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  await knex('test.users').insert({
+    email: 'thing@thang.com',
+  });
+
+  const { data: out } = await get('/test/users');
+
+  expect(out).toEqual({
+    data: [
+      {
+        '@links': {},
+        '@url': '/test/users/1',
+        avatar: 'http://avatar.io/thing@thang.com',
+        email: 'thing@thang.com',
+        id: 1,
+      },
+    ],
+    meta: {
+      '@links': {
+        count: '/test/users/count',
+        ids: '/test/users/ids',
+      },
+      '@url': '/test/users',
       hasMore: false,
       limit: 50,
       page: 0,

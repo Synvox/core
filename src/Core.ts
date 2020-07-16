@@ -64,6 +64,13 @@ const wrap = (
   }
 };
 
+const qsStringify = (val: any) => {
+  return qs.stringify(val, {
+    encodeValuesOnly: true,
+    arrayFormat: 'brackets',
+  });
+};
+
 export interface ContextFactory<Context> {
   (req: Request, res: Response): Context;
 }
@@ -128,8 +135,9 @@ export default function core<Context>(
     return relationsForCache.get(table)!;
   };
 
-  const processTableRow = (
+  const processTableRow = async (
     req: Request,
+    context: Context,
     table: Table<Context>,
     inputRow: any
   ) => {
@@ -144,15 +152,18 @@ export default function core<Context>(
       if (row[column] === null) continue;
       if (row[key] === undefined)
         result[key] = `${origin}${req.baseUrl}${table.path}/${row[column]}`;
-      else row[key] = processTableRow(req, table, row[key]);
+      else row[key] = await processTableRow(req, context, table, row[key]);
     }
 
     for (let { table, column, key } of hasMany) {
       if (row[key] === undefined)
         result[key] = `${origin}${table.path}?${column}=${row.id}`;
       else
-        row[key] = row[key].map((item: any) =>
-          processTableRow(req, table, item)
+        row[key] = await Promise.all(
+          row[key].map(
+            async (item: any) =>
+              await processTableRow(req, context, table, item)
+          )
         );
     }
 
@@ -161,6 +172,10 @@ export default function core<Context>(
       if (row.hasOwnProperty(key) && !table.hiddenColumns.includes(key)) {
         outputRow[key] = row[key];
       }
+    }
+
+    for (let key in table.getters) {
+      outputRow[key] = await table.getters[key](row, context);
     }
 
     return {
@@ -207,9 +222,7 @@ export default function core<Context>(
       const context = getContext(req, res);
 
       const includeRelated = async (stmt: QueryBuilder) => {
-        const { include: rawInclude = '' } = req.query;
-
-        const include = rawInclude.split(',');
+        const { include = [] } = req.query;
 
         for (let includeTable of include) {
           let isOne = true;
@@ -330,7 +343,7 @@ export default function core<Context>(
           ...(!req.query.page
             ? {
                 ...(results.length >= limit && {
-                  nextPage: `${origin}${path}?${qs.stringify({
+                  nextPage: `${origin}${path}?${qsStringify({
                     ...req.query,
                     lastId: results[results.length - 1].id,
                   })}`,
@@ -338,13 +351,13 @@ export default function core<Context>(
               }
             : {
                 ...(results.length >= limit && {
-                  nextPage: `${origin}${path}?${qs.stringify({
+                  nextPage: `${origin}${path}?${qsStringify({
                     ...req.query,
                     page: page + 1,
                   })}`,
                 }),
                 ...(page !== 0 && {
-                  previousPage: `${origin}${path}?${qs.stringify({
+                  previousPage: `${origin}${path}?${qsStringify({
                     ...req.query,
                     page: page - 1,
                   })}`,
@@ -352,10 +365,10 @@ export default function core<Context>(
               }),
           count: `${origin}${path}/count${
             Object.keys(req.query).length > 0 ? '?' : ''
-          }${qs.stringify(req.query)}`,
+          }${qsStringify(req.query)}`,
           ids: `${origin}${path}/ids${
             Object.keys(req.query).length > 0 ? '?' : ''
-          }${qs.stringify(req.query)}`,
+          }${qsStringify(req.query)}`,
         };
 
         return {
@@ -366,7 +379,12 @@ export default function core<Context>(
             '@url': `${origin}${req.url}`,
             '@links': links,
           },
-          data: results.map((item: any) => processTableRow(req, table, item)),
+          data: await Promise.all(
+            results.map(
+              async (item: any) =>
+                await processTableRow(req, context, table, item)
+            )
+          ),
         };
       };
 
@@ -400,7 +418,7 @@ export default function core<Context>(
         if (!data) throw new NotFoundError();
 
         return {
-          data: processTableRow(req, table, data),
+          data: await processTableRow(req, context, table, data),
         };
       }
     };
@@ -985,7 +1003,7 @@ export default function core<Context>(
           };
         }
 
-        row = processTableRow(req, table, row);
+        row = await processTableRow(req, context, table, row);
 
         for (let { column, key, table: otherTable } of hasMany) {
           const otherGraphs = graph[key];

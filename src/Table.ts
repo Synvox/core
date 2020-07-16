@@ -53,6 +53,12 @@ export interface Table<T> {
       context: ReturnType<ContextFactory<T>>
     ) => Promise<void>;
   };
+  getters: {
+    [key: string]: (
+      row: any,
+      context: ReturnType<ContextFactory<T>>
+    ) => Promise<any>;
+  };
   pluralForeignKeyMap: {
     [columnName: string]: string;
   };
@@ -275,6 +281,7 @@ export default function buildTable<T>(table: PartialTable<T>): Table<T> {
     idModifiers: {},
     queryModifiers: {},
     setters: {},
+    getters: {},
     readOnlyColumns: [],
     hiddenColumns: [],
 
