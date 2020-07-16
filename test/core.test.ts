@@ -1996,3 +1996,112 @@ it('handles getters', async () => {
     },
   });
 });
+
+it('handles upserts', async () => {
+  await knex.schema.withSchema('test').createTable('articles', t => {
+    t.bigIncrements('id').primary();
+  });
+  await knex.schema.withSchema('test').createTable('article_types', t => {
+    t.bigIncrements('id').primary();
+    t.bigInteger('article_id')
+      .references('id')
+      .inTable('test.articles');
+    t.text('type');
+    t.text('initial');
+    t.text('update');
+    t.unique(['article_id', 'type']);
+  });
+
+  const core = Core(knex, getContext);
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'articles',
+  });
+  core.table({
+    schemaName: 'test',
+    tableName: 'articleTypes',
+    allowUpserts: true,
+  });
+
+  const { get, put } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  const [article] = await knex('test.articles')
+    .insert({})
+    .returning('*');
+
+  await knex('test.article_types')
+    .insert({
+      articleId: article.id,
+      type: 'type',
+      initial: 'something',
+      update: '1',
+    })
+    .returning('*');
+
+  const { data: out } = await get('/test/articles?include[]=articleTypes');
+
+  expect(out).toEqual({
+    data: [
+      {
+        '@links': {},
+        '@url': '/test/articles/1',
+        articleTypes: [
+          {
+            '@links': {
+              article: '/test/articles/1',
+            },
+            '@url': '/test/articleTypes/1',
+            articleId: 1,
+            id: 1,
+            type: 'type',
+            initial: 'something',
+            update: '1',
+          },
+        ],
+        id: 1,
+      },
+    ],
+    meta: {
+      '@links': {
+        count: '/test/articles/count?include[]=articleTypes',
+        ids: '/test/articles/ids?include[]=articleTypes',
+      },
+      '@url': '/test/articles?include[]=articleTypes',
+      hasMore: false,
+      limit: 50,
+      page: 0,
+    },
+  });
+
+  const {
+    data: { data },
+  } = await put('/test/articles/1', {
+    articleTypes: [{ type: 'type', update: '2' }],
+  });
+
+  expect(data).toEqual({
+    '@links': {
+      articleTypes: '/test/articleTypes?articleId=1',
+    },
+    '@url': '/test/articles/1',
+    articleTypes: [
+      {
+        '@links': {
+          article: '/test/articles/1',
+        },
+        '@url': '/test/articleTypes/1',
+        articleId: 1,
+        id: 1,
+        initial: 'something',
+        update: '2',
+        type: 'type',
+      },
+    ],
+    id: 1,
+  });
+});

@@ -25,6 +25,7 @@ export type PartialTable<T> = { tableName: string } & Partial<{
   readOnlyColumns: string[];
   hiddenColumns: string[];
   paranoid: boolean;
+  allowUpserts: boolean;
   router: Router;
   idModifiers: {
     [name: string]: (
@@ -161,8 +162,8 @@ export async function initTable<Context>(
   const uniqueConstraints = await knex('pg_catalog.pg_constraint con')
     .join('pg_catalog.pg_class rel', 'rel.oid', 'con.conrelid')
     .join('pg_catalog.pg_namespace nsp', 'nsp.oid', 'connamespace')
-    .where('nsp.nspname', table.schemaName)
-    .where('rel.relname', table.tableName)
+    .where('nsp.nspname', transformKey(table.schemaName, caseMethods.snake))
+    .where('rel.relname', transformKey(table.tableName, caseMethods.snake))
     .where('con.contype', 'u')
     .select('con.conkey as indexes')
     .then(rows => rows.map(r => r.indexes as number[]));
@@ -275,6 +276,7 @@ export default function buildTable<T>(table: PartialTable<T>): Table<T> {
     relations: {},
     schema: {},
     paranoid: false,
+    allowUpserts: false,
     pluralForeignKeyMap: {},
     idModifiers: {},
     queryModifiers: {},

@@ -544,6 +544,63 @@ export default function core<Context>(
       const context = getContext(req, res);
       const beforeCommitCallbacks: Array<() => Promise<void>> = [];
 
+      const fixUpserts = async (table: Table<Context>, graph: any) => {
+        const { hasOne, hasMany } = relationsFor(table);
+
+        for (let { column, key, table: otherTable } of hasOne) {
+          const otherGraph = graph[key];
+          if (otherGraph === undefined) continue;
+          if (otherGraph.id) graph[column] = (otherGraph as any).id;
+          graph[key] = await fixUpserts(otherTable, otherGraph);
+        }
+
+        for (let { key, column, table: otherTable } of hasMany) {
+          const otherGraphs = graph[key];
+          if (otherGraphs === undefined || !Array.isArray(otherGraphs))
+            continue;
+
+          graph[key] = await Promise.all(
+            graph[key].map((otherGraph: any) =>
+              fixUpserts(otherTable, {
+                ...otherGraph,
+                [column]: (graph as any).id || otherGraph[column],
+              })
+            )
+          );
+        }
+
+        if (
+          !table.allowUpserts ||
+          graph._delete ||
+          graph.id ||
+          !table.uniqueColumns.every(columns =>
+            columns.every(column => graph[column])
+          )
+        ) {
+          return graph;
+        }
+
+        // if there is a row, see if we can upsert to it
+        for (let columns of table.uniqueColumns) {
+          const upsertCheckStmt = query(table).first();
+
+          for (let column of columns) {
+            upsertCheckStmt.where(column, graph[column]);
+          }
+
+          table.policy(upsertCheckStmt, context, 'update');
+
+          const viewAbleRow = await upsertCheckStmt;
+
+          if (viewAbleRow) {
+            const graphCopy = { ...graph };
+            Object.assign(graph, viewAbleRow, graphCopy);
+          }
+        }
+
+        return graph;
+      };
+
       const validateGraph = async (table: Table<Context>, graph: any) => {
         const validate = async (table: Table<Context>, graph: any) => {
           const getYupSchema = () => {
@@ -1021,6 +1078,8 @@ export default function core<Context>(
 
         return row;
       };
+
+      graph = await fixUpserts(table, graph);
 
       const errors = await validateGraph(table, graph);
       if (errors) {
