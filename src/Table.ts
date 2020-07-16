@@ -12,24 +12,18 @@ import {
   singularize,
 } from 'inflection';
 
-export interface Table<T> {
-  tableName: string;
+export type PartialTable<T> = { tableName: string } & Partial<{
   schemaName: string;
-  tenantIdColumnName: string | undefined;
-  init: (knex: Knex, schemaPath?: string | null) => Promise<void>;
+  tenantIdColumnName: string | null;
   policy: (
     query: QueryBuilder,
     context: ReturnType<ContextFactory<T>>,
     mode: Mode
   ) => Promise<void>;
-  tablePath: string;
+  schema: { [columnName: string]: MixedSchema };
   path: string;
-  columns: { [columnName: string]: Knex.ColumnInfo } | null;
   readOnlyColumns: string[];
   hiddenColumns: string[];
-  uniqueColumns: Array<string[]>;
-  relations: { [key: string]: string };
-  schema: { [columnName: string]: MixedSchema };
   paranoid: boolean;
   router: Router;
   idModifiers: {
@@ -62,21 +56,27 @@ export interface Table<T> {
   pluralForeignKeyMap: {
     [columnName: string]: string;
   };
-  beforeUpdate?: (
+  beforeUpdate: (
     trx: Transaction,
     row: any,
     mode: 'insert' | 'update' | 'delete',
     context: ReturnType<ContextFactory<T>>
   ) => Promise<void>;
-  afterUpdate?: (
+  afterUpdate: (
     trx: Transaction,
     row: any,
     mode: 'insert' | 'update' | 'delete',
     context: ReturnType<ContextFactory<T>>
   ) => Promise<void>;
-}
+}>;
 
-export type PartialTable<T> = { tableName: string } & Partial<Table<T>>;
+export type Table<T> = Required<PartialTable<T>> & {
+  columns: { [columnName: string]: Knex.ColumnInfo } | null;
+  tablePath: string;
+  uniqueColumns: Array<string[]>;
+  relations: { [key: string]: string };
+  schema: { [columnName: string]: MixedSchema };
+};
 
 export type TableEntry = {
   schemaName: string;
@@ -125,129 +125,127 @@ export async function saveSchema(filePath: string) {
   schema = {}; // no longer needed
 }
 
-export default function buildTable<T>(table: PartialTable<T>): Table<T> {
-  let initialized = false;
+export async function initTable<Context>(
+  table: Table<Context>,
+  knex: Knex,
+  schemaPath: string | null = null
+) {
+  table.schemaName = table.schemaName || 'public';
 
+  const key = `${table.schemaName}.${table.tableName}`;
+
+  if (schemaPath) {
+    const loadedSchema = await loadSchema(schemaPath);
+    if (loadedSchema[key]) {
+      const { columns, uniqueColumns, relations } = loadedSchema[key];
+
+      table.columns = columns;
+      table.uniqueColumns = uniqueColumns;
+      table.relations = relations;
+
+      return;
+    }
+  }
+
+  table.columns = ((await knex(table.tableName)
+    .withSchema(table.schemaName)
+    // pretty sure table is a bug in knex.
+    // columnInfo's type is only for a single column
+    .columnInfo()) as unknown) as { [columnName: string]: Knex.ColumnInfo };
+
+  if (table.paranoid && !('deletedAt' in table.columns))
+    throw new Error(
+      'Tried to make a paranoid table without a deletedAt column'
+    );
+
+  const uniqueConstraints = await knex('pg_catalog.pg_constraint con')
+    .join('pg_catalog.pg_class rel', 'rel.oid', 'con.conrelid')
+    .join('pg_catalog.pg_namespace nsp', 'nsp.oid', 'connamespace')
+    .where('nsp.nspname', table.schemaName)
+    .where('rel.relname', table.tableName)
+    .where('con.contype', 'u')
+    .select('con.conkey as indexes')
+    .then(rows => rows.map(r => r.indexes as number[]));
+
+  table.uniqueColumns = uniqueConstraints.map(indexes =>
+    indexes.map(
+      (index: number) =>
+        Object.keys(table.columns!)[
+          index - 1
+          // table is 1 indexed in postgres
+        ]
+    )
+  );
+
+  const { rows: refs } = await knex.raw(
+    `
+      select
+        kcu.column_name as column_name,
+        rel_kcu.table_schema as references_schema,
+        rel_kcu.table_name as references_table
+      from information_schema.table_constraints tco
+      join information_schema.key_column_usage kcu
+        on tco.constraint_schema = kcu.constraint_schema
+        and tco.constraint_name = kcu.constraint_name
+      join information_schema.referential_constraints rco
+        on tco.constraint_schema = rco.constraint_schema
+        and tco.constraint_name = rco.constraint_name
+      join information_schema.key_column_usage rel_kcu
+        on rco.unique_constraint_schema = rel_kcu.constraint_schema
+        and rco.unique_constraint_name = rel_kcu.constraint_name
+        and kcu.ordinal_position = rel_kcu.ordinal_position
+      where tco.constraint_type = 'FOREIGN KEY'
+        and rel_kcu.table_name is not null
+        and rel_kcu.column_name = 'id'
+        and kcu.table_schema = ?
+        and kcu.table_name = ?
+    `
+      .replace(/\s\s+/g, ' ')
+      .trim(),
+    [
+      transformKey(table.schemaName, caseMethods.snake),
+      transformKey(table.tableName, caseMethods.snake),
+    ]
+  );
+
+  const camelize = (str: string) => transformKey(str, caseMethods.camel);
+
+  table.relations = Object.fromEntries(
+    refs.map(
+      (ref: {
+        columnName: string;
+        referencesSchema: string;
+        referencesTable: string;
+      }) => [
+        camelize(ref.columnName),
+        `${camelize(ref.referencesSchema)}.${camelize(ref.referencesTable)}`,
+      ]
+    )
+  );
+
+  const className = classify(table.tableName);
+  const collectionName = humanize(underscore(table.tableName, true), true);
+  const name = titleize(underscore(className));
+
+  schema[key] = {
+    schemaName: table.schemaName,
+    tableName: table.tableName,
+    tablePath: key,
+    className,
+    collectionName,
+    name,
+    columns: table.columns,
+    uniqueColumns: table.uniqueColumns,
+    relations: table.relations,
+    queryModifiers: Object.keys(table.queryModifiers),
+    pluralForeignKeyMap: table.pluralForeignKeyMap,
+  };
+}
+
+export default function buildTable<T>(table: PartialTable<T>): Table<T> {
   return {
     schemaName: '',
-    tenantIdColumnName: undefined,
-
-    async init(knex: Knex, schemaPath: string | null = null) {
-      this.schemaName = this.schemaName || 'public';
-
-      const key = `${this.schemaName}.${this.tableName}`;
-      if (initialized) return;
-      initialized = true;
-
-      if (schemaPath) {
-        const loadedSchema = await loadSchema(schemaPath);
-        if (loadedSchema[key]) {
-          const { columns, uniqueColumns, relations } = loadedSchema[key];
-
-          this.columns = columns;
-          this.uniqueColumns = uniqueColumns;
-          this.relations = relations;
-
-          return;
-        }
-      }
-
-      this.columns = ((await knex(this.tableName)
-        .withSchema(this.schemaName)
-        // pretty sure this is a bug in knex.
-        // columnInfo's type is only for a single column
-        .columnInfo()) as unknown) as { [columnName: string]: Knex.ColumnInfo };
-
-      if (table.paranoid && !('deletedAt' in this.columns))
-        throw new Error(
-          'Tried to make a paranoid table without a deletedAt column'
-        );
-
-      const uniqueConstraints = await knex('pg_catalog.pg_constraint con')
-        .join('pg_catalog.pg_class rel', 'rel.oid', 'con.conrelid')
-        .join('pg_catalog.pg_namespace nsp', 'nsp.oid', 'connamespace')
-        .where('nsp.nspname', this.schemaName)
-        .where('rel.relname', this.tableName)
-        .where('con.contype', 'u')
-        .select('con.conkey as indexes')
-        .then(rows => rows.map(r => r.indexes as number[]));
-
-      this.uniqueColumns = uniqueConstraints.map(indexes =>
-        indexes.map(
-          (index: number) =>
-            Object.keys(this.columns!)[
-              index - 1
-              // this is 1 indexed in postgres
-            ]
-        )
-      );
-
-      const { rows: refs } = await knex.raw(
-        `
-          select
-            kcu.column_name as column_name,
-            rel_kcu.table_schema as references_schema,
-            rel_kcu.table_name as references_table
-          from information_schema.table_constraints tco
-          join information_schema.key_column_usage kcu
-            on tco.constraint_schema = kcu.constraint_schema
-            and tco.constraint_name = kcu.constraint_name
-          join information_schema.referential_constraints rco
-            on tco.constraint_schema = rco.constraint_schema
-            and tco.constraint_name = rco.constraint_name
-          join information_schema.key_column_usage rel_kcu
-            on rco.unique_constraint_schema = rel_kcu.constraint_schema
-            and rco.unique_constraint_name = rel_kcu.constraint_name
-            and kcu.ordinal_position = rel_kcu.ordinal_position
-          where tco.constraint_type = 'FOREIGN KEY'
-            and rel_kcu.table_name is not null
-            and rel_kcu.column_name = 'id'
-            and kcu.table_schema = ?
-            and kcu.table_name = ?
-        `
-          .replace(/\s\s+/g, ' ')
-          .trim(),
-        [
-          transformKey(this.schemaName, caseMethods.snake),
-          transformKey(this.tableName, caseMethods.snake),
-        ]
-      );
-
-      const camelize = (str: string) => transformKey(str, caseMethods.camel);
-
-      this.relations = Object.fromEntries(
-        refs.map(
-          (ref: {
-            columnName: string;
-            referencesSchema: string;
-            referencesTable: string;
-          }) => [
-            camelize(ref.columnName),
-            `${camelize(ref.referencesSchema)}.${camelize(
-              ref.referencesTable
-            )}`,
-          ]
-        )
-      );
-
-      const className = classify(this.tableName);
-      const collectionName = humanize(underscore(this.tableName, true), true);
-      const name = titleize(underscore(className));
-
-      schema[key] = {
-        schemaName: this.schemaName,
-        tableName: this.tableName,
-        tablePath: key,
-        className,
-        collectionName,
-        name,
-        columns: this.columns,
-        uniqueColumns: this.uniqueColumns,
-        relations: this.relations,
-        queryModifiers: Object.keys(this.queryModifiers),
-        pluralForeignKeyMap: this.pluralForeignKeyMap,
-      };
-    },
+    tenantIdColumnName: null,
 
     async policy(
       _query: QueryBuilder,
@@ -284,6 +282,9 @@ export default function buildTable<T>(table: PartialTable<T>): Table<T> {
     getters: {},
     readOnlyColumns: [],
     hiddenColumns: [],
+
+    async beforeUpdate() {},
+    async afterUpdate() {},
 
     ...table,
   };

@@ -17,6 +17,7 @@ import buildTable, {
   Table,
   saveTsTypes,
   PartialTable,
+  initTable,
 } from './Table';
 import { NotFoundError, UnauthorizedError } from './Errors';
 import sse from './sse';
@@ -754,11 +755,9 @@ export default function core<Context>(
 
           graph = { ...row, ...graph };
 
-          if (table.beforeUpdate) {
-            await table.beforeUpdate(trx, graph, 'update', context);
+          await table.beforeUpdate(trx, graph, 'update', context);
 
-            graph = filterGraph(table, graph);
-          }
+          graph = filterGraph(table, graph);
 
           const filteredByChanged = Object.fromEntries(
             Object.entries(graph).filter(
@@ -911,11 +910,9 @@ export default function core<Context>(
             await table.beforeUpdate(trx, row, 'delete', context);
           }
 
-          if (table.afterUpdate) {
-            beforeCommitCallbacks.push(() => {
-              return table.afterUpdate!(trx, row, 'delete', context);
-            });
-          }
+          beforeCommitCallbacks.push(() => {
+            return table.afterUpdate(trx, row, 'delete', context);
+          });
 
           async function cascade(table: Table<Context>) {
             const { hasMany } = relationsFor(table);
@@ -1081,7 +1078,7 @@ export default function core<Context>(
 
         await Promise.all(
           tables.map(table =>
-            table.init(knex, loadSchemaFromFile ? schemaPath : null)
+            initTable(table, knex, loadSchemaFromFile ? schemaPath : null)
           )
         );
 

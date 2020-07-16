@@ -1,18 +1,18 @@
-import core, {
+import Core, {
   ContextFactory,
   notifyChange,
   ChangeSummary,
   Mode,
 } from './Core';
 import { NotFoundError } from './Errors';
-import { Table } from './Table';
+import { Table, PartialTable } from './Table';
 import knexHelpers from './knexHelpers';
 import withTimestamps from './plugins/withTimestamps';
 
-export default core;
+export default Core;
 
 export {
-  core,
+  Core,
   ContextFactory,
   NotFoundError,
   Table,
@@ -21,4 +21,5 @@ export {
   notifyChange,
   ChangeSummary,
   Mode,
+  PartialTable,
 };
