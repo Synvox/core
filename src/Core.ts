@@ -245,8 +245,8 @@ export default function core<Context>(
           // make sure tenant ids are forwarded to subQueries where possible
           if (table.tenantIdColumnName && ref!.table.tenantIdColumnName) {
             subQuery.where(
-              `${ref!.table.tenantIdColumnName}`,
-              `${table.tenantIdColumnName}`
+              `${ref!.table.tableName}.${ref!.table.tenantIdColumnName}`,
+              knex.raw(`${table.tableName}.${table.tenantIdColumnName}`)
             );
           }
 

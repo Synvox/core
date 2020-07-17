@@ -2105,3 +2105,118 @@ it('handles upserts', async () => {
     id: 1,
   });
 });
+
+it('uses tenant ids for including related queries', async () => {
+  await knex.schema.withSchema('test').createTable('orgs', t => {
+    t.bigIncrements('id').primary();
+  });
+
+  await knex.schema.withSchema('test').createTable('parents', t => {
+    t.bigIncrements('id').primary();
+    t.bigInteger('org_id')
+      .references('id')
+      .inTable('test.orgs');
+  });
+
+  await knex.schema.withSchema('test').createTable('children', t => {
+    t.bigIncrements('id').primary();
+    t.bigInteger('org_id')
+      .references('id')
+      .inTable('test.orgs');
+    t.bigInteger('parent_id')
+      .references('id')
+      .inTable('test.parents');
+  });
+
+  const core = Core(knex, getContext);
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'orgs',
+  });
+  core.table({
+    schemaName: 'test',
+    tableName: 'parents',
+    tenantIdColumnName: 'orgId',
+  });
+  core.table({
+    schemaName: 'test',
+    tableName: 'children',
+    tenantIdColumnName: 'orgId',
+  });
+
+  const { get } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  const [org] = await knex('test.orgs')
+    .insert({})
+    .returning('*');
+
+  const [parent] = await knex('test.parents')
+    .insert({ orgId: org.id })
+    .returning('*');
+
+  for (let i = 0; i < 2; i++) {
+    await knex('test.children').insert({
+      orgId: org.id,
+      parentId: parent.id,
+    });
+  }
+
+  await get('/test/orgs');
+
+  queries = [];
+  const { data: out } = await get('/test/parents?include[]=children');
+
+  expect(out).toEqual({
+    data: [
+      {
+        '@links': {
+          org: '/test/orgs/1',
+        },
+        '@url': '/test/parents/1',
+        children: [
+          {
+            '@links': {
+              org: '/test/orgs/1',
+              parent: '/test/parents/1',
+            },
+            '@url': '/test/children/1',
+            id: 1,
+            orgId: 1,
+            parentId: 1,
+          },
+          {
+            '@links': {
+              org: '/test/orgs/1',
+              parent: '/test/parents/1',
+            },
+            '@url': '/test/children/2',
+            id: 2,
+            orgId: 1,
+            parentId: 1,
+          },
+        ],
+        id: 1,
+        orgId: 1,
+      },
+    ],
+    meta: {
+      '@links': {
+        count: '/test/parents/count?include[]=children',
+        ids: '/test/parents/ids?include[]=children',
+      },
+      '@url': '/test/parents?include[]=children',
+      hasMore: false,
+      limit: 50,
+      page: 0,
+    },
+  });
+
+  expect(queries).toEqual([
+    'select parents.*, array(select row_to_json(children) from test.children where children.org_id = parents.org_id and children.parent_id = parents.id limit 10) as children from test.parents order by parents.id asc limit ?',
+  ]);
+});
