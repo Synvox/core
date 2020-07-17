@@ -695,11 +695,14 @@ export default function core<Context>(
             for (let key in schema.describe().fields) {
               if (graph[key]) {
                 const validator = (schema.describe().fields as any)[key];
-                if (validator instanceof number) {
+                if (validator.type === 'number') {
                   graph[key] = Number(graph[key]);
                 }
-                if (validator instanceof date) {
+                if (validator.type === 'date') {
                   graph[key] = new Date(graph[key]);
+                }
+                if (validator.type === 'boolean') {
+                  graph[key] = Boolean(graph[key]) && graph[key] !== 'false';
                 }
               }
             }

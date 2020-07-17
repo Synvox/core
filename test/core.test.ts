@@ -2220,3 +2220,172 @@ it('uses tenant ids for including related queries', async () => {
     'select parents.*, array(select row_to_json(children) from test.children where children.org_id = parents.org_id and children.parent_id = parents.id limit 10) as children from test.parents order by parents.id asc limit ?',
   ]);
 });
+
+it('handles querystring changes like null, date, number', async () => {
+  await knex.schema.withSchema('test').createTable('resource', t => {
+    t.bigIncrements('id').primary();
+    t.boolean('nullable');
+    t.boolean('bool');
+    t.timestamp('date', { useTz: true });
+    t.integer('number');
+  });
+
+  const core = Core(knex, getContext);
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'resource',
+  });
+
+  const { get, post } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  const date = new Date();
+
+  const [row] = await knex('test.resource')
+    .insert({
+      bool: false,
+      date: date,
+      number: 1,
+    })
+    .returning('*');
+
+  await knex('test.resource')
+    .insert({
+      nullable: false,
+      bool: true,
+      date: date,
+      number: 1,
+    })
+    .returning('*');
+
+  await get('/test/resource');
+
+  expect((await get('/test/resource?nullable=')).data).toEqual({
+    data: [
+      {
+        '@links': {},
+        '@url': '/test/resource/1',
+        bool: false,
+        date: row.date.toISOString(),
+        id: 1,
+        nullable: null,
+        number: 1,
+      },
+    ],
+    meta: {
+      '@links': {
+        count: '/test/resource/count?nullable=',
+        ids: '/test/resource/ids?nullable=',
+      },
+      '@url': '/test/resource?nullable=',
+      hasMore: false,
+      limit: 50,
+      page: 0,
+    },
+  });
+
+  expect((await get('/test/resource?bool=false')).data).toEqual({
+    data: [
+      {
+        '@links': {},
+        '@url': '/test/resource/1',
+        bool: false,
+        date: row.date.toISOString(),
+        id: 1,
+        nullable: null,
+        number: 1,
+      },
+    ],
+    meta: {
+      '@links': {
+        count: '/test/resource/count?bool=false',
+        ids: '/test/resource/ids?bool=false',
+      },
+      '@url': '/test/resource?bool=false',
+      hasMore: false,
+      limit: 50,
+      page: 0,
+    },
+  });
+
+  expect((await get('/test/resource?bool=true')).data).toEqual({
+    data: [
+      {
+        '@links': {},
+        '@url': '/test/resource/2',
+        bool: true,
+        date: row.date.toISOString(),
+        id: 2,
+        nullable: false,
+        number: 1,
+      },
+    ],
+    meta: {
+      '@links': {
+        count: '/test/resource/count?bool=true',
+        ids: '/test/resource/ids?bool=true',
+      },
+      '@url': '/test/resource?bool=true',
+      hasMore: false,
+      limit: 50,
+      page: 0,
+    },
+  });
+
+  expect((await get('/test/resource?number=1')).data).toEqual({
+    data: [
+      {
+        '@links': {},
+        '@url': '/test/resource/1',
+        bool: false,
+        date: row.date.toISOString(),
+        id: 1,
+        nullable: null,
+        number: 1,
+      },
+      {
+        '@links': {},
+        '@url': '/test/resource/2',
+        bool: true,
+        date: row.date.toISOString(),
+        id: 2,
+        nullable: false,
+        number: 1,
+      },
+    ],
+    meta: {
+      '@links': {
+        count: '/test/resource/count?number=1',
+        ids: '/test/resource/ids?number=1',
+      },
+      '@url': '/test/resource?number=1',
+      hasMore: false,
+      limit: 50,
+      page: 0,
+    },
+  });
+
+  expect(
+    (
+      await post('/test/resource', {
+        date: date.toISOString(),
+        bool: 'false',
+        number: '1',
+      })
+    ).data
+  ).toEqual({
+    data: {
+      '@links': {},
+      '@url': '/test/resource/3',
+      bool: false,
+      date: date.toISOString(),
+      id: 3,
+      nullable: null,
+      number: 1,
+    },
+  });
+});
