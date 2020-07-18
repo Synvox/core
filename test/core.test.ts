@@ -256,18 +256,18 @@ it('reads tables', async () => {
   // read paginated (sorted)
   clearQueries();
   expect(
-    (await get('/test/users?limit=1&page=1&sort=email.asc')).data
+    (await get('/test/users?limit=1&page=1&sort=email')).data
   ).toStrictEqual({
     meta: {
       page: 1,
       limit: 1,
       hasMore: true,
-      '@url': '/test/users?limit=1&page=1&sort=email.asc',
+      '@url': '/test/users?limit=1&page=1&sort=email',
       '@links': {
-        ids: '/test/users/ids?limit=1&page=1&sort=email.asc',
-        count: '/test/users/count?limit=1&page=1&sort=email.asc',
-        nextPage: '/test/users?limit=1&page=2&sort=email.asc',
-        previousPage: '/test/users?limit=1&page=0&sort=email.asc',
+        ids: '/test/users/ids?limit=1&page=1&sort=email',
+        count: '/test/users/count?limit=1&page=1&sort=email',
+        nextPage: '/test/users?limit=1&page=2&sort=email',
+        previousPage: '/test/users?limit=1&page=0&sort=email',
       },
     },
     data: [
@@ -282,6 +282,66 @@ it('reads tables', async () => {
   expect(queries.length).toBe(1);
   expect(lastQuery()).toBe(
     'select users.* from test.users order by users.email asc limit ? offset ?'
+  );
+
+  clearQueries();
+  expect(
+    (await get('/test/users?limit=1&page=1&sort=-email')).data
+  ).toStrictEqual({
+    meta: {
+      page: 1,
+      limit: 1,
+      hasMore: true,
+      '@url': '/test/users?limit=1&page=1&sort=-email',
+      '@links': {
+        ids: '/test/users/ids?limit=1&page=1&sort=-email',
+        count: '/test/users/count?limit=1&page=1&sort=-email',
+        nextPage: '/test/users?limit=1&page=2&sort=-email',
+        previousPage: '/test/users?limit=1&page=0&sort=-email',
+      },
+    },
+    data: [
+      {
+        '@links': {},
+        '@url': `/test/users/8`,
+        id: 8,
+        email: `8@abc.com`,
+      },
+    ],
+  });
+  expect(queries.length).toBe(1);
+  expect(lastQuery()).toBe(
+    'select users.* from test.users order by users.email desc limit ? offset ?'
+  );
+
+  clearQueries();
+  expect(
+    (await get('/test/users?limit=1&page=1&sort[]=-email&sort[]=id')).data
+  ).toStrictEqual({
+    meta: {
+      page: 1,
+      limit: 1,
+      hasMore: true,
+      '@url': '/test/users?limit=1&page=1&sort[]=-email&sort[]=id',
+      '@links': {
+        ids: '/test/users/ids?limit=1&page=1&sort[]=-email&sort[]=id',
+        count: '/test/users/count?limit=1&page=1&sort[]=-email&sort[]=id',
+        nextPage: '/test/users?limit=1&page=2&sort[]=-email&sort[]=id',
+        previousPage: '/test/users?limit=1&page=0&sort[]=-email&sort[]=id',
+      },
+    },
+    data: [
+      {
+        '@links': {},
+        '@url': `/test/users/8`,
+        id: 8,
+        email: `8@abc.com`,
+      },
+    ],
+  });
+  expect(queries.length).toBe(1);
+  expect(lastQuery()).toBe(
+    'select users.* from test.users order by users.email desc, users.id asc limit ? offset ?'
   );
 
   // read paginated by keyset (sorted)
@@ -312,6 +372,36 @@ it('reads tables', async () => {
   expect(queries.length).toBe(1);
   expect(lastQuery()).toBe(
     'select users.* from test.users inner join test.users as prev on prev.id = ? where ((users.email > prev.email)) order by users.email asc limit ?'
+  );
+
+  // read paginated by keyset (sorted)
+  clearQueries();
+  expect(
+    (await get('/test/users?limit=1&lastId=1&sort[]=email&sort[]=-id')).data
+  ).toStrictEqual({
+    meta: {
+      page: 0,
+      limit: 1,
+      hasMore: true,
+      '@url': '/test/users?limit=1&lastId=1&sort[]=email&sort[]=-id',
+      '@links': {
+        count: '/test/users/count?limit=1&lastId=1&sort[]=email&sort[]=-id',
+        ids: '/test/users/ids?limit=1&lastId=1&sort[]=email&sort[]=-id',
+        nextPage: '/test/users?limit=1&lastId=2&sort[]=email&sort[]=-id',
+      },
+    },
+    data: [
+      {
+        '@links': {},
+        '@url': `/test/users/2`,
+        id: 2,
+        email: `2@abc.com`,
+      },
+    ],
+  });
+  expect(queries.length).toBe(1);
+  expect(lastQuery()).toBe(
+    'select users.* from test.users inner join test.users as prev on prev.id = ? where ((users.email > prev.email) or (users.email = prev.email and users.id < prev.id)) order by users.email asc, users.id desc limit ?'
   );
 
   // get by id
@@ -1025,7 +1115,74 @@ it('handles relations', async () => {
     ).status
   ).toStrictEqual(401);
   expect(queries.length).toBe(3);
+  expect(events.length).toBe(0);
+  events = [];
 
+  const [newPost] = await knex('test.comments')
+    .insert({
+      userId: 2,
+      body: 'thing',
+    })
+    .returning('*');
+  clearQueries();
+  expect(
+    (
+      await put(`/test/comments/${newPost.id}`, {
+        body: 'hey',
+        userId: 2,
+      }).catch(e => {
+        return e.response;
+      })
+    ).status
+  ).toStrictEqual(401);
+  expect(queries.length).toBe(2);
+  expect(events.length).toBe(0);
+  events = [];
+
+  clearQueries();
+  expect(
+    (
+      await put(`/test/comments/${newPost.id}`, {
+        body: 'hey',
+        userId: 1,
+      }).catch(e => {
+        return e.response;
+      })
+    ).status
+  ).toStrictEqual(401);
+  expect(queries.length).toBe(2);
+  expect(events.length).toBe(0);
+  events = [];
+
+  const [newPost2] = await knex('test.comments')
+    .insert({
+      userId: 1,
+      body: 'thing',
+    })
+    .returning('*');
+  expect(
+    (
+      await get(`/test/comments/${newPost2.id}`).catch(e => {
+        return e.response;
+      })
+    ).status
+  ).toStrictEqual(200);
+  clearQueries();
+  events = [];
+  expect(
+    (
+      await put(`/test/comments/${newPost2.id}`, {
+        body: 'hey',
+        userId: 2,
+      }).catch(e => {
+        return e.response;
+      })
+    ).status
+  ).toStrictEqual(401);
+  expect(queries).toEqual([
+    'select * from test.users where id = ? limit ?',
+    'select comments.* from test.comments where comments.user_id = ? and comments.id = ? and user_id = ? limit ?',
+  ]);
   expect(events.length).toBe(0);
   events = [];
 
@@ -2115,17 +2272,22 @@ it('uses tenant ids for including related queries', async () => {
     t.bigIncrements('id').primary();
     t.bigInteger('org_id')
       .references('id')
-      .inTable('test.orgs');
+      .inTable('test.orgs')
+      .notNullable();
   });
 
   await knex.schema.withSchema('test').createTable('children', t => {
     t.bigIncrements('id').primary();
     t.bigInteger('org_id')
       .references('id')
-      .inTable('test.orgs');
+      .inTable('test.orgs')
+      .notNullable();
     t.bigInteger('parent_id')
       .references('id')
       .inTable('test.parents');
+    t.string('uid')
+      .unique()
+      .notNullable();
   });
 
   const core = Core(knex, getContext);
@@ -2145,7 +2307,7 @@ it('uses tenant ids for including related queries', async () => {
     tenantIdColumnName: 'orgId',
   });
 
-  const { get } = await create(core, {
+  const { get, post, put, delete: del } = await create(core, {
     headers: {
       impersonate: '1',
     },
@@ -2163,6 +2325,7 @@ it('uses tenant ids for including related queries', async () => {
     await knex('test.children').insert({
       orgId: org.id,
       parentId: parent.id,
+      uid: i,
     });
   }
 
@@ -2188,6 +2351,7 @@ it('uses tenant ids for including related queries', async () => {
             id: 1,
             orgId: 1,
             parentId: 1,
+            uid: '0',
           },
           {
             '@links': {
@@ -2198,6 +2362,7 @@ it('uses tenant ids for including related queries', async () => {
             id: 2,
             orgId: 1,
             parentId: 1,
+            uid: '1',
           },
         ],
         id: 1,
@@ -2219,6 +2384,99 @@ it('uses tenant ids for including related queries', async () => {
   expect(queries).toEqual([
     'select parents.*, array(select row_to_json(children) from test.children where children.org_id = parents.org_id and children.parent_id = parents.id limit 10) as children from test.parents order by parents.id asc limit ?',
   ]);
+
+  expect(
+    (
+      await post('/test/parents', {
+        orgId: 1,
+        children: [{ orgId: 1, uid: 'post' }],
+      })
+    ).data
+  ).toEqual({
+    data: {
+      '@links': {
+        children: '/test/children?parentId=2',
+        org: '/test/orgs/1',
+      },
+      '@url': '/test/parents/2',
+      children: [
+        {
+          '@links': {
+            org: '/test/orgs/1',
+            parent: '/test/parents/2',
+          },
+          '@url': '/test/children/3',
+          id: 3,
+          orgId: 1,
+          parentId: 2,
+          uid: 'post',
+        },
+      ],
+      id: 2,
+      orgId: 1,
+    },
+  });
+
+  expect((await post('/test/parents', {}).catch(r => r.response)).data).toEqual(
+    {
+      errors: {
+        orgId: 'is required',
+      },
+    }
+  );
+
+  expect(
+    (await put('/test/parents/2', {}).catch(r => r.response)).data
+  ).toEqual({
+    errors: {
+      orgId: 'is required',
+    },
+  });
+
+  expect(
+    (await del('/test/parents/2', {}).catch(r => r.response)).data
+  ).toEqual({
+    errors: {
+      orgId: 'is required',
+    },
+  });
+
+  expect(
+    (await post('/test/children', { uid: 'post' }).catch(r => r.response)).data
+  ).toEqual({
+    errors: {
+      orgId: 'is required',
+      uid: 'is already in use',
+    },
+  });
+
+  expect(
+    (
+      await post('/test/children', { uid: 'post', orgId: 1 }).catch(
+        r => r.response
+      )
+    ).data
+  ).toEqual({
+    errors: {
+      uid: 'is already in use',
+    },
+  });
+
+  expect(
+    (await post('/test/children', { uid: 'post', orgId: 1, id: 3 })).data
+  ).toEqual({
+    data: {
+      '@links': {
+        org: '/test/orgs/1',
+        parent: '/test/parents/2',
+      },
+      '@url': '/test/children/3',
+      id: 3,
+      orgId: 1,
+      parentId: 2,
+      uid: 'post',
+    },
+  });
 });
 
 it('handles querystring changes like null, date, number', async () => {
@@ -2388,4 +2646,131 @@ it('handles querystring changes like null, date, number', async () => {
       number: 1,
     },
   });
+});
+
+it('allows specifying an origin', async () => {
+  await knex.schema.withSchema('test').createTable('resource', t => {
+    t.bigIncrements('id').primary();
+  });
+  await knex.schema.withSchema('test').createTable('children', t => {
+    t.bigIncrements('id').primary();
+    t.bigInteger('resource_id')
+      .references('id')
+      .inTable('test.resource');
+  });
+
+  const [resource] = await knex('test.resource')
+    .insert({})
+    .returning('*');
+  await knex('test.children').insert({
+    resourceId: resource.id,
+  });
+
+  const core = Core(knex, getContext, { origin: 'http://localhost:3000' });
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'resource',
+  });
+  core.table({
+    schemaName: 'test',
+    tableName: 'children',
+  });
+
+  const { get } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  expect((await get('/test/resource')).data).toEqual({
+    data: [
+      {
+        '@links': {
+          children: 'http://localhost:3000/test/children?resourceId=1',
+        },
+        '@url': 'http://localhost:3000/test/resource/1',
+        id: 1,
+      },
+    ],
+    meta: {
+      '@links': {
+        count: 'http://localhost:3000/test/resource/count',
+        ids: 'http://localhost:3000/test/resource/ids',
+      },
+      '@url': 'http://localhost:3000/test/resource',
+      hasMore: false,
+      limit: 50,
+      page: 0,
+    },
+  });
+});
+
+it('disallows edits that make a row uneditable', async () => {
+  await knex.schema.withSchema('test').createTable('users', t => {
+    t.bigIncrements('id').primary();
+  });
+  await knex.schema.withSchema('test').createTable('resource', t => {
+    t.bigIncrements('id').primary();
+    t.bigInteger('user_id')
+      .references('id')
+      .inTable('test.users');
+  });
+
+  await knex('test.users').insert({});
+  await knex('test.users').insert({});
+
+  await knex('test.resource')
+    .insert({
+      userId: 1,
+    })
+    .returning('*');
+
+  const core = Core(knex, getContext, { origin: 'http://localhost:3000' });
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'resource',
+    async policy(query: QueryBuilder, { getUser }) {
+      const user = await getUser();
+      if (!user) return;
+      query.where('resource.userId', user.id);
+    },
+  });
+
+  const { get, put } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  expect((await get('/test/resource/1')).data).toEqual({
+    data: {
+      '@links': {},
+      '@url': 'http://localhost:3000/test/resource/1',
+      id: 1,
+      userId: 1,
+    },
+  });
+
+  queries = [];
+  expect(
+    (
+      await put('/test/resource/1', {
+        userId: 2,
+      }).catch(e => e.response)
+    ).status
+  ).toEqual(401);
+  expect(queries).toEqual([
+    // get user
+    'select * from test.users where id = ? limit ?',
+    // get row for validations
+    'select resource.* from test.resource where resource.user_id = ? and resource.id = ? limit ?',
+    // get row for updating (in transaction)
+    'select resource.* from test.resource where resource.user_id = ? and resource.id = ? limit ?',
+    // update row
+    'update test.resource set user_id = ? where resource.user_id = ? and resource.id = ?',
+    // is row still visible?
+    'select resource.* from test.resource where resource.user_id = ? and resource.id = ? limit ?',
+  ]);
 });

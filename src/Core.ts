@@ -280,14 +280,20 @@ export default function core<Context>(
 
       const paginate = async (statement: QueryBuilder) => {
         const path = req.url.split('?').shift();
-        const { sort } = req.query;
+        let { sort } = req.query;
         const page = Number(req.query.page || 0);
         const limit = Math.max(0, Math.min(250, Number(req.query.limit) || 50));
 
         const sorts: { column: string; order: 'asc' | 'desc' }[] = [];
         if (sort) {
-          sort.split(',').forEach((pair: string) => {
-            const [column, order = 'asc'] = pair.split('.');
+          if (!Array.isArray(sort)) sort = [sort];
+
+          sort.forEach((column: string) => {
+            let order = 'asc';
+            if (column.startsWith('-')) {
+              order = 'desc';
+              column = column.slice(1);
+            }
 
             if (
               column in table.columns! &&
@@ -455,15 +461,6 @@ export default function core<Context>(
       }
 
       stmt.where(getWhereFiltersForTable(table, where));
-
-      const page = Number(req.query.page || 0);
-      const limit = Math.max(
-        0,
-        Math.min(100000, Number(req.query.limit) || 1000)
-      );
-
-      if (req.query.page) stmt.offset(page * limit);
-      if (req.query.limit) stmt.limit(limit);
 
       return {
         data: await stmt
@@ -682,7 +679,9 @@ export default function core<Context>(
               })
               .first();
 
-            if (!existing) throw new UnauthorizedError();
+            if (!existing) {
+              throw new UnauthorizedError();
+            }
 
             graph = {
               ...existing,
@@ -1236,9 +1235,7 @@ export default function core<Context>(
             wrap(async (req, res) => {
               return await write(req, res, table, {
                 ...req.body,
-                id: isNaN(Number(req.params.id))
-                  ? req.params.id
-                  : Number(req.params.id),
+                id: req.params.id,
               });
             })
           );
