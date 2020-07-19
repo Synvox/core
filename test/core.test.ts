@@ -794,16 +794,16 @@ it('handles relations', async () => {
 
   clearQueries();
   expect(
-    (await get('/test/comments?userId=1&include[]=user')).data
+    (await get('/test/comments?userId=1&include[]=user&include[]=notHere')).data
   ).toStrictEqual({
     meta: {
       page: 0,
       limit: 50,
       hasMore: false,
-      '@url': '/test/comments?userId=1&include[]=user',
+      '@url': '/test/comments?userId=1&include[]=user&include[]=notHere',
       '@links': {
-        count: '/test/comments/count?userId=1&include[]=user',
-        ids: '/test/comments/ids?userId=1&include[]=user',
+        count: '/test/comments/count?userId=1&include[]=user&include[]=notHere',
+        ids: '/test/comments/ids?userId=1&include[]=user&include[]=notHere',
       },
     },
     data: Array.from({ length: 10 }, (_, index) => ({
@@ -1845,6 +1845,227 @@ it('supports paranoid', async () => {
   expect(created.updatedAt).not.toBe(null);
 });
 
+it('supports paranoid with tenant ids', async () => {
+  await knex.schema.withSchema('test').createTable('orgs', t => {
+    t.bigIncrements('id').primary();
+  });
+
+  await knex.schema.withSchema('test').createTable('users', t => {
+    t.bigIncrements('id').primary();
+    t.bigInteger('org_id')
+      .references('id')
+      .inTable('test.orgs');
+    t.string('email')
+      .notNullable()
+      .unique();
+    t.timestamps(true, true);
+    t.timestamp('deleted_at', { useTz: true });
+  });
+
+  await knex.schema.withSchema('test').createTable('comments', t => {
+    t.bigIncrements('id').primary();
+    t.bigInteger('org_id')
+      .references('id')
+      .inTable('test.orgs');
+    t.bigInteger('user_id').notNullable();
+    t.string('body').notNullable();
+    t.timestamps(true, true);
+    t.timestamp('deleted_at', { useTz: true });
+    t.foreign('user_id')
+      .references('id')
+      .inTable('test.users');
+  });
+
+  const [org] = await knex('test.orgs')
+    .insert({})
+    .returning('*');
+
+  for (let i = 0; i < 2; i++) {
+    await knex('test.users').insert({
+      orgId: org.id,
+      email: `${i + 1}@abc.com`,
+    });
+
+    const date = new Date('May 1, 2020');
+
+    await knex('test.comments').insert({
+      orgId: org.id,
+      body: String(i),
+      userId: '1',
+      updatedAt: date,
+      createdAt: date,
+    });
+  }
+
+  const core = Core(knex, getContext);
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'users',
+    tenantIdColumnName: 'orgId',
+    paranoid: true,
+    schema: {
+      email: string().email(),
+    },
+    idModifiers: {
+      me: async (query, { getUser }) => {
+        const user = await getUser();
+        query.where('users.id', user.id);
+      },
+    },
+    async policy(query: QueryBuilder, { getUser }) {
+      const user = await getUser();
+      if (!user) return;
+      query.where('users.id', user.id);
+    },
+  });
+
+  core.table(
+    withTimestamps({
+      schemaName: 'test',
+      tableName: 'comments',
+      tenantIdColumnName: 'orgId',
+      paranoid: true,
+      queryModifiers: {
+        mine: async (_, query, { getUser }) => {
+          const user = await getUser();
+          query.where('comments.userId', user.id);
+        },
+      },
+      async policy(query: QueryBuilder, { getUser }) {
+        const user = await getUser();
+        if (!user) return;
+        query.where('comments.userId', user.id);
+      },
+    })
+  );
+
+  const { get, delete: del, post } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  let { data } = await get('/test/comments?orgId=1');
+
+  expect(data).toEqual({
+    data: [
+      {
+        '@links': {
+          user: '/test/users/1',
+        },
+        '@url': '/test/comments/1',
+        body: '0',
+        createdAt: '2020-05-01T06:00:00.000Z',
+        deletedAt: null,
+        id: 1,
+        updatedAt: '2020-05-01T06:00:00.000Z',
+        userId: 1,
+        orgId: 1,
+      },
+      {
+        '@links': {
+          user: '/test/users/1',
+        },
+        '@url': '/test/comments/2',
+        body: '1',
+        createdAt: '2020-05-01T06:00:00.000Z',
+        deletedAt: null,
+        id: 2,
+        updatedAt: '2020-05-01T06:00:00.000Z',
+        userId: 1,
+        orgId: 1,
+      },
+    ],
+    meta: {
+      '@links': {
+        count: '/test/comments/count?orgId=1',
+        ids: '/test/comments/ids?orgId=1',
+      },
+      '@url': '/test/comments?orgId=1',
+      hasMore: false,
+      page: 0,
+      limit: 50,
+    },
+  });
+
+  // make sure updatedAt is updated
+  const beforeUpdate = (await get('/test/comments/1')).data.data;
+
+  await del(`/test/comments/1?orgId=1`);
+
+  const afterUpdate = (await get('/test/comments/1')).data.data;
+
+  expect(beforeUpdate.deletedAt).toEqual(null);
+  expect(beforeUpdate.deletedAt).not.toEqual(afterUpdate.deletedAt);
+
+  let { data: afterData } = await get('/test/comments');
+  expect(afterData).toEqual({
+    data: [
+      {
+        '@links': {
+          user: '/test/users/1',
+        },
+        '@url': '/test/comments/2',
+        body: '1',
+        createdAt: '2020-05-01T06:00:00.000Z',
+        deletedAt: null,
+        id: 2,
+        updatedAt: '2020-05-01T06:00:00.000Z',
+        userId: 1,
+        orgId: 1,
+      },
+    ],
+    meta: {
+      '@links': {
+        count: '/test/comments/count',
+        ids: '/test/comments/ids',
+      },
+      '@url': '/test/comments',
+      hasMore: false,
+      page: 0,
+      limit: 50,
+    },
+  });
+
+  // make sure passing withDeleted gives the row
+  let { data: afterDataWithDeleted } = await get(
+    '/test/comments?withDeleted=true'
+  );
+  expect(afterDataWithDeleted.data.length).toEqual(2);
+
+  await del('/test/users/1?orgId=1');
+
+  const comments = await knex('test.comments');
+
+  expect(comments.every(comment => comment.deletedAt !== null)).toBe(true);
+
+  const {
+    data: { data: created },
+  } = await post('/test/comments', {
+    body: 'thing',
+    userId: 1,
+    orgId: 1,
+  });
+
+  expect(created).toEqual({
+    '@links': {
+      user: '/test/users/1',
+    },
+    '@url': '/test/comments/3',
+    body: 'thing',
+    createdAt: created.createdAt,
+    deletedAt: null,
+    id: 3,
+    updatedAt: created.updatedAt,
+    userId: 1,
+    orgId: 1,
+  });
+
+  expect(created.createdAt).not.toBe(null);
+  expect(created.updatedAt).not.toBe(null);
+});
+
 it('provides an eventsource endpoint', async () => {
   await knex.schema.withSchema('test').createTable('users', t => {
     t.bigIncrements('id').primary();
@@ -2166,6 +2387,7 @@ it('handles upserts', async () => {
     t.text('type');
     t.text('initial');
     t.text('update');
+    t.boolean('visible').defaultTo(true);
     t.unique(['article_id', 'type']);
   });
 
@@ -2179,6 +2401,9 @@ it('handles upserts', async () => {
     schemaName: 'test',
     tableName: 'articleTypes',
     allowUpserts: true,
+    async policy(stmt) {
+      stmt.where('visible', true);
+    },
   });
 
   const { get, put } = await create(core, {
@@ -2200,6 +2425,16 @@ it('handles upserts', async () => {
     })
     .returning('*');
 
+  await knex('test.article_types')
+    .insert({
+      articleId: article.id,
+      type: 'hidden',
+      initial: 'something',
+      update: '1',
+      visible: false,
+    })
+    .returning('*');
+
   const { data: out } = await get('/test/articles?include[]=articleTypes');
 
   expect(out).toEqual({
@@ -2218,6 +2453,7 @@ it('handles upserts', async () => {
             type: 'type',
             initial: 'something',
             update: '1',
+            visible: true,
           },
         ],
         id: 1,
@@ -2257,9 +2493,27 @@ it('handles upserts', async () => {
         initial: 'something',
         update: '2',
         type: 'type',
+        visible: true,
       },
     ],
     id: 1,
+  });
+
+  // this should fail because it's updating a unique item that is already in use
+  const { status, data: data2 } = await put('/test/articles/1', {
+    articleTypes: [{ type: 'hidden', update: '2' }],
+  }).catch(e => e.response);
+
+  expect(status).toEqual(400);
+  expect(data2).toEqual({
+    errors: {
+      articleTypes: [
+        {
+          articleId: 'is already in use',
+          type: 'is already in use',
+        },
+      ],
+    },
   });
 });
 
@@ -2773,4 +3027,57 @@ it('disallows edits that make a row uneditable', async () => {
     // is row still visible?
     'select resource.* from test.resource where resource.user_id = ? and resource.id = ? limit ?',
   ]);
+});
+
+it('allows setters', async () => {
+  await knex.schema.withSchema('test').createTable('resource', t => {
+    t.bigIncrements('id').primary();
+  });
+
+  const core = Core(knex, getContext);
+
+  let value = null;
+  let row = null;
+  core.table({
+    schemaName: 'test',
+    tableName: 'resource',
+    setters: {
+      async val(trx, v, r) {
+        // make sure this doesn't throw
+        await trx('test.resource');
+
+        value = v;
+        row = r;
+      },
+    },
+  });
+
+  const { post, put } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  expect((await post('/test/resource', { val: 1 })).data).toEqual({
+    data: {
+      '@links': {},
+      '@url': '/test/resource/1',
+      id: 1,
+    },
+  });
+  expect(value).toBe(1);
+  expect(row).toEqual({ id: 1 });
+
+  value = null;
+  row = null;
+
+  expect((await put('/test/resource/1', { val: 2 })).data).toEqual({
+    data: {
+      '@links': {},
+      '@url': '/test/resource/1',
+      id: 1,
+    },
+  });
+  expect(value).toBe(2);
+  expect(row).toEqual({ id: 1 });
 });

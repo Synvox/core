@@ -211,6 +211,27 @@ export default function core<Context>(
     return result;
   };
 
+  const applyModifiers = async (
+    stmt: QueryBuilder,
+    table: Table<Context>,
+    context: Context,
+    where: any
+  ) => {
+    if (Object.keys(table.idModifiers).includes(where.id)) {
+      const modifier = table.idModifiers[where.id];
+      await modifier.call(table, stmt, context);
+      delete where.id;
+    }
+
+    for (let key of Object.keys(where)) {
+      if (Object.keys(table.queryModifiers).includes(key)) {
+        const modifier = table.queryModifiers[key];
+        await modifier.call(table, where[key], stmt, context);
+        delete where[key];
+      }
+    }
+  };
+
   {
     const read = async (
       req: Request,
@@ -302,7 +323,7 @@ export default function core<Context>(
               sorts.push({ column, order });
             }
           });
-        } else sorts.push({ column: 'id', order: 'asc' });
+        }
 
         if (req.query.lastId) {
           // keyset pagination
@@ -338,11 +359,13 @@ export default function core<Context>(
 
         statement.limit(limit);
 
-        if (sorts.length) {
-          sorts.forEach(s =>
-            statement.orderBy(`${table.tableName}.${s.column}`, s.order)
-          );
+        if (sorts.length === 0) {
+          sorts.push({ column: 'id', order: 'asc' });
         }
+
+        sorts.forEach(s =>
+          statement.orderBy(`${table.tableName}.${s.column}`, s.order)
+        );
 
         const results = await statement;
 
@@ -401,19 +424,7 @@ export default function core<Context>(
 
       const where = { ...filters };
 
-      if (Object.keys(table.idModifiers).includes(where.id)) {
-        const modifier = table.idModifiers[where.id];
-        await modifier.call(table, stmt, context);
-        delete where.id;
-      }
-
-      for (let key of Object.keys(where)) {
-        if (Object.keys(table.queryModifiers).includes(key)) {
-          const modifier = table.queryModifiers[key];
-          await modifier.call(table, where[key], stmt, context);
-          delete where[key];
-        }
-      }
+      await applyModifiers(stmt, table, context, where);
 
       stmt.where(getWhereFiltersForTable(table, where));
 
@@ -446,19 +457,7 @@ export default function core<Context>(
 
       const where = { ...filters };
 
-      if (Object.keys(table.idModifiers).includes(where.id)) {
-        const modifier = table.idModifiers[where.id];
-        await modifier.call(table, stmt, context);
-        delete where.id;
-      }
-
-      for (let key of Object.keys(where)) {
-        if (Object.keys(table.queryModifiers).includes(key)) {
-          const modifier = table.queryModifiers[key];
-          await modifier.call(table, where[key], stmt, context);
-          delete where[key];
-        }
-      }
+      await applyModifiers(stmt, table, context, where);
 
       stmt.where(getWhereFiltersForTable(table, where));
 
@@ -481,19 +480,7 @@ export default function core<Context>(
 
       const where = { ...filters };
 
-      if (Object.keys(table.idModifiers).includes(where.id)) {
-        const modifier = table.idModifiers[where.id];
-        await modifier.call(table, stmt, context);
-        delete where.id;
-      }
-
-      for (let key of Object.keys(where)) {
-        if (Object.keys(table.queryModifiers).includes(key)) {
-          const modifier = table.queryModifiers[key];
-          await modifier.call(table, where[key], stmt, context);
-          delete where[key];
-        }
-      }
+      await applyModifiers(stmt, table, context, where);
 
       stmt.where(getWhereFiltersForTable(table, where));
 
@@ -828,22 +815,26 @@ export default function core<Context>(
             const stmt = query(table, trx);
             await table.policy.call(table, stmt, context, 'update');
 
-            if (Object.keys(filteredByChanged).length) {
-              await stmt
-                .where(`${table.tableName}.id`, graph.id)
-                .modify(function() {
-                  if (
-                    table.tenantIdColumnName &&
-                    graph[table.tenantIdColumnName]
-                  ) {
-                    this.where(
-                      `${table.tableName}.${table.tenantIdColumnName}`,
+            if (
+              Object.keys(filteredByChanged).length ||
+              Object.keys(table.setters).some(key => key in initialGraph)
+            ) {
+              if (Object.keys(filteredByChanged).length)
+                await stmt
+                  .where(`${table.tableName}.id`, graph.id)
+                  .modify(function() {
+                    if (
+                      table.tenantIdColumnName &&
                       graph[table.tenantIdColumnName]
-                    );
-                  }
-                })
-                .limit(1)
-                .update(filteredByChanged);
+                    ) {
+                      this.where(
+                        `${table.tableName}.${table.tenantIdColumnName}`,
+                        graph[table.tenantIdColumnName]
+                      );
+                    }
+                  })
+                  .limit(1)
+                  .update(filteredByChanged);
               trxNotifyCommit(trx, 'update', table, row);
 
               // in case an update now makes this row inaccessible
@@ -1094,16 +1085,16 @@ export default function core<Context>(
       let trxRef: null | Transaction = null;
 
       const data = await knex.transaction(async trx => {
-        const result = await updateGraph(trx, table, graph);
-        for (let cb of beforeCommitCallbacks) await cb();
-
         // Needs to emit commit after this function finishes
         trxRef = trx;
+
+        const result = await updateGraph(trx, table, graph);
+        for (let cb of beforeCommitCallbacks) await cb();
 
         return result;
       });
 
-      if (trxRef) trxRef!.emit('commit');
+      trxRef!.emit('commit');
 
       return { data };
     };
