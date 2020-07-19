@@ -19,7 +19,11 @@ import buildTable, {
   PartialTable,
   initTable,
 } from './Table';
-import { NotFoundError, UnauthorizedError } from './Errors';
+import {
+  NotFoundError,
+  UnauthorizedError,
+  //BadRequestError
+} from './Errors';
 import sse from './sse';
 
 const refPlaceholder = -1;
@@ -142,6 +146,12 @@ export default function core<Context>(
     table: Table<Context>,
     inputRow: any
   ) => {
+    let tenantId = null;
+    if (table.tenantIdColumnName) {
+      if (inputRow[table.tenantIdColumnName])
+        tenantId = inputRow[table.tenantIdColumnName];
+    }
+
     let row = { ...inputRow };
     const relations = relationsFor(table);
 
@@ -151,15 +161,19 @@ export default function core<Context>(
 
     for (let { table, column, key } of hasOne) {
       if (row[column] === null) continue;
-      if (row[key] === undefined)
+      if (row[key] === undefined) {
         result[key] = `${origin}${req.baseUrl}${table.path}/${row[column]}`;
-      else row[key] = await processTableRow(req, context, table, row[key]);
+        if (tenantId && table.tenantIdColumnName)
+          result[key] += `?${table.tenantIdColumnName}=${tenantId}`;
+      } else row[key] = await processTableRow(req, context, table, row[key]);
     }
 
     for (let { table, column, key } of hasMany) {
-      if (row[key] === undefined)
+      if (row[key] === undefined) {
         result[key] = `${origin}${table.path}?${column}=${row.id}`;
-      else
+        if (tenantId && table.tenantIdColumnName)
+          result[key] += `&${table.tenantIdColumnName}=${tenantId}`;
+      } else
         row[key] = await Promise.all(
           row[key].map(
             async (item: any) =>
@@ -179,9 +193,12 @@ export default function core<Context>(
       outputRow[key] = await table.getters[key](row, context);
     }
 
+    let selfUrl = `${origin}${req.baseUrl}${table.path}/${row.id}`;
+    if (tenantId) selfUrl += `?${table.tenantIdColumnName}=${tenantId}`;
+
     return {
       ...outputRow,
-      '@url': `${origin}${req.baseUrl}${table.path}/${row.id}`,
+      '@url': selfUrl,
       '@links': result,
     };
   };
@@ -242,6 +259,11 @@ export default function core<Context>(
     ) => {
       const withDeleted = Boolean(filters.withDeleted || !many);
       const context = getContext(req, res);
+
+      // if (table.tenantIdColumnName) {
+      //   const tenantId = filters[table.tenantIdColumnName];
+      //   if (!tenantId) throw new BadRequestError();
+      // }
 
       const includeRelated = async (stmt: QueryBuilder) => {
         const { include = [] } = req.query;

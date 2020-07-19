@@ -808,7 +808,7 @@ it('handles relations', async () => {
     },
     data: Array.from({ length: 10 }, (_, index) => ({
       '@links': {},
-      '@url': `/test/comments/${index + 1}`,
+      '@url': `/test/comments/${index + 1}?userId=1`,
       id: index + 1,
       userId: 1,
       body: String(index),
@@ -839,7 +839,7 @@ it('handles relations', async () => {
         '@links': {
           user: '/test/users/1',
         },
-        '@url': `/test/comments/${index + 1}`,
+        '@url': `/test/comments/${index + 1}?userId=1`,
         id: index + 1,
         userId: 1,
         body: String(index),
@@ -862,7 +862,7 @@ it('handles relations', async () => {
     },
     data: Array.from({ length: 10 }, (_, index) => ({
       '@links': {},
-      '@url': `/test/comments/${index + 1}`,
+      '@url': `/test/comments/${index + 1}?userId=1`,
       id: index + 1,
       userId: 1,
       body: String(index),
@@ -900,7 +900,7 @@ it('handles relations', async () => {
       '@links': {
         user: `/test/users/1`,
       },
-      '@url': `/test/comments/${index + 1}`,
+      '@url': `/test/comments/${index + 1}?userId=1`,
       id: index + 1,
       userId: 1,
       body: String(index),
@@ -965,7 +965,7 @@ it('handles relations', async () => {
           '@links': {
             user: '/test/users/11',
           },
-          '@url': '/test/comments/11',
+          '@url': '/test/comments/11?userId=11',
           body: 'hey',
           id: 11,
           userId: 11,
@@ -974,7 +974,7 @@ it('handles relations', async () => {
           '@links': {
             user: '/test/users/11',
           },
-          '@url': '/test/comments/12',
+          '@url': '/test/comments/12?userId=11',
           body: '123',
           id: 12,
           userId: 11,
@@ -1014,7 +1014,7 @@ it('handles relations', async () => {
   ).toStrictEqual({
     data: {
       '@links': {},
-      '@url': '/test/comments/13',
+      '@url': '/test/comments/13?userId=12',
       body: 'body',
       id: 13,
       user: {
@@ -1340,8 +1340,9 @@ it('handles nullable relations', async () => {
       },
     },
     data: Array.from({ length: 10 }, (_, index) => ({
-      '@links': index + 1 === 1 ? { replyToComment: '/test/comments/5' } : {},
-      '@url': `/test/comments/${index + 1}`,
+      '@links':
+        index + 1 === 1 ? { replyToComment: '/test/comments/5?userId=1' } : {},
+      '@url': `/test/comments/${index + 1}?userId=1`,
       id: index + 1,
       replyToCommentId: index + 1 === 1 ? 5 : null,
       userId: 1,
@@ -1543,7 +1544,7 @@ it('supports plugins like withTimestamp', async () => {
         '@links': {
           user: '/test/users/1',
         },
-        '@url': '/test/comments/1',
+        '@url': '/test/comments/1?userId=1',
         body: '0',
         createdAt: '2020-05-01T06:00:00.000Z',
         id: 1,
@@ -1554,7 +1555,7 @@ it('supports plugins like withTimestamp', async () => {
         '@links': {
           user: '/test/users/1',
         },
-        '@url': '/test/comments/2',
+        '@url': '/test/comments/2?userId=1',
         body: '1',
         createdAt: '2020-05-01T06:00:00.000Z',
         id: 2,
@@ -1601,7 +1602,7 @@ it('supports plugins like withTimestamp', async () => {
         '@links': {
           user: '/test/users/1',
         },
-        '@url': '/test/comments/1',
+        '@url': '/test/comments/1?userId=1',
         body: '0',
         createdAt: '2020-05-01T06:00:00.000Z',
         id: 1,
@@ -1612,7 +1613,7 @@ it('supports plugins like withTimestamp', async () => {
         '@links': {
           user: '/test/users/1',
         },
-        '@url': '/test/comments/2',
+        '@url': '/test/comments/2?userId=1',
         body: '1',
         createdAt: '2020-05-01T06:00:00.000Z',
         id: 2,
@@ -1738,7 +1739,7 @@ it('supports paranoid', async () => {
         '@links': {
           user: '/test/users/1',
         },
-        '@url': '/test/comments/1',
+        '@url': '/test/comments/1?userId=1',
         body: '0',
         createdAt: '2020-05-01T06:00:00.000Z',
         deletedAt: null,
@@ -1750,7 +1751,7 @@ it('supports paranoid', async () => {
         '@links': {
           user: '/test/users/1',
         },
-        '@url': '/test/comments/2',
+        '@url': '/test/comments/2?userId=1',
         body: '1',
         createdAt: '2020-05-01T06:00:00.000Z',
         deletedAt: null,
@@ -1788,7 +1789,7 @@ it('supports paranoid', async () => {
         '@links': {
           user: '/test/users/1',
         },
-        '@url': '/test/comments/2',
+        '@url': '/test/comments/2?userId=1',
         body: '1',
         createdAt: '2020-05-01T06:00:00.000Z',
         deletedAt: null,
@@ -1832,7 +1833,7 @@ it('supports paranoid', async () => {
     '@links': {
       user: '/test/users/1',
     },
-    '@url': '/test/comments/3',
+    '@url': '/test/comments/3?userId=1',
     body: 'thing',
     createdAt: created.createdAt,
     deletedAt: null,
@@ -1952,9 +1953,9 @@ it('supports paranoid with tenant ids', async () => {
     data: [
       {
         '@links': {
-          user: '/test/users/1',
+          user: '/test/users/1?orgId=1',
         },
-        '@url': '/test/comments/1',
+        '@url': '/test/comments/1?orgId=1',
         body: '0',
         createdAt: '2020-05-01T06:00:00.000Z',
         deletedAt: null,
@@ -1965,9 +1966,9 @@ it('supports paranoid with tenant ids', async () => {
       },
       {
         '@links': {
-          user: '/test/users/1',
+          user: '/test/users/1?orgId=1',
         },
-        '@url': '/test/comments/2',
+        '@url': '/test/comments/2?orgId=1',
         body: '1',
         createdAt: '2020-05-01T06:00:00.000Z',
         deletedAt: null,
@@ -2004,9 +2005,9 @@ it('supports paranoid with tenant ids', async () => {
     data: [
       {
         '@links': {
-          user: '/test/users/1',
+          user: '/test/users/1?orgId=1',
         },
-        '@url': '/test/comments/2',
+        '@url': '/test/comments/2?orgId=1',
         body: '1',
         createdAt: '2020-05-01T06:00:00.000Z',
         deletedAt: null,
@@ -2050,9 +2051,9 @@ it('supports paranoid with tenant ids', async () => {
 
   expect(created).toEqual({
     '@links': {
-      user: '/test/users/1',
+      user: '/test/users/1?orgId=1',
     },
-    '@url': '/test/comments/3',
+    '@url': '/test/comments/3?orgId=1',
     body: 'thing',
     createdAt: created.createdAt,
     deletedAt: null,
@@ -2594,14 +2595,14 @@ it('uses tenant ids for including related queries', async () => {
         '@links': {
           org: '/test/orgs/1',
         },
-        '@url': '/test/parents/1',
+        '@url': '/test/parents/1?orgId=1',
         children: [
           {
             '@links': {
               org: '/test/orgs/1',
-              parent: '/test/parents/1',
+              parent: '/test/parents/1?orgId=1',
             },
-            '@url': '/test/children/1',
+            '@url': '/test/children/1?orgId=1',
             id: 1,
             orgId: 1,
             parentId: 1,
@@ -2610,9 +2611,9 @@ it('uses tenant ids for including related queries', async () => {
           {
             '@links': {
               org: '/test/orgs/1',
-              parent: '/test/parents/1',
+              parent: '/test/parents/1?orgId=1',
             },
-            '@url': '/test/children/2',
+            '@url': '/test/children/2?orgId=1',
             id: 2,
             orgId: 1,
             parentId: 1,
@@ -2649,17 +2650,17 @@ it('uses tenant ids for including related queries', async () => {
   ).toEqual({
     data: {
       '@links': {
-        children: '/test/children?parentId=2',
+        children: '/test/children?parentId=2&orgId=1',
         org: '/test/orgs/1',
       },
-      '@url': '/test/parents/2',
+      '@url': '/test/parents/2?orgId=1',
       children: [
         {
           '@links': {
             org: '/test/orgs/1',
-            parent: '/test/parents/2',
+            parent: '/test/parents/2?orgId=1',
           },
-          '@url': '/test/children/3',
+          '@url': '/test/children/3?orgId=1',
           id: 3,
           orgId: 1,
           parentId: 2,
@@ -2722,9 +2723,9 @@ it('uses tenant ids for including related queries', async () => {
     data: {
       '@links': {
         org: '/test/orgs/1',
-        parent: '/test/parents/2',
+        parent: '/test/parents/2?orgId=1',
       },
-      '@url': '/test/children/3',
+      '@url': '/test/children/3?orgId=1',
       id: 3,
       orgId: 1,
       parentId: 2,

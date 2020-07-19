@@ -9,6 +9,13 @@ export class NotFoundError extends StatusError {
   }
 }
 
+export class BadRequestError extends StatusError {
+  statusCode = 400;
+  constructor() {
+    super('Bad Request');
+  }
+}
+
 export class UnauthorizedError extends StatusError {
   statusCode = 401;
   constructor() {
