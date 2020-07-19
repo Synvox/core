@@ -13,21 +13,21 @@ export default function withTimestamps<T>(
   return {
     ...table,
     queryModifiers: {
-      since: async (value, query) => {
+      async since(value, query) {
         const date = new Date(value);
         if (isNaN(date.getTime())) return;
 
-        query.where(`${table.tableName}.updatedAt`, '>', date);
+        query.where(`${this.alias}.updatedAt`, '>', date);
       },
       ...table.queryModifiers,
     },
-    beforeUpdate: async (trx, row, mode, authorizer) => {
+    async beforeUpdate(trx, row, mode, authorizer) {
       if (table.beforeUpdate)
-        await table.beforeUpdate(trx, row, mode, authorizer);
+        await table.beforeUpdate.call(this, trx, row, mode, authorizer);
 
-      row.updatedAt = new Date();
+      row.updatedAt = new Date(Date.now());
 
-      if (mode === 'insert') row.createdAt = new Date();
+      if (mode === 'insert') row.createdAt = new Date(Date.now());
       else delete row.createdAt;
     },
   };

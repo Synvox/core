@@ -118,13 +118,21 @@ export default function core<Context>(
 
   const query = (
     table: Table<Context>,
-    k: Knex = knex,
-    withDeleted: boolean = true
+    {
+      knex: k = knex,
+      withDeleted = true,
+    }: {
+      knex?: Knex;
+      withDeleted?: boolean;
+    } = {}
   ) => {
-    const stmt = k(table.tablePath).select(`${table.tableName}.*`);
+    let path = table.tablePath;
+    if (table.tableName !== table.alias) path += ` ${table.alias}`;
+
+    const stmt = k(path).select(`${table.alias}.*`);
 
     if (table.paranoid) {
-      if (!withDeleted) stmt.where(`${table.tableName}.deletedAt`, null);
+      if (!withDeleted) stmt.where(`${table.alias}.deletedAt`, null);
     }
 
     return stmt;
@@ -186,7 +194,7 @@ export default function core<Context>(
     }
 
     for (let key in table.getters) {
-      outputRow[key] = await table.getters[key](row, context);
+      outputRow[key] = await table.getters[key].call(table, row, context);
     }
 
     let selfUrl = `${origin}${req.baseUrl}${table.path}/${row.id}`;
@@ -218,7 +226,7 @@ export default function core<Context>(
       let value = graph[key];
 
       if (table.columns![key].nullable && value === '') value = null;
-      result[`${table.tableName}.${key}`] = value;
+      result[`${table.alias}.${key}`] = value;
     }
 
     return result;
@@ -262,8 +270,11 @@ export default function core<Context>(
       }
 
       const includeRelated = async (stmt: QueryBuilder) => {
-        const { include = [] } = req.query;
+        let { include = [] } = req.query;
 
+        if (typeof include === 'string') include = [include];
+
+        let refCount = 0;
         for (let includeTable of include) {
           let isOne = true;
           let ref = relationsFor(table).hasOne.find(
@@ -278,36 +289,42 @@ export default function core<Context>(
           }
 
           if (!ref) continue;
+          const alias =
+            ref.table.tableName === table.tableName
+              ? `${ref.table.tableName}__self_ref_alias_${refCount++}`
+              : ref.table.tableName;
 
-          let subQuery = query(ref.table, knex, withDeleted).clearSelect();
+          let subQuery = query(
+            { ...ref.table, alias },
+            { knex, withDeleted }
+          ).clearSelect();
 
           // make sure tenant ids are forwarded to subQueries where possible
           if (table.tenantIdColumnName && ref!.table.tenantIdColumnName) {
             subQuery.where(
-              `${ref!.table.tableName}.${ref!.table.tenantIdColumnName}`,
-              knex.raw(`${table.tableName}.${table.tenantIdColumnName}`)
+              `${alias}.${ref!.table.tenantIdColumnName}`,
+              knex.raw(`${table.alias}.${table.tenantIdColumnName}`)
             );
           }
 
           if (isOne) {
             subQuery
-              .where(
-                `${ref.table.tableName}.id`,
-                knex.ref(`${table.tableName}.${ref.column}`)
-              )
+              .where(`${alias}.id`, knex.ref(`${table.alias}.${ref.column}`))
               .limit(1)
-              .select(`row_to_json(${ref.table.tableName})`);
+              .select(`row_to_json(${alias})`);
           } else {
             subQuery
-              .where(
-                `${ref.table.tableName}.${ref.column}`,
-                knex.ref(`${table.tableName}.id`)
-              )
+              .where(`${alias}.${ref.column}`, knex.ref(`${table.alias}.id`))
               .limit(10)
-              .select(`row_to_json(${ref.table.tableName})`);
+              .select(`row_to_json(${alias})`);
           }
 
-          await ref.table.policy.call(ref.table, subQuery, context, 'read');
+          await ref.table.policy.call(
+            { ...ref.table, alias },
+            subQuery,
+            context,
+            'read'
+          );
 
           if (isOne) {
             stmt.select(`(${subQuery.toString()}) as ${ref.key}`);
@@ -382,7 +399,7 @@ export default function core<Context>(
         }
 
         sorts.forEach(s =>
-          statement.orderBy(`${table.tableName}.${s.column}`, s.order)
+          statement.orderBy(`${table.alias}.${s.column}`, s.order)
         );
 
         const results = await statement;
@@ -436,7 +453,7 @@ export default function core<Context>(
         };
       };
 
-      const stmt = query(table, knex, withDeleted);
+      const stmt = query(table, { knex, withDeleted });
       await table.policy.call(table, stmt, context, 'read');
       await includeRelated(stmt);
 
@@ -468,7 +485,7 @@ export default function core<Context>(
       const filters = req.query;
       const withDeleted = Boolean(filters.withDeleted);
 
-      const stmt = query(table, knex, withDeleted).clearSelect();
+      const stmt = query(table, { knex, withDeleted }).clearSelect();
       await table.policy.call(table, stmt, context, 'read');
 
       stmt.where(getWhereFiltersForTable(table, filters));
@@ -481,7 +498,7 @@ export default function core<Context>(
 
       return {
         data: await stmt
-          .countDistinct(`${table.tableName}.id`)
+          .countDistinct(`${table.alias}.id`)
           .then(([{ count }]) => Number(count)),
       };
     };
@@ -491,7 +508,7 @@ export default function core<Context>(
       const filters = req.query;
       const withDeleted = Boolean(filters.withDeleted);
 
-      const stmt = query(table, knex, withDeleted).clearSelect();
+      const stmt = query(table, { knex, withDeleted }).clearSelect();
       await table.policy.call(table, stmt, context, 'read');
 
       stmt.where(getWhereFiltersForTable(table, filters));
@@ -510,7 +527,7 @@ export default function core<Context>(
 
       stmt.offset(page * limit);
       stmt.limit(limit);
-      const results = await stmt.pluck(`${table.tableName}.id`);
+      const results = await stmt.pluck(`${table.alias}.id`);
 
       return {
         meta: {
@@ -590,7 +607,7 @@ export default function core<Context>(
             upsertCheckStmt.where(column, graph[column]);
           }
 
-          table.policy(upsertCheckStmt, context, 'update');
+          table.policy.call(table, upsertCheckStmt, context, 'update');
 
           const viewAbleRow = await upsertCheckStmt;
 
@@ -645,10 +662,10 @@ export default function core<Context>(
 
                     if (graph.id) {
                       stmt.whereNot(function() {
-                        this.where(`${table.tableName}.id`, graph.id);
+                        this.where(`${table.alias}.id`, graph.id);
                         if (table.tenantIdColumnName) {
                           this.where(
-                            `${table.tableName}.${table.tenantIdColumnName}`,
+                            `${table.alias}.${table.tenantIdColumnName}`,
                             graph[table.tenantIdColumnName]
                           );
                         }
@@ -674,7 +691,7 @@ export default function core<Context>(
               return { [table.tenantIdColumnName]: 'is required' };
 
             const existing = await stmt
-              .where(`${table.tableName}.id`, graph.id)
+              .where(`${table.alias}.id`, graph.id)
               .modify(function() {
                 if (table.tenantIdColumnName)
                   this.where(
@@ -802,15 +819,15 @@ export default function core<Context>(
           const initialGraph = graph;
           graph = filterGraph(table, graph);
 
-          const stmt = query(table, trx);
+          const stmt = query(table, { knex: trx });
           await table.policy.call(table, stmt, context, 'update');
 
           const row = await stmt
-            .where(`${table.tableName}.id`, graph.id)
+            .where(`${table.alias}.id`, graph.id)
             .modify(function() {
               if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
                 this.where(
-                  `${table.tableName}.${table.tenantIdColumnName}`,
+                  `${table.alias}.${table.tenantIdColumnName}`,
                   graph[table.tenantIdColumnName]
                 );
               }
@@ -819,7 +836,7 @@ export default function core<Context>(
 
           graph = { ...row, ...graph };
 
-          await table.beforeUpdate(trx, graph, 'update', context);
+          await table.beforeUpdate.call(table, trx, graph, 'update', context);
 
           graph = filterGraph(table, graph);
 
@@ -830,7 +847,7 @@ export default function core<Context>(
           );
 
           {
-            const stmt = query(table, trx);
+            const stmt = query(table, { knex: trx });
             await table.policy.call(table, stmt, context, 'update');
 
             if (
@@ -839,14 +856,14 @@ export default function core<Context>(
             ) {
               if (Object.keys(filteredByChanged).length)
                 await stmt
-                  .where(`${table.tableName}.id`, graph.id)
+                  .where(`${table.alias}.id`, graph.id)
                   .modify(function() {
                     if (
                       table.tenantIdColumnName &&
                       graph[table.tenantIdColumnName]
                     ) {
                       this.where(
-                        `${table.tableName}.${table.tenantIdColumnName}`,
+                        `${table.alias}.${table.tenantIdColumnName}`,
                         graph[table.tenantIdColumnName]
                       );
                     }
@@ -856,18 +873,18 @@ export default function core<Context>(
               trxNotifyCommit(trx, 'update', table, row);
 
               // in case an update now makes this row inaccessible
-              const readStmt = query(table, trx);
+              const readStmt = query(table, { knex: trx });
               await table.policy.call(table, readStmt, context, 'update');
 
               const updatedRow = await readStmt
-                .where(`${table.tableName}.id`, graph.id)
+                .where(`${table.alias}.id`, graph.id)
                 .modify(function() {
                   if (
                     table.tenantIdColumnName &&
                     graph[table.tenantIdColumnName]
                   ) {
                     this.where(
-                      `${table.tableName}.${table.tenantIdColumnName}`,
+                      `${table.alias}.${table.tenantIdColumnName}`,
                       graph[table.tenantIdColumnName]
                     );
                   }
@@ -878,7 +895,8 @@ export default function core<Context>(
 
               for (let key in initialGraph) {
                 if (table.setters[key]) {
-                  await table.setters[key](
+                  await table.setters[key].call(
+                    table,
                     trx,
                     initialGraph[key],
                     updatedRow,
@@ -889,7 +907,13 @@ export default function core<Context>(
 
               if (table.afterUpdate) {
                 beforeCommitCallbacks.push(() => {
-                  return table.afterUpdate!(trx, updatedRow, 'update', context);
+                  return table.afterUpdate!.call(
+                    table,
+                    trx,
+                    updatedRow,
+                    'update',
+                    context
+                  );
                 });
               }
 
@@ -907,22 +931,22 @@ export default function core<Context>(
           graph = filterGraph(table, graph);
 
           if (table.beforeUpdate) {
-            await table.beforeUpdate(trx, graph, 'insert', context);
+            await table.beforeUpdate.call(table, trx, graph, 'insert', context);
             graph = filterGraph(table, graph);
           }
 
-          const row = await query(table, trx)
+          const row = await query(table, { knex: trx })
             .insert(graph)
             .returning('*')
             .then(([row]) => row);
 
           trxNotifyCommit(trx, 'insert', table, row);
 
-          const stmt = query(table, trx);
+          const stmt = query(table, { knex: trx });
           await table.policy.call(table, stmt, context, 'insert');
 
           const updatedRow = await stmt
-            .where(`${table.tableName}.id`, row.id)
+            .where(`${table.alias}.id`, row.id)
             .first();
 
           if (!updatedRow) throw new UnauthorizedError();
@@ -940,7 +964,13 @@ export default function core<Context>(
 
           if (table.afterUpdate) {
             beforeCommitCallbacks.push(() => {
-              return table.afterUpdate!(trx, updatedRow, 'insert', context);
+              return table.afterUpdate!.call(
+                table,
+                trx,
+                updatedRow,
+                'insert',
+                context
+              );
             });
           }
 
@@ -960,26 +990,23 @@ export default function core<Context>(
             tenantId = graph[table.tenantIdColumnName] || undefined;
           }
 
-          const stmt = query(table, trx);
+          const stmt = query(table, { knex: trx });
           await table.policy.call(table, stmt, context, 'delete');
 
           if (table.tenantIdColumnName && tenantId !== undefined) {
-            stmt.where(
-              `${table.tableName}.${table.tenantIdColumnName}`,
-              tenantId
-            );
+            stmt.where(`${table.alias}.${table.tenantIdColumnName}`, tenantId);
           }
 
-          const row = await stmt.where(`${table.tableName}.id`, id).first();
+          const row = await stmt.where(`${table.alias}.id`, id).first();
 
           if (!row) throw new UnauthorizedError();
 
           if (table.beforeUpdate) {
-            await table.beforeUpdate(trx, row, 'delete', context);
+            await table.beforeUpdate.call(table, trx, row, 'delete', context);
           }
 
           beforeCommitCallbacks.push(() => {
-            return table.afterUpdate(trx, row, 'delete', context);
+            return table.afterUpdate.call(table, trx, row, 'delete', context);
           });
 
           async function cascade(table: Table<Context>) {
@@ -991,16 +1018,16 @@ export default function core<Context>(
                 continue;
               }
 
-              const [otherId] = await query(relation.table, trx)
+              const [otherId] = await query(relation.table, { knex: trx })
                 .select('id')
-                .where(`${relation.table.tableName}.${relation.column}`, id)
+                .where(`${relation.table.alias}.${relation.column}`, id)
                 .modify(function() {
                   if (
                     relation.table.tenantIdColumnName &&
                     tenantId !== undefined
                   ) {
                     this.where(
-                      `${relation.table.tableName}.${relation.table.tenantIdColumnName}`,
+                      `${relation.table.alias}.${relation.table.tenantIdColumnName}`,
                       tenantId
                     );
                   }
@@ -1016,13 +1043,16 @@ export default function core<Context>(
             }
           }
 
-          const delStmt = query(table, trx).where(`${table.tableName}.id`, id);
+          const delStmt = query(table, { knex: trx }).where(
+            `${table.alias}.id`,
+            id
+          );
 
           trxNotifyCommit(trx, 'delete', table, row);
 
           if (table.tenantIdColumnName && tenantId !== undefined) {
             delStmt.where(
-              `${table.tableName}.${table.tenantIdColumnName}`,
+              `${table.alias}.${table.tenantIdColumnName}`,
               tenantId
             );
           }

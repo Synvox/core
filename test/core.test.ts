@@ -19,7 +19,7 @@ import Core, {
 let server: null | ReturnType<typeof createServer> = null;
 
 async function create(
-  core: ReturnType<typeof Core>,
+  core: any,
   options?: Partial<AxiosRequestConfig>,
   middlewareHook?: (app: Application) => void
 ) {

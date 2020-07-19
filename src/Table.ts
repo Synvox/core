@@ -16,6 +16,7 @@ export type PartialTable<T> = { tableName: string } & Partial<{
   schemaName: string;
   tenantIdColumnName: string | null;
   policy: (
+    this: Table<T>,
     query: QueryBuilder,
     context: ReturnType<ContextFactory<T>>,
     mode: Mode
@@ -29,12 +30,14 @@ export type PartialTable<T> = { tableName: string } & Partial<{
   router: Router;
   idModifiers: {
     [name: string]: (
+      this: Table<T>,
       query: QueryBuilder,
       context: ReturnType<ContextFactory<T>>
     ) => Promise<void>;
   };
   queryModifiers: {
     [name: string]: (
+      this: Table<T>,
       value: any,
       query: QueryBuilder,
       context: ReturnType<ContextFactory<T>>
@@ -58,12 +61,14 @@ export type PartialTable<T> = { tableName: string } & Partial<{
     [columnName: string]: string;
   };
   beforeUpdate: (
+    this: Table<T>,
     trx: Transaction,
     row: any,
     mode: 'insert' | 'update' | 'delete',
     context: ReturnType<ContextFactory<T>>
   ) => Promise<void>;
   afterUpdate: (
+    this: Table<T>,
     trx: Transaction,
     row: any,
     mode: 'insert' | 'update' | 'delete',
@@ -77,6 +82,7 @@ export type Table<T> = Required<PartialTable<T>> & {
   uniqueColumns: Array<string[]>;
   relations: { [key: string]: string };
   schema: { [columnName: string]: MixedSchema };
+  alias: string;
 };
 
 export type TableEntry = {
@@ -245,6 +251,7 @@ export async function initTable<Context>(
 
 export default function buildTable<T>(table: PartialTable<T>): Table<T> {
   return {
+    alias: table.tableName,
     schemaName: '',
     tenantIdColumnName: null,
 
