@@ -35,7 +35,7 @@ async function create(
 
   // for debugging failures
   // app.use(function(error: any, _req: any, _res: any, next: any) {
-  //   console.log(error);
+  //   console.error(error);
   //   next(error);
   // });
 
@@ -849,15 +849,17 @@ it('handles relations', async () => {
   expect(queries.length).toBe(2);
 
   clearQueries();
-  expect((await get('/test/comments?mine&include[]=user')).data).toStrictEqual({
+  expect(
+    (await get('/test/comments?mine&include[]=user&userId=1')).data
+  ).toStrictEqual({
     meta: {
       page: 0,
       limit: 50,
       hasMore: false,
-      '@url': '/test/comments?mine&include[]=user',
+      '@url': '/test/comments?mine&include[]=user&userId=1',
       '@links': {
-        count: '/test/comments/count?mine=&include[]=user',
-        ids: '/test/comments/ids?mine=&include[]=user',
+        count: '/test/comments/count?mine=&include[]=user&userId=1',
+        ids: '/test/comments/ids?mine=&include[]=user&userId=1',
       },
     },
     data: Array.from({ length: 10 }, (_, index) => ({
@@ -1162,7 +1164,7 @@ it('handles relations', async () => {
     .returning('*');
   expect(
     (
-      await get(`/test/comments/${newPost2.id}`).catch(e => {
+      await get(`/test/comments/${newPost2.id}?userId=1`).catch(e => {
         return e.response;
       })
     ).status
@@ -1536,7 +1538,7 @@ it('supports plugins like withTimestamp', async () => {
     },
   });
 
-  let { data } = await get('/test/comments');
+  let { data } = await get('/test/comments?userId=1');
 
   expect(data).toEqual({
     data: [
@@ -1565,10 +1567,10 @@ it('supports plugins like withTimestamp', async () => {
     ],
     meta: {
       '@links': {
-        count: '/test/comments/count',
-        ids: '/test/comments/ids',
+        count: '/test/comments/count?userId=1',
+        ids: '/test/comments/ids?userId=1',
       },
-      '@url': '/test/comments',
+      '@url': '/test/comments?userId=1',
       hasMore: false,
       page: 0,
       limit: 50,
@@ -1577,16 +1579,19 @@ it('supports plugins like withTimestamp', async () => {
 
   // since works
   expect(
-    (await get(`/test/comments?since=${encodeURIComponent('may 2, 2020')}`))
-      .data
+    (
+      await get(
+        `/test/comments?since=${encodeURIComponent('may 2, 2020')}&userId=1`
+      )
+    ).data
   ).toEqual({
     data: [],
     meta: {
       '@links': {
-        count: '/test/comments/count?since=may%202%2C%202020',
-        ids: '/test/comments/ids?since=may%202%2C%202020',
+        count: '/test/comments/count?since=may%202%2C%202020&userId=1',
+        ids: '/test/comments/ids?since=may%202%2C%202020&userId=1',
       },
-      '@url': '/test/comments?since=may%202%2C%202020',
+      '@url': '/test/comments?since=may%202%2C%202020&userId=1',
       hasMore: false,
       page: 0,
       limit: 50,
@@ -1595,7 +1600,8 @@ it('supports plugins like withTimestamp', async () => {
 
   // passing an invalid since is ignored
   expect(
-    (await get(`/test/comments?since=${encodeURIComponent('trash')}`)).data
+    (await get(`/test/comments?since=${encodeURIComponent('trash')}&userId=1`))
+      .data
   ).toEqual({
     data: [
       {
@@ -1623,10 +1629,10 @@ it('supports plugins like withTimestamp', async () => {
     ],
     meta: {
       '@links': {
-        count: '/test/comments/count?since=trash',
-        ids: '/test/comments/ids?since=trash',
+        count: '/test/comments/count?since=trash&userId=1',
+        ids: '/test/comments/ids?since=trash&userId=1',
       },
-      '@url': '/test/comments?since=trash',
+      '@url': '/test/comments?since=trash&userId=1',
       hasMore: false,
       page: 0,
       limit: 50,
@@ -1634,14 +1640,14 @@ it('supports plugins like withTimestamp', async () => {
   });
 
   // make sure updatedAt is updated
-  const beforeUpdate = (await get('/test/comments/1')).data.data;
+  const beforeUpdate = (await get('/test/comments/1?userId=1')).data.data;
 
   await put(`/test/comments/1`, {
     body: 'hey',
     userId: 1,
   });
 
-  const afterUpdate = (await get('/test/comments/1')).data.data;
+  const afterUpdate = (await get('/test/comments/1?userId=1')).data.data;
 
   expect(beforeUpdate.createdAt).toEqual(afterUpdate.createdAt);
   expect(beforeUpdate.updatedAt).not.toEqual(afterUpdate.updatedAt);
@@ -1731,7 +1737,7 @@ it('supports paranoid', async () => {
     },
   });
 
-  let { data } = await get('/test/comments');
+  let { data } = await get('/test/comments?userId=1');
 
   expect(data).toEqual({
     data: [
@@ -1762,10 +1768,10 @@ it('supports paranoid', async () => {
     ],
     meta: {
       '@links': {
-        count: '/test/comments/count',
-        ids: '/test/comments/ids',
+        count: '/test/comments/count?userId=1',
+        ids: '/test/comments/ids?userId=1',
       },
-      '@url': '/test/comments',
+      '@url': '/test/comments?userId=1',
       hasMore: false,
       page: 0,
       limit: 50,
@@ -1773,16 +1779,16 @@ it('supports paranoid', async () => {
   });
 
   // make sure updatedAt is updated
-  const beforeUpdate = (await get('/test/comments/1')).data.data;
+  const beforeUpdate = (await get('/test/comments/1?userId=1')).data.data;
 
   await del(`/test/comments/1?userId=1`);
 
-  const afterUpdate = (await get('/test/comments/1')).data.data;
+  const afterUpdate = (await get('/test/comments/1?userId=1')).data.data;
 
   expect(beforeUpdate.deletedAt).toEqual(null);
   expect(beforeUpdate.deletedAt).not.toEqual(afterUpdate.deletedAt);
 
-  let { data: afterData } = await get('/test/comments');
+  let { data: afterData } = await get('/test/comments?userId=1');
   expect(afterData).toEqual({
     data: [
       {
@@ -1800,10 +1806,10 @@ it('supports paranoid', async () => {
     ],
     meta: {
       '@links': {
-        count: '/test/comments/count',
-        ids: '/test/comments/ids',
+        count: '/test/comments/count?userId=1',
+        ids: '/test/comments/ids?userId=1',
       },
-      '@url': '/test/comments',
+      '@url': '/test/comments?userId=1',
       hasMore: false,
       page: 0,
       limit: 50,
@@ -1812,7 +1818,7 @@ it('supports paranoid', async () => {
 
   // make sure passing withDeleted gives the row
   let { data: afterDataWithDeleted } = await get(
-    '/test/comments?withDeleted=true'
+    '/test/comments?withDeleted=true&userId=1'
   );
   expect(afterDataWithDeleted.data.length).toEqual(2);
 
@@ -1991,16 +1997,16 @@ it('supports paranoid with tenant ids', async () => {
   });
 
   // make sure updatedAt is updated
-  const beforeUpdate = (await get('/test/comments/1')).data.data;
+  const beforeUpdate = (await get('/test/comments/1?orgId=1')).data.data;
 
   await del(`/test/comments/1?orgId=1`);
 
-  const afterUpdate = (await get('/test/comments/1')).data.data;
+  const afterUpdate = (await get('/test/comments/1?orgId=1')).data.data;
 
   expect(beforeUpdate.deletedAt).toEqual(null);
   expect(beforeUpdate.deletedAt).not.toEqual(afterUpdate.deletedAt);
 
-  let { data: afterData } = await get('/test/comments');
+  let { data: afterData } = await get('/test/comments?orgId=1');
   expect(afterData).toEqual({
     data: [
       {
@@ -2019,10 +2025,10 @@ it('supports paranoid with tenant ids', async () => {
     ],
     meta: {
       '@links': {
-        count: '/test/comments/count',
-        ids: '/test/comments/ids',
+        count: '/test/comments/count?orgId=1',
+        ids: '/test/comments/ids?orgId=1',
       },
-      '@url': '/test/comments',
+      '@url': '/test/comments?orgId=1',
       hasMore: false,
       page: 0,
       limit: 50,
@@ -2031,7 +2037,7 @@ it('supports paranoid with tenant ids', async () => {
 
   // make sure passing withDeleted gives the row
   let { data: afterDataWithDeleted } = await get(
-    '/test/comments?withDeleted=true'
+    '/test/comments?withDeleted=true&orgId=1'
   );
   expect(afterDataWithDeleted.data.length).toEqual(2);
 
@@ -2587,7 +2593,7 @@ it('uses tenant ids for including related queries', async () => {
   await get('/test/orgs');
 
   queries = [];
-  const { data: out } = await get('/test/parents?include[]=children');
+  const { data: out } = await get('/test/parents?include[]=children&orgId=1');
 
   expect(out).toEqual({
     data: [
@@ -2626,10 +2632,10 @@ it('uses tenant ids for including related queries', async () => {
     ],
     meta: {
       '@links': {
-        count: '/test/parents/count?include[]=children',
-        ids: '/test/parents/ids?include[]=children',
+        count: '/test/parents/count?include[]=children&orgId=1',
+        ids: '/test/parents/ids?include[]=children&orgId=1',
       },
-      '@url': '/test/parents?include[]=children',
+      '@url': '/test/parents?include[]=children&orgId=1',
       hasMore: false,
       limit: 50,
       page: 0,
@@ -2637,7 +2643,7 @@ it('uses tenant ids for including related queries', async () => {
   });
 
   expect(queries).toEqual([
-    'select parents.*, array(select row_to_json(children) from test.children where children.org_id = parents.org_id and children.parent_id = parents.id limit 10) as children from test.parents order by parents.id asc limit ?',
+    'select parents.*, array(select row_to_json(children) from test.children where children.org_id = parents.org_id and children.parent_id = parents.id limit 10) as children from test.parents where parents.org_id = ? order by parents.id asc limit ?',
   ]);
 
   expect(

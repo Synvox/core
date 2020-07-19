@@ -19,11 +19,7 @@ import buildTable, {
   PartialTable,
   initTable,
 } from './Table';
-import {
-  NotFoundError,
-  UnauthorizedError,
-  //BadRequestError
-} from './Errors';
+import { NotFoundError, UnauthorizedError, BadRequestError } from './Errors';
 import sse from './sse';
 
 const refPlaceholder = -1;
@@ -260,10 +256,10 @@ export default function core<Context>(
       const withDeleted = Boolean(filters.withDeleted || !many);
       const context = getContext(req, res);
 
-      // if (table.tenantIdColumnName) {
-      //   const tenantId = filters[table.tenantIdColumnName];
-      //   if (!tenantId) throw new BadRequestError();
-      // }
+      if (table.tenantIdColumnName) {
+        const tenantId = filters[table.tenantIdColumnName];
+        if (!tenantId) throw new BadRequestError();
+      }
 
       const includeRelated = async (stmt: QueryBuilder) => {
         const { include = [] } = req.query;
