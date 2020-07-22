@@ -4,7 +4,7 @@ import Core, {
   ChangeSummary,
   Mode,
 } from './Core';
-import { NotFoundError } from './Errors';
+import { NotFoundError, UnauthorizedError } from './Errors';
 import { Table, PartialTable } from './Table';
 import knexHelpers from './knexHelpers';
 import withTimestamps from './plugins/withTimestamps';
@@ -22,4 +22,5 @@ export {
   ChangeSummary,
   Mode,
   PartialTable,
+  UnauthorizedError,
 };
