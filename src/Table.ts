@@ -274,9 +274,7 @@ export default function buildTable<T>(table: PartialTable<T>): Table<T> {
       );
     },
 
-    get router() {
-      return Router();
-    },
+    router: Router(),
 
     columns: null,
     uniqueColumns: [],
