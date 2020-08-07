@@ -1182,12 +1182,12 @@ export default function core<Context>(
           )
         );
 
-        if (process.env.NODE_ENV !== 'production' && schemaPath) {
-          await saveSchema(schemaPath);
-        }
-
         if (process.env.NODE_ENV !== 'production' && typescriptOutputPath) {
           await saveTsTypes(typescriptOutputPath);
+        }
+
+        if (process.env.NODE_ENV !== 'production' && schemaPath) {
+          await saveSchema(schemaPath);
         }
 
         tables.forEach(table => {
