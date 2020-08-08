@@ -135,14 +135,14 @@ export async function saveSchema(filePath: string) {
 export async function initTable<Context>(
   table: Table<Context>,
   knex: Knex,
-  schemaPath: string | null = null
+  writeSchemaToFile: string | null = null
 ) {
   table.schemaName = table.schemaName || 'public';
 
   const key = `${table.schemaName}.${table.tableName}`;
 
-  if (schemaPath) {
-    const loadedSchema = await loadSchema(schemaPath);
+  if (writeSchemaToFile) {
+    const loadedSchema = await loadSchema(writeSchemaToFile);
     if (loadedSchema[key]) {
       const { columns, uniqueColumns, relations } = loadedSchema[key];
 
@@ -340,7 +340,7 @@ function postgresTypesToJSONTsTypes(type: string) {
   }
 }
 
-export async function saveTsTypes(path: string) {
+export async function saveTsTypes(path: string, includeLinks = true) {
   const sortedSchema = sortObject(schema) as Schema;
 
   let schemas: {
@@ -357,30 +357,10 @@ export async function saveTsTypes(path: string) {
     schemas[table.schemaName][table.tableName] = table;
   });
 
-  let types = `
-export type Collection<T> = {
-  meta: {
-    page: number;
-    limit: number;
-    hasMore: boolean;
-    '@url': string;
-    '@links': {
-      count: string;
-      ids: string;
-      previousPage?: string;
-      nextPage?: string;
-    };
-  };
-  data: T[];
-};`.trim();
-  types += '\n\n';
+  let types = '';
   for (let schemaName in schemas) {
-    types += `export namespace ${transformKey(
-      schemaName,
-      caseMethods.pascal
-    )} {\n`;
     for (let tableName in schemas[schemaName]) {
-      types += `  export type ${transformKey(
+      types += `export type ${transformKey(
         singularize(tableName),
         caseMethods.pascal
       )} = {\n`;
@@ -419,27 +399,28 @@ export type Collection<T> = {
         const column = columns[columnName];
         let dataType = postgresTypesToJSONTsTypes(column.type);
         if (column.nullable) dataType += ' | null';
-        types += `    ${columnName}: ${dataType};\n`;
+        types += `  ${columnName}: ${dataType};\n`;
       }
 
-      types += `    '@url': string;\n`;
-      types += `    '@links': {\n`;
+      if (includeLinks) {
+        types += `  '@url': string;\n`;
+        types += `  '@links': {\n`;
 
-      const { hasOne, hasMany } = relationMaps;
+        const { hasOne, hasMany } = relationMaps;
 
-      for (let { column, key } of hasOne) {
-        types += `      ${key}${columns[column].nullable ? '?' : ''}: string`;
-        types += ';\n';
+        for (let { column, key } of hasOne) {
+          types += `    ${key}${columns[column].nullable ? '?' : ''}: string`;
+          types += ';\n';
+        }
+
+        for (let { key } of hasMany) {
+          types += `    ${key}: string;\n`;
+        }
+
+        types += `  };\n`;
       }
-
-      for (let { key } of hasMany) {
-        types += `      ${key}: string;\n`;
-      }
-
-      types += `    };\n`;
-      types += `  };\n`;
+      types += `};\n\n`;
     }
-    types += '}\n\n';
   }
 
   await fs.writeFile(path, types);

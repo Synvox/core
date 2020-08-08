@@ -81,15 +81,17 @@ export default function core<Context>(
   getContext: ContextFactory<Context>,
   {
     emitter = new EventEmitter(),
-    schemaPath = null,
-    typescriptOutputPath = null,
+    writeSchemaToFile = null,
+    writeTypesToFile = null,
+    includeLinksWithTypes = true,
     loadSchemaFromFile = process.env.NODE_ENV === 'production' &&
-      Boolean(schemaPath),
+      Boolean(writeSchemaToFile),
     origin = '',
   }: {
     emitter?: EventEmitter;
-    schemaPath?: string | null;
-    typescriptOutputPath?: string | null;
+    writeSchemaToFile?: string | null;
+    writeTypesToFile?: string | null;
+    includeLinksWithTypes?: boolean;
     loadSchemaFromFile?: boolean;
     origin?: string;
   } = {}
@@ -1178,16 +1180,20 @@ export default function core<Context>(
 
         await Promise.all(
           tables.map(table =>
-            initTable(table, knex, loadSchemaFromFile ? schemaPath : null)
+            initTable(
+              table,
+              knex,
+              loadSchemaFromFile ? writeSchemaToFile : null
+            )
           )
         );
 
-        if (process.env.NODE_ENV !== 'production' && typescriptOutputPath) {
-          await saveTsTypes(typescriptOutputPath);
+        if (process.env.NODE_ENV !== 'production' && writeTypesToFile) {
+          await saveTsTypes(writeTypesToFile, includeLinksWithTypes);
         }
 
-        if (process.env.NODE_ENV !== 'production' && schemaPath) {
-          await saveSchema(schemaPath);
+        if (process.env.NODE_ENV !== 'production' && writeSchemaToFile) {
+          await saveSchema(writeSchemaToFile);
         }
 
         tables.forEach(table => {

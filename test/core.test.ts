@@ -2200,7 +2200,7 @@ it('saves schema', async () => {
   });
 
   const core = Core(knex, getContext, {
-    schemaPath: path.join(__dirname, './__test_schema.json'),
+    writeSchemaToFile: path.join(__dirname, './__test_schema.json'),
   });
 
   core.table({
@@ -2219,7 +2219,7 @@ it('saves schema', async () => {
   queries = [];
 
   const core2 = Core(knex, getContext, {
-    schemaPath: path.join(__dirname, './__test_schema.json'),
+    writeSchemaToFile: path.join(__dirname, './__test_schema.json'),
     loadSchemaFromFile: true,
   });
 
@@ -2262,7 +2262,56 @@ it('saves typescript types', async () => {
   const tsPath = path.join(__dirname, './__ts_out');
 
   const core = Core(knex, getContext, {
-    typescriptOutputPath: tsPath,
+    writeTypesToFile: tsPath,
+  });
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'users',
+  });
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'comments',
+  });
+
+  const { get } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  await get('/test/users');
+
+  const out = await fs.readFile(tsPath, { encoding: 'utf-8' });
+
+  expect(out.trim()).toMatchSnapshot();
+});
+
+it('saves typescript types without links', async () => {
+  await knex.schema.withSchema('test').createTable('users', t => {
+    t.bigIncrements('id').primary();
+    t.string('email')
+      .notNullable()
+      .unique();
+    t.timestamps(true, true);
+    t.timestamp('deleted_at', { useTz: true });
+  });
+
+  await knex.schema.withSchema('test').createTable('comments', t => {
+    t.bigIncrements('id').primary();
+    t.bigInteger('user_id').notNullable();
+    t.string('body').notNullable();
+    t.foreign('user_id')
+      .references('id')
+      .inTable('test.users');
+  });
+
+  const tsPath = path.join(__dirname, './__ts_out');
+
+  const core = Core(knex, getContext, {
+    writeTypesToFile: tsPath,
+    includeLinksWithTypes: false,
   });
 
   core.table({

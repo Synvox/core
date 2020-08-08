@@ -1,42 +1,41 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`saves typescript types 1`] = `
-"export type Collection<T> = {
-  meta: {
-    page: number;
-    limit: number;
-    hasMore: boolean;
-    '@url': string;
-    '@links': {
-      count: string;
-      ids: string;
-      previousPage?: string;
-      nextPage?: string;
-    };
+"export type Comment = {
+  id: number;
+  userId: number;
+  body: string;
+  '@url': string;
+  '@links': {
+    user: string;
   };
-  data: T[];
 };
 
-export namespace Test {
-  export type Comment = {
-    id: number;
-    userId: number;
-    body: string;
-    '@url': string;
-    '@links': {
-      user: string;
-    };
+export type User = {
+  id: number;
+  email: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  '@url': string;
+  '@links': {
+    comments: string;
   };
-  export type User = {
-    id: number;
-    email: string;
-    createdAt: string;
-    updatedAt: string;
-    deletedAt: string | null;
-    '@url': string;
-    '@links': {
-      comments: string;
-    };
-  };
-}"
+};"
+`;
+
+exports[`saves typescript types without links 1`] = `
+"export type Comment = {
+  id: number;
+  userId: number;
+  body: string;
+};
+
+export type User = {
+  id: number;
+  email: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+};"
 `;
