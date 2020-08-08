@@ -2152,7 +2152,7 @@ it('provides an eventsource endpoint', async () => {
     app => {
       app.get(
         '/sse',
-        core.sse(async (_e, _c, isVisible) => {
+        core.sse(async isVisible => {
           const visible = await isVisible();
           sseVisibility.push(visible);
           return visible;

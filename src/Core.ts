@@ -31,9 +31,9 @@ type Relation<Context> = {
 };
 
 export type ShouldEventBeSent<Context> = (
+  isVisible: () => Promise<boolean>,
   event: ChangeSummary,
-  context: Context,
-  isVisible: () => Promise<boolean>
+  context: Context
 ) => Promise<boolean>;
 
 export type Mode = 'insert' | 'read' | 'update' | 'delete';
@@ -1170,8 +1170,8 @@ export default function core<Context>(
         }
         tables.push(buildTable(tableDef));
       },
-      sse(shouldEventBeSent: ShouldEventBeSent<Context>) {
-        return sse(knex, emitter, getContext, shouldEventBeSent, tables);
+      sse(shouldEventBeSent?: ShouldEventBeSent<Context>) {
+        return sse(knex, emitter, getContext, tables, shouldEventBeSent);
       },
     });
 

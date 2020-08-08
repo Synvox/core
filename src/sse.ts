@@ -1,18 +1,14 @@
 import Knex from 'knex';
 import { EventEmitter } from 'events';
 import { Request, Response } from 'express';
-import { ChangeSummary, ContextFactory, Table } from '.';
+import { ChangeSummary, ContextFactory, Table, ShouldEventBeSent } from '.';
 
 export default function sse<Context>(
   knex: Knex,
   emitter: EventEmitter,
   getContext: ContextFactory<Context>,
-  shouldEventBeSent: (
-    event: ChangeSummary,
-    context: Context,
-    isVisible: () => Promise<boolean>
-  ) => Promise<boolean>,
-  tables: Table<Context>[]
+  tables: Table<Context>[],
+  shouldEventBeSent?: ShouldEventBeSent<Context>
 ) {
   const sseHandlers = new Set<(changeSummary: ChangeSummary) => void>();
 
@@ -31,33 +27,35 @@ export default function sse<Context>(
     const context = getContext(req, res);
 
     const handler = async (changeSummary: ChangeSummary) => {
-      if (
-        !(await shouldEventBeSent(changeSummary, context, async () => {
-          const table = tables.find(
-            t =>
-              t.tableName === changeSummary.tableName &&
-              t.schemaName === changeSummary.schemaName
+      const isVisible = async () => {
+        const table = tables.find(
+          t =>
+            t.tableName === changeSummary.tableName &&
+            t.schemaName === changeSummary.schemaName
+        );
+        if (!table) return false;
+
+        const stmt = knex(`${table.schemaName}.${table.tableName}`)
+          .where(`${table.tableName}.id`, changeSummary.row.id)
+          .first();
+
+        if (table.tenantIdColumnName) {
+          stmt.where(
+            `${table.tableName}.${table.tenantIdColumnName}`,
+            changeSummary.row[table.tenantIdColumnName]
           );
-          if (!table) return false;
+        }
 
-          const stmt = knex(`${table.schemaName}.${table.tableName}`)
-            .where(`${table.tableName}.id`, changeSummary.row.id)
-            .first();
+        await table.policy(stmt, context, 'read');
 
-          if (table.tenantIdColumnName) {
-            stmt.where(
-              `${table.tableName}.${table.tenantIdColumnName}`,
-              changeSummary.row[table.tenantIdColumnName]
-            );
-          }
+        return Boolean(await stmt);
+      };
 
-          await table.policy(stmt, context, 'read');
+      const shouldSend = shouldEventBeSent
+        ? await shouldEventBeSent(isVisible, changeSummary, context)
+        : await isVisible();
 
-          return Boolean(await stmt);
-        }))
-      ) {
-        return;
-      }
+      if (!shouldSend) return;
 
       const batch =
         [
