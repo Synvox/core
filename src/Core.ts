@@ -1159,7 +1159,7 @@ export default function core<Context>(
     const app: Express & {
       table: (tableDef: PartialTable<Context>) => void;
       sse: (
-        shouldEventBeSent: ShouldEventBeSent<Context>
+        shouldEventBeSent?: ShouldEventBeSent<Context>
       ) => (req: Request, res: Response) => Promise<void>;
     } = Object.assign(express(), {
       table(tableDef: PartialTable<Context>) {
