@@ -1,14 +1,18 @@
+import Knex from 'knex';
 import { EventEmitter } from 'events';
 import { Request, Response } from 'express';
-import { ChangeSummary, ContextFactory } from '.';
+import { ChangeSummary, ContextFactory, Table } from '.';
 
 export default function sse<Context>(
+  knex: Knex,
   emitter: EventEmitter,
   getContext: ContextFactory<Context>,
   shouldEventBeSent: (
     event: ChangeSummary,
-    context: Context
-  ) => Promise<boolean>
+    context: Context,
+    isVisible: () => Promise<boolean>
+  ) => Promise<boolean>,
+  tables: Table<Context>[]
 ) {
   const sseHandlers = new Set<(changeSummary: ChangeSummary) => void>();
 
@@ -27,7 +31,31 @@ export default function sse<Context>(
     const context = getContext(req, res);
 
     const handler = async (changeSummary: ChangeSummary) => {
-      if (!(await shouldEventBeSent(changeSummary, context))) {
+      if (
+        !(await shouldEventBeSent(changeSummary, context, async () => {
+          const table = tables.find(
+            t =>
+              t.tableName === changeSummary.tableName &&
+              t.schemaName === changeSummary.schemaName
+          );
+          if (!table) return false;
+
+          const stmt = knex(`${table.schemaName}.${table.tableName}`)
+            .where(`${table.tableName}.id`, changeSummary.row.id)
+            .first();
+
+          if (table.tenantIdColumnName) {
+            stmt.where(
+              `${table.tableName}.${table.tenantIdColumnName}`,
+              changeSummary.row[table.tenantIdColumnName]
+            );
+          }
+
+          await table.policy(stmt, context, 'read');
+
+          return Boolean(await stmt);
+        }))
+      ) {
         return;
       }
 

@@ -3,6 +3,7 @@ import Core, {
   notifyChange,
   ChangeSummary,
   Mode,
+  ShouldEventBeSent,
 } from './Core';
 import { NotFoundError, UnauthorizedError } from './Errors';
 import { Table, PartialTable } from './Table';
@@ -23,4 +24,5 @@ export {
   Mode,
   PartialTable,
   UnauthorizedError,
+  ShouldEventBeSent,
 };

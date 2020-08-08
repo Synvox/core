@@ -2140,6 +2140,8 @@ it('provides an eventsource endpoint', async () => {
     },
   });
 
+  let sseVisibility: boolean[] = [];
+
   const { post, url } = await create(
     core,
     {
@@ -2150,7 +2152,11 @@ it('provides an eventsource endpoint', async () => {
     app => {
       app.get(
         '/sse',
-        core.sse(async () => true)
+        core.sse(async (_e, _c, isVisible) => {
+          const visible = await isVisible();
+          sseVisibility.push(visible);
+          return visible;
+        })
       );
     }
   );
@@ -2170,11 +2176,36 @@ it('provides an eventsource endpoint', async () => {
   await new Promise(r => {
     const int = setInterval(() => {
       if (message !== null) {
+        expect(sseVisibility[0]).toBe(true);
         clearInterval(int);
         expect(message.data).toBe(
           '{"mode":"insert","tableName":"comments","schemaName":"test","row":{"id":11,"userId":1,"body":"123"}}'
         );
         message = null;
+        r();
+      }
+    }, 100);
+  });
+
+  const [newRow] = await knex('test.comments')
+    .insert({
+      body: 'not visible',
+      userId: '2',
+    })
+    .returning('*');
+
+  emitter.emit('change', {
+    mode: 'insert',
+    tableName: 'comments',
+    schemaName: 'test',
+    row: newRow,
+  });
+
+  await new Promise(r => {
+    const int = setInterval(() => {
+      if (sseVisibility.length === 2) {
+        clearInterval(int);
+        expect(sseVisibility[1]).toBe(false);
         r();
       }
     }, 100);

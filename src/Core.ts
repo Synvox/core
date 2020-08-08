@@ -30,6 +30,12 @@ type Relation<Context> = {
   table: Table<Context>;
 };
 
+export type ShouldEventBeSent<Context> = (
+  event: ChangeSummary,
+  context: Context,
+  isVisible: () => Promise<boolean>
+) => Promise<boolean>;
+
 export type Mode = 'insert' | 'read' | 'update' | 'delete';
 
 export type ChangeSummary = {
@@ -1149,16 +1155,11 @@ export default function core<Context>(
       return { data };
     };
 
-    type ShouldTypeBeSent = (
-      event: ChangeSummary,
-      context: Context
-    ) => Promise<boolean>;
-
     let initializedModels = false;
     const app: Express & {
       table: (tableDef: PartialTable<Context>) => void;
       sse: (
-        shouldEventBeSent: ShouldTypeBeSent
+        shouldEventBeSent: ShouldEventBeSent<Context>
       ) => (req: Request, res: Response) => Promise<void>;
     } = Object.assign(express(), {
       table(tableDef: PartialTable<Context>) {
@@ -1169,8 +1170,8 @@ export default function core<Context>(
         }
         tables.push(buildTable(tableDef));
       },
-      sse(shouldEventBeSent: ShouldTypeBeSent) {
-        return sse(emitter, getContext, shouldEventBeSent);
+      sse(shouldEventBeSent: ShouldEventBeSent<Context>) {
+        return sse(knex, emitter, getContext, shouldEventBeSent, tables);
       },
     });
 
