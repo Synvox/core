@@ -149,7 +149,7 @@ async function columnInfo(knex: Knex, schemaName: string, tableName: string) {
         not a.attnotnull as "nullable",
         pg_get_expr(d.adbin, d.adrelid) as "default_value"
       from pg_catalog.pg_attribute a
-      left join pg_attrdef d on a.attnum = d.adnum
+      left join pg_attrdef d on a.attnum = d.adnum and d.adrelid = a.attrelid
       where a.attnum > 0
         and not a.attisdropped
         and a.attrelid =
