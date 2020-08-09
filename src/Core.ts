@@ -11,6 +11,7 @@ import {
   date,
   MixedSchema,
   ValidationError,
+  array,
 } from 'yup';
 import buildTable, {
   saveSchema,
@@ -640,6 +641,10 @@ export default function core<Context>(
                 type = type.concat(table.schema[column]);
               }
 
+              if (info.type.endsWith('[]')) {
+                type = array(type);
+              }
+
               if (!(info.nullable || info.defaultValue)) {
                 type = type.test(
                   'is-null',
@@ -748,17 +753,22 @@ export default function core<Context>(
               throw err;
             }
 
-            let errors = {};
-
             err.inner
               .map(e => {
-                const path = e.path.replace(/\[|\]/g, '').split('.');
+                const REPLACE_BRACKETS = /\[([^\[\]]+)\]/g;
+                const LFT_RT_TRIM_DOTS = /^[.]*|[.]*$/g;
+                const dotPath = e.path
+                  .replace(REPLACE_BRACKETS, '.$1')
+                  .replace(LFT_RT_TRIM_DOTS, '');
+
                 return {
-                  path: path.join('.'),
+                  path: dotPath,
                   message: e.message.slice(e.message.indexOf(' ')).trim(),
                 };
               })
-              .forEach(({ message, path }) => setValue(errors, path, message));
+              .forEach(({ message, path }) => {
+                setValue(errors, path, message);
+              });
 
             return errors;
           }

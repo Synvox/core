@@ -2279,6 +2279,7 @@ it('saves typescript types', async () => {
       .unique();
     t.timestamps(true, true);
     t.timestamp('deleted_at', { useTz: true });
+    t.specificType('arr', 'text[]');
   });
 
   await knex.schema.withSchema('test').createTable('comments', t => {
@@ -2316,7 +2317,30 @@ it('saves typescript types', async () => {
 
   const out = await fs.readFile(tsPath, { encoding: 'utf-8' });
 
-  expect(out.trim()).toMatchSnapshot();
+  expect(out.trim()).toMatchInlineSnapshot(`
+    "export type Comment = {
+      id: number;
+      userId: number;
+      body: string;
+      '@url': string;
+      '@links': {
+        user: string;
+      };
+    };
+
+    export type User = {
+      id: number;
+      email: string;
+      createdAt: string;
+      updatedAt: string;
+      deletedAt: string | null;
+      arr: string[] | null;
+      '@url': string;
+      '@links': {
+        comments: string;
+      };
+    };"
+  `);
 });
 
 it('saves typescript types without links', async () => {
@@ -2365,7 +2389,21 @@ it('saves typescript types without links', async () => {
 
   const out = await fs.readFile(tsPath, { encoding: 'utf-8' });
 
-  expect(out.trim()).toMatchSnapshot();
+  expect(out.trim()).toMatchInlineSnapshot(`
+    "export type Comment = {
+      id: number;
+      userId: number;
+      body: string;
+    };
+
+    export type User = {
+      id: number;
+      email: string;
+      createdAt: string;
+      updatedAt: string;
+      deletedAt: string | null;
+    };"
+  `);
 });
 
 it('handles tables in the public schema', async () => {
@@ -3167,4 +3205,87 @@ it('allows setters', async () => {
   });
   expect(value).toBe(2);
   expect(row).toEqual({ id: 1 });
+});
+
+it('allows arrays', async () => {
+  await knex.schema.withSchema('test').createTable('resource', t => {
+    t.bigIncrements('id').primary();
+    t.specificType('arr', 'text[]').notNullable();
+  });
+
+  const core = Core(knex, getContext);
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'resource',
+  });
+
+  const { get, post, put } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  expect(
+    (await post('/test/resource', { arr: [1, 2, 3] }).catch(e => e.response))
+      .data
+  ).toMatchInlineSnapshot(`
+    Object {
+      "errors": Object {
+        "arr": Object {
+          "0": "must be a \`string\` type, but the final value was: \`1\`.",
+          "1": "must be a \`string\` type, but the final value was: \`2\`.",
+          "2": "must be a \`string\` type, but the final value was: \`3\`.",
+        },
+      },
+    }
+  `);
+
+  expect((await post('/test/resource', { arr: ['a', 'b', 'c'] })).data)
+    .toMatchInlineSnapshot(`
+    Object {
+      "data": Object {
+        "@links": Object {},
+        "@url": "/test/resource/1",
+        "arr": Array [
+          "a",
+          "b",
+          "c",
+        ],
+        "id": 1,
+      },
+    }
+  `);
+
+  expect((await get('/test/resource/1')).data).toMatchInlineSnapshot(`
+    Object {
+      "data": Object {
+        "@links": Object {},
+        "@url": "/test/resource/1",
+        "arr": Array [
+          "a",
+          "b",
+          "c",
+        ],
+        "id": 1,
+      },
+    }
+  `);
+
+  expect((await put('/test/resource/1', { arr: ['a', 'b', 'c', 'd'] })).data)
+    .toMatchInlineSnapshot(`
+    Object {
+      "data": Object {
+        "@links": Object {},
+        "@url": "/test/resource/1",
+        "arr": Array [
+          "a",
+          "b",
+          "c",
+          "d",
+        ],
+        "id": 1,
+      },
+    }
+  `);
 });

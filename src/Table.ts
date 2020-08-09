@@ -77,7 +77,7 @@ export type PartialTable<T> = { tableName: string } & Partial<{
 }>;
 
 export type Table<T> = Required<PartialTable<T>> & {
-  columns: { [columnName: string]: Knex.ColumnInfo } | null;
+  columns: Columns | null;
   tablePath: string;
   uniqueColumns: Array<string[]>;
   relations: { [key: string]: string };
@@ -92,7 +92,7 @@ export type TableEntry = {
   className: string;
   collectionName: string;
   name: string;
-  columns: { [columnName: string]: Knex.ColumnInfo };
+  columns: Columns;
   uniqueColumns: Array<string[]>;
   relations: { [key: string]: string };
   queryModifiers: string[];
@@ -132,6 +132,63 @@ export async function saveSchema(filePath: string) {
   schema = {}; // no longer needed
 }
 
+type Column = {
+  name: string;
+  type: string;
+  nullable: boolean;
+  defaultValue: string | null;
+};
+type Columns = { [name: string]: Column };
+
+async function columnInfo(knex: Knex, schemaName: string, tableName: string) {
+  const stmt = knex.raw(
+    `
+      select
+        a.attname as "name",
+        pg_catalog.format_type(a.atttypid, a.atttypmod) as "type",
+        not a.attnotnull as "nullable",
+        pg_get_expr(d.adbin, d.adrelid) as "default_value"
+      from pg_catalog.pg_attribute a
+      left join pg_attrdef d on a.attnum = d.adnum
+      where a.attnum > 0
+        and not a.attisdropped
+        and a.attrelid =
+          (select c.oid
+          from pg_catalog.pg_class c
+          left join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+          where n.nspname = ?
+            and c.relname = ?)
+      order by a.attnum;`
+      .replace(/\s\s+/g, ' ')
+      .trim(),
+    [
+      transformKey(schemaName, caseMethods.snake),
+      transformKey(tableName, caseMethods.snake),
+    ]
+  );
+
+  const {
+    rows: columns,
+  }: {
+    rows: Column[];
+  } = await stmt;
+
+  const formatted = columns
+    .map(column => ({
+      ...column,
+      name: transformKey(column.name, caseMethods.camel),
+      type: column.type.startsWith('character varying')
+        ? 'character varying'
+        : column.type,
+    }))
+    .reduce(
+      (acc: Columns, column) => Object.assign(acc, { [column.name]: column }),
+      {} as Columns
+    );
+
+  return formatted;
+}
+
 export async function initTable<Context>(
   table: Table<Context>,
   knex: Knex,
@@ -154,11 +211,7 @@ export async function initTable<Context>(
     }
   }
 
-  table.columns = ((await knex(table.tableName)
-    .withSchema(table.schemaName)
-    // pretty sure table is a bug in knex.
-    // columnInfo's type is only for a single column
-    .columnInfo()) as unknown) as { [columnName: string]: Knex.ColumnInfo };
+  table.columns = await columnInfo(knex, table.schemaName, table.tableName);
 
   if (table.paranoid && !('deletedAt' in table.columns))
     throw new Error(
@@ -397,7 +450,16 @@ export async function saveTsTypes(path: string, includeLinks = true) {
 
       for (let columnName in columns) {
         const column = columns[columnName];
-        let dataType = postgresTypesToJSONTsTypes(column.type);
+        let type = column.type;
+        let array = false;
+        if (type.endsWith('[]')) {
+          type = type.slice(0, -2);
+          array = true;
+        }
+
+        let dataType = postgresTypesToJSONTsTypes(type);
+        if (array) dataType += '[]';
+
         if (column.nullable) dataType += ' | null';
         types += `  ${columnName}: ${dataType};\n`;
       }
