@@ -203,8 +203,10 @@ export default function core<Context>(
       }
     }
 
+    let selectedGetters = [];
     for (let getterName in table.getters) {
       if (include.includes(getterName)) {
+        selectedGetters.push(getterName);
         outputRow[getterName] = await table.getters[getterName].call(
           table,
           row,
@@ -215,8 +217,21 @@ export default function core<Context>(
       }
     }
 
+    let rowQueryParams: { [key: string]: any } = {};
+
+    if (table.tenantIdColumnName && tenantId) {
+      rowQueryParams[table.tenantIdColumnName] = tenantId;
+    }
+
+    if (selectedGetters.length > 0) {
+      rowQueryParams.include = selectedGetters;
+    }
+
     let selfUrl = `${origin}${req.baseUrl}${table.path}/${row.id}`;
-    if (tenantId) selfUrl += `?${table.tenantIdColumnName}=${tenantId}`;
+
+    if (Object.keys(rowQueryParams).length > 0) {
+      selfUrl += `?${qsStringify(rowQueryParams)}`;
+    }
 
     return {
       ...outputRow,

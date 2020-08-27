@@ -2502,7 +2502,7 @@ it('handles getters', async () => {
     data: [
       {
         '@links': {},
-        '@url': '/test/users/1',
+        '@url': '/test/users/1?include[]=avatar',
         avatar: 'http://avatar.io/thing@thang.com',
         email: 'thing@thang.com',
         id: 1,
@@ -2517,6 +2517,16 @@ it('handles getters', async () => {
       hasMore: false,
       limit: 50,
       page: 0,
+    },
+  });
+
+  expect((await get('/test/users/1?include=avatar')).data).toEqual({
+    data: {
+      '@links': {},
+      '@url': '/test/users/1?include[]=avatar',
+      avatar: 'http://avatar.io/thing@thang.com',
+      email: 'thing@thang.com',
+      id: 1,
     },
   });
 
