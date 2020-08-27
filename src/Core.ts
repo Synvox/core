@@ -157,7 +157,8 @@ export default function core<Context>(
     req: Request,
     context: Context,
     table: Table<Context>,
-    inputRow: any
+    inputRow: any,
+    include: string[] = []
   ) => {
     let tenantId = null;
     if (table.tenantIdColumnName) {
@@ -202,8 +203,16 @@ export default function core<Context>(
       }
     }
 
-    for (let key in table.getters) {
-      outputRow[key] = await table.getters[key].call(table, row, context);
+    for (let getterName in table.getters) {
+      if (include.includes(getterName)) {
+        outputRow[getterName] = await table.getters[getterName].call(
+          table,
+          row,
+          context
+        );
+      } else {
+        result[getterName] = `${origin}${table.path}/${row.id}/${getterName}`;
+      }
     }
 
     let selfUrl = `${origin}${req.baseUrl}${table.path}/${row.id}`;
@@ -264,14 +273,18 @@ export default function core<Context>(
 
   {
     const read = async (
+      context: Context,
       req: Request,
-      res: Response,
+      _res: Response,
       table: Table<Context>,
       filters: any,
       many: boolean = true
     ) => {
+      let { include = [] } = req.query;
+
+      if (typeof include === 'string') include = [include];
+
       const withDeleted = Boolean(filters.withDeleted || !many);
-      const context = getContext(req, res);
 
       if (table.tenantIdColumnName) {
         const tenantId = filters[table.tenantIdColumnName];
@@ -279,10 +292,6 @@ export default function core<Context>(
       }
 
       const includeRelated = async (stmt: QueryBuilder) => {
-        let { include = [] } = req.query;
-
-        if (typeof include === 'string') include = [include];
-
         let refCount = 0;
         for (let includeTable of include) {
           let isOne = true;
@@ -456,7 +465,7 @@ export default function core<Context>(
           data: await Promise.all(
             results.map(
               async (item: any) =>
-                await processTableRow(req, context, table, item)
+                await processTableRow(req, context, table, item, include)
             )
           ),
         };
@@ -480,17 +489,17 @@ export default function core<Context>(
         if (!data) throw new NotFoundError();
 
         return {
-          data: await processTableRow(req, context, table, data),
+          data: await processTableRow(req, context, table, data, include),
         };
       }
     };
 
     const count = async (
+      context: Context,
       req: Request,
-      res: Response,
+      _res: Response,
       table: Table<Context>
     ) => {
-      const context = getContext(req, res);
       const filters = req.query;
       const withDeleted = Boolean(filters.withDeleted);
 
@@ -512,8 +521,12 @@ export default function core<Context>(
       };
     };
 
-    const ids = async (req: Request, res: Response, table: Table<Context>) => {
-      const context = getContext(req, res);
+    const ids = async (
+      context: Context,
+      req: Request,
+      _res: Response,
+      table: Table<Context>
+    ) => {
       const filters = req.query;
       const withDeleted = Boolean(filters.withDeleted);
 
@@ -564,12 +577,12 @@ export default function core<Context>(
     };
 
     const write = async (
+      context: Context,
       req: Request,
       res: Response,
       table: Table<Context>,
       graph: any
     ) => {
-      const context = getContext(req, res);
       const beforeCommitCallbacks: Array<() => Promise<void>> = [];
 
       const fixUpserts = async (table: Table<Context>, graph: any) => {
@@ -1248,21 +1261,51 @@ export default function core<Context>(
           app.get(
             `${path}/count`,
             wrap(async (req, res) => {
-              return count(req, res, table);
+              const context = getContext(req, res);
+              return count(context, req, res, table);
             })
           );
 
           app.get(
             `${path}/ids`,
             wrap(async (req, res) => {
-              return ids(req, res, table);
+              const context = getContext(req, res);
+              return ids(context, req, res, table);
             })
           );
+
+          for (let getterName in table.getters) {
+            app.get(
+              `${path}/:id/${getterName}`,
+              wrap(async (req, res) => {
+                const context = getContext(req, res);
+
+                const { data: row } = await read(
+                  context,
+                  req,
+                  res,
+                  table,
+                  { ...req.query, id: req.params.id },
+                  false
+                );
+
+                return {
+                  data: await table.getters[getterName].call(
+                    table,
+                    row,
+                    context
+                  ),
+                };
+              })
+            );
+          }
 
           app.get(
             `${path}/:id`,
             wrap(async (req, res) => {
+              const context = getContext(req, res);
               return read(
+                context,
                 req,
                 res,
                 table,
@@ -1275,21 +1318,24 @@ export default function core<Context>(
           app.get(
             path,
             wrap(async (req, res) => {
-              return read(req, res, table, req.query);
+              const context = getContext(req, res);
+              return read(context, req, res, table, req.query);
             })
           );
 
           app.post(
             path,
             wrap(async (req, res) => {
-              return await write(req, res, table, req.body);
+              const context = getContext(req, res);
+              return await write(context, req, res, table, req.body);
             })
           );
 
           app.put(
             `${path}/:id`,
             wrap(async (req, res) => {
-              return await write(req, res, table, {
+              const context = getContext(req, res);
+              return await write(context, req, res, table, {
                 ...req.body,
                 id: req.params.id,
               });
@@ -1299,11 +1345,12 @@ export default function core<Context>(
           app.delete(
             `${path}/:id`,
             wrap(async (req, res) => {
+              const context = getContext(req, res);
               const tenantId = table.tenantIdColumnName
                 ? req.query[table.tenantIdColumnName]
                 : undefined;
 
-              return await write(req, res, table, {
+              return await write(context, req, res, table, {
                 id: req.params.id,
                 _delete: true,
                 ...(tenantId !== undefined

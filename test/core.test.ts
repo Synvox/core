@@ -2475,14 +2475,13 @@ it('handles getters', async () => {
     email: 'thing@thang.com',
   });
 
-  const { data: out } = await get('/test/users');
-
-  expect(out).toEqual({
+  expect((await get('/test/users')).data).toEqual({
     data: [
       {
-        '@links': {},
+        '@links': {
+          avatar: '/test/users/1/avatar',
+        },
         '@url': '/test/users/1',
-        avatar: 'http://avatar.io/thing@thang.com',
         email: 'thing@thang.com',
         id: 1,
       },
@@ -2497,6 +2496,32 @@ it('handles getters', async () => {
       limit: 50,
       page: 0,
     },
+  });
+
+  expect((await get('/test/users?include=avatar')).data).toEqual({
+    data: [
+      {
+        '@links': {},
+        '@url': '/test/users/1',
+        avatar: 'http://avatar.io/thing@thang.com',
+        email: 'thing@thang.com',
+        id: 1,
+      },
+    ],
+    meta: {
+      '@links': {
+        count: '/test/users/count?include=avatar',
+        ids: '/test/users/ids?include=avatar',
+      },
+      '@url': '/test/users?include=avatar',
+      hasMore: false,
+      limit: 50,
+      page: 0,
+    },
+  });
+
+  expect((await get('/test/users/1/avatar')).data).toEqual({
+    data: 'http://avatar.io/thing@thang.com',
   });
 });
 
