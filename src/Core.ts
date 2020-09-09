@@ -882,7 +882,14 @@ export default function core<Context>(
 
           graph = { ...row, ...graph };
 
-          await table.beforeUpdate.call(table, trx, graph, 'update', context);
+          await table.beforeUpdate.call(
+            table,
+            trx,
+            context,
+            'update',
+            graph,
+            row
+          );
 
           graph = filterGraph(table, graph);
 
@@ -956,9 +963,10 @@ export default function core<Context>(
                   return table.afterUpdate!.call(
                     table,
                     trx,
-                    updatedRow,
+                    context,
                     'update',
-                    context
+                    updatedRow,
+                    row
                   );
                 });
               }
@@ -977,7 +985,14 @@ export default function core<Context>(
           graph = filterGraph(table, graph);
 
           if (table.beforeUpdate) {
-            await table.beforeUpdate.call(table, trx, graph, 'insert', context);
+            await table.beforeUpdate.call(
+              table,
+              trx,
+              context,
+              'insert',
+              graph,
+              undefined
+            );
             graph = filterGraph(table, graph);
           }
 
@@ -1013,9 +1028,10 @@ export default function core<Context>(
               return table.afterUpdate!.call(
                 table,
                 trx,
-                updatedRow,
+                context,
                 'insert',
-                context
+                updatedRow,
+                undefined
               );
             });
           }
@@ -1048,11 +1064,25 @@ export default function core<Context>(
           if (!row) throw new UnauthorizedError();
 
           if (table.beforeUpdate) {
-            await table.beforeUpdate.call(table, trx, row, 'delete', context);
+            await table.beforeUpdate.call(
+              table,
+              trx,
+              context,
+              'delete',
+              undefined,
+              row
+            );
           }
 
           beforeCommitCallbacks.push(() => {
-            return table.afterUpdate.call(table, trx, row, 'delete', context);
+            return table.afterUpdate.call(
+              table,
+              trx,
+              context,
+              'delete',
+              undefined,
+              row
+            );
           });
 
           async function cascade(table: Table<Context>) {

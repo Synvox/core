@@ -21,14 +21,17 @@ export default function withTimestamps<T>(
       },
       ...table.queryModifiers,
     },
-    async beforeUpdate(trx, row, mode, authorizer) {
+    async beforeUpdate(trx, context, mode, draft, current) {
       if (table.beforeUpdate)
-        await table.beforeUpdate.call(this, trx, row, mode, authorizer);
+        await table.beforeUpdate.call(this, trx, context, mode, draft, current);
 
-      row.updatedAt = new Date(Date.now());
+      // if the row was hard deleted
+      if (!draft) return;
 
-      if (mode === 'insert') row.createdAt = new Date(Date.now());
-      else delete row.createdAt;
+      draft.updatedAt = new Date(Date.now());
+
+      if (mode === 'insert') draft.createdAt = new Date(Date.now());
+      else delete draft.createdAt;
     },
   };
 }

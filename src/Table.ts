@@ -63,16 +63,18 @@ export type PartialTable<T> = { tableName: string } & Partial<{
   beforeUpdate: (
     this: Table<T>,
     trx: Transaction,
-    row: any,
+    context: ReturnType<ContextFactory<T>>,
     mode: 'insert' | 'update' | 'delete',
-    context: ReturnType<ContextFactory<T>>
+    draft: any,
+    current: any
   ) => Promise<void>;
   afterUpdate: (
     this: Table<T>,
     trx: Transaction,
-    row: any,
+    context: ReturnType<ContextFactory<T>>,
     mode: 'insert' | 'update' | 'delete',
-    context: ReturnType<ContextFactory<T>>
+    next: any,
+    previous: any
   ) => Promise<void>;
 }>;
 
