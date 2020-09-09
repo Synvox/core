@@ -423,15 +423,19 @@ export async function saveTsTypes(path: string, includeLinks = true) {
       const table = schemas[schemaName][tableName];
       const { relations, columns } = table;
 
+      const thisSchema = schema;
+
       const relationMaps = {
         hasOne: Object.entries(relations)
           .map(([column, tablePath]) => ({
             column,
             key: column.replace(/Id$/, ''),
-            table: Object.values(schema).find(m => m.tablePath === tablePath)!,
+            table: Object.values(thisSchema).find(
+              m => m.tablePath === tablePath
+            )!,
           }))
           .filter(r => r.table),
-        hasMany: Object.values(schema)
+        hasMany: Object.values(thisSchema)
           .filter(m => m !== table)
           .map(otherTable => {
             return Object.entries(otherTable.relations)

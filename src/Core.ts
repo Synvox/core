@@ -687,6 +687,7 @@ export default function core<Context>(
 
             for (let columns of table.uniqueColumns) {
               for (let column of columns) {
+                const g = graph;
                 schema[column] = schema[column].test(
                   'unique',
                   // eslint-disable-next-line no-template-curly-in-string
@@ -701,13 +702,13 @@ export default function core<Context>(
                     // There is no policy check here so rows that conflict
                     // that are not visible to the user
 
-                    if (graph.id) {
+                    if (g.id) {
                       stmt.whereNot(function() {
-                        this.where(`${table.alias}.id`, graph.id);
+                        this.where(`${table.alias}.id`, g.id);
                         if (table.tenantIdColumnName) {
                           this.where(
                             `${table.alias}.${table.tenantIdColumnName}`,
-                            graph[table.tenantIdColumnName]
+                            g[table.tenantIdColumnName]
                           );
                         }
                       });
@@ -783,7 +784,7 @@ export default function core<Context>(
 
             err.inner
               .map(e => {
-                const REPLACE_BRACKETS = /\[([^\[\]]+)\]/g;
+                const REPLACE_BRACKETS = /\[([^[\]]+)\]/g;
                 const LFT_RT_TRIM_DOTS = /^[.]*|[.]*$/g;
                 const dotPath = e.path
                   .replace(REPLACE_BRACKETS, '.$1')
