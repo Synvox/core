@@ -22,6 +22,7 @@ import buildTable, {
 } from './Table';
 import { NotFoundError, UnauthorizedError, BadRequestError } from './Errors';
 import sse from './sse';
+import uploads from './uploads';
 
 const refPlaceholder = -1;
 
@@ -58,7 +59,7 @@ export function notifyChange(
   });
 }
 
-const wrap = (
+export const wrap = (
   fn: (req: Request, res: Response, next: NextFunction) => Promise<any>
 ) => async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -1230,6 +1231,7 @@ export default function core<Context>(
       sse: (
         shouldEventBeSent?: ShouldEventBeSent<Context>
       ) => (req: Request, res: Response) => Promise<void>;
+      uploads: typeof uploads;
     } = Object.assign(express(), {
       table(tableDef: PartialTable<Context>) {
         if (initializedModels) {
@@ -1242,6 +1244,7 @@ export default function core<Context>(
       sse(shouldEventBeSent?: ShouldEventBeSent<Context>) {
         return sse(knex, emitter, getContext, tables, shouldEventBeSent);
       },
+      uploads,
     });
 
     app.use(
