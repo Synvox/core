@@ -57,6 +57,13 @@ export type PartialTable<T> = { tableName: string } & Partial<{
       context: ReturnType<ContextFactory<T>>
     ) => Promise<any>;
   };
+  methods: {
+    [key: string]: (
+      row: any,
+      context: ReturnType<ContextFactory<T>>,
+      body: any
+    ) => Promise<any>;
+  };
   pluralForeignKeyMap: {
     [columnName: string]: string;
   };
@@ -342,6 +349,7 @@ export default function buildTable<T>(table: PartialTable<T>): Table<T> {
     queryModifiers: {},
     setters: {},
     getters: {},
+    methods: {},
     readOnlyColumns: [],
     hiddenColumns: [],
 

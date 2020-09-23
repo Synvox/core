@@ -1372,6 +1372,37 @@ export default function core<Context>(
             })
           );
 
+          for (let methodName in table.methods) {
+            app.post(
+              `${path}/:id/${methodName}`,
+              wrap(async (req, res) => {
+                const { id } = req.params;
+
+                const context = getContext(req, res);
+                const stmt = query(table, { knex })
+                  .where(`${table.tableName}.id`, id)
+                  .first();
+                if (table.tenantIdColumnName) {
+                  if (req.query[table.tenantIdColumnName]) {
+                    stmt.where(
+                      `${table.tableName}.${table.tenantIdColumnName}`,
+                      req.query[table.tenantIdColumnName]
+                    );
+                  } else {
+                    throw new BadRequestError();
+                  }
+                }
+
+                await table.policy.call(table, stmt, context, 'read');
+
+                const row = await stmt;
+                if (!row) throw new NotFoundError();
+
+                return await table.methods[methodName](row, context, req.body);
+              })
+            );
+          }
+
           app.post(
             path,
             wrap(async (req, res) => {

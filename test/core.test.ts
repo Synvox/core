@@ -3242,6 +3242,123 @@ it('allows setters', async () => {
   expect(row).toEqual({ id: 1 });
 });
 
+it('allows methods', async () => {
+  await knex.schema.withSchema('test').createTable('users', t => {
+    t.bigIncrements('id').primary();
+  });
+  await knex.schema.withSchema('test').createTable('jobs', t => {
+    t.bigIncrements('id').primary();
+    t.boolean('active').defaultTo(true);
+    t.integer('user_id');
+  });
+
+  await knex('test.users').insert({});
+  await knex('test.jobs')
+    .insert({ userId: 1 })
+    .returning('*');
+
+  const core = Core(knex, getContext);
+
+  let receivedBody = null;
+  core.table({
+    schemaName: 'test',
+    tableName: 'jobs',
+    async policy(query, { getUser }) {
+      query.where('userId', (await getUser()).id);
+    },
+    methods: {
+      async deactivate(row, _context, body) {
+        receivedBody = body;
+        await knex('test.jobs')
+          .update({ active: false })
+          .where('id', row.id);
+
+        return { ok: true };
+      },
+    },
+  });
+
+  const { post } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  expect(
+    (await post('/test/jobs/1/deactivate', { val: 1 })).data
+  ).toStrictEqual({
+    ok: true,
+  });
+  expect(receivedBody).toStrictEqual({ val: 1 });
+  expect(
+    (await post('/test/jobs/2/deactivate', { val: 1 }).catch(e => e.response))
+      .status
+  ).toBe(404);
+});
+
+it('allows methods (with tenant)', async () => {
+  await knex.schema.withSchema('test').createTable('users', t => {
+    t.bigIncrements('id').primary();
+  });
+  await knex.schema.withSchema('test').createTable('jobs', t => {
+    t.bigIncrements('id').primary();
+    t.boolean('active').defaultTo(true);
+    t.integer('user_id');
+  });
+
+  await knex('test.users').insert({});
+  await knex('test.jobs')
+    .insert({ userId: 1 })
+    .returning('*');
+
+  const core = Core(knex, getContext);
+
+  let receivedBody = null;
+  core.table({
+    schemaName: 'test',
+    tableName: 'jobs',
+    tenantIdColumnName: 'userId',
+    async policy(query, { getUser }) {
+      query.where(`${this.alias}.userId`, (await getUser()).id);
+    },
+    methods: {
+      async deactivate(row, _context, body) {
+        receivedBody = body;
+        await knex('test.jobs')
+          .update({ active: false })
+          .where('id', row.id)
+          .where('userId', row.userId);
+
+        return { ok: true };
+      },
+    },
+  });
+
+  const { post } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  expect(
+    (await post('/test/jobs/1/deactivate?userId=1', { val: 1 })).data
+  ).toStrictEqual({
+    ok: true,
+  });
+  expect(receivedBody).toStrictEqual({ val: 1 });
+  expect(
+    (
+      await post('/test/jobs/2/deactivate?userId=1', { val: 1 }).catch(
+        e => e.response
+      )
+    ).status
+  ).toBe(404);
+  expect(
+    (await post('/test/jobs/2/deactivate', { val: 1 }).catch(e => e.response))
+      .status
+  ).toBe(400);
+});
+
 it('allows arrays', async () => {
   await knex.schema.withSchema('test').createTable('resource', t => {
     t.bigIncrements('id').primary();
