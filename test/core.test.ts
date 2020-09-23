@@ -3357,6 +3357,12 @@ it('allows methods (with tenant)', async () => {
     (await post('/test/jobs/2/deactivate', { val: 1 }).catch(e => e.response))
       .status
   ).toBe(400);
+
+  expect(await knex('test.jobs').first()).toStrictEqual({
+    id: 1,
+    userId: 1,
+    active: false,
+  });
 });
 
 it('allows arrays', async () => {
