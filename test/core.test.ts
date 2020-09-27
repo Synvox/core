@@ -3447,3 +3447,58 @@ it('allows arrays', async () => {
     }
   `);
 });
+
+it('forwards params', async () => {
+  await knex.schema.withSchema('test').createTable('users', t => {
+    t.bigIncrements('id').primary();
+  });
+  await knex.schema.withSchema('test').createTable('jobs', t => {
+    t.bigIncrements('id').primary();
+    t.boolean('active').defaultTo(true);
+    t.integer('user_id')
+      .references('id')
+      .inTable('test.users');
+  });
+
+  await knex('test.users').insert({});
+  await knex('test.jobs')
+    .insert({ userId: 1 })
+    .returning('*');
+
+  const core = Core(knex, getContext, { forwardQueryParams: ['__token__'] });
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'users',
+    async policy(query, { getUser }) {
+      query.where('id', (await getUser()).id);
+    },
+  });
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'jobs',
+    async policy(query, { getUser }) {
+      query.where('userId', (await getUser()).id);
+    },
+  });
+
+  const { get } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  expect((await get('/test/users/1?__token__=abc123')).data)
+    .toMatchInlineSnapshot(`
+    Object {
+      "data": Object {
+        "@links": Object {
+          "jobs": "/test/jobs?__token__=abc123&userId=1",
+        },
+        "@url": "/test/users/1?__token__=abc123",
+        "id": 1,
+      },
+    }
+  `);
+});

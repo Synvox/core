@@ -95,6 +95,7 @@ export default function core<Context>(
     loadSchemaFromFile = process.env.NODE_ENV === 'production' &&
       Boolean(writeSchemaToFile),
     origin = '',
+    forwardQueryParams = [],
   }: {
     emitter?: EventEmitter;
     writeSchemaToFile?: string | null;
@@ -102,6 +103,7 @@ export default function core<Context>(
     includeLinksWithTypes?: boolean;
     loadSchemaFromFile?: boolean;
     origin?: string;
+    forwardQueryParams?: string[];
   } = {}
 ) {
   function trxNotifyCommit(
@@ -167,6 +169,10 @@ export default function core<Context>(
         tenantId = inputRow[table.tenantIdColumnName];
     }
 
+    const forwardedQueryParams: { [key: string]: string } = Object.fromEntries(
+      forwardQueryParams.map(key => [key, req.query[key]]).filter(([_, v]) => v)
+    );
+
     let row = { ...inputRow };
     const relations = relationsFor(table);
 
@@ -178,16 +184,25 @@ export default function core<Context>(
       if (row[column] === null) continue;
       if (row[key] === undefined) {
         result[key] = `${origin}${req.baseUrl}${table.path}/${row[column]}`;
+        const params: { [key: string]: string } = forwardedQueryParams;
         if (tenantId && table.tenantIdColumnName)
-          result[key] += `?${table.tenantIdColumnName}=${tenantId}`;
+          params[table.tenantIdColumnName] = tenantId;
+        if (Object.keys(params).length)
+          result[key] += `?${qsStringify(params)}`;
       } else row[key] = await processTableRow(req, context, table, row[key]);
     }
 
     for (let { table, column, key } of hasMany) {
       if (row[key] === undefined) {
-        result[key] = `${origin}${table.path}?${column}=${row.id}`;
+        result[key] = `${origin}${table.path}`;
+        const params: { [key: string]: string } = {
+          ...forwardedQueryParams,
+          [column]: row.id,
+        };
         if (tenantId && table.tenantIdColumnName)
-          result[key] += `&${table.tenantIdColumnName}=${tenantId}`;
+          params[table.tenantIdColumnName] = tenantId;
+        if (Object.keys(params).length)
+          result[key] += `?${qsStringify(params)}`;
       } else
         row[key] = await Promise.all(
           row[key].map(
@@ -218,7 +233,7 @@ export default function core<Context>(
       }
     }
 
-    let rowQueryParams: { [key: string]: any } = {};
+    let rowQueryParams: { [key: string]: any } = forwardedQueryParams;
 
     if (table.tenantIdColumnName && tenantId) {
       rowQueryParams[table.tenantIdColumnName] = tenantId;
