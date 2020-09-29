@@ -58,7 +58,7 @@ const getContext: ContextFactory<{
 
       if (impersonate) {
         user = await knex('test.users')
-          .where('id', impersonate)
+          .where('users.id', impersonate)
           .first();
         return user;
       } else return null;
@@ -565,7 +565,7 @@ it('writes tables', async () => {
   });
   expect(queries.length).toBe(3);
   expect(queries).toStrictEqual([
-    'select users.* from test.users where email = ? limit ?',
+    'select users.* from test.users where users.email = ? limit ?',
     'insert into test.users (email) values (?) returning *',
     'select users.* from test.users where users.id = ? limit ?',
   ]);
@@ -585,7 +585,7 @@ it('writes tables', async () => {
   ).toStrictEqual({ errors: { email: 'is already in use' } });
   expect(queries.length).toBe(1);
   expect(lastQuery()).toBe(
-    'select users.* from test.users where email = ? limit ?'
+    'select users.* from test.users where users.email = ? limit ?'
   );
 
   expect(events.length).toBe(0);
@@ -611,7 +611,7 @@ it('writes tables', async () => {
   expect(queries.length).toBe(5);
   expect(queries).toStrictEqual([
     'select users.* from test.users where users.id = ? limit ?', // get row
-    'select users.* from test.users where not (users.id = ?) and email = ? limit ?', // get possible duplicates
+    'select users.* from test.users where not (users.id = ?) and users.email = ? limit ?', // get possible duplicates
     'select users.* from test.users where users.id = ? limit ?', // get row (in transaction)
     'update test.users set email = ? where users.id = ?', // update
     'select users.* from test.users where users.id = ? limit ?', // make sure row is still editable
@@ -640,7 +640,7 @@ it('writes tables', async () => {
   });
   expect(queries).toStrictEqual([
     'select users.* from test.users where users.id = ? limit ?',
-    'select users.* from test.users where not (users.id = ?) and email = ? limit ?', // check for duplicate
+    'select users.* from test.users where not (users.id = ?) and users.email = ? limit ?', // check for duplicate
     'select users.* from test.users where users.id = ? limit ?', // get in transaction
     // abort because nothing actually changed
   ]);
@@ -823,7 +823,7 @@ it('handles relations', async () => {
     })),
   });
   expect(queries).toEqual([
-    'select * from test.users where id = ? limit ?',
+    'select * from test.users where users.id = ? limit ?',
     'select comments.*, (select row_to_json(users) from test.users where users.id = comments.user_id and users.id = 1 limit 1) as user from test.comments where comments.user_id = ? and comments.user_id = ? order by comments.id asc limit ?',
   ]);
   expect(queries.length).toBe(2);
@@ -1182,8 +1182,8 @@ it('handles relations', async () => {
     ).status
   ).toStrictEqual(401);
   expect(queries).toEqual([
-    'select * from test.users where id = ? limit ?',
-    'select comments.* from test.comments where comments.user_id = ? and comments.id = ? and user_id = ? limit ?',
+    'select * from test.users where users.id = ? limit ?',
+    'select comments.* from test.comments where comments.user_id = ? and comments.id = ? and comments.user_id = ? limit ?',
   ]);
   expect(events.length).toBe(0);
   events = [];
@@ -2562,7 +2562,7 @@ it('handles upserts', async () => {
     tableName: 'articleTypes',
     allowUpserts: true,
     async policy(stmt) {
-      stmt.where('visible', true);
+      stmt.where('articleTypes.visible', true);
     },
   });
 
@@ -3177,7 +3177,7 @@ it('disallows edits that make a row uneditable', async () => {
   ).toEqual(401);
   expect(queries).toEqual([
     // get user
-    'select * from test.users where id = ? limit ?',
+    'select * from test.users where users.id = ? limit ?',
     // get row for validations
     'select resource.* from test.resource where resource.user_id = ? and resource.id = ? limit ?',
     // get row for updating (in transaction)
@@ -3264,7 +3264,7 @@ it('allows methods', async () => {
     schemaName: 'test',
     tableName: 'jobs',
     async policy(query, { getUser }) {
-      query.where('userId', (await getUser()).id);
+      query.where('jobs.userId', (await getUser()).id);
     },
     methods: {
       async deactivate(row, _context, body) {
@@ -3471,7 +3471,7 @@ it('forwards params', async () => {
     schemaName: 'test',
     tableName: 'users',
     async policy(query, { getUser }) {
-      query.where('id', (await getUser()).id);
+      query.where('users.id', (await getUser()).id);
     },
   });
 
@@ -3479,7 +3479,7 @@ it('forwards params', async () => {
     schemaName: 'test',
     tableName: 'jobs',
     async policy(query, { getUser }) {
-      query.where('userId', (await getUser()).id);
+      query.where('jobs.userId', (await getUser()).id);
     },
   });
 

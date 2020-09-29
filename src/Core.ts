@@ -662,7 +662,8 @@ export default function core<Context>(
           const upsertCheckStmt = query(table).first();
 
           for (let column of columns) {
-            upsertCheckStmt.where(column, graph[column]);
+            if (graph[column])
+              upsertCheckStmt.where(`${table.alias}.${column}`, graph[column]);
           }
 
           table.policy.call(table, upsertCheckStmt, context, 'update');
@@ -716,7 +717,10 @@ export default function core<Context>(
                   async function test() {
                     const { parent } = this;
                     const where = Object.fromEntries(
-                      columns.map(column => [column, parent[column]])
+                      columns.map(column => [
+                        `${table.alias}.${column}`,
+                        parent[column],
+                      ])
                     );
 
                     const stmt = query(table);
@@ -758,7 +762,7 @@ export default function core<Context>(
               .modify(function() {
                 if (table.tenantIdColumnName)
                   this.where(
-                    table.tenantIdColumnName,
+                    `${table.alias}.${table.tenantIdColumnName}`,
                     graph[table.tenantIdColumnName]
                   );
               })
