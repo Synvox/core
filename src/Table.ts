@@ -89,7 +89,17 @@ export type Table<T> = Required<PartialTable<T>> & {
   columns: Columns | null;
   tablePath: string;
   uniqueColumns: Array<string[]>;
-  relations: { [key: string]: string };
+  relations: {
+    [key: string]: {
+      path: string;
+      columnName: string;
+      referencesSchema: string;
+      referencesTable: string;
+      referencesColumnName: string;
+      deleteRule: string;
+      updateRule: string;
+    };
+  };
   schema: { [columnName: string]: MixedSchema };
   alias: string;
 };
@@ -103,7 +113,17 @@ export type TableEntry = {
   name: string;
   columns: Columns;
   uniqueColumns: Array<string[]>;
-  relations: { [key: string]: string };
+  relations: {
+    [key: string]: {
+      path: string;
+      columnName: string;
+      referencesSchema: string;
+      referencesTable: string;
+      referencesColumnName: string;
+      deleteRule: string;
+      updateRule: string;
+    };
+  };
   queryModifiers: string[];
   pluralForeignKeyMap: { [key: string]: string };
 };
@@ -249,9 +269,14 @@ export async function initTable<Context>(
   const { rows: refs } = await knex.raw(
     `
       select
+        kcu.table_schema,
+        kcu.table_name,
         kcu.column_name as column_name,
         rel_kcu.table_schema as references_schema,
-        rel_kcu.table_name as references_table
+        rel_kcu.table_name as references_table,
+        rel_kcu.column_name as references_column_name,
+        rco.update_rule,
+        rco.delete_rule
       from information_schema.table_constraints tco
       join information_schema.key_column_usage kcu
         on tco.constraint_schema = kcu.constraint_schema
@@ -266,8 +291,8 @@ export async function initTable<Context>(
       where tco.constraint_type = 'FOREIGN KEY'
         and rel_kcu.table_name is not null
         and rel_kcu.column_name = 'id'
-        and kcu.table_schema = ?
-        and kcu.table_name = ?
+      and kcu.table_schema = ?
+      and kcu.table_name = ?
     `
       .replace(/\s\s+/g, ' ')
       .trim(),
@@ -285,9 +310,21 @@ export async function initTable<Context>(
         columnName: string;
         referencesSchema: string;
         referencesTable: string;
+        referencesColumnName: string;
+        deleteRule: string;
+        updateRule: string;
       }) => [
         camelize(ref.columnName),
-        `${camelize(ref.referencesSchema)}.${camelize(ref.referencesTable)}`,
+        {
+          path: `${camelize(ref.referencesSchema)}.${camelize(
+            ref.referencesTable
+          )}`,
+          referencesSchema: ref.referencesSchema,
+          referencesTable: ref.referencesTable,
+          referencesColumnName: ref.referencesColumnName,
+          deleteRule: ref.deleteRule,
+          updateRule: ref.updateRule,
+        },
       ]
     )
   );
@@ -435,7 +472,7 @@ export async function saveTsTypes(path: string, includeLinks = true) {
 
       const relationMaps = {
         hasOne: Object.entries(relations)
-          .map(([column, tablePath]) => ({
+          .map(([column, { path: tablePath }]) => ({
             column,
             key: column.replace(/Id$/, ''),
             table: Object.values(thisSchema).find(
@@ -447,7 +484,9 @@ export async function saveTsTypes(path: string, includeLinks = true) {
           .filter(m => m !== table)
           .map(otherTable => {
             return Object.entries(otherTable.relations)
-              .filter(([_, tablePath]) => tablePath === table.tablePath)
+              .filter(
+                ([_, { path: tablePath }]) => tablePath === table.tablePath
+              )
               .map(([column]) => {
                 return {
                   column,

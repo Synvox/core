@@ -230,6 +230,11 @@ export default function core<Context>(
         );
       } else {
         result[getterName] = `${origin}${table.path}/${row.id}/${getterName}`;
+        const params: { [key: string]: string } = forwardedQueryParams;
+        if (tenantId && table.tenantIdColumnName)
+          params[table.tenantIdColumnName] = tenantId;
+        if (Object.keys(params).length)
+          result[getterName] += `?${qsStringify(params)}`;
       }
     }
 
@@ -1287,7 +1292,7 @@ export default function core<Context>(
         tables.forEach(table => {
           const relations = {
             hasOne: Object.entries(table.relations)
-              .map(([column, tablePath]) => ({
+              .map(([column, { path: tablePath }]) => ({
                 column,
                 key: column.replace(/Id$/, ''),
                 table: tables.find(m => m.tablePath === tablePath)!,
@@ -1297,7 +1302,9 @@ export default function core<Context>(
               .filter(m => m !== table)
               .map(otherTable => {
                 return Object.entries(otherTable.relations)
-                  .filter(([_, tablePath]) => tablePath === table.tablePath)
+                  .filter(
+                    ([_, { path: tablePath }]) => tablePath === table.tablePath
+                  )
                   .map(([column]) => {
                     return {
                       column,
