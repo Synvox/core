@@ -723,6 +723,9 @@ export default function core<Context>(
                       ])
                     );
 
+                    // if we don't have every column, abort pass
+                    if (!Object.values(where).every(Boolean)) return true;
+
                     const stmt = query(table);
                     // There is no policy check here so rows that conflict
                     // that are not visible to the user
