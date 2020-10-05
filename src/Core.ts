@@ -414,34 +414,29 @@ export default function core<Context>(
           });
         }
 
-        if (req.query.lastId) {
+        if (req.query.cursor) {
+          const cursor = JSON.parse(atob(req.query.cursor));
           // keyset pagination
-          statement
-            .join(
-              `${table.schemaName}.${table.tableName} as prev`,
-              'prev.id',
-              knex.raw('?', req.query.lastId)
-            )
-            .where(function() {
-              sorts.forEach((sort, index) => {
-                this.orWhere(function() {
-                  sorts
-                    .slice(0, index)
-                    .map(({ column }) =>
-                      this.where(
-                        `${table.tableName}.${column}`,
-                        '=',
-                        knex.raw('??', `prev.${column}`)
-                      )
-                    );
-                  this.where(
-                    `${table.tableName}.${sort.column}`,
-                    sort.order === 'asc' ? '>' : '<',
-                    knex.raw('??', `prev.${sort.column}`)
+          statement.where(function() {
+            sorts.forEach((sort, index) => {
+              this.orWhere(function() {
+                sorts
+                  .slice(0, index)
+                  .map(({ column }) =>
+                    this.where(
+                      `${table.tableName}.${column}`,
+                      '=',
+                      cursor[column]
+                    )
                   );
-                });
+                this.where(
+                  `${table.tableName}.${sort.column}`,
+                  sort.order === 'asc' ? '>' : '<',
+                  cursor[sort.column]
+                );
               });
             });
+          });
         } else {
           statement.offset(page * limit);
         }
@@ -464,7 +459,7 @@ export default function core<Context>(
                 ...(results.length >= limit && {
                   nextPage: `${origin}${path}?${qsStringify({
                     ...req.query,
-                    lastId: results[results.length - 1].id,
+                    cursor: btoa(JSON.stringify(results[results.length - 1])),
                   })}`,
                 }),
               }
@@ -710,6 +705,7 @@ export default function core<Context>(
             for (let columns of table.uniqueColumns) {
               for (let column of columns) {
                 const g = graph;
+                if (g[column] === undefined) continue;
                 schema[column] = schema[column].test(
                   'unique',
                   // eslint-disable-next-line no-template-curly-in-string
@@ -723,8 +719,9 @@ export default function core<Context>(
                       ])
                     );
 
-                    // if we don't have every column, abort pass
-                    if (!Object.values(where).every(Boolean)) return true;
+                    // if we don't have every column, abort and pass the test
+                    if (!Object.values(where).every(v => v !== undefined))
+                      return true;
 
                     const stmt = query(table);
                     // There is no policy check here so rows that conflict

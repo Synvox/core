@@ -199,27 +199,29 @@ it('reads tables', async () => {
 
   // check for keyset pagination link
   clearQueries();
-  expect((await get('/test/users?limit=1')).data).toStrictEqual({
-    meta: {
-      page: 0,
-      limit: 1,
-      hasMore: true,
-      '@url': '/test/users?limit=1',
-      '@links': {
-        count: '/test/users/count?limit=1',
-        ids: '/test/users/ids?limit=1',
-        nextPage: '/test/users?limit=1&lastId=1',
+  expect((await get('/test/users?limit=1')).data).toMatchInlineSnapshot(`
+    Object {
+      "data": Array [
+        Object {
+          "@links": Object {},
+          "@url": "/test/users/1",
+          "email": "1@abc.com",
+          "id": 1,
+        },
+      ],
+      "meta": Object {
+        "@links": Object {
+          "count": "/test/users/count?limit=1",
+          "ids": "/test/users/ids?limit=1",
+          "nextPage": "/test/users?limit=1&cursor=eyJpZCI6MSwiZW1haWwiOiIxQGFiYy5jb20iLCJoaWRkZW4iOiJhYmMxMjMifQ%3D%3D",
+        },
+        "@url": "/test/users?limit=1",
+        "hasMore": true,
+        "limit": 1,
+        "page": 0,
       },
-    },
-    data: [
-      {
-        '@links': {},
-        '@url': `/test/users/1`,
-        id: 1,
-        email: `1@abc.com`,
-      },
-    ],
-  });
+    }
+  `);
   expect(queries.length).toBe(1);
   expect(lastQuery()).toBe(
     'select users.* from test.users order by users.id asc limit ?'
@@ -227,30 +229,38 @@ it('reads tables', async () => {
 
   // use pagination link
   clearQueries();
-  expect((await get('/test/users?limit=1&lastId=1')).data).toStrictEqual({
-    meta: {
-      page: 0,
-      limit: 1,
-      hasMore: true,
-      '@url': '/test/users?limit=1&lastId=1',
-      '@links': {
-        ids: '/test/users/ids?limit=1&lastId=1',
-        count: '/test/users/count?limit=1&lastId=1',
-        nextPage: '/test/users?limit=1&lastId=2',
+  expect(
+    (
+      await get(
+        '/test/users?limit=1&cursor=eyJpZCI6MSwiZW1haWwiOiIxQGFiYy5jb20iLCJoaWRkZW4iOiJhYmMxMjMifQ%3D%3D'
+      )
+    ).data
+  ).toMatchInlineSnapshot(`
+    Object {
+      "data": Array [
+        Object {
+          "@links": Object {},
+          "@url": "/test/users/2",
+          "email": "2@abc.com",
+          "id": 2,
+        },
+      ],
+      "meta": Object {
+        "@links": Object {
+          "count": "/test/users/count?limit=1&cursor=eyJpZCI6MSwiZW1haWwiOiIxQGFiYy5jb20iLCJoaWRkZW4iOiJhYmMxMjMifQ%3D%3D",
+          "ids": "/test/users/ids?limit=1&cursor=eyJpZCI6MSwiZW1haWwiOiIxQGFiYy5jb20iLCJoaWRkZW4iOiJhYmMxMjMifQ%3D%3D",
+          "nextPage": "/test/users?limit=1&cursor=eyJpZCI6MiwiZW1haWwiOiIyQGFiYy5jb20iLCJoaWRkZW4iOiJhYmMxMjMifQ%3D%3D",
+        },
+        "@url": "/test/users?limit=1&cursor=eyJpZCI6MSwiZW1haWwiOiIxQGFiYy5jb20iLCJoaWRkZW4iOiJhYmMxMjMifQ%3D%3D",
+        "hasMore": true,
+        "limit": 1,
+        "page": 0,
       },
-    },
-    data: [
-      {
-        '@links': {},
-        '@url': `/test/users/2`,
-        id: 2,
-        email: `2@abc.com`,
-      },
-    ],
-  });
+    }
+  `);
   expect(queries.length).toBe(1);
   expect(lastQuery()).toBe(
-    'select users.* from test.users inner join test.users as prev on prev.id = ? where ((users.id > prev.id)) order by users.id asc limit ?'
+    'select users.* from test.users where ((users.id > ?)) order by users.id asc limit ?'
   );
 
   // read paginated (sorted)
@@ -347,61 +357,73 @@ it('reads tables', async () => {
   // read paginated by keyset (sorted)
   clearQueries();
   expect(
-    (await get('/test/users?limit=1&lastId=1&sort=email')).data
-  ).toStrictEqual({
-    meta: {
-      page: 0,
-      limit: 1,
-      hasMore: true,
-      '@url': '/test/users?limit=1&lastId=1&sort=email',
-      '@links': {
-        count: '/test/users/count?limit=1&lastId=1&sort=email',
-        ids: '/test/users/ids?limit=1&lastId=1&sort=email',
-        nextPage: '/test/users?limit=1&lastId=2&sort=email',
+    (
+      await get(
+        '/test/users?limit=1&sort=email&cursor=eyJpZCI6MSwiZW1haWwiOiIxQGFiYy5jb20iLCJoaWRkZW4iOiJhYmMxMjMifQ%3D%3D'
+      )
+    ).data
+  ).toMatchInlineSnapshot(`
+    Object {
+      "data": Array [
+        Object {
+          "@links": Object {},
+          "@url": "/test/users/2",
+          "email": "2@abc.com",
+          "id": 2,
+        },
+      ],
+      "meta": Object {
+        "@links": Object {
+          "count": "/test/users/count?limit=1&sort=email&cursor=eyJpZCI6MSwiZW1haWwiOiIxQGFiYy5jb20iLCJoaWRkZW4iOiJhYmMxMjMifQ%3D%3D",
+          "ids": "/test/users/ids?limit=1&sort=email&cursor=eyJpZCI6MSwiZW1haWwiOiIxQGFiYy5jb20iLCJoaWRkZW4iOiJhYmMxMjMifQ%3D%3D",
+          "nextPage": "/test/users?limit=1&sort=email&cursor=eyJpZCI6MiwiZW1haWwiOiIyQGFiYy5jb20iLCJoaWRkZW4iOiJhYmMxMjMifQ%3D%3D",
+        },
+        "@url": "/test/users?limit=1&sort=email&cursor=eyJpZCI6MSwiZW1haWwiOiIxQGFiYy5jb20iLCJoaWRkZW4iOiJhYmMxMjMifQ%3D%3D",
+        "hasMore": true,
+        "limit": 1,
+        "page": 0,
       },
-    },
-    data: [
-      {
-        '@links': {},
-        '@url': `/test/users/2`,
-        id: 2,
-        email: `2@abc.com`,
-      },
-    ],
-  });
+    }
+  `);
   expect(queries.length).toBe(1);
   expect(lastQuery()).toBe(
-    'select users.* from test.users inner join test.users as prev on prev.id = ? where ((users.email > prev.email)) order by users.email asc limit ?'
+    'select users.* from test.users where ((users.email > ?)) order by users.email asc limit ?'
   );
 
   // read paginated by keyset (sorted)
   clearQueries();
   expect(
-    (await get('/test/users?limit=1&lastId=1&sort[]=email&sort[]=-id')).data
-  ).toStrictEqual({
-    meta: {
-      page: 0,
-      limit: 1,
-      hasMore: true,
-      '@url': '/test/users?limit=1&lastId=1&sort[]=email&sort[]=-id',
-      '@links': {
-        count: '/test/users/count?limit=1&lastId=1&sort[]=email&sort[]=-id',
-        ids: '/test/users/ids?limit=1&lastId=1&sort[]=email&sort[]=-id',
-        nextPage: '/test/users?limit=1&lastId=2&sort[]=email&sort[]=-id',
+    (
+      await get(
+        '/test/users?limit=1&sort[]=email&sort[]=-id&cursor=eyJpZCI6MSwiZW1haWwiOiIxQGFiYy5jb20iLCJoaWRkZW4iOiJhYmMxMjMifQ%3D%3D'
+      )
+    ).data
+  ).toMatchInlineSnapshot(`
+    Object {
+      "data": Array [
+        Object {
+          "@links": Object {},
+          "@url": "/test/users/2",
+          "email": "2@abc.com",
+          "id": 2,
+        },
+      ],
+      "meta": Object {
+        "@links": Object {
+          "count": "/test/users/count?limit=1&sort[]=email&sort[]=-id&cursor=eyJpZCI6MSwiZW1haWwiOiIxQGFiYy5jb20iLCJoaWRkZW4iOiJhYmMxMjMifQ%3D%3D",
+          "ids": "/test/users/ids?limit=1&sort[]=email&sort[]=-id&cursor=eyJpZCI6MSwiZW1haWwiOiIxQGFiYy5jb20iLCJoaWRkZW4iOiJhYmMxMjMifQ%3D%3D",
+          "nextPage": "/test/users?limit=1&sort[]=email&sort[]=-id&cursor=eyJpZCI6MiwiZW1haWwiOiIyQGFiYy5jb20iLCJoaWRkZW4iOiJhYmMxMjMifQ%3D%3D",
+        },
+        "@url": "/test/users?limit=1&sort[]=email&sort[]=-id&cursor=eyJpZCI6MSwiZW1haWwiOiIxQGFiYy5jb20iLCJoaWRkZW4iOiJhYmMxMjMifQ%3D%3D",
+        "hasMore": true,
+        "limit": 1,
+        "page": 0,
       },
-    },
-    data: [
-      {
-        '@links': {},
-        '@url': `/test/users/2`,
-        id: 2,
-        email: `2@abc.com`,
-      },
-    ],
-  });
+    }
+  `);
   expect(queries.length).toBe(1);
   expect(lastQuery()).toBe(
-    'select users.* from test.users inner join test.users as prev on prev.id = ? where ((users.email > prev.email) or (users.email = prev.email and users.id < prev.id)) order by users.email asc, users.id desc limit ?'
+    'select users.* from test.users where ((users.email > ?) or (users.email = ? and users.id < ?)) order by users.email asc, users.id desc limit ?'
   );
 
   // get by id
