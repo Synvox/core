@@ -92,6 +92,7 @@ export default function core<Context>(
     writeSchemaToFile = null,
     writeTypesToFile = null,
     includeLinksWithTypes = true,
+    includeRelationsWithTypes = true,
     loadSchemaFromFile = process.env.NODE_ENV === 'production' &&
       Boolean(writeSchemaToFile),
     origin = '',
@@ -101,6 +102,7 @@ export default function core<Context>(
     writeSchemaToFile?: string | null;
     writeTypesToFile?: string | null;
     includeLinksWithTypes?: boolean;
+    includeRelationsWithTypes?: boolean;
     loadSchemaFromFile?: boolean;
     origin?: string;
     forwardQueryParams?: string[];
@@ -1286,7 +1288,11 @@ export default function core<Context>(
         );
 
         if (process.env.NODE_ENV !== 'production' && writeTypesToFile) {
-          await saveTsTypes(writeTypesToFile, includeLinksWithTypes);
+          await saveTsTypes(
+            writeTypesToFile,
+            includeLinksWithTypes,
+            includeRelationsWithTypes
+          );
         }
 
         if (process.env.NODE_ENV !== 'production' && writeSchemaToFile) {

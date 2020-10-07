@@ -4,13 +4,7 @@ import { Router } from 'express';
 import { MixedSchema } from 'yup';
 import { ContextFactory, Mode } from '.';
 import { transformKey, caseMethods } from './knexHelpers';
-import {
-  classify,
-  titleize,
-  underscore,
-  humanize,
-  singularize,
-} from 'inflection';
+import { classify, titleize, underscore, humanize } from 'inflection';
 
 export type PartialTable<T> = { tableName: string } & Partial<{
   schemaName: string;
@@ -431,6 +425,7 @@ function postgresTypesToJSONTsTypes(type: string) {
     case 'int':
       return 'number';
     case 'bool':
+    case 'boolean':
       return 'boolean';
     case 'json':
     case 'jsonb':
@@ -440,7 +435,11 @@ function postgresTypesToJSONTsTypes(type: string) {
   }
 }
 
-export async function saveTsTypes(path: string, includeLinks = true) {
+export async function saveTsTypes(
+  path: string,
+  includeLinks = true,
+  includeRelations = false
+) {
   const sortedSchema = sortObject(schema) as Schema;
 
   let schemas: {
@@ -460,12 +459,8 @@ export async function saveTsTypes(path: string, includeLinks = true) {
   let types = '';
   for (let schemaName in schemas) {
     for (let tableName in schemas[schemaName]) {
-      types += `export type ${transformKey(
-        singularize(tableName),
-        caseMethods.pascal
-      )} = {\n`;
-
       const table = schemas[schemaName][tableName];
+      types += `export type ${table.className} = {\n`;
       const { relations, columns } = table;
 
       const thisSchema = schema;
@@ -533,6 +528,20 @@ export async function saveTsTypes(path: string, includeLinks = true) {
         }
 
         types += `  };\n`;
+      }
+      if (includeRelations) {
+        const { hasOne, hasMany } = relationMaps;
+
+        for (let { column, key, table: refTable } of hasOne) {
+          types += `  ${key}${columns[column].nullable ? '?' : ''}: ${
+            refTable.className
+          }`;
+          types += ';\n';
+        }
+
+        for (let { key, table: refTable } of hasMany) {
+          types += `  ${key}: ${refTable.className}[];\n`;
+        }
       }
       types += `};\n\n`;
     }

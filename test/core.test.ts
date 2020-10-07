@@ -2348,6 +2348,7 @@ it('saves typescript types', async () => {
       '@links': {
         user: string;
       };
+      user: User;
     };
 
     export type User = {
@@ -2361,6 +2362,7 @@ it('saves typescript types', async () => {
       '@links': {
         comments: string;
       };
+      comments: Comment[];
     };"
   `);
 });
@@ -2416,6 +2418,7 @@ it('saves typescript types without links', async () => {
       id: number;
       userId: number;
       body: string;
+      user: User;
     };
 
     export type User = {
@@ -2424,6 +2427,7 @@ it('saves typescript types without links', async () => {
       createdAt: string;
       updatedAt: string;
       deletedAt: string | null;
+      comments: Comment[];
     };"
   `);
 });
