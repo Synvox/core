@@ -3,6 +3,8 @@ import qs from 'qs';
 import Knex, { Transaction, QueryBuilder } from 'knex';
 import express, { Request, Response, NextFunction, Express } from 'express';
 import setValue from 'set-value';
+import atob from 'atob';
+import btoa from 'btoa';
 import {
   object,
   string,
