@@ -488,11 +488,10 @@ it('reads tables', async () => {
     data: 1,
   });
 
-  for (let i = 10; i < 2000; i++) {
-    await knex('test.users').insert({
-      email: `${i + 1}@abc.com`,
-    });
-  }
+  await knex.raw(`
+    insert into test.users (email)
+    select i from generate_series(1, 2000) as t(i)
+  `);
 
   clearQueries();
 
