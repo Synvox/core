@@ -1036,14 +1036,16 @@ export default function core<Context>(
           const stmt = query(table, { knex: trx });
           await table.policy.call(table, stmt, context, 'insert');
 
-          const updatedRow = await stmt
+          let updatedRow = await stmt
             .where(`${table.alias}.id`, row.id)
             .first();
 
           if (!updatedRow) throw new UnauthorizedError();
 
+          let didUseSetter = false;
           for (let key in initialGraph) {
             if (table.setters[key]) {
+              didUseSetter = true;
               await table.setters[key](
                 trx,
                 initialGraph[key],
@@ -1051,6 +1053,10 @@ export default function core<Context>(
                 context
               );
             }
+          }
+
+          if (didUseSetter) {
+            updatedRow = await stmt.where(`${table.alias}.id`, row.id).first();
           }
 
           if (table.afterUpdate) {
