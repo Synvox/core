@@ -3527,3 +3527,83 @@ it('forwards params', async () => {
     }
   `);
 });
+
+it('supports base url', async () => {
+  async function create(core: any, options?: Partial<AxiosRequestConfig>) {
+    if (server) {
+      server?.close();
+      server = null;
+    }
+
+    const app = express();
+    app.use(express.json());
+    const router = express.Router();
+    router.use(core);
+    app.use('/api', router);
+
+    server = createServer(app);
+    const url = await listen(server);
+    return {
+      ...axios.create({ ...options, baseURL: url }),
+      url,
+    };
+  }
+
+  await knex.schema.withSchema('test').createTable('users', t => {
+    t.bigIncrements('id').primary();
+  });
+  await knex.schema.withSchema('test').createTable('jobs', t => {
+    t.bigIncrements('id').primary();
+    t.boolean('active').defaultTo(true);
+    t.integer('user_id')
+      .references('id')
+      .inTable('test.users');
+  });
+
+  await knex('test.users').insert({});
+  await knex('test.jobs')
+    .insert({ userId: 1 })
+    .returning('*');
+
+  const core = Core(knex, getContext);
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'users',
+  });
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'jobs',
+  });
+
+  const { get } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  expect((await get('/api/test/users')).data).toMatchInlineSnapshot(`
+    Object {
+      "data": Array [
+        Object {
+          "@links": Object {
+            "jobs": "/api/test/jobs?userId=1",
+          },
+          "@url": "/api/test/users/1",
+          "id": 1,
+        },
+      ],
+      "meta": Object {
+        "@links": Object {
+          "count": "/api/test/users/count",
+          "ids": "/api/test/users/ids",
+        },
+        "@url": "/api/test/users",
+        "hasMore": false,
+        "limit": 50,
+        "page": 0,
+      },
+    }
+  `);
+});

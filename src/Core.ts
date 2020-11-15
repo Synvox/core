@@ -198,7 +198,7 @@ export default function core<Context>(
 
     for (let { table, column, key } of hasMany) {
       if (row[key] === undefined) {
-        result[key] = `${origin}${table.path}`;
+        result[key] = `${origin}${req.baseUrl}${table.path}`;
         const params: { [key: string]: string } = {
           ...forwardedQueryParams,
           [column]: row.id,
@@ -233,7 +233,9 @@ export default function core<Context>(
           context
         );
       } else {
-        result[getterName] = `${origin}${table.path}/${row.id}/${getterName}`;
+        result[
+          getterName
+        ] = `${origin}${req.baseUrl}${table.path}/${row.id}/${getterName}`;
         const params: { [key: string]: string } = forwardedQueryParams;
         if (tenantId && table.tenantIdColumnName)
           params[table.tenantIdColumnName] = tenantId;
@@ -393,7 +395,7 @@ export default function core<Context>(
       };
 
       const paginate = async (statement: QueryBuilder) => {
-        const path = req.url.split('?').shift();
+        const path = req.baseUrl + req.url.split('?').shift();
         let { sort } = req.query;
         const page = Number(req.query.page || 0);
         const limit = Math.max(0, Math.min(250, Number(req.query.limit) || 50));
@@ -494,7 +496,7 @@ export default function core<Context>(
             page,
             limit,
             hasMore: results.length >= limit,
-            '@url': `${origin}${req.url}`,
+            '@url': `${origin}${req.baseUrl}${req.url}`,
             '@links': links,
           },
           data: await Promise.all(
