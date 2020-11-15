@@ -241,9 +241,9 @@ export async function initTable<Context>(
       'Tried to make a paranoid table without a deletedAt column'
     );
 
-  const uniqueConstraints = await knex('pg_catalog.pg_constraint con')
-    .join('pg_catalog.pg_class rel', 'rel.oid', 'con.conrelid')
-    .join('pg_catalog.pg_namespace nsp', 'nsp.oid', 'connamespace')
+  const uniqueConstraints = await knex('pg_catalog.pg_constraint as con')
+    .join('pg_catalog.pg_class as rel', 'rel.oid', 'con.conrelid')
+    .join('pg_catalog.pg_namespace as nsp', 'nsp.oid', 'connamespace')
     .where('nsp.nspname', transformKey(table.schemaName, caseMethods.snake))
     .where('rel.relname', transformKey(table.tableName, caseMethods.snake))
     .where('con.contype', 'u')
