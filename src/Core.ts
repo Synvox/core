@@ -31,38 +31,6 @@ type Relation<Context> = {
   table: Table<Context>;
 };
 
-// class Collection<T> extends Array<T> {
-//   url: string;
-//   page: number;
-//   limit: number;
-//   links: { [key: string]: string };
-//   constructor(
-//     items: T[],
-//     url: string,
-//     page: number,
-//     limit: number,
-//     links: { [key: string]: string }
-//   ) {
-//     super(...items);
-//     this.url = url;
-//     this.page = page;
-//     this.limit = limit;
-//     this.links = links;
-//   }
-//   toJSON() {
-//     return {
-//       data: [...this],
-//       meta: {
-//         page: this.page,
-//         limit: this.limit,
-//         hasMore: this.length >= this.limit,
-//         '@url': this.url,
-//         '@links': this.links,
-//       },
-//     };
-//   }
-// }
-
 export type ShouldEventBeSent<Context> = (
   isVisible: () => Promise<boolean>,
   event: ChangeSummary,
@@ -361,8 +329,6 @@ export default function core<Context>(
   {
     const read = async (
       context: Context,
-      req: Request,
-      _res: Response,
       table: Table<Context>,
       filters: any,
       many: boolean = true
@@ -552,7 +518,7 @@ export default function core<Context>(
           data: await Promise.all(
             results.map(
               async (item: any) =>
-                await processTableRow(req.query, context, table, item, include)
+                await processTableRow(filters, context, table, item, include)
             )
           ),
         };
@@ -575,17 +541,15 @@ export default function core<Context>(
 
         if (!data) throw new NotFoundError();
 
-        return await processTableRow(req.query, context, table, data, include);
+        return await processTableRow(filters, context, table, data, include);
       }
     };
 
     const count = async (
       context: Context,
-      req: Request,
-      _res: Response,
+      filters: any,
       table: Table<Context>
     ) => {
-      const filters = req.query;
       const withDeleted = Boolean(filters.withDeleted);
 
       const stmt = query(table, { knex, withDeleted }).clearSelect();
@@ -606,11 +570,9 @@ export default function core<Context>(
 
     const ids = async (
       context: Context,
-      req: Request,
-      _res: Response,
+      filters: any,
       table: Table<Context>
     ) => {
-      const filters = req.query;
       const withDeleted = Boolean(filters.withDeleted);
 
       const stmt = query(table, { knex, withDeleted }).clearSelect();
@@ -624,10 +586,10 @@ export default function core<Context>(
 
       stmt.where(getWhereFiltersForTable(table, where));
 
-      const page = Number(req.query.page || 0);
+      const page = Number(filters.page || 0);
       const limit = Math.max(
         0,
-        Math.min(100000, Number(req.query.limit) || 1000)
+        Math.min(100000, Number(filters.limit) || 1000)
       );
 
       stmt.offset(page * limit);
@@ -639,17 +601,19 @@ export default function core<Context>(
           page,
           limit,
           hasMore: results.length >= limit,
-          '@url': `${baseUrl}${req.url}`,
+          '@url': `${baseUrl}${table.path}/ids${
+            Object.keys(filters).length > 0 ? `?${qsStringify(filters)}` : ''
+          }`,
           '@links': {
             ...(results.length >= limit && {
-              nextPage: `${baseUrl}${req.path}?${qs.stringify({
-                ...req.query,
+              nextPage: `${baseUrl}${table.path}/ids?${qs.stringify({
+                ...filters,
                 page: page + 1,
               })}`,
             }),
             ...(page !== 0 && {
-              previousPage: `${baseUrl}${req.path}?${qs.stringify({
-                ...req.query,
+              previousPage: `${baseUrl}${table.path}/ids?${qs.stringify({
+                ...filters,
                 page: page - 1,
               })}`,
             }),
@@ -661,8 +625,6 @@ export default function core<Context>(
 
     const write = async (
       context: Context,
-      req: Request,
-      _res: Response,
       table: Table<Context>,
       graph: any
     ) => {
@@ -1258,7 +1220,7 @@ export default function core<Context>(
           };
         }
 
-        row = await processTableRow(req.query, context, table, row);
+        row = await processTableRow({}, context, table, row);
 
         for (let { column, key, table: otherTable } of hasMany) {
           const otherGraphs = graph[key];
@@ -1303,16 +1265,6 @@ export default function core<Context>(
 
       return data;
     };
-
-    // class Controller {
-    //   table: Table<Context>;
-    //   constructor(table: Table<Context>) {
-    //     this.table = table;
-    //   }
-    //   read(context: Context, filters: any, many: boolean = true) {
-    //     return read(context, this.table, filters, many);
-    //   }
-    // }
 
     let initializedModels = false;
     const app: Express & {
@@ -1409,7 +1361,7 @@ export default function core<Context>(
             wrap(async (req, res) => {
               const context = getContext(req, res);
               return {
-                data: await count(context, req, res, table),
+                data: await count(context, req.query, table),
               };
             })
           );
@@ -1418,7 +1370,7 @@ export default function core<Context>(
             `${path}/ids`,
             wrap(async (req, res) => {
               const context = getContext(req, res);
-              return ids(context, req, res, table);
+              return ids(context, req.query, table);
             })
           );
 
@@ -1430,8 +1382,6 @@ export default function core<Context>(
 
                 const row = await read(
                   context,
-                  req,
-                  res,
                   table,
                   { ...req.query, id: req.params.id },
                   false
@@ -1455,8 +1405,6 @@ export default function core<Context>(
               return {
                 data: await read(
                   context,
-                  req,
-                  res,
                   table,
                   { ...req.query, id: req.params.id },
                   false
@@ -1469,7 +1417,7 @@ export default function core<Context>(
             path,
             wrap(async (req, res) => {
               const context = getContext(req, res);
-              return read(context, req, res, table, req.query);
+              return read(context, table, req.query);
             })
           );
 
@@ -1511,7 +1459,7 @@ export default function core<Context>(
             wrap(async (req, res) => {
               const context = getContext(req, res);
               return {
-                data: await write(context, req, res, table, req.body),
+                data: await write(context, table, req.body),
               };
             })
           );
@@ -1521,7 +1469,7 @@ export default function core<Context>(
             wrap(async (req, res) => {
               const context = getContext(req, res);
               return {
-                data: await write(context, req, res, table, {
+                data: await write(context, table, {
                   ...req.body,
                   id: req.params.id,
                 }),
@@ -1538,7 +1486,7 @@ export default function core<Context>(
                 : undefined;
 
               return {
-                data: await write(context, req, res, table, {
+                data: await write(context, table, {
                   id: req.params.id,
                   _delete: true,
                   ...(tenantId !== undefined
