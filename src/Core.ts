@@ -143,7 +143,7 @@ export default function core<Context>(
     includeRelationsWithTypes = true,
     loadSchemaFromFile = process.env.NODE_ENV === 'production' &&
       Boolean(writeSchemaToFile),
-    origin = '',
+    baseUrl = '',
     forwardQueryParams = [],
   }: {
     emitter?: EventEmitter;
@@ -152,7 +152,7 @@ export default function core<Context>(
     includeLinksWithTypes?: boolean;
     includeRelationsWithTypes?: boolean;
     loadSchemaFromFile?: boolean;
-    origin?: string;
+    baseUrl?: string;
     forwardQueryParams?: string[];
   } = {}
 ) {
@@ -207,7 +207,7 @@ export default function core<Context>(
   }
 
   async function processTableRow(
-    req: Request,
+    filters: any,
     context: Context,
     table: Table<Context>,
     inputRow: any,
@@ -220,7 +220,7 @@ export default function core<Context>(
     }
 
     const forwardedQueryParams: { [key: string]: string } = Object.fromEntries(
-      forwardQueryParams.map(key => [key, req.query[key]]).filter(([_, v]) => v)
+      forwardQueryParams.map(key => [key, filters[key]]).filter(([_, v]) => v)
     );
 
     let row = { ...inputRow };
@@ -233,18 +233,19 @@ export default function core<Context>(
     for (let { table, column, key } of hasOne) {
       if (row[column] === null) continue;
       if (row[key] === undefined) {
-        result[key] = `${origin}${req.baseUrl}${table.path}/${row[column]}`;
+        result[key] = `${baseUrl}${table.path}/${row[column]}`;
         const params: { [key: string]: string } = forwardedQueryParams;
         if (tenantId && table.tenantIdColumnName)
           params[table.tenantIdColumnName] = tenantId;
         if (Object.keys(params).length)
           result[key] += `?${qsStringify(params)}`;
-      } else row[key] = await processTableRow(req, context, table, row[key]);
+      } else
+        row[key] = await processTableRow(filters, context, table, row[key]);
     }
 
     for (let { table, column, key } of hasMany) {
       if (row[key] === undefined) {
-        result[key] = `${origin}${req.baseUrl}${table.path}`;
+        result[key] = `${baseUrl}${table.path}`;
         const params: { [key: string]: string } = {
           ...forwardedQueryParams,
           [column]: row.id,
@@ -257,7 +258,7 @@ export default function core<Context>(
         row[key] = await Promise.all(
           row[key].map(
             async (item: any) =>
-              await processTableRow(req, context, table, item)
+              await processTableRow(filters, context, table, item)
           )
         );
     }
@@ -279,9 +280,7 @@ export default function core<Context>(
           context
         );
       } else {
-        result[
-          getterName
-        ] = `${origin}${req.baseUrl}${table.path}/${row.id}/${getterName}`;
+        result[getterName] = `${baseUrl}${table.path}/${row.id}/${getterName}`;
         const params: { [key: string]: string } = forwardedQueryParams;
         if (tenantId && table.tenantIdColumnName)
           params[table.tenantIdColumnName] = tenantId;
@@ -300,7 +299,7 @@ export default function core<Context>(
       rowQueryParams.include = selectedGetters;
     }
 
-    let selfUrl = `${origin}${req.baseUrl}${table.path}/${row.id}`;
+    let selfUrl = `${baseUrl}${table.path}/${row.id}`;
 
     if (Object.keys(rowQueryParams).length > 0) {
       selfUrl += `?${qsStringify(rowQueryParams)}`;
@@ -368,7 +367,7 @@ export default function core<Context>(
       filters: any,
       many: boolean = true
     ) => {
-      let { include = [] } = req.query;
+      let { include = [] } = filters;
 
       if (typeof include === 'string') include = [include];
 
@@ -444,10 +443,10 @@ export default function core<Context>(
       };
 
       const paginate = async (statement: QueryBuilder) => {
-        const path = req.baseUrl + req.url.split('?').shift();
-        let { sort } = req.query;
-        const page = Number(req.query.page || 0);
-        const limit = Math.max(0, Math.min(250, Number(req.query.limit) || 50));
+        const path = table.path;
+        let { sort } = filters;
+        const page = Number(filters.page || 0);
+        const limit = Math.max(0, Math.min(250, Number(filters.limit) || 50));
 
         const sorts: { column: string; order: 'asc' | 'desc' }[] = [];
         if (sort) {
@@ -469,8 +468,8 @@ export default function core<Context>(
           });
         }
 
-        if (req.query.cursor) {
-          const cursor = JSON.parse(atob(req.query.cursor));
+        if (filters.cursor) {
+          const cursor = JSON.parse(atob(filters.cursor));
           // keyset pagination
           statement.where(function() {
             sorts.forEach((sort, index) => {
@@ -509,35 +508,35 @@ export default function core<Context>(
         const results = await statement;
 
         const links = {
-          ...(!req.query.page
+          ...(!filters.page
             ? {
                 ...(results.length >= limit && {
-                  nextPage: `${origin}${path}?${qsStringify({
-                    ...req.query,
+                  nextPage: `${baseUrl}${path}?${qsStringify({
+                    ...filters,
                     cursor: btoa(JSON.stringify(results[results.length - 1])),
                   })}`,
                 }),
               }
             : {
                 ...(results.length >= limit && {
-                  nextPage: `${origin}${path}?${qsStringify({
-                    ...req.query,
+                  nextPage: `${baseUrl}${path}?${qsStringify({
+                    ...filters,
                     page: page + 1,
                   })}`,
                 }),
                 ...(page !== 0 && {
-                  previousPage: `${origin}${path}?${qsStringify({
-                    ...req.query,
+                  previousPage: `${baseUrl}${path}?${qsStringify({
+                    ...filters,
                     page: page - 1,
                   })}`,
                 }),
               }),
-          count: `${origin}${path}/count${
-            Object.keys(req.query).length > 0 ? '?' : ''
-          }${qsStringify(req.query)}`,
-          ids: `${origin}${path}/ids${
-            Object.keys(req.query).length > 0 ? '?' : ''
-          }${qsStringify(req.query)}`,
+          count: `${baseUrl}${path}/count${
+            Object.keys(filters).length > 0 ? '?' : ''
+          }${qsStringify(filters)}`,
+          ids: `${baseUrl}${path}/ids${
+            Object.keys(filters).length > 0 ? '?' : ''
+          }${qsStringify(filters)}`,
         };
 
         return {
@@ -545,13 +544,15 @@ export default function core<Context>(
             page,
             limit,
             hasMore: results.length >= limit,
-            '@url': `${origin}${req.baseUrl}${req.url}`,
+            '@url': `${baseUrl}${path}${
+              Object.keys(filters).length > 0 ? `?${qsStringify(filters)}` : ''
+            }`,
             '@links': links,
           },
           data: await Promise.all(
             results.map(
               async (item: any) =>
-                await processTableRow(req, context, table, item, include)
+                await processTableRow(req.query, context, table, item, include)
             )
           ),
         };
@@ -574,7 +575,7 @@ export default function core<Context>(
 
         if (!data) throw new NotFoundError();
 
-        return await processTableRow(req, context, table, data, include);
+        return await processTableRow(req.query, context, table, data, include);
       }
     };
 
@@ -638,16 +639,16 @@ export default function core<Context>(
           page,
           limit,
           hasMore: results.length >= limit,
-          '@url': `${origin}${req.url}`,
+          '@url': `${baseUrl}${req.url}`,
           '@links': {
             ...(results.length >= limit && {
-              nextPage: `${origin}${req.path}?${qs.stringify({
+              nextPage: `${baseUrl}${req.path}?${qs.stringify({
                 ...req.query,
                 page: page + 1,
               })}`,
             }),
             ...(page !== 0 && {
-              previousPage: `${origin}${req.path}?${qs.stringify({
+              previousPage: `${baseUrl}${req.path}?${qs.stringify({
                 ...req.query,
                 page: page - 1,
               })}`,
@@ -1257,7 +1258,7 @@ export default function core<Context>(
           };
         }
 
-        row = await processTableRow(req, context, table, row);
+        row = await processTableRow(req.query, context, table, row);
 
         for (let { column, key, table: otherTable } of hasMany) {
           const otherGraphs = graph[key];
@@ -1302,6 +1303,16 @@ export default function core<Context>(
 
       return data;
     };
+
+    // class Controller {
+    //   table: Table<Context>;
+    //   constructor(table: Table<Context>) {
+    //     this.table = table;
+    //   }
+    //   read(context: Context, filters: any, many: boolean = true) {
+    //     return read(context, this.table, filters, many);
+    //   }
+    // }
 
     let initializedModels = false;
     const app: Express & {

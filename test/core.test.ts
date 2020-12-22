@@ -877,7 +877,7 @@ it('handles relations', async () => {
       page: 0,
       limit: 50,
       hasMore: false,
-      '@url': '/test/comments?mine&include[]=user&userId=1',
+      '@url': '/test/comments?mine=&include[]=user&userId=1',
       '@links': {
         count: '/test/comments/count?mine=&include[]=user&userId=1',
         ids: '/test/comments/ids?mine=&include[]=user&userId=1',
@@ -3105,7 +3105,7 @@ it('allows specifying an origin', async () => {
     resourceId: resource.id,
   });
 
-  const core = Core(knex, getContext, { origin: 'http://localhost:3000' });
+  const core = Core(knex, getContext, { baseUrl: 'http://localhost:3000' });
 
   core.table({
     schemaName: 'test',
@@ -3165,7 +3165,7 @@ it('disallows edits that make a row uneditable', async () => {
     })
     .returning('*');
 
-  const core = Core(knex, getContext, { origin: 'http://localhost:3000' });
+  const core = Core(knex, getContext, { baseUrl: 'http://localhost:3000' });
 
   core.table({
     schemaName: 'test',
@@ -3565,7 +3565,7 @@ it('supports base url', async () => {
     .insert({ userId: 1 })
     .returning('*');
 
-  const core = Core(knex, getContext);
+  const core = Core(knex, getContext, { baseUrl: '/api' });
 
   core.table({
     schemaName: 'test',
@@ -3578,6 +3578,7 @@ it('supports base url', async () => {
   });
 
   const { get } = await create(core, {
+    baseURL: '/api',
     headers: {
       impersonate: '1',
     },
