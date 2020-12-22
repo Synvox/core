@@ -175,7 +175,7 @@ export default function core<Context>(
   }
 
   async function processTableRow(
-    filters: any,
+    queryParams: any,
     context: Context,
     table: Table<Context>,
     inputRow: any,
@@ -188,7 +188,9 @@ export default function core<Context>(
     }
 
     const forwardedQueryParams: { [key: string]: string } = Object.fromEntries(
-      forwardQueryParams.map(key => [key, filters[key]]).filter(([_, v]) => v)
+      forwardQueryParams
+        .map(key => [key, queryParams[key]])
+        .filter(([_, v]) => v)
     );
 
     let row = { ...inputRow };
@@ -208,7 +210,7 @@ export default function core<Context>(
         if (Object.keys(params).length)
           result[key] += `?${qsStringify(params)}`;
       } else
-        row[key] = await processTableRow(filters, context, table, row[key]);
+        row[key] = await processTableRow(queryParams, context, table, row[key]);
     }
 
     for (let { table, column, key } of hasMany) {
@@ -226,7 +228,7 @@ export default function core<Context>(
         row[key] = await Promise.all(
           row[key].map(
             async (item: any) =>
-              await processTableRow(filters, context, table, item)
+              await processTableRow(queryParams, context, table, item)
           )
         );
     }
@@ -330,17 +332,17 @@ export default function core<Context>(
     const read = async (
       context: Context,
       table: Table<Context>,
-      filters: any,
+      queryParams: any,
       many: boolean = true
     ) => {
-      let { include = [] } = filters;
+      let { include = [] } = queryParams;
 
       if (typeof include === 'string') include = [include];
 
-      const withDeleted = Boolean(filters.withDeleted || !many);
+      const withDeleted = Boolean(queryParams.withDeleted || !many);
 
       if (table.tenantIdColumnName) {
-        const tenantId = filters[table.tenantIdColumnName];
+        const tenantId = queryParams[table.tenantIdColumnName];
         if (!tenantId)
           throw new BadRequestError({
             error: `${table.tenantIdColumnName} is required`,
@@ -410,9 +412,12 @@ export default function core<Context>(
 
       const paginate = async (statement: QueryBuilder) => {
         const path = table.path;
-        let { sort } = filters;
-        const page = Number(filters.page || 0);
-        const limit = Math.max(0, Math.min(250, Number(filters.limit) || 50));
+        let { sort } = queryParams;
+        const page = Number(queryParams.page || 0);
+        const limit = Math.max(
+          0,
+          Math.min(250, Number(queryParams.limit) || 50)
+        );
 
         const sorts: { column: string; order: 'asc' | 'desc' }[] = [];
         if (sort) {
@@ -434,8 +439,8 @@ export default function core<Context>(
           });
         }
 
-        if (filters.cursor) {
-          const cursor = JSON.parse(atob(filters.cursor));
+        if (queryParams.cursor) {
+          const cursor = JSON.parse(atob(queryParams.cursor));
           // keyset pagination
           statement.where(function() {
             sorts.forEach((sort, index) => {
@@ -474,11 +479,11 @@ export default function core<Context>(
         const results = await statement;
 
         const links = {
-          ...(!filters.page
+          ...(!queryParams.page
             ? {
                 ...(results.length >= limit && {
                   nextPage: `${baseUrl}${path}?${qsStringify({
-                    ...filters,
+                    ...queryParams,
                     cursor: btoa(JSON.stringify(results[results.length - 1])),
                   })}`,
                 }),
@@ -486,23 +491,23 @@ export default function core<Context>(
             : {
                 ...(results.length >= limit && {
                   nextPage: `${baseUrl}${path}?${qsStringify({
-                    ...filters,
+                    ...queryParams,
                     page: page + 1,
                   })}`,
                 }),
                 ...(page !== 0 && {
                   previousPage: `${baseUrl}${path}?${qsStringify({
-                    ...filters,
+                    ...queryParams,
                     page: page - 1,
                   })}`,
                 }),
               }),
           count: `${baseUrl}${path}/count${
-            Object.keys(filters).length > 0 ? '?' : ''
-          }${qsStringify(filters)}`,
+            Object.keys(queryParams).length > 0 ? '?' : ''
+          }${qsStringify(queryParams)}`,
           ids: `${baseUrl}${path}/ids${
-            Object.keys(filters).length > 0 ? '?' : ''
-          }${qsStringify(filters)}`,
+            Object.keys(queryParams).length > 0 ? '?' : ''
+          }${qsStringify(queryParams)}`,
         };
 
         return {
@@ -511,14 +516,22 @@ export default function core<Context>(
             limit,
             hasMore: results.length >= limit,
             '@url': `${baseUrl}${path}${
-              Object.keys(filters).length > 0 ? `?${qsStringify(filters)}` : ''
+              Object.keys(queryParams).length > 0
+                ? `?${qsStringify(queryParams)}`
+                : ''
             }`,
             '@links': links,
           },
           data: await Promise.all(
             results.map(
               async (item: any) =>
-                await processTableRow(filters, context, table, item, include)
+                await processTableRow(
+                  queryParams,
+                  context,
+                  table,
+                  item,
+                  include
+                )
             )
           ),
         };
@@ -528,7 +541,7 @@ export default function core<Context>(
       await table.policy.call(table, stmt, context, 'read');
       await includeRelated(stmt);
 
-      const where = { ...filters };
+      const where = { ...queryParams };
 
       await applyModifiers(stmt, table, context, where);
 
@@ -541,23 +554,29 @@ export default function core<Context>(
 
         if (!data) throw new NotFoundError();
 
-        return await processTableRow(filters, context, table, data, include);
+        return await processTableRow(
+          queryParams,
+          context,
+          table,
+          data,
+          include
+        );
       }
     };
 
     const count = async (
       context: Context,
-      filters: any,
+      queryParams: any,
       table: Table<Context>
     ) => {
-      const withDeleted = Boolean(filters.withDeleted);
+      const withDeleted = Boolean(queryParams.withDeleted);
 
       const stmt = query(table, { knex, withDeleted }).clearSelect();
       await table.policy.call(table, stmt, context, 'read');
 
-      stmt.where(getWhereFiltersForTable(table, filters));
+      stmt.where(getWhereFiltersForTable(table, queryParams));
 
-      const where = { ...filters };
+      const where = { ...queryParams };
 
       await applyModifiers(stmt, table, context, where);
 
@@ -570,26 +589,26 @@ export default function core<Context>(
 
     const ids = async (
       context: Context,
-      filters: any,
+      queryParams: any,
       table: Table<Context>
     ) => {
-      const withDeleted = Boolean(filters.withDeleted);
+      const withDeleted = Boolean(queryParams.withDeleted);
 
       const stmt = query(table, { knex, withDeleted }).clearSelect();
       await table.policy.call(table, stmt, context, 'read');
 
-      stmt.where(getWhereFiltersForTable(table, filters));
+      stmt.where(getWhereFiltersForTable(table, queryParams));
 
-      const where = { ...filters };
+      const where = { ...queryParams };
 
       await applyModifiers(stmt, table, context, where);
 
       stmt.where(getWhereFiltersForTable(table, where));
 
-      const page = Number(filters.page || 0);
+      const page = Number(queryParams.page || 0);
       const limit = Math.max(
         0,
-        Math.min(100000, Number(filters.limit) || 1000)
+        Math.min(100000, Number(queryParams.limit) || 1000)
       );
 
       stmt.offset(page * limit);
@@ -602,18 +621,20 @@ export default function core<Context>(
           limit,
           hasMore: results.length >= limit,
           '@url': `${baseUrl}${table.path}/ids${
-            Object.keys(filters).length > 0 ? `?${qsStringify(filters)}` : ''
+            Object.keys(queryParams).length > 0
+              ? `?${qsStringify(queryParams)}`
+              : ''
           }`,
           '@links': {
             ...(results.length >= limit && {
               nextPage: `${baseUrl}${table.path}/ids?${qs.stringify({
-                ...filters,
+                ...queryParams,
                 page: page + 1,
               })}`,
             }),
             ...(page !== 0 && {
               previousPage: `${baseUrl}${table.path}/ids?${qs.stringify({
-                ...filters,
+                ...queryParams,
                 page: page - 1,
               })}`,
             }),
