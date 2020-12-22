@@ -5,6 +5,7 @@ import { MixedSchema } from 'yup';
 import { ContextFactory, Mode } from '.';
 import { transformKey, caseMethods } from './knexHelpers';
 import { classify, titleize, underscore, humanize } from 'inflection';
+import { postgresTypesToJSONTsTypes } from './lookups';
 
 export type PartialTable<T> = { tableName: string } & Partial<{
   schemaName: string;
@@ -389,50 +390,6 @@ export default function buildTable<T>(table: PartialTable<T>): Table<T> {
 
     ...table,
   };
-}
-
-function postgresTypesToJSONTsTypes(type: string) {
-  /* istanbul ignore next */
-  switch (type) {
-    case 'bpchar':
-    case 'char':
-    case 'varchar':
-    case 'text':
-    case 'citext':
-    case 'uuid':
-    case 'bytea':
-    case 'inet':
-    case 'time':
-    case 'timetz':
-    case 'interval':
-    case 'name':
-    case 'character varying':
-    case 'timestamp with time zone':
-    case 'timestamp without time zone':
-    case 'date':
-    case 'timestamp':
-    case 'timestamptz':
-      return 'string';
-    case 'int2':
-    case 'int4':
-    case 'int8':
-    case 'float4':
-    case 'float8':
-    case 'numeric':
-    case 'money':
-    case 'oid':
-    case 'bigint':
-    case 'int':
-      return 'number';
-    case 'bool':
-    case 'boolean':
-      return 'boolean';
-    case 'json':
-    case 'jsonb':
-      return 'object';
-    default:
-      return 'any';
-  }
 }
 
 export async function saveTsTypes(

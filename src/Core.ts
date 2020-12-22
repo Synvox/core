@@ -5,16 +5,7 @@ import express, { Request, Response, NextFunction, Express } from 'express';
 import setValue from 'set-value';
 import atob from 'atob';
 import btoa from 'btoa';
-import {
-  object,
-  string,
-  number,
-  boolean,
-  date,
-  MixedSchema,
-  ValidationError,
-  array,
-} from 'yup';
+import { object, MixedSchema, ValidationError, array } from 'yup';
 import buildTable, {
   saveSchema,
   Table,
@@ -22,9 +13,15 @@ import buildTable, {
   PartialTable,
   initTable,
 } from './Table';
-import { NotFoundError, UnauthorizedError, BadRequestError } from './Errors';
+import {
+  StatusError,
+  NotFoundError,
+  UnauthorizedError,
+  BadRequestError,
+} from './Errors';
 import sse from './sse';
 import uploads from './uploads';
+import { postgresTypesToYupType } from './lookups';
 
 const refPlaceholder = -1;
 
@@ -33,6 +30,38 @@ type Relation<Context> = {
   key: string;
   table: Table<Context>;
 };
+
+// class Collection<T> extends Array<T> {
+//   url: string;
+//   page: number;
+//   limit: number;
+//   links: { [key: string]: string };
+//   constructor(
+//     items: T[],
+//     url: string,
+//     page: number,
+//     limit: number,
+//     links: { [key: string]: string }
+//   ) {
+//     super(...items);
+//     this.url = url;
+//     this.page = page;
+//     this.limit = limit;
+//     this.links = links;
+//   }
+//   toJSON() {
+//     return {
+//       data: [...this],
+//       meta: {
+//         page: this.page,
+//         limit: this.limit,
+//         hasMore: this.length >= this.limit,
+//         '@url': this.url,
+//         '@links': this.links,
+//       },
+//     };
+//   }
+// }
 
 export type ShouldEventBeSent<Context> = (
   isVisible: () => Promise<boolean>,
@@ -71,7 +100,24 @@ export const wrap = (
       res.end();
     }
   } catch (e) {
-    next(e);
+    const error = e as StatusError;
+    try {
+      let body = error.body;
+
+      if (error.body === undefined) {
+        if (process.env.NODE_ENV === 'production')
+          body = { error: 'An error occurred' };
+        else
+          error.body = {
+            error: error.message,
+            stack: error.stack,
+          };
+      }
+
+      res.status(error.statusCode || 500).send(body);
+    } catch (_) {
+      next(error);
+    }
   }
 };
 
@@ -110,11 +156,11 @@ export default function core<Context>(
     forwardQueryParams?: string[];
   } = {}
 ) {
-  function trxNotifyCommit(
+  function trxNotifyCommit<T>(
     trx: Transaction,
     mode: Mode,
     table: Table<Context>,
-    row: any
+    row: T
   ) {
     trx.on('commit', () => {
       notifyChange(emitter, {
@@ -132,7 +178,7 @@ export default function core<Context>(
     { hasOne: Relation<Context>[]; hasMany: Relation<Context>[] }
   >();
 
-  const query = (
+  function query(
     table: Table<Context>,
     {
       knex: k = knex,
@@ -141,7 +187,7 @@ export default function core<Context>(
       knex?: Knex;
       withDeleted?: boolean;
     } = {}
-  ) => {
+  ) {
     let path = table.tablePath;
     if (table.tableName !== table.alias) path += ` ${table.alias}`;
 
@@ -152,21 +198,21 @@ export default function core<Context>(
     }
 
     return stmt;
-  };
+  }
 
-  const relationsFor = (
+  function relationsFor(
     table: Table<Context>
-  ): { hasOne: Relation<Context>[]; hasMany: Relation<Context>[] } => {
+  ): { hasOne: Relation<Context>[]; hasMany: Relation<Context>[] } {
     return relationsForCache.get(table)!;
-  };
+  }
 
-  const processTableRow = async (
+  async function processTableRow(
     req: Request,
     context: Context,
     table: Table<Context>,
     inputRow: any,
     include: string[] = []
-  ) => {
+  ) {
     let tenantId = null;
     if (table.tenantIdColumnName) {
       if (inputRow[table.tenantIdColumnName])
@@ -265,7 +311,7 @@ export default function core<Context>(
       '@url': selfUrl,
       '@links': result,
     };
-  };
+  }
 
   const filterGraph = (table: Table<Context>, graph: any) => {
     const result: { [key: string]: any } = {};
@@ -330,7 +376,10 @@ export default function core<Context>(
 
       if (table.tenantIdColumnName) {
         const tenantId = filters[table.tenantIdColumnName];
-        if (!tenantId) throw new BadRequestError();
+        if (!tenantId)
+          throw new BadRequestError({
+            error: `${table.tenantIdColumnName} is required`,
+          });
       }
 
       const includeRelated = async (stmt: QueryBuilder) => {
@@ -525,9 +574,7 @@ export default function core<Context>(
 
         if (!data) throw new NotFoundError();
 
-        return {
-          data: await processTableRow(req, context, table, data, include),
-        };
+        return await processTableRow(req, context, table, data, include);
       }
     };
 
@@ -551,11 +598,9 @@ export default function core<Context>(
 
       stmt.where(getWhereFiltersForTable(table, where));
 
-      return {
-        data: await stmt
-          .countDistinct(`${table.alias}.id`)
-          .then(([{ count }]) => Number(count)),
-      };
+      return await stmt
+        .countDistinct(`${table.alias}.id`)
+        .then(([{ count }]) => Number(count));
     };
 
     const ids = async (
@@ -616,7 +661,7 @@ export default function core<Context>(
     const write = async (
       context: Context,
       req: Request,
-      res: Response,
+      _res: Response,
       table: Table<Context>,
       graph: any
     ) => {
@@ -1238,10 +1283,7 @@ export default function core<Context>(
 
       const errors = await validateGraph(table, graph);
       if (errors) {
-        res.status(400);
-        return {
-          errors,
-        };
+        throw new BadRequestError({ errors });
       }
 
       let trxRef: null | Transaction = null;
@@ -1258,7 +1300,7 @@ export default function core<Context>(
 
       trxRef!.emit('commit');
 
-      return { data };
+      return data;
     };
 
     let initializedModels = false;
@@ -1282,6 +1324,8 @@ export default function core<Context>(
       },
       uploads,
     });
+
+    const router = express.Router();
 
     app.use(
       wrap(async (_req, _res, next) => {
@@ -1347,17 +1391,19 @@ export default function core<Context>(
         for (let table of tables) {
           const { path } = table;
 
-          app.use(path, table.router);
+          router.use(path, table.router);
 
-          app.get(
+          router.get(
             `${path}/count`,
             wrap(async (req, res) => {
               const context = getContext(req, res);
-              return count(context, req, res, table);
+              return {
+                data: await count(context, req, res, table),
+              };
             })
           );
 
-          app.get(
+          router.get(
             `${path}/ids`,
             wrap(async (req, res) => {
               const context = getContext(req, res);
@@ -1366,12 +1412,12 @@ export default function core<Context>(
           );
 
           for (let getterName in table.getters) {
-            app.get(
+            router.get(
               `${path}/:id/${getterName}`,
               wrap(async (req, res) => {
                 const context = getContext(req, res);
 
-                const { data: row } = await read(
+                const row = await read(
                   context,
                   req,
                   res,
@@ -1391,22 +1437,24 @@ export default function core<Context>(
             );
           }
 
-          app.get(
+          router.get(
             `${path}/:id`,
             wrap(async (req, res) => {
               const context = getContext(req, res);
-              return read(
-                context,
-                req,
-                res,
-                table,
-                { ...req.query, id: req.params.id },
-                false
-              );
+              return {
+                data: await read(
+                  context,
+                  req,
+                  res,
+                  table,
+                  { ...req.query, id: req.params.id },
+                  false
+                ),
+              };
             })
           );
 
-          app.get(
+          router.get(
             path,
             wrap(async (req, res) => {
               const context = getContext(req, res);
@@ -1415,7 +1463,7 @@ export default function core<Context>(
           );
 
           for (let methodName in table.methods) {
-            app.post(
+            router.post(
               `${path}/:id/${methodName}`,
               wrap(async (req, res) => {
                 const { id } = req.params;
@@ -1431,7 +1479,9 @@ export default function core<Context>(
                       req.query[table.tenantIdColumnName]
                     );
                   } else {
-                    throw new BadRequestError();
+                    throw new BadRequestError({
+                      error: `${table.tenantIdColumnName} is required`,
+                    });
                   }
                 }
 
@@ -1445,26 +1495,30 @@ export default function core<Context>(
             );
           }
 
-          app.post(
+          router.post(
             path,
             wrap(async (req, res) => {
               const context = getContext(req, res);
-              return await write(context, req, res, table, req.body);
+              return {
+                data: await write(context, req, res, table, req.body),
+              };
             })
           );
 
-          app.put(
+          router.put(
             `${path}/:id`,
             wrap(async (req, res) => {
               const context = getContext(req, res);
-              return await write(context, req, res, table, {
-                ...req.body,
-                id: req.params.id,
-              });
+              return {
+                data: await write(context, req, res, table, {
+                  ...req.body,
+                  id: req.params.id,
+                }),
+              };
             })
           );
 
-          app.delete(
+          router.delete(
             `${path}/:id`,
             wrap(async (req, res) => {
               const context = getContext(req, res);
@@ -1472,13 +1526,15 @@ export default function core<Context>(
                 ? req.query[table.tenantIdColumnName]
                 : undefined;
 
-              return await write(context, req, res, table, {
-                id: req.params.id,
-                _delete: true,
-                ...(tenantId !== undefined
-                  ? { [table.tenantIdColumnName!]: tenantId }
-                  : {}),
-              });
+              return {
+                data: await write(context, req, res, table, {
+                  id: req.params.id,
+                  _delete: true,
+                  ...(tenantId !== undefined
+                    ? { [table.tenantIdColumnName!]: tenantId }
+                    : {}),
+                }),
+              };
             })
           );
         }
@@ -1487,50 +1543,8 @@ export default function core<Context>(
       })
     );
 
-    return app;
-  }
-}
+    app.use(router);
 
-function postgresTypesToYupType(type: string): MixedSchema<any> {
-  /* istanbul ignore next */
-  switch (type) {
-    case 'bpchar':
-    case 'char':
-    case 'varchar':
-    case 'text':
-    case 'citext':
-    case 'uuid':
-    case 'bytea':
-    case 'inet':
-    case 'time':
-    case 'timetz':
-    case 'interval':
-    case 'name':
-      return string();
-    case 'int2':
-    case 'int4':
-    case 'int8':
-    case 'float4':
-    case 'float8':
-    case 'numeric':
-    case 'money':
-    case 'oid':
-    case 'bigint':
-    case 'integer':
-      return number();
-    case 'bool':
-    case 'boolean':
-      return boolean();
-    case 'json':
-    case 'jsonb':
-      return object();
-    case 'date':
-    case 'timestamp':
-    case 'timestamptz':
-    case 'timestamp with time zone':
-    case 'timestamp without time zone':
-      return date();
-    default:
-      return string();
+    return app;
   }
 }
