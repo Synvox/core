@@ -5,16 +5,7 @@ import express, { Request, Response, NextFunction, Express } from 'express';
 import setValue from 'set-value';
 import atob from 'atob';
 import btoa from 'btoa';
-import {
-  object,
-  string,
-  number,
-  boolean,
-  date,
-  MixedSchema,
-  ValidationError,
-  array,
-} from 'yup';
+import { object, MixedSchema, ValidationError, array } from 'yup';
 import buildTable, {
   saveSchema,
   Table,
@@ -22,9 +13,15 @@ import buildTable, {
   PartialTable,
   initTable,
 } from './Table';
-import { NotFoundError, UnauthorizedError, BadRequestError } from './Errors';
+import {
+  StatusError,
+  NotFoundError,
+  UnauthorizedError,
+  BadRequestError,
+} from './Errors';
 import sse from './sse';
 import uploads from './uploads';
+import { postgresTypesToYupType } from './lookups';
 
 const refPlaceholder = -1;
 
@@ -71,7 +68,24 @@ export const wrap = (
       res.end();
     }
   } catch (e) {
-    next(e);
+    const error = e as StatusError;
+    try {
+      let body = error.body;
+
+      if (error.body === undefined) {
+        if (process.env.NODE_ENV === 'production')
+          body = { error: 'An error occurred' };
+        else
+          error.body = {
+            error: error.message,
+            stack: error.stack,
+          };
+      }
+
+      res.status(error.statusCode || 500).send(body);
+    } catch (_) {
+      next(error);
+    }
   }
 };
 
@@ -97,7 +111,7 @@ export default function core<Context>(
     includeRelationsWithTypes = true,
     loadSchemaFromFile = process.env.NODE_ENV === 'production' &&
       Boolean(writeSchemaToFile),
-    origin = '',
+    baseUrl = '',
     forwardQueryParams = [],
   }: {
     emitter?: EventEmitter;
@@ -106,15 +120,15 @@ export default function core<Context>(
     includeLinksWithTypes?: boolean;
     includeRelationsWithTypes?: boolean;
     loadSchemaFromFile?: boolean;
-    origin?: string;
+    baseUrl?: string;
     forwardQueryParams?: string[];
   } = {}
 ) {
-  function trxNotifyCommit(
+  function trxNotifyCommit<T>(
     trx: Transaction,
     mode: Mode,
     table: Table<Context>,
-    row: any
+    row: T
   ) {
     trx.on('commit', () => {
       notifyChange(emitter, {
@@ -132,7 +146,7 @@ export default function core<Context>(
     { hasOne: Relation<Context>[]; hasMany: Relation<Context>[] }
   >();
 
-  const query = (
+  function query(
     table: Table<Context>,
     {
       knex: k = knex,
@@ -141,7 +155,7 @@ export default function core<Context>(
       knex?: Knex;
       withDeleted?: boolean;
     } = {}
-  ) => {
+  ) {
     let path = table.tablePath;
     if (table.tableName !== table.alias) path += ` ${table.alias}`;
 
@@ -152,21 +166,21 @@ export default function core<Context>(
     }
 
     return stmt;
-  };
+  }
 
-  const relationsFor = (
+  function relationsFor(
     table: Table<Context>
-  ): { hasOne: Relation<Context>[]; hasMany: Relation<Context>[] } => {
+  ): { hasOne: Relation<Context>[]; hasMany: Relation<Context>[] } {
     return relationsForCache.get(table)!;
-  };
+  }
 
-  const processTableRow = async (
-    req: Request,
+  async function processTableRow(
+    queryParams: any,
     context: Context,
     table: Table<Context>,
     inputRow: any,
     include: string[] = []
-  ) => {
+  ) {
     let tenantId = null;
     if (table.tenantIdColumnName) {
       if (inputRow[table.tenantIdColumnName])
@@ -174,7 +188,9 @@ export default function core<Context>(
     }
 
     const forwardedQueryParams: { [key: string]: string } = Object.fromEntries(
-      forwardQueryParams.map(key => [key, req.query[key]]).filter(([_, v]) => v)
+      forwardQueryParams
+        .map(key => [key, queryParams[key]])
+        .filter(([_, v]) => v)
     );
 
     let row = { ...inputRow };
@@ -187,18 +203,19 @@ export default function core<Context>(
     for (let { table, column, key } of hasOne) {
       if (row[column] === null) continue;
       if (row[key] === undefined) {
-        result[key] = `${origin}${req.baseUrl}${table.path}/${row[column]}`;
+        result[key] = `${baseUrl}${table.path}/${row[column]}`;
         const params: { [key: string]: string } = forwardedQueryParams;
         if (tenantId && table.tenantIdColumnName)
           params[table.tenantIdColumnName] = tenantId;
         if (Object.keys(params).length)
           result[key] += `?${qsStringify(params)}`;
-      } else row[key] = await processTableRow(req, context, table, row[key]);
+      } else
+        row[key] = await processTableRow(queryParams, context, table, row[key]);
     }
 
     for (let { table, column, key } of hasMany) {
       if (row[key] === undefined) {
-        result[key] = `${origin}${req.baseUrl}${table.path}`;
+        result[key] = `${baseUrl}${table.path}`;
         const params: { [key: string]: string } = {
           ...forwardedQueryParams,
           [column]: row.id,
@@ -211,7 +228,7 @@ export default function core<Context>(
         row[key] = await Promise.all(
           row[key].map(
             async (item: any) =>
-              await processTableRow(req, context, table, item)
+              await processTableRow(queryParams, context, table, item)
           )
         );
     }
@@ -233,9 +250,7 @@ export default function core<Context>(
           context
         );
       } else {
-        result[
-          getterName
-        ] = `${origin}${req.baseUrl}${table.path}/${row.id}/${getterName}`;
+        result[getterName] = `${baseUrl}${table.path}/${row.id}/${getterName}`;
         const params: { [key: string]: string } = forwardedQueryParams;
         if (tenantId && table.tenantIdColumnName)
           params[table.tenantIdColumnName] = tenantId;
@@ -254,7 +269,7 @@ export default function core<Context>(
       rowQueryParams.include = selectedGetters;
     }
 
-    let selfUrl = `${origin}${req.baseUrl}${table.path}/${row.id}`;
+    let selfUrl = `${baseUrl}${table.path}/${row.id}`;
 
     if (Object.keys(rowQueryParams).length > 0) {
       selfUrl += `?${qsStringify(rowQueryParams)}`;
@@ -265,7 +280,7 @@ export default function core<Context>(
       '@url': selfUrl,
       '@links': result,
     };
-  };
+  }
 
   const filterGraph = (table: Table<Context>, graph: any) => {
     const result: { [key: string]: any } = {};
@@ -316,21 +331,22 @@ export default function core<Context>(
   {
     const read = async (
       context: Context,
-      req: Request,
-      _res: Response,
       table: Table<Context>,
-      filters: any,
+      queryParams: any,
       many: boolean = true
     ) => {
-      let { include = [] } = req.query;
+      let { include = [] } = queryParams;
 
       if (typeof include === 'string') include = [include];
 
-      const withDeleted = Boolean(filters.withDeleted || !many);
+      const withDeleted = Boolean(queryParams.withDeleted || !many);
 
       if (table.tenantIdColumnName) {
-        const tenantId = filters[table.tenantIdColumnName];
-        if (!tenantId) throw new BadRequestError();
+        const tenantId = queryParams[table.tenantIdColumnName];
+        if (!tenantId)
+          throw new BadRequestError({
+            error: `${table.tenantIdColumnName} is required`,
+          });
       }
 
       const includeRelated = async (stmt: QueryBuilder) => {
@@ -395,10 +411,13 @@ export default function core<Context>(
       };
 
       const paginate = async (statement: QueryBuilder) => {
-        const path = req.baseUrl + req.url.split('?').shift();
-        let { sort } = req.query;
-        const page = Number(req.query.page || 0);
-        const limit = Math.max(0, Math.min(250, Number(req.query.limit) || 50));
+        const path = table.path;
+        let { sort } = queryParams;
+        const page = Number(queryParams.page || 0);
+        const limit = Math.max(
+          0,
+          Math.min(250, Number(queryParams.limit) || 50)
+        );
 
         const sorts: { column: string; order: 'asc' | 'desc' }[] = [];
         if (sort) {
@@ -420,8 +439,8 @@ export default function core<Context>(
           });
         }
 
-        if (req.query.cursor) {
-          const cursor = JSON.parse(atob(req.query.cursor));
+        if (queryParams.cursor) {
+          const cursor = JSON.parse(atob(queryParams.cursor));
           // keyset pagination
           statement.where(function() {
             sorts.forEach((sort, index) => {
@@ -460,35 +479,35 @@ export default function core<Context>(
         const results = await statement;
 
         const links = {
-          ...(!req.query.page
+          ...(!queryParams.page
             ? {
                 ...(results.length >= limit && {
-                  nextPage: `${origin}${path}?${qsStringify({
-                    ...req.query,
+                  nextPage: `${baseUrl}${path}?${qsStringify({
+                    ...queryParams,
                     cursor: btoa(JSON.stringify(results[results.length - 1])),
                   })}`,
                 }),
               }
             : {
                 ...(results.length >= limit && {
-                  nextPage: `${origin}${path}?${qsStringify({
-                    ...req.query,
+                  nextPage: `${baseUrl}${path}?${qsStringify({
+                    ...queryParams,
                     page: page + 1,
                   })}`,
                 }),
                 ...(page !== 0 && {
-                  previousPage: `${origin}${path}?${qsStringify({
-                    ...req.query,
+                  previousPage: `${baseUrl}${path}?${qsStringify({
+                    ...queryParams,
                     page: page - 1,
                   })}`,
                 }),
               }),
-          count: `${origin}${path}/count${
-            Object.keys(req.query).length > 0 ? '?' : ''
-          }${qsStringify(req.query)}`,
-          ids: `${origin}${path}/ids${
-            Object.keys(req.query).length > 0 ? '?' : ''
-          }${qsStringify(req.query)}`,
+          count: `${baseUrl}${path}/count${
+            Object.keys(queryParams).length > 0 ? '?' : ''
+          }${qsStringify(queryParams)}`,
+          ids: `${baseUrl}${path}/ids${
+            Object.keys(queryParams).length > 0 ? '?' : ''
+          }${qsStringify(queryParams)}`,
         };
 
         return {
@@ -496,13 +515,23 @@ export default function core<Context>(
             page,
             limit,
             hasMore: results.length >= limit,
-            '@url': `${origin}${req.baseUrl}${req.url}`,
+            '@url': `${baseUrl}${path}${
+              Object.keys(queryParams).length > 0
+                ? `?${qsStringify(queryParams)}`
+                : ''
+            }`,
             '@links': links,
           },
           data: await Promise.all(
             results.map(
               async (item: any) =>
-                await processTableRow(req, context, table, item, include)
+                await processTableRow(
+                  queryParams,
+                  context,
+                  table,
+                  item,
+                  include
+                )
             )
           ),
         };
@@ -512,7 +541,7 @@ export default function core<Context>(
       await table.policy.call(table, stmt, context, 'read');
       await includeRelated(stmt);
 
-      const where = { ...filters };
+      const where = { ...queryParams };
 
       await applyModifiers(stmt, table, context, where);
 
@@ -525,63 +554,61 @@ export default function core<Context>(
 
         if (!data) throw new NotFoundError();
 
-        return {
-          data: await processTableRow(req, context, table, data, include),
-        };
+        return await processTableRow(
+          queryParams,
+          context,
+          table,
+          data,
+          include
+        );
       }
     };
 
     const count = async (
       context: Context,
-      req: Request,
-      _res: Response,
+      queryParams: any,
       table: Table<Context>
     ) => {
-      const filters = req.query;
-      const withDeleted = Boolean(filters.withDeleted);
+      const withDeleted = Boolean(queryParams.withDeleted);
 
       const stmt = query(table, { knex, withDeleted }).clearSelect();
       await table.policy.call(table, stmt, context, 'read');
 
-      stmt.where(getWhereFiltersForTable(table, filters));
+      stmt.where(getWhereFiltersForTable(table, queryParams));
 
-      const where = { ...filters };
+      const where = { ...queryParams };
 
       await applyModifiers(stmt, table, context, where);
 
       stmt.where(getWhereFiltersForTable(table, where));
 
-      return {
-        data: await stmt
-          .countDistinct(`${table.alias}.id`)
-          .then(([{ count }]) => Number(count)),
-      };
+      return await stmt
+        .countDistinct(`${table.alias}.id`)
+        .then(([{ count }]) => Number(count));
     };
 
     const ids = async (
       context: Context,
-      req: Request,
-      _res: Response,
+      queryParams: any,
       table: Table<Context>
     ) => {
-      const filters = req.query;
-      const withDeleted = Boolean(filters.withDeleted);
+      const withDeleted = Boolean(queryParams.withDeleted);
 
       const stmt = query(table, { knex, withDeleted }).clearSelect();
       await table.policy.call(table, stmt, context, 'read');
 
-      stmt.where(getWhereFiltersForTable(table, filters));
+      stmt.where(getWhereFiltersForTable(table, queryParams));
 
-      const where = { ...filters };
+      const where = { ...queryParams };
 
       await applyModifiers(stmt, table, context, where);
 
       stmt.where(getWhereFiltersForTable(table, where));
 
-      const page = Number(req.query.page || 0);
+      const page = Number(queryParams.page || 0);
       const limit = Math.max(
         0,
-        Math.min(100000, Number(req.query.limit) || 1000)
+        Math.min(100000, Number(queryParams.limit) || 1000)
       );
 
       stmt.offset(page * limit);
@@ -593,17 +620,21 @@ export default function core<Context>(
           page,
           limit,
           hasMore: results.length >= limit,
-          '@url': `${origin}${req.url}`,
+          '@url': `${baseUrl}${table.path}/ids${
+            Object.keys(queryParams).length > 0
+              ? `?${qsStringify(queryParams)}`
+              : ''
+          }`,
           '@links': {
             ...(results.length >= limit && {
-              nextPage: `${origin}${req.path}?${qs.stringify({
-                ...req.query,
+              nextPage: `${baseUrl}${table.path}/ids?${qs.stringify({
+                ...queryParams,
                 page: page + 1,
               })}`,
             }),
             ...(page !== 0 && {
-              previousPage: `${origin}${req.path}?${qs.stringify({
-                ...req.query,
+              previousPage: `${baseUrl}${table.path}/ids?${qs.stringify({
+                ...queryParams,
                 page: page - 1,
               })}`,
             }),
@@ -615,8 +646,6 @@ export default function core<Context>(
 
     const write = async (
       context: Context,
-      req: Request,
-      res: Response,
       table: Table<Context>,
       graph: any
     ) => {
@@ -1212,7 +1241,7 @@ export default function core<Context>(
           };
         }
 
-        row = await processTableRow(req, context, table, row);
+        row = await processTableRow({}, context, table, row);
 
         for (let { column, key, table: otherTable } of hasMany) {
           const otherGraphs = graph[key];
@@ -1238,10 +1267,7 @@ export default function core<Context>(
 
       const errors = await validateGraph(table, graph);
       if (errors) {
-        res.status(400);
-        return {
-          errors,
-        };
+        throw new BadRequestError({ errors });
       }
 
       let trxRef: null | Transaction = null;
@@ -1258,7 +1284,7 @@ export default function core<Context>(
 
       trxRef!.emit('commit');
 
-      return { data };
+      return data;
     };
 
     let initializedModels = false;
@@ -1282,6 +1308,8 @@ export default function core<Context>(
       },
       uploads,
     });
+
+    const router = express.Router();
 
     app.use(
       wrap(async (_req, _res, next) => {
@@ -1347,34 +1375,34 @@ export default function core<Context>(
         for (let table of tables) {
           const { path } = table;
 
-          app.use(path, table.router);
+          router.use(path, table.router);
 
-          app.get(
+          router.get(
             `${path}/count`,
             wrap(async (req, res) => {
               const context = getContext(req, res);
-              return count(context, req, res, table);
+              return {
+                data: await count(context, req.query, table),
+              };
             })
           );
 
-          app.get(
+          router.get(
             `${path}/ids`,
             wrap(async (req, res) => {
               const context = getContext(req, res);
-              return ids(context, req, res, table);
+              return ids(context, req.query, table);
             })
           );
 
           for (let getterName in table.getters) {
-            app.get(
+            router.get(
               `${path}/:id/${getterName}`,
               wrap(async (req, res) => {
                 const context = getContext(req, res);
 
-                const { data: row } = await read(
+                const row = await read(
                   context,
-                  req,
-                  res,
                   table,
                   { ...req.query, id: req.params.id },
                   false
@@ -1391,31 +1419,31 @@ export default function core<Context>(
             );
           }
 
-          app.get(
+          router.get(
             `${path}/:id`,
             wrap(async (req, res) => {
               const context = getContext(req, res);
-              return read(
-                context,
-                req,
-                res,
-                table,
-                { ...req.query, id: req.params.id },
-                false
-              );
+              return {
+                data: await read(
+                  context,
+                  table,
+                  { ...req.query, id: req.params.id },
+                  false
+                ),
+              };
             })
           );
 
-          app.get(
+          router.get(
             path,
             wrap(async (req, res) => {
               const context = getContext(req, res);
-              return read(context, req, res, table, req.query);
+              return read(context, table, req.query);
             })
           );
 
           for (let methodName in table.methods) {
-            app.post(
+            router.post(
               `${path}/:id/${methodName}`,
               wrap(async (req, res) => {
                 const { id } = req.params;
@@ -1431,7 +1459,9 @@ export default function core<Context>(
                       req.query[table.tenantIdColumnName]
                     );
                   } else {
-                    throw new BadRequestError();
+                    throw new BadRequestError({
+                      error: `${table.tenantIdColumnName} is required`,
+                    });
                   }
                 }
 
@@ -1445,26 +1475,30 @@ export default function core<Context>(
             );
           }
 
-          app.post(
+          router.post(
             path,
             wrap(async (req, res) => {
               const context = getContext(req, res);
-              return await write(context, req, res, table, req.body);
+              return {
+                data: await write(context, table, req.body),
+              };
             })
           );
 
-          app.put(
+          router.put(
             `${path}/:id`,
             wrap(async (req, res) => {
               const context = getContext(req, res);
-              return await write(context, req, res, table, {
-                ...req.body,
-                id: req.params.id,
-              });
+              return {
+                data: await write(context, table, {
+                  ...req.body,
+                  id: req.params.id,
+                }),
+              };
             })
           );
 
-          app.delete(
+          router.delete(
             `${path}/:id`,
             wrap(async (req, res) => {
               const context = getContext(req, res);
@@ -1472,13 +1506,15 @@ export default function core<Context>(
                 ? req.query[table.tenantIdColumnName]
                 : undefined;
 
-              return await write(context, req, res, table, {
-                id: req.params.id,
-                _delete: true,
-                ...(tenantId !== undefined
-                  ? { [table.tenantIdColumnName!]: tenantId }
-                  : {}),
-              });
+              return {
+                data: await write(context, table, {
+                  id: req.params.id,
+                  _delete: true,
+                  ...(tenantId !== undefined
+                    ? { [table.tenantIdColumnName!]: tenantId }
+                    : {}),
+                }),
+              };
             })
           );
         }
@@ -1487,50 +1523,8 @@ export default function core<Context>(
       })
     );
 
-    return app;
-  }
-}
+    app.use(router);
 
-function postgresTypesToYupType(type: string): MixedSchema<any> {
-  /* istanbul ignore next */
-  switch (type) {
-    case 'bpchar':
-    case 'char':
-    case 'varchar':
-    case 'text':
-    case 'citext':
-    case 'uuid':
-    case 'bytea':
-    case 'inet':
-    case 'time':
-    case 'timetz':
-    case 'interval':
-    case 'name':
-      return string();
-    case 'int2':
-    case 'int4':
-    case 'int8':
-    case 'float4':
-    case 'float8':
-    case 'numeric':
-    case 'money':
-    case 'oid':
-    case 'bigint':
-    case 'integer':
-      return number();
-    case 'bool':
-    case 'boolean':
-      return boolean();
-    case 'json':
-    case 'jsonb':
-      return object();
-    case 'date':
-    case 'timestamp':
-    case 'timestamptz':
-    case 'timestamp with time zone':
-    case 'timestamp without time zone':
-      return date();
-    default:
-      return string();
+    return app;
   }
 }
