@@ -18,6 +18,8 @@ import Core, {
 
 let server: null | ReturnType<typeof createServer> = null;
 
+const DATE = new Date('2020-05-01T06:00:00.000Z');
+
 async function create(
   core: any,
   options?: Partial<AxiosRequestConfig>,
@@ -80,6 +82,13 @@ const knex = Knex({
   log: {
     debug: message => {
       queries.push(message.sql);
+    },
+  },
+  pool: {
+    afterCreate: function(conn: any, done: any) {
+      conn.query('SET TIME ZONE -6;', function(err: any) {
+        done(err, conn);
+      });
     },
   },
 });
@@ -1503,13 +1512,11 @@ it('supports plugins like withTimestamp', async () => {
       email: `${i + 1}@abc.com`,
     });
 
-    const date = new Date('May 1, 2020');
-
     await knex('test.comments').insert({
       body: String(i),
       userId: '1',
-      updatedAt: date,
-      createdAt: date,
+      updatedAt: DATE,
+      createdAt: DATE,
     });
   }
 
@@ -1700,13 +1707,11 @@ it('supports paranoid', async () => {
       email: `${i + 1}@abc.com`,
     });
 
-    const date = new Date('May 1, 2020');
-
     await knex('test.comments').insert({
       body: String(i),
       userId: '1',
-      updatedAt: date,
-      createdAt: date,
+      updatedAt: DATE,
+      createdAt: DATE,
     });
   }
 
@@ -1914,14 +1919,12 @@ it('supports paranoid with tenant ids', async () => {
       email: `${i + 1}@abc.com`,
     });
 
-    const date = new Date('May 1, 2020');
-
     await knex('test.comments').insert({
       orgId: org.id,
       body: String(i),
       userId: '1',
-      updatedAt: date,
-      createdAt: date,
+      updatedAt: DATE,
+      createdAt: DATE,
     });
   }
 
