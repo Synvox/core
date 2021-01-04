@@ -258,6 +258,15 @@ export default function core<Context>(
       }
     }
 
+    for (let getterName in table.eagerGetters) {
+      if (row[getterName] === undefined) {
+        result[getterName] = `${baseUrl}${table.path}/${row.id}/${getterName}`;
+        const params: { [key: string]: string } = forwardedQueryParams;
+        if (Object.keys(params).length)
+          result[getterName] += `?${qsStringify(params)}`;
+      }
+    }
+
     let rowQueryParams: { [key: string]: any } = forwardedQueryParams;
 
     if (table.tenantIdColumnName && tenantId) {
@@ -349,7 +358,9 @@ export default function core<Context>(
       }
 
       const includeRelated = async (stmt: QueryBuilder) => {
+        let notFoundIncludes: string[] = [];
         let refCount = 0;
+
         for (let includeTable of include) {
           let isOne = true;
           let ref = relationsFor(table).hasOne.find(
@@ -363,7 +374,11 @@ export default function core<Context>(
             );
           }
 
-          if (!ref) continue;
+          if (!ref) {
+            notFoundIncludes.push(includeTable);
+            continue;
+          }
+
           const alias =
             ref.table.tableName === table.tableName
               ? `${ref.table.tableName}__self_ref_alias_${refCount++}`
@@ -409,6 +424,28 @@ export default function core<Context>(
             stmt.select(
               knex.raw(`array(${sql}) as ??`, [...bindings, ref.key])
             );
+          }
+        }
+
+        for (let eager of notFoundIncludes) {
+          const eagerGetter = Object.entries(table.eagerGetters).find(
+            ([key]) => key === eager
+          );
+
+          if (!eagerGetter) continue;
+          const [key, fn] = eagerGetter;
+
+          let eagerStmt = knex.queryBuilder();
+          await fn.call(table, eagerStmt, context);
+          const { bindings, sql, method } = eagerStmt.toSQL();
+          const isOne = method === 'first';
+
+          const rawSql = `select row_to_json(i.*) from (${sql}) as i`;
+
+          if (isOne) {
+            stmt.select(knex.raw(`(${rawSql}) as ??`, [...bindings, key]));
+          } else {
+            stmt.select(knex.raw(`array(${rawSql}) as ??`, [...bindings, key]));
           }
         }
       };
@@ -1417,6 +1454,26 @@ export default function core<Context>(
                     row,
                     context
                   ),
+                };
+              })
+            );
+          }
+
+          for (let getterName in table.eagerGetters) {
+            router.get(
+              `${path}/:id/${getterName}`,
+              wrap(async (req, res) => {
+                const context = getContext(req, res);
+
+                const { [getterName]: value } = await read(
+                  context,
+                  table,
+                  { ...req.query, id: req.params.id, include: [getterName] },
+                  false
+                );
+
+                return {
+                  data: value,
                 };
               })
             );

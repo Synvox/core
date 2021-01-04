@@ -36,10 +36,10 @@ async function create(
   app.use(core);
 
   // for debugging failures
-  // app.use(function(error: any, _req: any, _res: any, next: any) {
-  //   console.error(error);
-  //   next(error);
-  // });
+  app.use(function(error: any, _req: any, _res: any, next: any) {
+    console.error(error);
+    next(error);
+  });
 
   server = createServer(app);
   const url = await listen(server);
@@ -3612,6 +3612,170 @@ it('supports base url', async () => {
         "limit": 50,
         "page": 0,
       },
+    }
+  `);
+});
+
+it('supports eager getters', async () => {
+  await knex.schema.withSchema('test').createTable('users', t => {
+    t.bigIncrements('id').primary();
+  });
+  await knex.schema.withSchema('test').createTable('jobs', t => {
+    t.bigIncrements('id').primary();
+    t.boolean('active').defaultTo(true);
+    t.integer('user_id')
+      .references('id')
+      .inTable('test.users');
+  });
+
+  await knex('test.users').insert({});
+  await knex('test.jobs')
+    .insert({ userId: 1 })
+    .returning('*');
+
+  const core = Core(knex, getContext);
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'users',
+    eagerGetters: {
+      async activeJob(stmt) {
+        stmt
+          .from('test.jobs')
+          .where('jobs.active', true)
+          .whereRaw(`jobs.user_id = ${this.alias}.id`)
+          .first();
+      },
+      async activeJobs(stmt) {
+        stmt
+          .from('test.jobs')
+          .where('jobs.active', true)
+          .whereRaw(`jobs.user_id = ${this.alias}.id`);
+      },
+    },
+  });
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'jobs',
+  });
+
+  const { get } = await create(core, {
+    baseURL: '/api',
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  expect((await get('/test/users')).data).toMatchInlineSnapshot(`
+    Object {
+      "data": Array [
+        Object {
+          "@links": Object {
+            "activeJob": "/test/users/1/activeJob",
+            "activeJobs": "/test/users/1/activeJobs",
+            "jobs": "/test/jobs?userId=1",
+          },
+          "@url": "/test/users/1",
+          "id": 1,
+        },
+      ],
+      "meta": Object {
+        "@links": Object {
+          "count": "/test/users/count",
+          "ids": "/test/users/ids",
+        },
+        "@url": "/test/users",
+        "hasMore": false,
+        "limit": 50,
+        "page": 0,
+      },
+    }
+  `);
+
+  expect((await get('/test/users?include[]=activeJob')).data)
+    .toMatchInlineSnapshot(`
+    Object {
+      "data": Array [
+        Object {
+          "@links": Object {
+            "activeJobs": "/test/users/1/activeJobs",
+            "jobs": "/test/jobs?userId=1",
+          },
+          "@url": "/test/users/1",
+          "activeJob": Object {
+            "active": true,
+            "id": 1,
+            "userId": 1,
+          },
+          "id": 1,
+        },
+      ],
+      "meta": Object {
+        "@links": Object {
+          "count": "/test/users/count?include[]=activeJob",
+          "ids": "/test/users/ids?include[]=activeJob",
+        },
+        "@url": "/test/users?include[]=activeJob",
+        "hasMore": false,
+        "limit": 50,
+        "page": 0,
+      },
+    }
+  `);
+
+  expect((await get('/test/users?include[]=activeJobs')).data)
+    .toMatchInlineSnapshot(`
+    Object {
+      "data": Array [
+        Object {
+          "@links": Object {
+            "activeJob": "/test/users/1/activeJob",
+            "jobs": "/test/jobs?userId=1",
+          },
+          "@url": "/test/users/1",
+          "activeJobs": Array [
+            Object {
+              "active": true,
+              "id": 1,
+              "userId": 1,
+            },
+          ],
+          "id": 1,
+        },
+      ],
+      "meta": Object {
+        "@links": Object {
+          "count": "/test/users/count?include[]=activeJobs",
+          "ids": "/test/users/ids?include[]=activeJobs",
+        },
+        "@url": "/test/users?include[]=activeJobs",
+        "hasMore": false,
+        "limit": 50,
+        "page": 0,
+      },
+    }
+  `);
+
+  expect((await get('/test/users/1/activeJob')).data).toMatchInlineSnapshot(`
+    Object {
+      "data": Object {
+        "active": true,
+        "id": 1,
+        "userId": 1,
+      },
+    }
+  `);
+
+  expect((await get('/test/users/1/activeJobs')).data).toMatchInlineSnapshot(`
+    Object {
+      "data": Array [
+        Object {
+          "active": true,
+          "id": 1,
+          "userId": 1,
+        },
+      ],
     }
   `);
 });

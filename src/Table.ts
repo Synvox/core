@@ -46,6 +46,13 @@ export type PartialTable<T> = { tableName: string } & Partial<{
       context: ReturnType<ContextFactory<T>>
     ) => Promise<void>;
   };
+  eagerGetters: {
+    [key: string]: (
+      this: Table<T>,
+      stmt: QueryBuilder,
+      context: ReturnType<ContextFactory<T>>
+    ) => Promise<void>;
+  };
   getters: {
     [key: string]: (
       row: any,
@@ -381,6 +388,7 @@ export default function buildTable<T>(table: PartialTable<T>): Table<T> {
     queryModifiers: {},
     setters: {},
     getters: {},
+    eagerGetters: {},
     methods: {},
     readOnlyColumns: [],
     hiddenColumns: [],
