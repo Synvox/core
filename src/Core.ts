@@ -68,24 +68,23 @@ export const wrap = (
       res.end();
     }
   } catch (e) {
-    const error = e as StatusError;
-    try {
+    if (typeof e.statusCode === 'number') {
+      const error = e as StatusError;
+
       let body = error.body;
 
       if (error.body === undefined) {
         if (process.env.NODE_ENV === 'production')
           body = { error: 'An error occurred' };
-        else
-          error.body = {
+        else {
+          body = {
             error: error.message,
             stack: error.stack,
           };
+        }
       }
-
-      res.status(error.statusCode || 500).send(body);
-    } catch (_) {
-      next(error);
-    }
+      res.status(error.statusCode!).send(body);
+    } else next(e);
   }
 };
 
@@ -379,7 +378,7 @@ export default function core<Context>(
           if (table.tenantIdColumnName && ref!.table.tenantIdColumnName) {
             subQuery.where(
               `${alias}.${ref!.table.tenantIdColumnName}`,
-              knex.raw(`${table.alias}.${table.tenantIdColumnName}`)
+              knex.raw(`??`, [`${table.alias}.${table.tenantIdColumnName}`])
             );
           }
 
@@ -402,10 +401,14 @@ export default function core<Context>(
             'read'
           );
 
+          const { bindings, sql } = subQuery.toSQL();
+
           if (isOne) {
-            stmt.select(`(${subQuery.toString()}) as ${ref.key}`);
+            stmt.select(knex.raw(`(${sql}) as ??`, [...bindings, ref.key]));
           } else {
-            stmt.select(`array(${subQuery.toString()}) as ${ref.key}`);
+            stmt.select(
+              knex.raw(`array(${sql}) as ??`, [...bindings, ref.key])
+            );
           }
         }
       };

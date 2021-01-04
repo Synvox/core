@@ -852,10 +852,12 @@ it('handles relations', async () => {
       },
     })),
   });
-  expect(queries).toEqual([
-    'select * from test.users where users.id = ? limit ?',
-    'select comments.*, (select row_to_json(users) from test.users where users.id = comments.user_id and users.id = 1 limit 1) as user from test.comments where comments.user_id = ? and comments.user_id = ? order by comments.id asc limit ?',
-  ]);
+  expect(queries).toMatchInlineSnapshot(`
+    Array [
+      "select * from test.users where users.id = ? limit ?",
+      "select comments.*, (select row_to_json(users) from test.users where users.id = comments.user_id and users.id = ? limit ?) as user from test.comments where comments.user_id = ? and comments.user_id = ? order by comments.id asc limit ?",
+    ]
+  `);
   expect(queries.length).toBe(2);
 
   clearQueries();
@@ -2823,9 +2825,11 @@ it('uses tenant ids for including related queries', async () => {
     },
   });
 
-  expect(queries).toEqual([
-    'select parents.*, array(select row_to_json(children) from test.children where children.org_id = parents.org_id and children.parent_id = parents.id limit 10) as children from test.parents where parents.org_id = ? order by parents.id asc limit ?',
-  ]);
+  expect(queries).toMatchInlineSnapshot(`
+    Array [
+      "select parents.*, array(select row_to_json(children) from test.children where children.org_id = parents.org_id and children.parent_id = parents.id limit ?) as children from test.parents where parents.org_id = ? order by parents.id asc limit ?",
+    ]
+  `);
 
   expect(
     (

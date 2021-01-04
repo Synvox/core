@@ -333,7 +333,7 @@ it('works', async () => {
 
   expect(queries).toMatchInlineSnapshot(`
     Array [
-      "select messages.*, (select row_to_json(messages__self_ref_alias_0) from public.messages messages__self_ref_alias_0 where messages__self_ref_alias_0.id = messages.reply_to_message_id limit 1) as reply_to_message from public.messages order by messages.id asc limit ?",
+      "select messages.*, (select row_to_json(messages__self_ref_alias_0) from public.messages messages__self_ref_alias_0 where messages__self_ref_alias_0.id = messages.reply_to_message_id limit ?) as reply_to_message from public.messages order by messages.id asc limit ?",
     ]
   `);
 
