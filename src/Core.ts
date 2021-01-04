@@ -922,7 +922,7 @@ export default function core<Context>(
               .first();
 
             if (!existing) {
-              throw new NotFoundError();
+              throw new UnauthorizedError();
             }
 
             graph = {

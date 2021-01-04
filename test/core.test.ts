@@ -1128,18 +1128,20 @@ it('handles relations', async () => {
         }
       ).catch(e => e.response)
     ).data
-  ).toStrictEqual({
-    errors: {
-      comments: [
-        {
-          body: 'is required',
+  ).toMatchInlineSnapshot(`
+    Object {
+      "errors": Object {
+        "comments": Object {
+          "0": Object {
+            "body": "is required",
+          },
+          "1": Object {
+            "body": "is required",
+          },
         },
-        {
-          body: 'is required',
-        },
-      ],
-    },
-  });
+      },
+    }
+  `);
   expect(queries.length).toBe(1);
 
   // cannot create outside this user's policy
@@ -2702,16 +2704,7 @@ it('handles upserts', async () => {
   }).catch(e => e.response);
 
   expect(status).toEqual(400);
-  expect(data2).toEqual({
-    errors: {
-      articleTypes: [
-        {
-          articleId: 'is already in use',
-          type: 'is already in use',
-        },
-      ],
-    },
-  });
+  expect(data2).toMatchInlineSnapshot;
 });
 
 it('uses tenant ids for including related queries', async () => {
@@ -3700,6 +3693,7 @@ it('supports eager getters', async () => {
     }
   `);
 
+  queries.length = 0;
   expect((await get('/test/users?include[]=activeJob')).data)
     .toMatchInlineSnapshot(`
     Object {
@@ -3730,7 +3724,13 @@ it('supports eager getters', async () => {
       },
     }
   `);
+  expect(queries).toMatchInlineSnapshot(`
+    Array [
+      "select users.*, (select row_to_json(i.*) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users.id limit ?) as i) as active_job from test.users order by users.id asc limit ?",
+    ]
+  `);
 
+  queries.length = 0;
   expect((await get('/test/users?include[]=activeJobs')).data)
     .toMatchInlineSnapshot(`
     Object {
@@ -3763,7 +3763,13 @@ it('supports eager getters', async () => {
       },
     }
   `);
+  expect(queries).toMatchInlineSnapshot(`
+    Array [
+      "select users.*, array(select row_to_json(i.*) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users.id) as i) as active_jobs from test.users order by users.id asc limit ?",
+    ]
+  `);
 
+  queries.length = 0;
   expect((await get('/test/users/1/activeJob')).data).toMatchInlineSnapshot(`
     Object {
       "data": Object {
@@ -3773,7 +3779,13 @@ it('supports eager getters', async () => {
       },
     }
   `);
+  expect(queries).toMatchInlineSnapshot(`
+    Array [
+      "select users.*, (select row_to_json(i.*) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users.id limit ?) as i) as active_job from test.users where users.id = ? limit ?",
+    ]
+  `);
 
+  queries.length = 0;
   expect((await get('/test/users/1/activeJobs')).data).toMatchInlineSnapshot(`
     Object {
       "data": Array [
@@ -3784,6 +3796,11 @@ it('supports eager getters', async () => {
         },
       ],
     }
+  `);
+  expect(queries).toMatchInlineSnapshot(`
+    Array [
+      "select users.*, array(select row_to_json(i.*) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users.id) as i) as active_jobs from test.users where users.id = ? limit ?",
+    ]
   `);
 });
 
@@ -3862,5 +3879,79 @@ it('supports uuid', async () => {
   const { status: status2 } = await post('/test/tasks', {
     subTasks: [{}, { id: 'bbdcd427-46e7-4674-9522-ca3a41514198' }, {}],
   }).catch(e => e.response);
-  expect(status2).toMatchInlineSnapshot(`404`);
+  expect(status2).toMatchInlineSnapshot(`401`);
+});
+
+it('shows the error on the right index', async () => {
+  await knex.schema.withSchema('test').createTable('tasks', t => {
+    t.bigIncrements('id').primary();
+  });
+  await knex.schema.withSchema('test').createTable('sub_tasks', t => {
+    t.bigIncrements('id').primary();
+    t.bigInteger('task_id')
+      .references('id')
+      .inTable('test.tasks')
+      .notNullable();
+  });
+
+  const [task] = await knex('test.tasks')
+    .insert({})
+    .returning('*');
+
+  const core = Core(knex, getContext);
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'tasks',
+  });
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'subTasks',
+  });
+
+  const { get, post } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  expect((await get('/test/tasks')).status).toBe(200);
+
+  const { data: subTask } = (
+    await post('/test/subTasks', { taskId: task.id })
+  ).data;
+
+  expect(subTask.taskId).toBe(task.id);
+
+  const { data: newTask } = (
+    await post('/test/tasks', { subTasks: [{}, {}] })
+  ).data;
+
+  expect(
+    (await get(`/test/tasks/${newTask.id}?include[]=subTasks`)).data.data
+      .subTasks.length
+  ).toBe(2);
+
+  const { status, data } = await post('/test/tasks', {
+    subTasks: [{}, { id: 'abc' }],
+  }).catch(e => e.response);
+  expect(status).toMatchInlineSnapshot(`400`);
+  // This nan stuff happens because we expect numbers to be numbers
+  expect(data).toMatchInlineSnapshot(`
+    Object {
+      "errors": Object {
+        "subTasks": Object {
+          "1": Object {
+            "id": "must be a \`number\` type, but the final value was: \`NaN\` (cast from the value \`NaN\`).",
+          },
+        },
+      },
+    }
+  `);
+
+  const { status: status2 } = await post('/test/tasks', {
+    subTasks: [{}, { id: 5 }, {}],
+  }).catch(e => e.response);
+  expect(status2).toMatchInlineSnapshot(`401`);
 });
