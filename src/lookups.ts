@@ -3,6 +3,8 @@ import { object, string, number, boolean, date, BaseSchema } from 'yup';
 export function postgresTypesToYupType(type: string): BaseSchema {
   /* istanbul ignore next */
   switch (type) {
+    case 'uuid':
+      return string().uuid();
     case 'bpchar':
     case 'char':
     case 'varchar':

@@ -23,7 +23,8 @@ import sse from './sse';
 import uploads from './uploads';
 import { postgresTypesToYupType } from './lookups';
 
-const refPlaceholder = -1;
+const refPlaceholderNumber = 0;
+const refPlaceholderUUID = '00000000-0000-0000-0000-000000000000';
 
 type Relation<Context> = {
   column: string;
@@ -829,12 +830,85 @@ export default function core<Context>(
             return object(schema);
           };
 
+          const validateGraphAgainstSchema = async (
+            schema: ReturnType<typeof getYupSchema>,
+            graph: any
+          ) => {
+            try {
+              for (let key in schema.describe().fields) {
+                if (graph[key]) {
+                  const validator = (schema.describe().fields as any)[key];
+                  if (validator.type === 'number') {
+                    graph[key] = Number(graph[key]);
+                  }
+                  if (validator.type === 'date') {
+                    graph[key] = new Date(graph[key]);
+                  }
+                  if (validator.type === 'boolean') {
+                    graph[key] = Boolean(graph[key]) && graph[key] !== 'false';
+                  }
+                }
+              }
+
+              await schema.validate(graph, {
+                abortEarly: false,
+                strict: true,
+              });
+              return {};
+            } catch (err) {
+              // in case a validator crashes we want to surface that through express
+              /* istanbul ignore next */
+              if (!(err instanceof ValidationError)) {
+                throw err;
+              }
+
+              err.inner
+                .map(e => {
+                  const REPLACE_BRACKETS = /\[([^[\]]+)\]/g;
+                  const LFT_RT_TRIM_DOTS = /^[.]*|[.]*$/g;
+                  const dotPath = e
+                    .path!.replace(REPLACE_BRACKETS, '.$1')
+                    .replace(LFT_RT_TRIM_DOTS, '');
+
+                  return {
+                    path: dotPath,
+                    message: e.message.slice(e.message.indexOf(' ')).trim(),
+                  };
+                })
+                .forEach(({ message, path }) => {
+                  setValue(errors, path, message);
+                });
+
+              return errors;
+            }
+          };
+
           if (graph.id) {
+            const existingSchema = object({
+              id: postgresTypesToYupType(table.columns!.id.type),
+            });
+
             const stmt = query(table);
             await table.policy.call(table, stmt, context, 'update');
 
-            if (table.tenantIdColumnName && !graph[table.tenantIdColumnName])
-              return { [table.tenantIdColumnName]: 'is required' };
+            if (table.tenantIdColumnName) {
+              if (!graph[table.tenantIdColumnName])
+                return { [table.tenantIdColumnName]: 'is required' };
+              existingSchema.concat(
+                object({
+                  [table.tenantIdColumnName]: postgresTypesToYupType(
+                    table.columns![table.tenantIdColumnName].type
+                  ),
+                })
+              );
+            }
+
+            const preValidate = await validateGraphAgainstSchema(
+              existingSchema,
+              graph
+            );
+
+            if (Object.keys(preValidate).length > 0) return preValidate;
 
             const existing = await stmt
               .where(`${table.alias}.id`, graph.id)
@@ -848,7 +922,7 @@ export default function core<Context>(
               .first();
 
             if (!existing) {
-              throw new UnauthorizedError();
+              throw new NotFoundError();
             }
 
             graph = {
@@ -857,54 +931,7 @@ export default function core<Context>(
             };
           }
 
-          try {
-            const schema = await getYupSchema();
-            for (let key in schema.describe().fields) {
-              if (graph[key]) {
-                const validator = (schema.describe().fields as any)[key];
-                if (validator.type === 'number') {
-                  graph[key] = Number(graph[key]);
-                }
-                if (validator.type === 'date') {
-                  graph[key] = new Date(graph[key]);
-                }
-                if (validator.type === 'boolean') {
-                  graph[key] = Boolean(graph[key]) && graph[key] !== 'false';
-                }
-              }
-            }
-
-            await schema.validate(graph, {
-              abortEarly: false,
-              strict: true,
-            });
-            return {};
-          } catch (err) {
-            // in case a validator crashes we want to surface that through express
-            /* istanbul ignore next */
-            if (!(err instanceof ValidationError)) {
-              throw err;
-            }
-
-            err.inner
-              .map(e => {
-                const REPLACE_BRACKETS = /\[([^[\]]+)\]/g;
-                const LFT_RT_TRIM_DOTS = /^[.]*|[.]*$/g;
-                const dotPath = e
-                  .path!.replace(REPLACE_BRACKETS, '.$1')
-                  .replace(LFT_RT_TRIM_DOTS, '');
-
-                return {
-                  path: dotPath,
-                  message: e.message.slice(e.message.indexOf(' ')).trim(),
-                };
-              })
-              .forEach(({ message, path }) => {
-                setValue(errors, path, message);
-              });
-
-            return errors;
-          }
+          return await validateGraphAgainstSchema(getYupSchema(), graph);
         };
 
         if (graph._delete) {
@@ -918,13 +945,20 @@ export default function core<Context>(
 
         const { hasOne, hasMany } = relationsFor(table);
 
+        const placeholderFor = (table: Table<Context>) => {
+          return postgresTypesToYupType(table.columns!.id.type).type ===
+            'string'
+            ? refPlaceholderUUID
+            : refPlaceholderNumber;
+        };
+
         for (let { column, key, table: otherTable } of hasOne) {
           const otherGraph = graph[key];
           if (otherGraph === undefined) continue;
 
           const otherErrors = await validateGraph(otherTable, otherGraph);
 
-          graph[column] = (otherGraph as any).id || refPlaceholder;
+          graph[column] = (otherGraph as any).id || placeholderFor(otherTable);
           if (otherErrors) errors[key] = otherErrors;
         }
 
@@ -938,18 +972,22 @@ export default function core<Context>(
           if (otherGraphs === undefined || !Array.isArray(otherGraphs))
             continue;
 
-          errors[key] = [];
+          errors[key] = {};
+          let hadError = false;
 
-          for (let otherGraph of otherGraphs) {
+          for (let [index, otherGraph] of Object.entries(otherGraphs)) {
             const otherErrors = await validateGraph(otherTable, {
               ...otherGraph,
-              [column]: (graph as any).id || refPlaceholder,
+              [column]: (graph as any).id || placeholderFor(otherTable),
             });
 
-            if (otherErrors) errors[key].push(otherErrors);
+            if (otherErrors) {
+              hadError = true;
+              errors[key][index] = otherErrors;
+            }
           }
 
-          if (errors[key].length === 0) delete errors[key];
+          if (!hadError) delete errors[key];
         }
 
         if (Object.keys(errors).length === 0) return undefined;

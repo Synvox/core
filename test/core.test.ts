@@ -3786,3 +3786,81 @@ it('supports eager getters', async () => {
     }
   `);
 });
+
+it('supports uuid', async () => {
+  await knex.raw('create extension if not exists pgcrypto');
+  await knex.schema.withSchema('test').createTable('tasks', t => {
+    t.uuid('id')
+      .primary()
+      .defaultTo(knex.raw('gen_random_uuid()'));
+  });
+  await knex.schema.withSchema('test').createTable('sub_tasks', t => {
+    t.uuid('id')
+      .primary()
+      .defaultTo(knex.raw('gen_random_uuid()'));
+    t.uuid('task_id')
+      .references('id')
+      .inTable('test.tasks')
+      .notNullable();
+  });
+
+  const [task] = await knex('test.tasks')
+    .insert({})
+    .returning('*');
+
+  const core = Core(knex, getContext);
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'tasks',
+  });
+
+  core.table({
+    schemaName: 'test',
+    tableName: 'subTasks',
+  });
+
+  const { get, post } = await create(core, {
+    headers: {
+      impersonate: '1',
+    },
+  });
+
+  expect((await get('/test/tasks')).status).toBe(200);
+
+  const { data: subTask } = (
+    await post('/test/subTasks', { taskId: task.id })
+  ).data;
+
+  expect(subTask.taskId).toBe(task.id);
+
+  const { data: newTask } = (
+    await post('/test/tasks', { subTasks: [{}, {}] })
+  ).data;
+
+  expect(
+    (await get(`/test/tasks/${newTask.id}?include[]=subTasks`)).data.data
+      .subTasks.length
+  ).toBe(2);
+
+  const { status, data } = await post('/test/tasks', {
+    subTasks: [{}, { id: 'abc' }],
+  }).catch(e => e.response);
+  expect(status).toMatchInlineSnapshot(`400`);
+  expect(data).toMatchInlineSnapshot(`
+    Object {
+      "errors": Object {
+        "subTasks": Object {
+          "1": Object {
+            "id": "must be a valid UUID",
+          },
+        },
+      },
+    }
+  `);
+
+  const { status: status2 } = await post('/test/tasks', {
+    subTasks: [{}, { id: 'bbdcd427-46e7-4674-9522-ca3a41514198' }, {}],
+  }).catch(e => e.response);
+  expect(status2).toMatchInlineSnapshot(`404`);
+});
