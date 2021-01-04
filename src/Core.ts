@@ -5,7 +5,7 @@ import express, { Request, Response, NextFunction, Express } from 'express';
 import setValue from 'set-value';
 import atob from 'atob';
 import btoa from 'btoa';
-import { object, MixedSchema, ValidationError, array } from 'yup';
+import { object, mixed, ValidationError, array } from 'yup';
 import buildTable, {
   saveSchema,
   Table,
@@ -45,6 +45,8 @@ export type ChangeSummary = {
   tableName: string;
   row: any;
 };
+
+export type Mixed = ReturnType<typeof mixed>;
 
 export function notifyChange(
   emitter: EventEmitter,
@@ -752,13 +754,13 @@ export default function core<Context>(
       const validateGraph = async (table: Table<Context>, graph: any) => {
         const validate = async (table: Table<Context>, graph: any) => {
           const getYupSchema = () => {
-            const schema: { [key: string]: MixedSchema } = {};
+            const schema: { [key: string]: Mixed } = {};
 
             for (let [column, info] of Object.entries(table.columns!)) {
               let type = postgresTypesToYupType(info.type).nullable();
 
               if (table.schema[column]) {
-                type = type.concat(table.schema[column]);
+                type = type.concat(table.schema[column].nullable());
               }
 
               if (info.type.endsWith('[]')) {
@@ -770,7 +772,9 @@ export default function core<Context>(
                   'is-null',
                   // eslint-disable-next-line no-template-curly-in-string
                   '${path} is required',
-                  value => value !== null && value !== undefined
+                  (value: any) => {
+                    return value !== null && value !== undefined;
+                  }
                 );
               }
 
@@ -886,8 +890,8 @@ export default function core<Context>(
               .map(e => {
                 const REPLACE_BRACKETS = /\[([^[\]]+)\]/g;
                 const LFT_RT_TRIM_DOTS = /^[.]*|[.]*$/g;
-                const dotPath = e.path
-                  .replace(REPLACE_BRACKETS, '.$1')
+                const dotPath = e
+                  .path!.replace(REPLACE_BRACKETS, '.$1')
                   .replace(LFT_RT_TRIM_DOTS, '');
 
                 return {
@@ -1514,10 +1518,10 @@ export default function core<Context>(
                   .first();
                 if (table.tenantIdColumnName) {
                   if (req.query[table.tenantIdColumnName]) {
-                    stmt.where(
-                      `${table.tableName}.${table.tenantIdColumnName}`,
-                      req.query[table.tenantIdColumnName]
-                    );
+                    stmt.where({
+                      [`${table.tableName}.${table.tenantIdColumnName}`]: req
+                        .query[table.tenantIdColumnName],
+                    });
                   } else {
                     throw new BadRequestError({
                       error: `${table.tenantIdColumnName} is required`,

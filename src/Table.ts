@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import Knex, { QueryBuilder, Transaction } from 'knex';
 import { Router } from 'express';
-import { MixedSchema } from 'yup';
+import { BaseSchema } from 'yup';
 import { ContextFactory, Mode } from '.';
 import { transformKey, caseMethods } from './knexHelpers';
 import { classify, titleize, underscore, humanize } from 'inflection';
@@ -16,7 +16,7 @@ export type PartialTable<T> = { tableName: string } & Partial<{
     context: ReturnType<ContextFactory<T>>,
     mode: Mode
   ) => Promise<void>;
-  schema: { [columnName: string]: MixedSchema };
+  schema: { [columnName: string]: BaseSchema };
   path: string;
   readOnlyColumns: string[];
   hiddenColumns: string[];
@@ -102,7 +102,7 @@ export type Table<T> = Required<PartialTable<T>> & {
       updateRule: string;
     };
   };
-  schema: { [columnName: string]: MixedSchema };
+  schema: { [columnName: string]: BaseSchema };
   alias: string;
 };
 

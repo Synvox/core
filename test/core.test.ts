@@ -43,8 +43,15 @@ async function create(
 
   server = createServer(app);
   const url = await listen(server);
+
+  const instance = axios.create({ ...options, baseURL: url });
+  axios.interceptors.request.use(c => {
+    console.log('URL: ', c.url);
+    return c;
+  });
+
   return {
-    ...axios.create({ ...options, baseURL: url }),
+    ...instance,
     url,
   };
 }
@@ -2199,7 +2206,7 @@ it('provides an eventsource endpoint', async () => {
     userId: 1,
   });
 
-  await new Promise(r => {
+  await new Promise<void>(r => {
     const int = setInterval(() => {
       if (message !== null) {
         expect(sseVisibility[0]).toBe(true);
@@ -2227,7 +2234,7 @@ it('provides an eventsource endpoint', async () => {
     row: newRow,
   });
 
-  await new Promise(r => {
+  await new Promise<void>(r => {
     const int = setInterval(() => {
       if (sseVisibility.length === 2) {
         clearInterval(int);
@@ -2241,7 +2248,7 @@ it('provides an eventsource endpoint', async () => {
 
   // this is to verify the 'end' callbacks are fired and noted in
   // coverage.
-  await new Promise(r => {
+  await new Promise<void>(r => {
     setTimeout(r, 1000);
   });
 });

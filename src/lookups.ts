@@ -1,6 +1,6 @@
-import { object, string, number, boolean, date, MixedSchema } from 'yup';
+import { object, string, number, boolean, date, BaseSchema } from 'yup';
 
-export function postgresTypesToYupType(type: string): MixedSchema<any> {
+export function postgresTypesToYupType(type: string): BaseSchema {
   /* istanbul ignore next */
   switch (type) {
     case 'bpchar':
