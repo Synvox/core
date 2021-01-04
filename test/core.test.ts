@@ -2704,7 +2704,18 @@ it('handles upserts', async () => {
   }).catch(e => e.response);
 
   expect(status).toEqual(400);
-  expect(data2).toMatchInlineSnapshot;
+  expect(data2).toMatchInlineSnapshot(`
+    Object {
+      "errors": Object {
+        "articleTypes": Object {
+          "0": Object {
+            "articleId": "is already in use",
+            "type": "is already in use",
+          },
+        },
+      },
+    }
+  `);
 });
 
 it('uses tenant ids for including related queries', async () => {

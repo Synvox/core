@@ -10,7 +10,6 @@ export function postgresTypesToYupType(type: string): BaseSchema {
     case 'varchar':
     case 'text':
     case 'citext':
-    case 'uuid':
     case 'bytea':
     case 'inet':
     case 'time':
