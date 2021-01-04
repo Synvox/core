@@ -3770,6 +3770,50 @@ it('supports eager getters', async () => {
   `);
 
   queries.length = 0;
+  expect(
+    (await get('/test/users?include[]=activeJobs&include[]=activeJob')).data
+  ).toMatchInlineSnapshot(`
+    Object {
+      "data": Array [
+        Object {
+          "@links": Object {
+            "jobs": "/test/jobs?userId=1",
+          },
+          "@url": "/test/users/1",
+          "activeJob": Object {
+            "active": true,
+            "id": 1,
+            "userId": 1,
+          },
+          "activeJobs": Array [
+            Object {
+              "active": true,
+              "id": 1,
+              "userId": 1,
+            },
+          ],
+          "id": 1,
+        },
+      ],
+      "meta": Object {
+        "@links": Object {
+          "count": "/test/users/count?include[]=activeJobs&include[]=activeJob",
+          "ids": "/test/users/ids?include[]=activeJobs&include[]=activeJob",
+        },
+        "@url": "/test/users?include[]=activeJobs&include[]=activeJob",
+        "hasMore": false,
+        "limit": 50,
+        "page": 0,
+      },
+    }
+  `);
+  expect(queries).toMatchInlineSnapshot(`
+    Array [
+      "select users.*, array(select row_to_json(i.*) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users.id) as i) as active_jobs, (select row_to_json(i.*) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users.id limit ?) as i) as active_job from test.users order by users.id asc limit ?",
+    ]
+  `);
+
+  queries.length = 0;
   expect((await get('/test/users/1/activeJob')).data).toMatchInlineSnapshot(`
     Object {
       "data": Object {
