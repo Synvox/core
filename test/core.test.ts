@@ -844,7 +844,9 @@ it('handles relations', async () => {
       },
     },
     data: Array.from({ length: 10 }, (_, index) => ({
-      '@links': {},
+      '@links': {
+        user: '/test/users/1',
+      },
       '@url': `/test/comments/${index + 1}?userId=1`,
       id: index + 1,
       userId: 1,
@@ -870,7 +872,9 @@ it('handles relations', async () => {
   clearQueries();
   expect((await get('/test/users/me?include[]=comments')).data).toStrictEqual({
     data: {
-      '@links': {},
+      '@links': {
+        comments: '/test/comments?userId=1',
+      },
       '@url': '/test/users/1',
       email: '1@abc.com',
       id: 1,
@@ -902,7 +906,9 @@ it('handles relations', async () => {
       },
     },
     data: Array.from({ length: 10 }, (_, index) => ({
-      '@links': {},
+      '@links': {
+        user: '/test/users/1',
+      },
       '@url': `/test/comments/${index + 1}?userId=1`,
       id: index + 1,
       userId: 1,
@@ -1052,23 +1058,27 @@ it('handles relations', async () => {
         }
       )
     ).data
-  ).toStrictEqual({
-    data: {
-      '@links': {},
-      '@url': '/test/comments/13?userId=12',
-      body: 'body',
-      id: 13,
-      user: {
-        '@links': {
-          comments: '/test/comments?userId=12',
+  ).toMatchInlineSnapshot(`
+    Object {
+      "data": Object {
+        "@links": Object {
+          "user": "/test/users/12",
         },
-        '@url': '/test/users/12',
-        email: 'another-email@email.com',
-        id: 12,
+        "@url": "/test/comments/13?userId=12",
+        "body": "body",
+        "id": 13,
+        "user": Object {
+          "@links": Object {
+            "comments": "/test/comments?userId=12",
+          },
+          "@url": "/test/users/12",
+          "email": "another-email@email.com",
+          "id": 12,
+        },
+        "userId": 12,
       },
-      userId: 12,
-    },
-  });
+    }
+  `);
   expect(queries.length).toBe(5);
 
   expect(events.length).toBe(2);
@@ -1383,8 +1393,12 @@ it('handles nullable relations', async () => {
       },
     },
     data: Array.from({ length: 10 }, (_, index) => ({
-      '@links':
-        index + 1 === 1 ? { replyToComment: '/test/comments/5?userId=1' } : {},
+      '@links': {
+        ...(index + 1 === 1
+          ? { replyToComment: '/test/comments/5?userId=1' }
+          : {}),
+        user: '/test/users/1',
+      },
       '@url': `/test/comments/${index + 1}?userId=1`,
       id: index + 1,
       replyToCommentId: index + 1 === 1 ? 5 : null,
@@ -2537,40 +2551,52 @@ it('handles getters', async () => {
     },
   });
 
-  expect((await get('/test/users?include=avatar')).data).toEqual({
-    data: [
-      {
-        '@links': {},
-        '@url': '/test/users/1?include[]=avatar',
-        avatar: 'http://avatar.io/thing@thang.com',
-        email: 'thing@thang.com',
-        id: 1,
+  expect((await get('/test/users?include=avatar')).data).toMatchInlineSnapshot(`
+    Object {
+      "data": Array [
+        Object {
+          "@links": Object {
+            "avatar": "/test/users/1/avatar",
+          },
+          "@url": "/test/users/1?include[]=avatar",
+          "avatar": "http://avatar.io/thing@thang.com",
+          "email": "thing@thang.com",
+          "id": 1,
+        },
+      ],
+      "meta": Object {
+        "@links": Object {
+          "count": "/test/users/count?include=avatar",
+          "ids": "/test/users/ids?include=avatar",
+        },
+        "@url": "/test/users?include=avatar",
+        "hasMore": false,
+        "limit": 50,
+        "page": 0,
       },
-    ],
-    meta: {
-      '@links': {
-        count: '/test/users/count?include=avatar',
-        ids: '/test/users/ids?include=avatar',
-      },
-      '@url': '/test/users?include=avatar',
-      hasMore: false,
-      limit: 50,
-      page: 0,
-    },
-  });
+    }
+  `);
 
-  expect((await get('/test/users/1?include=avatar')).data).toEqual({
-    data: {
-      '@links': {},
-      '@url': '/test/users/1?include[]=avatar',
-      avatar: 'http://avatar.io/thing@thang.com',
-      email: 'thing@thang.com',
-      id: 1,
-    },
-  });
+  expect((await get('/test/users/1?include=avatar')).data)
+    .toMatchInlineSnapshot(`
+    Object {
+      "data": Object {
+        "@links": Object {
+          "avatar": "/test/users/1/avatar",
+        },
+        "@url": "/test/users/1?include[]=avatar",
+        "avatar": "http://avatar.io/thing@thang.com",
+        "email": "thing@thang.com",
+        "id": 1,
+      },
+    }
+  `);
 
   expect((await get('/test/users/1/avatar')).data).toEqual({
     data: 'http://avatar.io/thing@thang.com',
+    meta: {
+      '@url': '/test/users/1/avatar',
+    },
   });
 });
 
@@ -2636,39 +2662,43 @@ it('handles upserts', async () => {
 
   const { data: out } = await get('/test/articles?include[]=articleTypes');
 
-  expect(out).toEqual({
-    data: [
-      {
-        '@links': {},
-        '@url': '/test/articles/1',
-        articleTypes: [
-          {
-            '@links': {
-              article: '/test/articles/1',
-            },
-            '@url': '/test/articleTypes/1',
-            articleId: 1,
-            id: 1,
-            type: 'type',
-            initial: 'something',
-            update: '1',
-            visible: true,
+  expect(out).toMatchInlineSnapshot(`
+    Object {
+      "data": Array [
+        Object {
+          "@links": Object {
+            "articleTypes": "/test/articleTypes?articleId=1",
           },
-        ],
-        id: 1,
+          "@url": "/test/articles/1",
+          "articleTypes": Array [
+            Object {
+              "@links": Object {
+                "article": "/test/articles/1",
+              },
+              "@url": "/test/articleTypes/1",
+              "articleId": 1,
+              "id": 1,
+              "initial": "something",
+              "type": "type",
+              "update": "1",
+              "visible": true,
+            },
+          ],
+          "id": 1,
+        },
+      ],
+      "meta": Object {
+        "@links": Object {
+          "count": "/test/articles/count?include[]=articleTypes",
+          "ids": "/test/articles/ids?include[]=articleTypes",
+        },
+        "@url": "/test/articles?include[]=articleTypes",
+        "hasMore": false,
+        "limit": 50,
+        "page": 0,
       },
-    ],
-    meta: {
-      '@links': {
-        count: '/test/articles/count?include[]=articleTypes',
-        ids: '/test/articles/ids?include[]=articleTypes',
-      },
-      '@url': '/test/articles?include[]=articleTypes',
-      hasMore: false,
-      limit: 50,
-      page: 0,
-    },
-  });
+    }
+  `);
 
   const {
     data: { data },
@@ -2789,52 +2819,55 @@ it('uses tenant ids for including related queries', async () => {
   queries = [];
   const { data: out } = await get('/test/parents?include[]=children&orgId=1');
 
-  expect(out).toEqual({
-    data: [
-      {
-        '@links': {
-          org: '/test/orgs/1',
+  expect(out).toMatchInlineSnapshot(`
+    Object {
+      "data": Array [
+        Object {
+          "@links": Object {
+            "children": "/test/children?parentId=1&orgId=1",
+            "org": "/test/orgs/1",
+          },
+          "@url": "/test/parents/1?orgId=1",
+          "children": Array [
+            Object {
+              "@links": Object {
+                "org": "/test/orgs/1",
+                "parent": "/test/parents/1?orgId=1",
+              },
+              "@url": "/test/children/1?orgId=1",
+              "id": 1,
+              "orgId": 1,
+              "parentId": 1,
+              "uid": "0",
+            },
+            Object {
+              "@links": Object {
+                "org": "/test/orgs/1",
+                "parent": "/test/parents/1?orgId=1",
+              },
+              "@url": "/test/children/2?orgId=1",
+              "id": 2,
+              "orgId": 1,
+              "parentId": 1,
+              "uid": "1",
+            },
+          ],
+          "id": 1,
+          "orgId": 1,
         },
-        '@url': '/test/parents/1?orgId=1',
-        children: [
-          {
-            '@links': {
-              org: '/test/orgs/1',
-              parent: '/test/parents/1?orgId=1',
-            },
-            '@url': '/test/children/1?orgId=1',
-            id: 1,
-            orgId: 1,
-            parentId: 1,
-            uid: '0',
-          },
-          {
-            '@links': {
-              org: '/test/orgs/1',
-              parent: '/test/parents/1?orgId=1',
-            },
-            '@url': '/test/children/2?orgId=1',
-            id: 2,
-            orgId: 1,
-            parentId: 1,
-            uid: '1',
-          },
-        ],
-        id: 1,
-        orgId: 1,
+      ],
+      "meta": Object {
+        "@links": Object {
+          "count": "/test/parents/count?include[]=children&orgId=1",
+          "ids": "/test/parents/ids?include[]=children&orgId=1",
+        },
+        "@url": "/test/parents?include[]=children&orgId=1",
+        "hasMore": false,
+        "limit": 50,
+        "page": 0,
       },
-    ],
-    meta: {
-      '@links': {
-        count: '/test/parents/count?include[]=children&orgId=1',
-        ids: '/test/parents/ids?include[]=children&orgId=1',
-      },
-      '@url': '/test/parents?include[]=children&orgId=1',
-      hasMore: false,
-      limit: 50,
-      page: 0,
-    },
-  });
+    }
+  `);
 
   expect(queries).toMatchInlineSnapshot(`
     Array [
@@ -3711,6 +3744,7 @@ it('supports eager getters', async () => {
       "data": Array [
         Object {
           "@links": Object {
+            "activeJob": "/test/users/1/activeJob",
             "activeJobs": "/test/users/1/activeJobs",
             "jobs": "/test/jobs?userId=1",
           },
@@ -3749,6 +3783,7 @@ it('supports eager getters', async () => {
         Object {
           "@links": Object {
             "activeJob": "/test/users/1/activeJob",
+            "activeJobs": "/test/users/1/activeJobs",
             "jobs": "/test/jobs?userId=1",
           },
           "@url": "/test/users/1",
@@ -3788,6 +3823,8 @@ it('supports eager getters', async () => {
       "data": Array [
         Object {
           "@links": Object {
+            "activeJob": "/test/users/1/activeJob",
+            "activeJobs": "/test/users/1/activeJobs",
             "jobs": "/test/jobs?userId=1",
           },
           "@url": "/test/users/1",
@@ -3832,6 +3869,9 @@ it('supports eager getters', async () => {
         "id": 1,
         "userId": 1,
       },
+      "meta": Object {
+        "@url": "/test/users/1/activeJob",
+      },
     }
   `);
   expect(queries).toMatchInlineSnapshot(`
@@ -3850,6 +3890,9 @@ it('supports eager getters', async () => {
           "userId": 1,
         },
       ],
+      "meta": Object {
+        "@url": "/test/users/1/activeJobs",
+      },
     }
   `);
   expect(queries).toMatchInlineSnapshot(`

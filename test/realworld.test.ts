@@ -292,6 +292,7 @@ it('works', async () => {
         Object {
           "@links": Object {
             "likes": "/likes?messageId=2",
+            "replyToMessage": "/messages/1",
             "user": "/users/1",
           },
           "@url": "/messages/2",

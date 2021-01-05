@@ -204,29 +204,26 @@ export default function core<Context>(
 
     for (let { table, column, key } of hasOne) {
       if (row[column] === null) continue;
-      if (row[key] === undefined) {
-        result[key] = `${baseUrl}${table.path}/${row[column]}`;
-        const params: { [key: string]: string } = forwardedQueryParams;
-        if (tenantId && table.tenantIdColumnName)
-          params[table.tenantIdColumnName] = tenantId;
-        if (Object.keys(params).length)
-          result[key] += `?${qsStringify(params)}`;
-      } else
+      result[key] = `${baseUrl}${table.path}/${row[column]}`;
+      const params: { [key: string]: string } = forwardedQueryParams;
+      if (tenantId && table.tenantIdColumnName)
+        params[table.tenantIdColumnName] = tenantId;
+      if (Object.keys(params).length) result[key] += `?${qsStringify(params)}`;
+      if (row[key] !== undefined)
         row[key] = await processTableRow(queryParams, context, table, row[key]);
     }
 
     for (let { table, column, key } of hasMany) {
-      if (row[key] === undefined) {
-        result[key] = `${baseUrl}${table.path}`;
-        const params: { [key: string]: string } = {
-          ...forwardedQueryParams,
-          [column]: row.id,
-        };
-        if (tenantId && table.tenantIdColumnName)
-          params[table.tenantIdColumnName] = tenantId;
-        if (Object.keys(params).length)
-          result[key] += `?${qsStringify(params)}`;
-      } else
+      result[key] = `${baseUrl}${table.path}`;
+      const params: { [key: string]: string } = {
+        ...forwardedQueryParams,
+        [column]: row.id,
+      };
+      if (tenantId && table.tenantIdColumnName)
+        params[table.tenantIdColumnName] = tenantId;
+      if (Object.keys(params).length) result[key] += `?${qsStringify(params)}`;
+
+      if (row[key] !== undefined)
         row[key] = await Promise.all(
           row[key].map(
             async (item: any) =>
@@ -251,23 +248,20 @@ export default function core<Context>(
           row,
           context
         );
-      } else {
-        result[getterName] = `${baseUrl}${table.path}/${row.id}/${getterName}`;
-        const params: { [key: string]: string } = forwardedQueryParams;
-        if (tenantId && table.tenantIdColumnName)
-          params[table.tenantIdColumnName] = tenantId;
-        if (Object.keys(params).length)
-          result[getterName] += `?${qsStringify(params)}`;
       }
+      result[getterName] = `${baseUrl}${table.path}/${row.id}/${getterName}`;
+      const params: { [key: string]: string } = forwardedQueryParams;
+      if (tenantId && table.tenantIdColumnName)
+        params[table.tenantIdColumnName] = tenantId;
+      if (Object.keys(params).length)
+        result[getterName] += `?${qsStringify(params)}`;
     }
 
     for (let getterName in table.eagerGetters) {
-      if (row[getterName] === undefined) {
-        result[getterName] = `${baseUrl}${table.path}/${row.id}/${getterName}`;
-        const params: { [key: string]: string } = forwardedQueryParams;
-        if (Object.keys(params).length)
-          result[getterName] += `?${qsStringify(params)}`;
-      }
+      result[getterName] = `${baseUrl}${table.path}/${row.id}/${getterName}`;
+      const params: { [key: string]: string } = forwardedQueryParams;
+      if (Object.keys(params).length)
+        result[getterName] += `?${qsStringify(params)}`;
     }
 
     let rowQueryParams: { [key: string]: any } = forwardedQueryParams;
@@ -1491,6 +1485,9 @@ export default function core<Context>(
                 );
 
                 return {
+                  meta: {
+                    '@url': `${baseUrl}${path}/${row.id}/${getterName}`,
+                  },
                   data: await table.getters[getterName].call(
                     table,
                     row,
@@ -1507,7 +1504,7 @@ export default function core<Context>(
               wrap(async (req, res) => {
                 const context = getContext(req, res);
 
-                const { [getterName]: value } = await read(
+                const { [getterName]: value, id } = await read(
                   context,
                   table,
                   { ...req.query, id: req.params.id, include: [getterName] },
@@ -1515,6 +1512,9 @@ export default function core<Context>(
                 );
 
                 return {
+                  meta: {
+                    '@url': `${baseUrl}${path}/${id}/${getterName}`,
+                  },
                   data: value,
                 };
               })
