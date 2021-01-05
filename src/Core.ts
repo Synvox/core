@@ -435,9 +435,12 @@ export default function core<Context>(
           let eagerStmt = knex.queryBuilder();
           await fn.call(table, eagerStmt, context);
           const { bindings, sql, method } = eagerStmt.toSQL();
-          const isOne = method === 'first';
+          const isPluck = method === 'pluck';
+          const isOne = isPluck || method === 'first';
 
-          const rawSql = `select row_to_json(i.*) from (${sql}) as i`;
+          const rawSql = isPluck
+            ? sql
+            : `select row_to_json(i.*) from (${sql}) as i`;
 
           if (isOne) {
             stmt.select(knex.raw(`(${rawSql}) as ??`, [...bindings, key]));

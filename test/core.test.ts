@@ -3690,6 +3690,13 @@ it('supports eager getters', async () => {
           .whereRaw(`jobs.user_id = ${this.alias}.id`)
           .first();
       },
+      async activeJobId(stmt) {
+        stmt
+          .from('test.jobs')
+          .where('jobs.active', true)
+          .whereRaw(`jobs.user_id = ${this.alias}.id`)
+          .pluck('id');
+      },
       async activeJobs(stmt) {
         stmt
           .from('test.jobs')
@@ -3717,6 +3724,7 @@ it('supports eager getters', async () => {
         Object {
           "@links": Object {
             "activeJob": "/test/users/1/activeJob",
+            "activeJobId": "/test/users/1/activeJobId",
             "activeJobs": "/test/users/1/activeJobs",
             "jobs": "/test/jobs?userId=1",
           },
@@ -3745,6 +3753,7 @@ it('supports eager getters', async () => {
         Object {
           "@links": Object {
             "activeJob": "/test/users/1/activeJob",
+            "activeJobId": "/test/users/1/activeJobId",
             "activeJobs": "/test/users/1/activeJobs",
             "jobs": "/test/jobs?userId=1",
           },
@@ -3783,6 +3792,7 @@ it('supports eager getters', async () => {
         Object {
           "@links": Object {
             "activeJob": "/test/users/1/activeJob",
+            "activeJobId": "/test/users/1/activeJobId",
             "activeJobs": "/test/users/1/activeJobs",
             "jobs": "/test/jobs?userId=1",
           },
@@ -3824,6 +3834,7 @@ it('supports eager getters', async () => {
         Object {
           "@links": Object {
             "activeJob": "/test/users/1/activeJob",
+            "activeJobId": "/test/users/1/activeJobId",
             "activeJobs": "/test/users/1/activeJobs",
             "jobs": "/test/jobs?userId=1",
           },
@@ -3898,6 +3909,84 @@ it('supports eager getters', async () => {
   expect(queries).toMatchInlineSnapshot(`
     Array [
       "select users.*, array(select row_to_json(i.*) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users.id) as i) as active_jobs from test.users where users.id = ? limit ?",
+    ]
+  `);
+
+  queries.length = 0;
+  expect((await get('/test/users/1/activeJobId')).data).toMatchInlineSnapshot(`
+    Object {
+      "data": 1,
+      "meta": Object {
+        "@url": "/test/users/1/activeJobId",
+      },
+    }
+  `);
+  expect(queries).toMatchInlineSnapshot(`
+    Array [
+      "select users.*, (select id from test.jobs where jobs.active = ? and jobs.user_id = users.id) as active_job_id from test.users where users.id = ? limit ?",
+    ]
+  `);
+
+  queries.length = 0;
+  expect((await get('/test/users/1?include[]=activeJobId')).data)
+    .toMatchInlineSnapshot(`
+    Object {
+      "data": Object {
+        "@links": Object {
+          "activeJob": "/test/users/1/activeJob",
+          "activeJobId": "/test/users/1/activeJobId",
+          "activeJobs": "/test/users/1/activeJobs",
+          "jobs": "/test/jobs?userId=1",
+        },
+        "@url": "/test/users/1",
+        "activeJobId": 1,
+        "id": 1,
+      },
+    }
+  `);
+  expect(queries).toMatchInlineSnapshot(`
+    Array [
+      "select users.*, (select id from test.jobs where jobs.active = ? and jobs.user_id = users.id) as active_job_id from test.users where users.id = ? limit ?",
+    ]
+  `);
+
+  queries.length = 0;
+  expect(
+    (
+      await get(
+        '/test/users/1?include[]=activeJobId&include[]=activeJob&include[]=activeJobs'
+      )
+    ).data
+  ).toMatchInlineSnapshot(`
+    Object {
+      "data": Object {
+        "@links": Object {
+          "activeJob": "/test/users/1/activeJob",
+          "activeJobId": "/test/users/1/activeJobId",
+          "activeJobs": "/test/users/1/activeJobs",
+          "jobs": "/test/jobs?userId=1",
+        },
+        "@url": "/test/users/1",
+        "activeJob": Object {
+          "active": true,
+          "id": 1,
+          "userId": 1,
+        },
+        "activeJobId": 1,
+        "activeJobs": Array [
+          Object {
+            "active": true,
+            "id": 1,
+            "userId": 1,
+          },
+        ],
+        "id": 1,
+      },
+    }
+  `);
+  expect(queries).toMatchInlineSnapshot(`
+    Array [
+      "select users.*, (select id from test.jobs where jobs.active = ? and jobs.user_id = users.id) as active_job_id, (select row_to_json(i.*) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users.id limit ?) as i) as active_job, array(select row_to_json(i.*) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users.id) as i) as active_jobs from test.users where users.id = ? limit ?",
     ]
   `);
 });
