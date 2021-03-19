@@ -1,7 +1,7 @@
 import { object, string, number, boolean, date, BaseSchema } from 'yup';
 
+/* istanbul ignore next */
 export function postgresTypesToYupType(type: string): BaseSchema {
-  /* istanbul ignore next */
   switch (type) {
     case 'uuid':
       return string().uuid();
@@ -45,8 +45,8 @@ export function postgresTypesToYupType(type: string): BaseSchema {
   }
 }
 
+/* istanbul ignore next */
 export function postgresTypesToJSONTsTypes(type: string) {
-  /* istanbul ignore next */
   switch (type) {
     case 'bpchar':
     case 'char':
