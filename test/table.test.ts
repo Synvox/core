@@ -3600,34 +3600,12 @@ describe("paranoid", () => {
       null
     );
 
-    expect(await items.read(knex, { withDeleted: true }, {}))
-      .toMatchInlineSnapshot(`
-      Object {
-        "data": Array [
-          Object {
-            "_links": Object {
-              "subitems": "/test/subitems?itemId=1",
-            },
-            "_type": "test/items",
-            "_url": "/test/items/1",
-            "deletedAt": 2021-03-20T01:43:23.037Z,
-            "id": 1,
-          },
-        ],
-        "meta": Object {
-          "_collection": "test/items",
-          "_links": Object {
-            "count": "/test/items/count?withDeleted=true",
-            "ids": "/test/items/ids?withDeleted=true",
-          },
-          "_type": "collection",
-          "_url": "/test/items?withDeleted=true",
-          "hasMore": false,
-          "limit": 50,
-          "page": 0,
-        },
-      }
-    `);
+    expect(
+      (await items.read(knex, { withDeleted: true }, {})).data.length
+    ).toMatchInlineSnapshot(`1`);
+    expect(
+      (await items.read(knex, { withDeleted: false }, {})).data.length
+    ).toMatchInlineSnapshot(`0`);
   });
 
   it("cascades even with tenant ids", async () => {
