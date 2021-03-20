@@ -284,12 +284,12 @@ describe("saves to files", () => {
     );
 
     core.table({
-      schemaName: "coreTest",
+      schemaName: "saveTest",
       tableName: "test",
     });
 
     core.table({
-      schemaName: "coreTest",
+      schemaName: "saveTest",
       tableName: "testSub",
     });
 
@@ -307,6 +307,7 @@ describe("saves to files", () => {
       export type TestSub = {
         id: number;
         parentId: number;
+        arr: number[] | null;
       };
 
       "
@@ -322,12 +323,12 @@ describe("saves to files", () => {
     );
 
     core.table({
-      schemaName: "coreTest",
+      schemaName: "saveTest",
       tableName: "test",
     });
 
     core.table({
-      schemaName: "coreTest",
+      schemaName: "saveTest",
       tableName: "testSub",
     });
 
@@ -346,6 +347,7 @@ describe("saves to files", () => {
       export type TestSub = {
         id: number;
         parentId: number;
+        arr: number[] | null;
         parent: Test;
       };
 
