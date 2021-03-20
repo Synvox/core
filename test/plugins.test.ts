@@ -382,12 +382,11 @@ describe("withTimestamps plugin", () => {
           },
         ],
         "meta": Object {
-          "_collection": "testPlugins/items",
           "_links": Object {
             "count": "/testPlugins/items/count?since=1999-01-01%2004%3A05%3A06",
             "ids": "/testPlugins/items/ids?since=1999-01-01%2004%3A05%3A06",
           },
-          "_type": "collection",
+          "_type": "testPlugins/items",
           "_url": "/testPlugins/items?since=1999-01-01%2004%3A05%3A06",
           "hasMore": false,
           "limit": 50,
@@ -416,12 +415,11 @@ describe("withTimestamps plugin", () => {
           },
         ],
         "meta": Object {
-          "_collection": "testPlugins/items",
           "_links": Object {
             "count": "/testPlugins/items/count?since=1999-01-10%2004%3A05%3A06",
             "ids": "/testPlugins/items/ids?since=1999-01-10%2004%3A05%3A06",
           },
-          "_type": "collection",
+          "_type": "testPlugins/items",
           "_url": "/testPlugins/items?since=1999-01-10%2004%3A05%3A06",
           "hasMore": false,
           "limit": 50,
@@ -458,12 +456,11 @@ describe("withTimestamps plugin", () => {
           },
         ],
         "meta": Object {
-          "_collection": "testPlugins/items",
           "_links": Object {
             "count": "/testPlugins/items/count?since=something%20bogus",
             "ids": "/testPlugins/items/ids?since=something%20bogus",
           },
-          "_type": "collection",
+          "_type": "testPlugins/items",
           "_url": "/testPlugins/items?since=something%20bogus",
           "hasMore": false,
           "limit": 50,

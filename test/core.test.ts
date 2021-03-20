@@ -113,12 +113,11 @@ describe("listens on server", () => {
           },
         ],
         "meta": Object {
-          "_collection": "coreTest/test",
           "_links": Object {
             "count": "/coreTest/test/count",
             "ids": "/coreTest/test/ids",
           },
-          "_type": "collection",
+          "_type": "coreTest/test",
           "_url": "/coreTest/test",
           "hasMore": false,
           "limit": 50,

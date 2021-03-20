@@ -36,7 +36,6 @@ type CollectionMeta = {
   hasMore: boolean;
   links: Record<string, string>;
   type: string;
-  collection: string;
   url: string;
 };
 
@@ -48,7 +47,6 @@ export class CollectionResult<T extends Record<string, any>>
   hasMore: boolean;
   links: Record<string, string>;
   type: string;
-  collection: string;
   url: string;
 
   constructor(data: T[], meta: CollectionMeta) {
@@ -58,7 +56,6 @@ export class CollectionResult<T extends Record<string, any>>
     this.hasMore = meta.hasMore;
     this.links = meta.links;
     this.type = meta.type;
-    this.collection = meta.collection;
     this.url = meta.url;
     Object.assign(this, meta);
   }
@@ -70,7 +67,6 @@ export class CollectionResult<T extends Record<string, any>>
       hasMore: this.hasMore,
       _links: this.links,
       _type: this.type,
-      _collection: this.collection,
       _url: this.url,
     };
   }

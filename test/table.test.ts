@@ -93,12 +93,11 @@ describe("without policies", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/test",
           "_links": Object {
             "count": "/test/test/count",
             "ids": "/test/test/ids",
           },
-          "_type": "collection",
+          "_type": "test/test",
           "_url": "/test/test",
           "hasMore": false,
           "limit": 50,
@@ -145,12 +144,11 @@ describe("without policies", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/test",
           "_links": Object {
             "count": "/test/test/count?id[]=1",
             "ids": "/test/test/ids?id[]=1",
           },
-          "_type": "collection",
+          "_type": "test/test",
           "_url": "/test/test?id[]=1",
           "hasMore": false,
           "limit": 50,
@@ -181,12 +179,11 @@ describe("without policies", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/test",
           "_links": Object {
             "count": "/test/test/count?isBoolean=true",
             "ids": "/test/test/ids?isBoolean=true",
           },
-          "_type": "collection",
+          "_type": "test/test",
           "_url": "/test/test?isBoolean=true",
           "hasMore": false,
           "limit": 50,
@@ -219,12 +216,11 @@ describe("without policies", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/test",
           "_links": Object {
             "count": "/test/test/count?numberCount=1",
             "ids": "/test/test/ids?numberCount=1",
           },
-          "_type": "collection",
+          "_type": "test/test",
           "_url": "/test/test?numberCount=1",
           "hasMore": false,
           "limit": 50,
@@ -247,12 +243,11 @@ describe("without policies", () => {
       Object {
         "data": Array [],
         "meta": Object {
-          "_collection": "test/test",
           "_links": Object {
             "count": "/test/test/count?id=123",
             "ids": "/test/test/ids?id=123",
           },
-          "_type": "collection",
+          "_type": "test/test",
           "_url": "/test/test?id=123",
           "hasMore": false,
           "limit": 50,
@@ -327,12 +322,11 @@ describe("without policies", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/users",
           "_links": Object {
             "count": "/test/users/count",
             "ids": "/test/users/ids",
           },
-          "_type": "collection",
+          "_type": "test/users",
           "_url": "/test/users",
           "hasMore": false,
           "limit": 50,
@@ -361,12 +355,11 @@ describe("without policies", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/posts",
           "_links": Object {
             "count": "/test/posts/count",
             "ids": "/test/posts/ids",
           },
-          "_type": "collection",
+          "_type": "test/posts",
           "_url": "/test/posts",
           "hasMore": false,
           "limit": 50,
@@ -451,12 +444,11 @@ describe("without policies", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/users",
           "_links": Object {
             "count": "/test/users/count?include=bogus",
             "ids": "/test/users/ids?include=bogus",
           },
-          "_type": "collection",
+          "_type": "test/users",
           "_url": "/test/users?include=bogus",
           "hasMore": false,
           "limit": 50,
@@ -527,12 +519,11 @@ describe("without policies", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/users",
           "_links": Object {
             "count": "/test/users/count?token=123",
             "ids": "/test/users/ids?token=123",
           },
-          "_type": "collection",
+          "_type": "test/users",
           "_url": "/test/users?token=123",
           "hasMore": false,
           "limit": 50,
@@ -562,12 +553,11 @@ describe("without policies", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/posts",
           "_links": Object {
             "count": "/test/posts/count?token=123",
             "ids": "/test/posts/ids?token=123",
           },
-          "_type": "collection",
+          "_type": "test/posts",
           "_url": "/test/posts?token=123",
           "hasMore": false,
           "limit": 50,
@@ -695,12 +685,11 @@ describe("without policies", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/users",
           "_links": Object {
             "count": "/test/users/count?include=bogus&token=123",
             "ids": "/test/users/ids?include=bogus&token=123",
           },
-          "_type": "collection",
+          "_type": "test/users",
           "_url": "/test/users?include=bogus&token=123",
           "hasMore": false,
           "limit": 50,
@@ -839,12 +828,11 @@ describe("without policies", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/docs",
           "_links": Object {
             "count": "/test/docs/count?include[]=version&include[]=firstVersion",
             "ids": "/test/docs/ids?include[]=version&include[]=firstVersion",
           },
-          "_type": "collection",
+          "_type": "test/docs",
           "_url": "/test/docs?include[]=version&include[]=firstVersion",
           "hasMore": false,
           "limit": 50,
@@ -901,12 +889,11 @@ describe("without policies", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/versions",
           "_links": Object {
             "count": "/test/versions/count?include[]=headDocs&include[]=firstDocs",
             "ids": "/test/versions/ids?include[]=headDocs&include[]=firstDocs",
           },
-          "_type": "collection",
+          "_type": "test/versions",
           "_url": "/test/versions?include[]=headDocs&include[]=firstDocs",
           "hasMore": false,
           "limit": 50,
@@ -1989,12 +1976,11 @@ describe("without policies", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/users",
           "_links": Object {
             "count": "/test/users/count?include=activeJob",
             "ids": "/test/users/ids?include=activeJob",
           },
-          "_type": "collection",
+          "_type": "test/users",
           "_url": "/test/users?include=activeJob",
           "hasMore": false,
           "limit": 50,
@@ -2033,12 +2019,11 @@ describe("without policies", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/users",
           "_links": Object {
             "count": "/test/users/count?include=activeJobs",
             "ids": "/test/users/ids?include=activeJobs",
           },
-          "_type": "collection",
+          "_type": "test/users",
           "_url": "/test/users?include=activeJobs",
           "hasMore": false,
           "limit": 50,
@@ -2088,12 +2073,11 @@ describe("without policies", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/users",
           "_links": Object {
             "count": "/test/users/count?include[]=activeJob&include[]=activeJobs&include[]=activeJobId",
             "ids": "/test/users/ids?include[]=activeJob&include[]=activeJobs&include[]=activeJobId",
           },
-          "_type": "collection",
+          "_type": "test/users",
           "_url": "/test/users?include[]=activeJob&include[]=activeJobs&include[]=activeJobId",
           "hasMore": false,
           "limit": 50,
@@ -2365,13 +2349,12 @@ describe("without policies", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/jobs",
           "_links": Object {
             "count": "/test/jobs/count?limit=2",
             "ids": "/test/jobs/ids?limit=2",
             "nextPage": "/test/jobs?limit=2&cursor=eyJpZCI6MiwiaXNBY3RpdmUiOmZhbHNlfQ%3D%3D",
           },
-          "_type": "collection",
+          "_type": "test/jobs",
           "_url": "/test/jobs?limit=2",
           "hasMore": true,
           "limit": 2,
@@ -2406,14 +2389,13 @@ describe("without policies", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/jobs",
           "_links": Object {
             "count": "/test/jobs/count?limit=2&page=1",
             "ids": "/test/jobs/ids?limit=2&page=1",
             "nextPage": "/test/jobs?limit=2&page=2",
             "previousPage": "/test/jobs?limit=2&page=0",
           },
-          "_type": "collection",
+          "_type": "test/jobs",
           "_url": "/test/jobs?limit=2&page=1",
           "hasMore": true,
           "limit": 2,
@@ -2433,13 +2415,12 @@ describe("without policies", () => {
       Object {
         "data": Array [],
         "meta": Object {
-          "_collection": "test/jobs",
           "_links": Object {
             "count": "/test/jobs/count?limit=2&page=100",
             "ids": "/test/jobs/ids?limit=2&page=100",
             "previousPage": "/test/jobs?limit=2&page=99",
           },
-          "_type": "collection",
+          "_type": "test/jobs",
           "_url": "/test/jobs?limit=2&page=100",
           "hasMore": false,
           "limit": 2,
@@ -2549,12 +2530,11 @@ describe("with policies", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/users",
           "_links": Object {
             "count": "/test/users/count?include=posts",
             "ids": "/test/users/ids?include=posts",
           },
-          "_type": "collection",
+          "_type": "test/users",
           "_url": "/test/users?include=posts",
           "hasMore": false,
           "limit": 50,
@@ -2594,12 +2574,11 @@ describe("with policies", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/posts",
           "_links": Object {
             "count": "/test/posts/count?include[]=user",
             "ids": "/test/posts/ids?include[]=user",
           },
-          "_type": "collection",
+          "_type": "test/posts",
           "_url": "/test/posts?include[]=user",
           "hasMore": false,
           "limit": 50,
@@ -3056,12 +3035,11 @@ describe("multitenancy", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/items",
           "_links": Object {
             "count": "/test/items/count?orgId=1",
             "ids": "/test/items/ids?orgId=1",
           },
-          "_type": "collection",
+          "_type": "test/items",
           "_url": "/test/items?orgId=1",
           "hasMore": false,
           "limit": 50,
@@ -3127,12 +3105,11 @@ describe("multitenancy", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/items",
           "_links": Object {
             "count": "/test/items/count?orgId=1&include[]=org",
             "ids": "/test/items/ids?orgId=1&include[]=org",
           },
-          "_type": "collection",
+          "_type": "test/items",
           "_url": "/test/items?orgId=1&include[]=org",
           "hasMore": false,
           "limit": 50,
@@ -3327,12 +3304,11 @@ describe("multitenancy", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/items",
           "_links": Object {
             "count": "/test/items/count?orgId=1",
             "ids": "/test/items/ids?orgId=1",
           },
-          "_type": "collection",
+          "_type": "test/items",
           "_url": "/test/items?orgId=1",
           "hasMore": false,
           "limit": 50,
@@ -3573,12 +3549,11 @@ describe("paranoid", () => {
       Object {
         "data": Array [],
         "meta": Object {
-          "_collection": "test/items",
           "_links": Object {
             "count": "/test/items/count?id=1",
             "ids": "/test/items/ids?id=1",
           },
-          "_type": "collection",
+          "_type": "test/items",
           "_url": "/test/items?id=1",
           "hasMore": false,
           "limit": 50,
@@ -3721,12 +3696,11 @@ describe("hidden columns", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/items",
           "_links": Object {
             "count": "/test/items/count",
             "ids": "/test/items/ids",
           },
-          "_type": "collection",
+          "_type": "test/items",
           "_url": "/test/items",
           "hasMore": false,
           "limit": 50,
@@ -3811,12 +3785,11 @@ describe("uuid columns", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/items",
           "_links": Object {
             "count": "/test/items/count",
             "ids": "/test/items/ids",
           },
-          "_type": "collection",
+          "_type": "test/items",
           "_url": "/test/items",
           "hasMore": false,
           "limit": 50,
@@ -4344,12 +4317,11 @@ describe("self references", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/items",
           "_links": Object {
             "count": "/test/items/count?include=parentItem",
             "ids": "/test/items/ids?include=parentItem",
           },
-          "_type": "collection",
+          "_type": "test/items",
           "_url": "/test/items?include=parentItem",
           "hasMore": false,
           "limit": 50,
@@ -4423,12 +4395,11 @@ describe("self references", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/items",
           "_links": Object {
             "count": "/test/items/count?include=items",
             "ids": "/test/items/ids?include=items",
           },
-          "_type": "collection",
+          "_type": "test/items",
           "_url": "/test/items?include=items",
           "hasMore": false,
           "limit": 50,
@@ -4494,12 +4465,11 @@ describe("sorts", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/items",
           "_links": Object {
             "count": "/test/items/count?sort=-key1",
             "ids": "/test/items/ids?sort=-key1",
           },
-          "_type": "collection",
+          "_type": "test/items",
           "_url": "/test/items?sort=-key1",
           "hasMore": false,
           "limit": 50,
@@ -4544,12 +4514,11 @@ describe("sorts", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/items",
           "_links": Object {
             "count": "/test/items/count?sort[]=key2&sort[]=-key1",
             "ids": "/test/items/ids?sort[]=key2&sort[]=-key1",
           },
-          "_type": "collection",
+          "_type": "test/items",
           "_url": "/test/items?sort[]=key2&sort[]=-key1",
           "hasMore": false,
           "limit": 50,
@@ -4594,12 +4563,11 @@ describe("sorts", () => {
           },
         ],
         "meta": Object {
-          "_collection": "test/items",
           "_links": Object {
             "count": "/test/items/count?sort=bogus",
             "ids": "/test/items/ids?sort=bogus",
           },
-          "_type": "collection",
+          "_type": "test/items",
           "_url": "/test/items?sort=bogus",
           "hasMore": false,
           "limit": 50,
@@ -4648,13 +4616,12 @@ describe("pagination", () => {
     } = await items.readMany(knex, { sort: ["-key1", "key2"] }, {});
     expect(meta1).toMatchInlineSnapshot(`
       Object {
-        "_collection": "test/items",
         "_links": Object {
           "count": "/test/items/count?sort[]=-key1&sort[]=key2",
           "ids": "/test/items/ids?sort[]=-key1&sort[]=key2",
           "nextPage": "/test/items?sort[]=-key1&sort[]=key2&cursor=eyJpZCI6NzYyLCJrZXkxIjo5NCwia2V5MiI6NjN9",
         },
-        "_type": "collection",
+        "_type": "test/items",
         "_url": "/test/items?sort[]=-key1&sort[]=key2",
         "hasMore": true,
         "limit": 50,
@@ -4687,13 +4654,12 @@ describe("pagination", () => {
     } = await items.readMany(knex, params, {});
     expect(meta2).toMatchInlineSnapshot(`
       Object {
-        "_collection": "test/items",
         "_links": Object {
           "count": "/test/items/count?sort[]=-key1&sort[]=key2&cursor=eyJpZCI6NzYyLCJrZXkxIjo5NCwia2V5MiI6NjN9",
           "ids": "/test/items/ids?sort[]=-key1&sort[]=key2&cursor=eyJpZCI6NzYyLCJrZXkxIjo5NCwia2V5MiI6NjN9",
           "nextPage": "/test/items?sort[]=-key1&sort[]=key2&cursor=eyJpZCI6MjQwLCJrZXkxIjo4OSwia2V5MiI6MTZ9",
         },
-        "_type": "collection",
+        "_type": "test/items",
         "_url": "/test/items?sort[]=-key1&sort[]=key2&cursor=eyJpZCI6NzYyLCJrZXkxIjo5NCwia2V5MiI6NjN9",
         "hasMore": true,
         "limit": 50,
@@ -4770,12 +4736,11 @@ describe("in public schema", () => {
           },
         ],
         "meta": Object {
-          "_collection": "testTable",
           "_links": Object {
             "count": "/testTable/count",
             "ids": "/testTable/ids",
           },
-          "_type": "collection",
+          "_type": "testTable",
           "_url": "/testTable",
           "hasMore": false,
           "limit": 50,

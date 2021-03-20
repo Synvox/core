@@ -1462,8 +1462,7 @@ export class Table<Context, T = any> {
             : ""
         }`,
         links: links,
-        type: "collection",
-        collection: path,
+        type: path,
       });
     };
 
