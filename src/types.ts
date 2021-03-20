@@ -1,7 +1,7 @@
-import { Request, Response, Router } from 'express';
-import { Knex } from 'knex';
-import { mixed, object, BaseSchema } from 'yup';
-import { Table } from './Table';
+import { Request, Response, Router } from "express";
+import { Knex } from "knex";
+import { mixed, object, BaseSchema } from "yup";
+import { Table } from "./Table";
 
 export class Relation {
   schemaName: string;
@@ -44,7 +44,7 @@ export interface ContextFactory<Context> {
 export type Mixed = ReturnType<typeof mixed>;
 export type ObjectSchema = ReturnType<typeof object>;
 
-export type Mode = 'insert' | 'read' | 'update' | 'delete';
+export type Mode = "insert" | "read" | "update" | "delete";
 
 export interface ContextFactory<Context> {
   (req: Request, res: Response): Context;
@@ -108,7 +108,7 @@ export type BeforeUpdate<Context> = (
   this: Table<Context>,
   trx: Knex.Transaction,
   context: ReturnType<ContextFactory<Context>>,
-  mode: 'insert' | 'update' | 'delete',
+  mode: "insert" | "update" | "delete",
   draft: any,
   current: any
 ) => Promise<void>;
@@ -117,7 +117,7 @@ export type AfterUpdate<Context> = (
   this: Table<Context>,
   trx: Knex.Transaction,
   context: ReturnType<ContextFactory<Context>>,
-  mode: 'insert' | 'update' | 'delete',
+  mode: "insert" | "update" | "delete",
   next: any,
   previous: any
 ) => Promise<void>;
@@ -181,3 +181,5 @@ export type TableDef<T> = { tableName: string } & Partial<{
   relations: Relations;
   idGenerator?: () => any;
 }>;
+
+export type KnexGetter = (mode: "read" | "write" | "schema") => Promise<Knex>;

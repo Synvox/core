@@ -1,14 +1,19 @@
-import Knex from 'knex';
-import { knexHelpers, Table, BadRequestError, NotFoundError } from '../src';
-import { string } from 'yup';
-import { UnauthorizedError } from '../src/Errors';
-import { Mode } from '../src/types';
-import QueryString from 'qs';
+import Knex from "knex";
+import {
+  knexHelpers,
+  Table,
+  BadRequestError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../src";
+import { string } from "yup";
+import { Mode } from "../src/types";
+import QueryString from "qs";
 
 let queries: string[] = [];
 
 const knex = Knex({
-  client: 'pg',
+  client: "pg",
   connection: {
     database: process.env.USER,
   },
@@ -20,8 +25,8 @@ const knex = Knex({
     },
   },
   pool: {
-    afterCreate: function(conn: any, done: any) {
-      conn.query('SET TIME ZONE -6;', function(err: any) {
+    afterCreate: function (conn: any, done: any) {
+      conn.query("SET TIME ZONE -6;", function (err: any) {
         done(err, conn);
       });
     },
@@ -44,29 +49,25 @@ afterAll(async () => {
   await knex.destroy();
 });
 
-describe('without policies', () => {
-  it('reads', async () => {
-    await knex.schema.withSchema('test').createTable('test', t => {
-      t.bigIncrements('id').primary();
-      t.boolean('is_boolean')
+describe("without policies", () => {
+  it("reads", async () => {
+    await knex.schema.withSchema("test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+      t.boolean("is_boolean").notNullable().defaultTo(false);
+      t.integer("number_count").notNullable().defaultTo(0);
+      t.specificType("text", "character varying(10)")
         .notNullable()
-        .defaultTo(false);
-      t.integer('number_count')
-        .notNullable()
-        .defaultTo(0);
-      t.specificType('text', 'character varying(10)')
-        .notNullable()
-        .defaultTo('text');
+        .defaultTo("text");
     });
 
     const table = new Table({
-      schemaName: 'test',
-      tableName: 'test',
+      schemaName: "test",
+      tableName: "test",
     });
 
     await table.init(knex);
 
-    for (let i = 0; i < 2; i++) await knex('test.test').insert({});
+    for (let i = 0; i < 2; i++) await knex("test.test").insert({});
 
     queries = [];
     expect(await table.read(knex, {}, {})).toMatchInlineSnapshot(`
@@ -163,11 +164,9 @@ describe('without policies', () => {
       ]
     `);
 
-    await knex('test.test')
-      .update({ isBoolean: true })
-      .where('id', 1);
+    await knex("test.test").update({ isBoolean: true }).where("id", 1);
     queries = [];
-    expect(await table.read(knex, { isBoolean: 'true' }, {}))
+    expect(await table.read(knex, { isBoolean: "true" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -201,9 +200,9 @@ describe('without policies', () => {
       ]
     `);
 
-    await knex('test.test')
+    await knex("test.test")
       .update({ isBoolean: false, numberCount: 1 })
-      .where('id', 1);
+      .where("id", 1);
     queries = [];
     expect(await table.read(knex, { numberCount: 1 }, {}))
       .toMatchInlineSnapshot(`
@@ -285,26 +284,24 @@ describe('without policies', () => {
     `);
   });
 
-  it('read relations', async () => {
-    await knex.schema.withSchema('test').createTable('users', t => {
-      t.bigIncrements('id').primary();
+  it("read relations", async () => {
+    await knex.schema.withSchema("test").createTable("users", (t) => {
+      t.bigIncrements("id").primary();
     });
 
-    await knex.schema.withSchema('test').createTable('posts', t => {
-      t.bigIncrements('id').primary();
-      t.bigInteger('user_id')
-        .references('id')
-        .inTable('test.users');
+    await knex.schema.withSchema("test").createTable("posts", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("user_id").references("id").inTable("test.users");
     });
 
     const users = new Table({
-      schemaName: 'test',
-      tableName: 'users',
+      schemaName: "test",
+      tableName: "users",
     });
 
     const posts = new Table({
-      schemaName: 'test',
-      tableName: 'posts',
+      schemaName: "test",
+      tableName: "posts",
     });
 
     await users.init(knex);
@@ -312,13 +309,9 @@ describe('without policies', () => {
     users.linkTables([users, posts]);
     posts.linkTables([users, posts]);
 
-    const [user] = await knex('test.users')
-      .insert({})
-      .returning('*');
+    const [user] = await knex("test.users").insert({}).returning("*");
 
-    await knex('test.posts')
-      .insert({ userId: user.id })
-      .returning('*');
+    await knex("test.posts").insert({ userId: user.id }).returning("*");
 
     queries = [];
     expect(await users.read(knex, {}, {})).toMatchInlineSnapshot(`
@@ -388,7 +381,7 @@ describe('without policies', () => {
     `);
 
     queries = [];
-    expect(await posts.read(knex, { include: 'user', id: 1 }, {}, false))
+    expect(await posts.read(knex, { include: "user", id: 1 }, {}, false))
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
@@ -415,7 +408,7 @@ describe('without policies', () => {
     `);
 
     queries = [];
-    expect(await users.read(knex, { include: 'posts', id: 1 }, {}, false))
+    expect(await users.read(knex, { include: "posts", id: 1 }, {}, false))
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
@@ -444,7 +437,7 @@ describe('without policies', () => {
     `);
 
     queries = [];
-    expect(await users.read(knex, { include: 'bogus' }, {}))
+    expect(await users.read(knex, { include: "bogus" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -478,27 +471,25 @@ describe('without policies', () => {
     `);
   });
 
-  it('forwards query params to relations', async () => {
-    await knex.schema.withSchema('test').createTable('users', t => {
-      t.bigIncrements('id').primary();
+  it("forwards query params to relations", async () => {
+    await knex.schema.withSchema("test").createTable("users", (t) => {
+      t.bigIncrements("id").primary();
     });
 
-    await knex.schema.withSchema('test').createTable('posts', t => {
-      t.bigIncrements('id').primary();
-      t.bigInteger('user_id')
-        .references('id')
-        .inTable('test.users');
+    await knex.schema.withSchema("test").createTable("posts", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("user_id").references("id").inTable("test.users");
     });
 
     const users = new Table({
-      schemaName: 'test',
-      tableName: 'users',
-      forwardQueryParams: ['token'],
+      schemaName: "test",
+      tableName: "users",
+      forwardQueryParams: ["token"],
       eagerGetters: {
         async postCount(stmt) {
           stmt
-            .from('test.posts')
-            .whereRaw('user_id=??', [`${this.alias}.id`])
+            .from("test.posts")
+            .whereRaw("user_id=??", [`${this.alias}.id`])
             .count()
             .first();
         },
@@ -506,9 +497,9 @@ describe('without policies', () => {
     });
 
     const posts = new Table({
-      schemaName: 'test',
-      tableName: 'posts',
-      forwardQueryParams: ['token'],
+      schemaName: "test",
+      tableName: "posts",
+      forwardQueryParams: ["token"],
     });
 
     await users.init(knex);
@@ -516,16 +507,12 @@ describe('without policies', () => {
     users.linkTables([users, posts]);
     posts.linkTables([users, posts]);
 
-    const [user] = await knex('test.users')
-      .insert({})
-      .returning('*');
+    const [user] = await knex("test.users").insert({}).returning("*");
 
-    await knex('test.posts')
-      .insert({ userId: user.id })
-      .returning('*');
+    await knex("test.posts").insert({ userId: user.id }).returning("*");
 
     queries = [];
-    expect(await users.read(knex, { token: '123' }, {})).toMatchInlineSnapshot(`
+    expect(await users.read(knex, { token: "123" }, {})).toMatchInlineSnapshot(`
       Object {
         "data": Array [
           Object {
@@ -559,7 +546,7 @@ describe('without policies', () => {
     `);
 
     queries = [];
-    expect(await posts.read(knex, { token: '123' }, {})).toMatchInlineSnapshot(`
+    expect(await posts.read(knex, { token: "123" }, {})).toMatchInlineSnapshot(`
       Object {
         "data": Array [
           Object {
@@ -596,7 +583,7 @@ describe('without policies', () => {
     expect(
       await posts.read(
         knex,
-        { include: 'user', id: 1, token: '123' },
+        { include: "user", id: 1, token: "123" },
         {},
         false
       )
@@ -630,7 +617,7 @@ describe('without policies', () => {
     expect(
       await users.read(
         knex,
-        { include: 'posts', id: 1, token: '123' },
+        { include: "posts", id: 1, token: "123" },
         {},
         false
       )
@@ -666,7 +653,7 @@ describe('without policies', () => {
     expect(
       await users.read(
         knex,
-        { include: ['posts', 'postCount'], id: 1, token: '123' },
+        { include: ["posts", "postCount"], id: 1, token: "123" },
         {},
         false
       )
@@ -702,7 +689,7 @@ describe('without policies', () => {
     `);
 
     queries = [];
-    expect(await users.read(knex, { include: 'bogus', token: '123' }, {}))
+    expect(await users.read(knex, { include: "bogus", token: "123" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -737,42 +724,40 @@ describe('without policies', () => {
     `);
   });
 
-  it('reads relations with multiple references (failure)', async () => {
-    await knex.schema.withSchema('test').createTable('versions', t => {
-      t.bigIncrements('id').primary();
+  it("reads relations with multiple references (failure)", async () => {
+    await knex.schema.withSchema("test").createTable("versions", (t) => {
+      t.bigIncrements("id").primary();
     });
 
-    await knex.schema.withSchema('test').createTable('docs', t => {
-      t.bigIncrements('id').primary();
-      t.bigInteger('versionId')
-        .references('id')
-        .inTable('test.versions')
+    await knex.schema.withSchema("test").createTable("docs", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("versionId")
+        .references("id")
+        .inTable("test.versions")
         .notNullable();
-      t.bigInteger('firstVersionId')
-        .references('id')
-        .inTable('test.versions')
+      t.bigInteger("firstVersionId")
+        .references("id")
+        .inTable("test.versions")
         .notNullable();
     });
 
-    const [version] = await knex('test.versions')
-      .insert({})
-      .returning('*');
+    const [version] = await knex("test.versions").insert({}).returning("*");
 
-    await knex('test.docs')
+    await knex("test.docs")
       .insert({
         versionId: version.id,
         firstVersionId: version.id,
       })
-      .returning('*');
+      .returning("*");
 
     const versions = new Table({
-      schemaName: 'test',
-      tableName: 'versions',
+      schemaName: "test",
+      tableName: "versions",
     });
 
     const docs = new Table({
-      schemaName: 'test',
-      tableName: 'docs',
+      schemaName: "test",
+      tableName: "docs",
     });
 
     await versions.init(knex);
@@ -781,45 +766,43 @@ describe('without policies', () => {
     expect(() => versions.linkTables([docs])).toThrow();
   });
 
-  it('reads relations with multiple references', async () => {
-    await knex.schema.withSchema('test').createTable('versions', t => {
-      t.bigIncrements('id').primary();
+  it("reads relations with multiple references", async () => {
+    await knex.schema.withSchema("test").createTable("versions", (t) => {
+      t.bigIncrements("id").primary();
     });
 
-    await knex.schema.withSchema('test').createTable('docs', t => {
-      t.bigIncrements('id').primary();
-      t.bigInteger('versionId')
-        .references('id')
-        .inTable('test.versions')
+    await knex.schema.withSchema("test").createTable("docs", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("versionId")
+        .references("id")
+        .inTable("test.versions")
         .notNullable();
-      t.bigInteger('firstVersionId')
-        .references('id')
-        .inTable('test.versions')
+      t.bigInteger("firstVersionId")
+        .references("id")
+        .inTable("test.versions")
         .notNullable();
     });
 
-    const [version] = await knex('test.versions')
-      .insert({})
-      .returning('*');
+    const [version] = await knex("test.versions").insert({}).returning("*");
 
-    await knex('test.docs')
+    await knex("test.docs")
       .insert({
         versionId: version.id,
         firstVersionId: version.id,
       })
-      .returning('*');
+      .returning("*");
 
     const versions = new Table({
-      schemaName: 'test',
-      tableName: 'versions',
+      schemaName: "test",
+      tableName: "versions",
     });
 
     const docs = new Table({
-      schemaName: 'test',
-      tableName: 'docs',
+      schemaName: "test",
+      tableName: "docs",
       inverseOfColumnName: {
-        versionId: 'headDocs',
-        firstVersionId: 'firstDocs',
+        versionId: "headDocs",
+        firstVersionId: "firstDocs",
       },
     });
 
@@ -829,7 +812,7 @@ describe('without policies', () => {
     docs.linkTables([versions, docs]);
 
     queries = [];
-    expect(await docs.read(knex, { include: ['version', 'firstVersion'] }, {}))
+    expect(await docs.read(knex, { include: ["version", "firstVersion"] }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -885,7 +868,7 @@ describe('without policies', () => {
 
     queries = [];
     expect(
-      await versions.read(knex, { include: ['headDocs', 'firstDocs'] }, {})
+      await versions.read(knex, { include: ["headDocs", "firstDocs"] }, {})
     ).toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -946,23 +929,19 @@ describe('without policies', () => {
     `);
   });
 
-  it('writes', async () => {
-    await knex.schema.withSchema('test').createTable('test', t => {
-      t.bigIncrements('id').primary();
-      t.boolean('is_boolean')
+  it("writes", async () => {
+    await knex.schema.withSchema("test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+      t.boolean("is_boolean").notNullable().defaultTo(false);
+      t.integer("number_count").notNullable().defaultTo(0);
+      t.specificType("text", "character varying(10)")
         .notNullable()
-        .defaultTo(false);
-      t.integer('number_count')
-        .notNullable()
-        .defaultTo(0);
-      t.specificType('text', 'character varying(10)')
-        .notNullable()
-        .defaultTo('text');
+        .defaultTo("text");
     });
 
     const table = new Table({
-      schemaName: 'test',
-      tableName: 'test',
+      schemaName: "test",
+      tableName: "test",
     });
 
     await table.init(knex);
@@ -1002,29 +981,21 @@ describe('without policies', () => {
     `);
   });
 
-  it('validates', async () => {
-    await knex.schema.withSchema('test').createTable('test', t => {
-      t.bigIncrements('id').primary();
-      t.boolean('is_boolean')
+  it("validates", async () => {
+    await knex.schema.withSchema("test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+      t.boolean("is_boolean").notNullable().defaultTo(false);
+      t.timestamp("date").notNullable().defaultTo("1999-01-08 04:05:06");
+      t.integer("number_count").notNullable().defaultTo(0);
+      t.specificType("text", "character varying(5)")
         .notNullable()
-        .defaultTo(false);
-      t.timestamp('date')
-        .notNullable()
-        .defaultTo('1999-01-08 04:05:06');
-      t.integer('number_count')
-        .notNullable()
-        .defaultTo(0);
-      t.specificType('text', 'character varying(5)')
-        .notNullable()
-        .defaultTo('text');
-      t.specificType('arr', 'text[]')
-        .defaultTo('{}')
-        .notNullable();
+        .defaultTo("text");
+      t.specificType("arr", "text[]").defaultTo("{}").notNullable();
     });
 
     const table = new Table({
-      schemaName: 'test',
-      tableName: 'test',
+      schemaName: "test",
+      tableName: "test",
     });
 
     await table.init(knex);
@@ -1046,7 +1017,7 @@ describe('without policies', () => {
     queries = [];
     expect(
       await table
-        .write(knex, { numberCount: 'a' }, {})
+        .write(knex, { numberCount: "a" }, {})
         .catch((e: BadRequestError) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
@@ -1060,7 +1031,7 @@ describe('without policies', () => {
     queries = [];
     expect(
       await table
-        .write(knex, { text: '01234567890' }, {})
+        .write(knex, { text: "01234567890" }, {})
         .catch((e: BadRequestError) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
@@ -1072,7 +1043,7 @@ describe('without policies', () => {
     expect(queries).toMatchInlineSnapshot(`Array []`);
 
     queries = [];
-    expect(await table.write(knex, { isBoolean: 'false' }, {}))
+    expect(await table.write(knex, { isBoolean: "false" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "changes": Array [
@@ -1110,12 +1081,12 @@ describe('without policies', () => {
       ]
     `);
 
-    await knex('test.test').truncate();
+    await knex("test.test").truncate();
     queries = [];
     expect(
       await table.write(
         knex,
-        { date: new Date('2000-01-01 04:05:06').toISOString() },
+        { date: new Date("2000-01-01 04:05:06").toISOString() },
         {}
       )
     ).toMatchInlineSnapshot(`
@@ -1158,7 +1129,7 @@ describe('without policies', () => {
     queries = [];
     expect(
       await table
-        .write(knex, { arr: [true, 1, 'text', []] }, {})
+        .write(knex, { arr: [true, 1, "text", []] }, {})
         .catch((e: BadRequestError) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
@@ -1176,7 +1147,7 @@ describe('without policies', () => {
     queries = [];
     expect(
       await table
-        .write(knex, { id: 'abc' }, {})
+        .write(knex, { id: "abc" }, {})
         .catch((e: BadRequestError) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
@@ -1205,19 +1176,17 @@ describe('without policies', () => {
     `);
   });
 
-  it('validates extended schemas', async () => {
-    await knex.schema.withSchema('test').createTable('test', t => {
-      t.bigIncrements('id').primary();
-      t.text('email').notNullable();
+  it("validates extended schemas", async () => {
+    await knex.schema.withSchema("test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("email").notNullable();
     });
 
     const table = new Table({
-      schemaName: 'test',
-      tableName: 'test',
+      schemaName: "test",
+      tableName: "test",
       schema: {
-        email: string()
-          .email()
-          .min(1),
+        email: string().email().min(1),
       },
     });
 
@@ -1240,7 +1209,7 @@ describe('without policies', () => {
     queries = [];
     expect(
       await table
-        .write(knex, { email: '' }, {})
+        .write(knex, { email: "" }, {})
         .catch((e: BadRequestError) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
@@ -1252,7 +1221,7 @@ describe('without policies', () => {
     expect(queries).toMatchInlineSnapshot(`Array []`);
 
     queries = [];
-    expect(await table.write(knex, { email: 'test@test.com' }, {}))
+    expect(await table.write(knex, { email: "test@test.com" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "changes": Array [
@@ -1283,23 +1252,21 @@ describe('without policies', () => {
     `);
   });
 
-  it('validates unique keys', async () => {
-    await knex.schema.withSchema('test').createTable('test', t => {
-      t.bigIncrements('id').primary();
-      t.text('username')
-        .unique()
-        .notNullable();
+  it("validates unique keys", async () => {
+    await knex.schema.withSchema("test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("username").unique().notNullable();
     });
 
     const table = new Table({
-      schemaName: 'test',
-      tableName: 'test',
+      schemaName: "test",
+      tableName: "test",
     });
 
     await table.init(knex);
 
     queries = [];
-    expect(await table.write(knex, { username: 'abc' }, {}))
+    expect(await table.write(knex, { username: "abc" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "changes": Array [
@@ -1333,7 +1300,7 @@ describe('without policies', () => {
     queries = [];
     expect(
       await table
-        .write(knex, { username: 'abc' }, {})
+        .write(knex, { username: "abc" }, {})
         .catch((e: BadRequestError) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
@@ -1349,24 +1316,24 @@ describe('without policies', () => {
     `);
   });
 
-  it('validates compound unique keys', async () => {
-    await knex.schema.withSchema('test').createTable('test', t => {
-      t.bigIncrements('id').primary();
-      t.text('org').notNullable();
-      t.text('username').notNullable();
-      t.unique(['org', 'username']);
+  it("validates compound unique keys", async () => {
+    await knex.schema.withSchema("test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("org").notNullable();
+      t.text("username").notNullable();
+      t.unique(["org", "username"]);
     });
 
     const table = new Table({
-      schemaName: 'test',
-      tableName: 'test',
+      schemaName: "test",
+      tableName: "test",
     });
 
     await table.init(knex);
 
-    await knex('test.test').truncate();
+    await knex("test.test").truncate();
     queries = [];
-    expect(await table.write(knex, { username: 'abc', org: 'a' }, {}))
+    expect(await table.write(knex, { username: "abc", org: "a" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "changes": Array [
@@ -1400,11 +1367,11 @@ describe('without policies', () => {
       ]
     `);
 
-    await knex('test.test').truncate();
+    await knex("test.test").truncate();
     queries = [];
     expect(
       await table
-        .write(knex, { username: 'abc', org: 'a' }, {})
+        .write(knex, { username: "abc", org: "a" }, {})
         .catch((e: BadRequestError) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
@@ -1439,9 +1406,9 @@ describe('without policies', () => {
       ]
     `);
 
-    await knex('test.test').truncate();
+    await knex("test.test").truncate();
     queries = [];
-    expect(await table.write(knex, { username: 'abc', org: 'b' }, {}))
+    expect(await table.write(knex, { username: "abc", org: "b" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "changes": Array [
@@ -1475,7 +1442,7 @@ describe('without policies', () => {
       ]
     `);
 
-    await knex('test.test').truncate();
+    await knex("test.test").truncate();
     queries = [];
     expect(
       await table.write(knex, {}, {}).catch((e: BadRequestError) => e.body)
@@ -1489,11 +1456,11 @@ describe('without policies', () => {
     `);
     expect(queries).toMatchInlineSnapshot(`Array []`);
 
-    await knex('test.test').truncate();
+    await knex("test.test").truncate();
     queries = [];
     expect(
       await table
-        .write(knex, { username: 'xyz' }, {})
+        .write(knex, { username: "xyz" }, {})
         .catch((e: BadRequestError) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
@@ -1504,16 +1471,16 @@ describe('without policies', () => {
     `);
     expect(queries).toMatchInlineSnapshot(`Array []`);
 
-    await knex('test.test').truncate();
+    await knex("test.test").truncate();
     const { result: row } = await table.write(
       knex,
-      { username: 'xyz', org: 'org' },
+      { username: "xyz", org: "org" },
       {}
     );
 
     queries = [];
     expect(
-      await table.write(knex, { id: row!.id, username: 'xyb', org: 'org' }, {})
+      await table.write(knex, { id: row!.id, username: "xyb", org: "org" }, {})
     ).toMatchInlineSnapshot(`
       Object {
         "changes": Array [
@@ -1576,29 +1543,29 @@ describe('without policies', () => {
     `);
   });
 
-  it('validates deep', async () => {
-    await knex.schema.withSchema('test').createTable('users', t => {
-      t.bigIncrements('id').primary();
-      t.text('name').notNullable();
+  it("validates deep", async () => {
+    await knex.schema.withSchema("test").createTable("users", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("name").notNullable();
     });
 
-    await knex.schema.withSchema('test').createTable('posts', t => {
-      t.bigIncrements('id').primary();
-      t.bigInteger('user_id')
-        .references('id')
-        .inTable('test.users')
-        .onDelete('cascade');
-      t.text('body').notNullable();
+    await knex.schema.withSchema("test").createTable("posts", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("user_id")
+        .references("id")
+        .inTable("test.users")
+        .onDelete("cascade");
+      t.text("body").notNullable();
     });
 
     const users = new Table({
-      schemaName: 'test',
-      tableName: 'users',
+      schemaName: "test",
+      tableName: "users",
     });
 
     const posts = new Table({
-      schemaName: 'test',
-      tableName: 'posts',
+      schemaName: "test",
+      tableName: "posts",
     });
 
     await users.init(knex);
@@ -1612,10 +1579,10 @@ describe('without policies', () => {
         .write(
           knex,
           {
-            name: 'a',
+            name: "a",
             posts: [
               {
-                body: '123',
+                body: "123",
               },
               { body: null },
             ],
@@ -1637,7 +1604,7 @@ describe('without policies', () => {
     expect(queries).toMatchInlineSnapshot(`Array []`);
 
     queries = [];
-    expect(await users.write(knex, { name: 'a' }, {})).toMatchInlineSnapshot(`
+    expect(await users.write(knex, { name: "a" }, {})).toMatchInlineSnapshot(`
       Object {
         "changes": Array [
           Object {
@@ -1672,7 +1639,7 @@ describe('without policies', () => {
     expect(
       await users.write(
         knex,
-        { name: 'a', posts: [{ body: 'a' }, { body: 'b' }] },
+        { name: "a", posts: [{ body: "a" }, { body: "b" }] },
         {}
       )
     ).toMatchInlineSnapshot(`
@@ -1755,7 +1722,7 @@ describe('without policies', () => {
     queries = [];
     expect(
       await posts
-        .write(knex, { body: 'abc', user: {} }, {})
+        .write(knex, { body: "abc", user: {} }, {})
         .catch((e: BadRequestError) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
@@ -1771,7 +1738,7 @@ describe('without policies', () => {
     queries = [];
     expect(
       await posts
-        .write(knex, { name: 'a', body: 'abc', user: { name: 'a' } }, {})
+        .write(knex, { name: "a", body: "abc", user: { name: "a" } }, {})
         .catch((e: BadRequestError) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
@@ -1854,12 +1821,12 @@ describe('without policies', () => {
       ]
     `);
 
-    const [user] = await knex('test.users')
-      .insert({ name: 'Yo' })
-      .returning('*');
-    const [post] = await knex('test.posts')
-      .insert({ userId: user.id, body: 'body' })
-      .returning('*');
+    const [user] = await knex("test.users")
+      .insert({ name: "Yo" })
+      .returning("*");
+    const [post] = await knex("test.posts")
+      .insert({ userId: user.id, body: "body" })
+      .returning("*");
     queries = [];
     expect(
       await users.write(
@@ -1903,19 +1870,19 @@ describe('without policies', () => {
     `);
   });
 
-  it('counts', async () => {
-    await knex.schema.withSchema('test').createTable('test', t => {
-      t.bigIncrements('id').primary();
+  it("counts", async () => {
+    await knex.schema.withSchema("test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
     });
 
     const table = new Table({
-      schemaName: 'test',
-      tableName: 'test',
+      schemaName: "test",
+      tableName: "test",
     });
 
     await table.init(knex);
 
-    for (let i = 0; i < 100; i++) await knex('test.test').insert({});
+    for (let i = 0; i < 100; i++) await knex("test.test").insert({});
 
     queries = [];
     expect(await table.count(knex, {}, {})).toMatchInlineSnapshot(`100`);
@@ -1926,19 +1893,19 @@ describe('without policies', () => {
     `);
   });
 
-  it('gets ids', async () => {
-    await knex.schema.withSchema('test').createTable('test', t => {
-      t.bigIncrements('id').primary();
+  it("gets ids", async () => {
+    await knex.schema.withSchema("test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
     });
 
     const table = new Table({
-      schemaName: 'test',
-      tableName: 'test',
+      schemaName: "test",
+      tableName: "test",
     });
 
     await table.init(knex);
 
-    for (let i = 0; i < 100; i++) await knex('test.test').insert({});
+    for (let i = 0; i < 100; i++) await knex("test.test").insert({});
 
     queries = [];
     expect((await table.ids(knex, {}, {})).meta).toMatchInlineSnapshot(`
@@ -1957,53 +1924,49 @@ describe('without policies', () => {
     `);
   });
 
-  it('supports eager getters', async () => {
-    await knex.schema.withSchema('test').createTable('users', t => {
-      t.bigIncrements('id').primary();
+  it("supports eager getters", async () => {
+    await knex.schema.withSchema("test").createTable("users", (t) => {
+      t.bigIncrements("id").primary();
     });
-    await knex.schema.withSchema('test').createTable('jobs', t => {
-      t.bigIncrements('id').primary();
-      t.boolean('active').defaultTo(true);
-      t.integer('user_id')
-        .references('id')
-        .inTable('test.users');
+    await knex.schema.withSchema("test").createTable("jobs", (t) => {
+      t.bigIncrements("id").primary();
+      t.boolean("active").defaultTo(true);
+      t.integer("user_id").references("id").inTable("test.users");
     });
 
-    await knex('test.users').insert({});
-    await knex('test.jobs')
-      .insert({ userId: 1 })
-      .returning('*');
+    await knex("test.users").insert({});
+    await knex("test.jobs").insert({ userId: 1 }).returning("*");
 
     const users = new Table({
-      schemaName: 'test',
-      tableName: 'users',
+      schemaName: "test",
+      tableName: "users",
       eagerGetters: {
         async activeJob(stmt) {
           stmt
-            .from('test.jobs')
-            .where('jobs.active', true)
+            .from("test.jobs")
+            .where("jobs.active", true)
             .whereRaw(`jobs.user_id = ${this.alias}.id`)
             .first();
         },
         async activeJobId(stmt) {
           stmt
-            .from('test.jobs')
-            .where('jobs.active', true)
+            .from("test.jobs")
+            .where("jobs.active", true)
             .whereRaw(`jobs.user_id = ${this.alias}.id`)
-            .pluck('id');
+            .pluck("id");
         },
         async activeJobs(stmt) {
           stmt
-            .from('test.jobs')
-            .where('jobs.active', true)
+            .from("test.jobs")
+            .where("jobs.active", true)
             .whereRaw(`jobs.user_id = ${this.alias}.id`);
         },
       },
     });
 
     const jobs = new Table({
-      schemaName: 'test',
-      tableName: 'jobs',
+      schemaName: "test",
+      tableName: "jobs",
     });
 
     await users.init(knex);
@@ -2012,7 +1975,7 @@ describe('without policies', () => {
     jobs.linkTables([users]);
 
     queries = [];
-    expect(await users.read(knex, { include: 'activeJob' }, {}))
+    expect(await users.read(knex, { include: "activeJob" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -2054,7 +2017,7 @@ describe('without policies', () => {
     `);
 
     queries = [];
-    expect(await users.read(knex, { include: 'activeJobs' }, {}))
+    expect(await users.read(knex, { include: "activeJobs" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -2101,7 +2064,7 @@ describe('without policies', () => {
     expect(
       await users.read(
         knex,
-        { include: ['activeJob', 'activeJobs', 'activeJobId'] },
+        { include: ["activeJob", "activeJobs", "activeJobId"] },
         {}
       )
     ).toMatchInlineSnapshot(`
@@ -2153,18 +2116,16 @@ describe('without policies', () => {
     `);
   });
 
-  it('supports getters', async () => {
-    await knex.schema.withSchema('test').createTable('test', t => {
-      t.bigIncrements('id').primary();
+  it("supports getters", async () => {
+    await knex.schema.withSchema("test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
     });
 
-    const [item] = await knex('test.test')
-      .insert({})
-      .returning('*');
+    const [item] = await knex("test.test").insert({}).returning("*");
 
     const table = new Table({
-      schemaName: 'test',
-      tableName: 'test',
+      schemaName: "test",
+      tableName: "test",
       getters: {
         async dynamic(_row, _context) {
           return 2 + 2;
@@ -2175,7 +2136,7 @@ describe('without policies', () => {
     await table.init(knex);
 
     expect(
-      await table.read(knex, { include: 'dynamic', id: item.id }, {}, false)
+      await table.read(knex, { include: "dynamic", id: item.id }, {}, false)
     ).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
@@ -2189,15 +2150,15 @@ describe('without policies', () => {
     `);
   });
 
-  it('supports setters', async () => {
-    await knex.schema.withSchema('test').createTable('test', t => {
-      t.bigIncrements('id').primary();
+  it("supports setters", async () => {
+    await knex.schema.withSchema("test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
     });
 
     let result: [any, any, any][] = [];
     const table = new Table({
-      schemaName: 'test',
-      tableName: 'test',
+      schemaName: "test",
+      tableName: "test",
       setters: {
         async dynamic(_trx, value, row, context) {
           result.push([value, row, context]);
@@ -2284,21 +2245,19 @@ describe('without policies', () => {
     `);
   });
 
-  it('supports id modifiers', async () => {
-    await knex.schema.withSchema('test').createTable('users', t => {
-      t.bigIncrements('id').primary();
+  it("supports id modifiers", async () => {
+    await knex.schema.withSchema("test").createTable("users", (t) => {
+      t.bigIncrements("id").primary();
     });
 
-    const [user] = await knex('test.users')
-      .insert({})
-      .returning('*');
+    const [user] = await knex("test.users").insert({}).returning("*");
 
     const table = new Table({
-      schemaName: 'test',
-      tableName: 'users',
+      schemaName: "test",
+      tableName: "users",
       idModifiers: {
         async me(stmt, _context) {
-          stmt.where('id', user.id);
+          stmt.where("id", user.id);
         },
       },
     });
@@ -2306,7 +2265,7 @@ describe('without policies', () => {
     await table.init(knex);
 
     queries = [];
-    expect(await table.read(knex, { id: 'me' }, {}, false))
+    expect(await table.read(knex, { id: "me" }, {}, false))
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {},
@@ -2322,27 +2281,21 @@ describe('without policies', () => {
     `);
   });
 
-  it('supports query modifiers', async () => {
-    await knex.schema.withSchema('test').createTable('jobs', t => {
-      t.bigIncrements('id').primary();
-      t.boolean('is_active')
-        .notNullable()
-        .defaultTo(false);
+  it("supports query modifiers", async () => {
+    await knex.schema.withSchema("test").createTable("jobs", (t) => {
+      t.bigIncrements("id").primary();
+      t.boolean("is_active").notNullable().defaultTo(false);
     });
 
-    await knex('test.jobs')
-      .insert({})
-      .returning('*');
-    await knex('test.jobs')
-      .insert({ isActive: true })
-      .returning('*');
+    await knex("test.jobs").insert({}).returning("*");
+    await knex("test.jobs").insert({ isActive: true }).returning("*");
 
     const table = new Table({
-      schemaName: 'test',
-      tableName: 'jobs',
+      schemaName: "test",
+      tableName: "jobs",
       queryModifiers: {
         async active(value, stmt, _context) {
-          stmt.where('isActive', Boolean(value));
+          stmt.where("isActive", Boolean(value));
         },
       },
     });
@@ -2384,22 +2337,20 @@ describe('without policies', () => {
     `);
   });
 
-  it('supports page pagination', async () => {
-    await knex.schema.withSchema('test').createTable('jobs', t => {
-      t.bigIncrements('id').primary();
-      t.boolean('is_active')
-        .notNullable()
-        .defaultTo(false);
+  it("supports page pagination", async () => {
+    await knex.schema.withSchema("test").createTable("jobs", (t) => {
+      t.bigIncrements("id").primary();
+      t.boolean("is_active").notNullable().defaultTo(false);
     });
 
-    for (let i = 0; i < 100; i++) await knex('test.jobs').insert({});
+    for (let i = 0; i < 100; i++) await knex("test.jobs").insert({});
 
     for (let i = 0; i < 100; i++)
-      await knex('test.jobs').insert({ isActive: true });
+      await knex("test.jobs").insert({ isActive: true });
 
     const table = new Table({
-      schemaName: 'test',
-      tableName: 'jobs',
+      schemaName: "test",
+      tableName: "jobs",
     });
 
     await table.init(knex);
@@ -2514,46 +2465,44 @@ describe('without policies', () => {
   });
 });
 
-describe('with policies', () => {
-  it('prevents reads outside of policy', async () => {
+describe("with policies", () => {
+  it("prevents reads outside of policy", async () => {
     type Context = {
       orgId: number;
     };
 
-    await knex.schema.withSchema('test').createTable('orgs', t => {
-      t.bigIncrements('id').primary();
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
     });
 
-    await knex.schema.withSchema('test').createTable('users', t => {
-      t.bigIncrements('id').primary();
-      t.bigInteger('org_id')
-        .references('id')
-        .inTable('test.orgs')
+    await knex.schema.withSchema("test").createTable("users", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("org_id")
+        .references("id")
+        .inTable("test.orgs")
         .notNullable();
     });
 
-    await knex.schema.withSchema('test').createTable('posts', t => {
-      t.bigIncrements('id').primary();
-      t.bigInteger('org_id')
-        .references('id')
-        .inTable('test.orgs')
+    await knex.schema.withSchema("test").createTable("posts", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("org_id")
+        .references("id")
+        .inTable("test.orgs")
         .notNullable();
-      t.bigInteger('user_id')
-        .references('id')
-        .inTable('test.users');
+      t.bigInteger("user_id").references("id").inTable("test.users");
     });
 
     const users = new Table<Context>({
-      schemaName: 'test',
-      tableName: 'users',
+      schemaName: "test",
+      tableName: "users",
       async policy(stmt, context) {
         stmt.where(`${this.alias}.orgId`, context.orgId);
       },
     });
 
     const posts = new Table<Context>({
-      schemaName: 'test',
-      tableName: 'posts',
+      schemaName: "test",
+      tableName: "posts",
       async policy(stmt, context) {
         stmt.where(`${this.alias}.orgId`, context.orgId);
       },
@@ -2564,30 +2513,26 @@ describe('with policies', () => {
     users.linkTables([users, posts]);
     posts.linkTables([users, posts]);
 
-    const [org1] = await knex('test.orgs')
-      .insert({})
-      .returning('*');
-    const [org2] = await knex('test.orgs')
-      .insert({})
-      .returning('*');
+    const [org1] = await knex("test.orgs").insert({}).returning("*");
+    const [org2] = await knex("test.orgs").insert({}).returning("*");
 
-    const [user1] = await knex('test.users')
+    const [user1] = await knex("test.users")
       .insert({ orgId: org1.id })
-      .returning('*');
-    const [user2] = await knex('test.users')
+      .returning("*");
+    const [user2] = await knex("test.users")
       .insert({ orgId: org2.id })
-      .returning('*');
+      .returning("*");
 
-    await knex('test.posts')
+    await knex("test.posts")
       .insert({ orgId: org1.id, userId: user1.id })
-      .returning('*');
+      .returning("*");
 
-    await knex('test.posts')
+    await knex("test.posts")
       .insert({ orgId: org2.id, userId: user2.id })
-      .returning('*');
+      .returning("*");
 
     queries = [];
-    expect(await users.read(knex, { include: 'posts' }, { orgId: 1 }))
+    expect(await users.read(knex, { include: "posts" }, { orgId: 1 }))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -2634,7 +2579,7 @@ describe('with policies', () => {
     `);
 
     queries = [];
-    expect(await posts.read(knex, { include: ['user'] }, { orgId: 1 }))
+    expect(await posts.read(knex, { include: ["user"] }, { orgId: 1 }))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -2679,48 +2624,44 @@ describe('with policies', () => {
     `);
   });
 
-  it('prevents writes outside of policy', async () => {
+  it("prevents writes outside of policy", async () => {
     type Context = {
       orgId: number;
     };
 
-    await knex.schema.withSchema('test').createTable('orgs', t => {
-      t.bigIncrements('id').primary();
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
     });
 
-    await knex.schema.withSchema('test').createTable('users', t => {
-      t.bigIncrements('id').primary();
-      t.bigInteger('org_id')
-        .references('id')
-        .inTable('test.orgs')
+    await knex.schema.withSchema("test").createTable("users", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("org_id")
+        .references("id")
+        .inTable("test.orgs")
         .notNullable();
     });
 
-    await knex.schema.withSchema('test').createTable('posts', t => {
-      t.bigIncrements('id').primary();
-      t.bigInteger('org_id')
-        .references('id')
-        .inTable('test.orgs')
+    await knex.schema.withSchema("test").createTable("posts", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("org_id")
+        .references("id")
+        .inTable("test.orgs")
         .notNullable();
-      t.bigInteger('user_id')
-        .references('id')
-        .inTable('test.users');
-      t.text('body')
-        .notNullable()
-        .defaultTo('');
+      t.bigInteger("user_id").references("id").inTable("test.users");
+      t.text("body").notNullable().defaultTo("");
     });
 
     const users = new Table<Context>({
-      schemaName: 'test',
-      tableName: 'users',
+      schemaName: "test",
+      tableName: "users",
       async policy(stmt, context) {
         stmt.where(`${this.alias}.orgId`, context.orgId);
       },
     });
 
     const posts = new Table<Context>({
-      schemaName: 'test',
-      tableName: 'posts',
+      schemaName: "test",
+      tableName: "posts",
       async policy(stmt, context) {
         stmt.where(`${this.alias}.orgId`, context.orgId);
       },
@@ -2731,26 +2672,22 @@ describe('with policies', () => {
     users.linkTables([users, posts]);
     posts.linkTables([users, posts]);
 
-    const [org1] = await knex('test.orgs')
-      .insert({})
-      .returning('*');
-    const [org2] = await knex('test.orgs')
-      .insert({})
-      .returning('*');
+    const [org1] = await knex("test.orgs").insert({}).returning("*");
+    const [org2] = await knex("test.orgs").insert({}).returning("*");
 
-    const [user1] = await knex('test.users')
+    const [user1] = await knex("test.users")
       .insert({ orgId: org1.id })
-      .returning('*');
-    const [user2] = await knex('test.users')
+      .returning("*");
+    const [user2] = await knex("test.users")
       .insert({ orgId: org2.id })
-      .returning('*');
+      .returning("*");
 
-    const [post1] = await knex('test.posts')
+    const [post1] = await knex("test.posts")
       .insert({ orgId: org1.id, userId: user1.id })
-      .returning('*');
-    await knex('test.posts')
+      .returning("*");
+    await knex("test.posts")
       .insert({ orgId: org2.id, userId: user2.id })
-      .returning('*');
+      .returning("*");
 
     queries = [];
     expect(
@@ -2888,7 +2825,7 @@ describe('with policies', () => {
     expect(
       await posts.write(
         knex,
-        { id: post1.id, body: 'Body' },
+        { id: post1.id, body: "Body" },
         { orgId: org1.id }
       )
     ).toMatchInlineSnapshot(`
@@ -2959,46 +2896,37 @@ describe('with policies', () => {
     `);
   });
 
-  it('counts', async () => {
-    await knex.schema.withSchema('test').createTable('users', t => {
-      t.bigIncrements('id').primary();
+  it("counts", async () => {
+    await knex.schema.withSchema("test").createTable("users", (t) => {
+      t.bigIncrements("id").primary();
     });
-    await knex.schema.withSchema('test').createTable('test', t => {
-      t.bigIncrements('id').primary();
-      t.bigInteger('userId')
-        .references('id')
-        .inTable('test.users')
+    await knex.schema.withSchema("test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("userId")
+        .references("id")
+        .inTable("test.users")
         .notNullable();
     });
 
-    const [user1] = await knex('test.users')
-      .insert({})
-      .returning('*');
-    const [user2] = await knex('test.users')
-      .insert({})
-      .returning('*');
+    const [user1] = await knex("test.users").insert({}).returning("*");
+    const [user2] = await knex("test.users").insert({}).returning("*");
 
     for (let i = 0; i < 100; i++)
-      await knex('test.test').insert({ userId: user1.id });
+      await knex("test.test").insert({ userId: user1.id });
 
-    await knex('test.test')
+    await knex("test.test")
       .update({ userId: user2.id })
-      .whereIn(
-        'id',
-        knex('test.test')
-          .limit(50)
-          .select('id')
-      );
+      .whereIn("id", knex("test.test").limit(50).select("id"));
 
     type Context = {
       userId: number;
     };
 
     const table = new Table<Context>({
-      schemaName: 'test',
-      tableName: 'test',
+      schemaName: "test",
+      tableName: "test",
       async policy(stmt, context) {
-        stmt.where('userId', context.userId);
+        stmt.where("userId", context.userId);
       },
     });
 
@@ -3025,46 +2953,37 @@ describe('with policies', () => {
     `);
   });
 
-  it('gets ids', async () => {
-    await knex.schema.withSchema('test').createTable('users', t => {
-      t.bigIncrements('id').primary();
+  it("gets ids", async () => {
+    await knex.schema.withSchema("test").createTable("users", (t) => {
+      t.bigIncrements("id").primary();
     });
-    await knex.schema.withSchema('test').createTable('test', t => {
-      t.bigIncrements('id').primary();
-      t.bigInteger('userId')
-        .references('id')
-        .inTable('test.users')
+    await knex.schema.withSchema("test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("userId")
+        .references("id")
+        .inTable("test.users")
         .notNullable();
     });
 
-    const [user1] = await knex('test.users')
-      .insert({})
-      .returning('*');
-    const [user2] = await knex('test.users')
-      .insert({})
-      .returning('*');
+    const [user1] = await knex("test.users").insert({}).returning("*");
+    const [user2] = await knex("test.users").insert({}).returning("*");
 
     for (let i = 0; i < 100; i++)
-      await knex('test.test').insert({ userId: user1.id });
+      await knex("test.test").insert({ userId: user1.id });
 
-    await knex('test.test')
+    await knex("test.test")
       .update({ userId: user2.id })
-      .whereIn(
-        'id',
-        knex('test.test')
-          .limit(50)
-          .select('id')
-      );
+      .whereIn("id", knex("test.test").limit(50).select("id"));
 
     type Context = {
       userId: number;
     };
 
     const table = new Table<Context>({
-      schemaName: 'test',
-      tableName: 'test',
+      schemaName: "test",
+      tableName: "test",
       async policy(stmt, context) {
-        stmt.where('userId', context.userId);
+        stmt.where("userId", context.userId);
       },
     });
 
@@ -3092,36 +3011,31 @@ describe('with policies', () => {
   });
 });
 
-describe('multitenancy', () => {
-  it('requires tenant id on read', async () => {
-    await knex.schema.withSchema('test').createTable('orgs', t => {
-      t.bigIncrements('id').primary();
+describe("multitenancy", () => {
+  it("requires tenant id on read", async () => {
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
     });
 
-    await knex.schema.withSchema('test').createTable('items', t => {
-      t.bigIncrements('id').primary();
-      t.bigInteger('orgId')
-        .references('id')
-        .inTable('test.orgs')
-        .notNullable();
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs").notNullable();
     });
 
-    const [org] = await knex('test.orgs')
-      .insert({})
-      .returning('*');
+    const [org] = await knex("test.orgs").insert({}).returning("*");
 
-    await knex('test.items').insert({ orgId: org.id });
+    await knex("test.items").insert({ orgId: org.id });
 
     const items = new Table({
-      schemaName: 'test',
-      tableName: 'items',
-      tenantIdColumnName: 'orgId',
+      schemaName: "test",
+      tableName: "items",
+      tenantIdColumnName: "orgId",
     });
 
     const orgs = new Table({
-      schemaName: 'test',
-      tableName: 'orgs',
-      tenantIdColumnName: 'id',
+      schemaName: "test",
+      tableName: "orgs",
+      tenantIdColumnName: "id",
     });
 
     await items.init(knex);
@@ -3199,7 +3113,7 @@ describe('multitenancy', () => {
       await items.count(knex, { orgId: org.id }, {})
     ).toMatchInlineSnapshot(`1`);
 
-    expect(await items.read(knex, { orgId: org.id, include: ['org'] }, {}))
+    expect(await items.read(knex, { orgId: org.id, include: ["org"] }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -3237,34 +3151,27 @@ describe('multitenancy', () => {
     `);
   });
 
-  it('requires tenant id on write', async () => {
-    await knex.schema.withSchema('test').createTable('orgs', t => {
-      t.bigIncrements('id').primary();
+  it("requires tenant id on write", async () => {
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
     });
 
-    await knex.schema.withSchema('test').createTable('items', t => {
-      t.bigIncrements('id').primary();
-      t.bigInteger('orgId')
-        .references('id')
-        .inTable('test.orgs')
-        .notNullable();
-      t.text('body')
-        .notNullable()
-        .defaultTo('');
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs").notNullable();
+      t.text("body").notNullable().defaultTo("");
     });
 
-    const [org] = await knex('test.orgs')
-      .insert({})
-      .returning('*');
+    const [org] = await knex("test.orgs").insert({}).returning("*");
 
-    const [item] = await knex('test.items')
+    const [item] = await knex("test.items")
       .insert({ orgId: org.id })
-      .returning('*');
+      .returning("*");
 
     const items = new Table({
-      schemaName: 'test',
-      tableName: 'items',
-      tenantIdColumnName: 'orgId',
+      schemaName: "test",
+      tableName: "items",
+      tenantIdColumnName: "orgId",
     });
 
     await items.init(knex);
@@ -3330,7 +3237,7 @@ describe('multitenancy', () => {
     `);
 
     expect(
-      await items.write(knex, { id: item.id, orgId: org.id, body: 'body' }, {})
+      await items.write(knex, { id: item.id, orgId: org.id, body: "body" }, {})
     ).toMatchInlineSnapshot(`
       Object {
         "changes": Array [
@@ -3377,40 +3284,35 @@ describe('multitenancy', () => {
     `);
   });
 
-  it('forwards query param to getters', async () => {
-    await knex.schema.withSchema('test').createTable('orgs', t => {
-      t.bigIncrements('id').primary();
+  it("forwards query param to getters", async () => {
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
     });
 
-    await knex.schema.withSchema('test').createTable('items', t => {
-      t.bigIncrements('id').primary();
-      t.bigInteger('orgId')
-        .references('id')
-        .inTable('test.orgs')
-        .notNullable();
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs").notNullable();
     });
 
-    const [org] = await knex('test.orgs')
-      .insert({})
-      .returning('*');
+    const [org] = await knex("test.orgs").insert({}).returning("*");
 
-    await knex('test.items').insert({ orgId: org.id });
+    await knex("test.items").insert({ orgId: org.id });
 
     const items = new Table({
-      schemaName: 'test',
-      tableName: 'items',
-      tenantIdColumnName: 'orgId',
+      schemaName: "test",
+      tableName: "items",
+      tenantIdColumnName: "orgId",
       getters: {
         async getter() {
-          return 'yo';
+          return "yo";
         },
       },
     });
 
     const orgs = new Table({
-      schemaName: 'test',
-      tableName: 'orgs',
-      tenantIdColumnName: 'id',
+      schemaName: "test",
+      tableName: "orgs",
+      tenantIdColumnName: "id",
     });
 
     await items.init(knex);
@@ -3449,29 +3351,26 @@ describe('multitenancy', () => {
     `);
   });
 
-  it('validates compound unique keys with tenant id', async () => {
-    await knex.schema.withSchema('test').createTable('orgs', t => {
-      t.bigIncrements('id').primary();
+  it("validates compound unique keys with tenant id", async () => {
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
     });
 
-    await knex.schema.withSchema('test').createTable('test', t => {
-      t.bigIncrements('id').primary();
-      t.bigInteger('orgId')
-        .references('id')
-        .inTable('test.orgs')
-        .notNullable();
-      t.text('username').notNullable();
-      t.unique(['orgId', 'username']);
+    await knex.schema.withSchema("test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs").notNullable();
+      t.text("username").notNullable();
+      t.unique(["orgId", "username"]);
     });
 
     const orgs = new Table({
-      schemaName: 'test',
-      tableName: 'orgs',
+      schemaName: "test",
+      tableName: "orgs",
     });
     const table = new Table({
-      schemaName: 'test',
-      tableName: 'test',
-      tenantIdColumnName: 'orgId',
+      schemaName: "test",
+      tableName: "test",
+      tenantIdColumnName: "orgId",
     });
 
     await orgs.init(knex);
@@ -3480,13 +3379,11 @@ describe('multitenancy', () => {
     orgs.linkTables([table]);
     table.linkTables([orgs]);
 
-    const [org] = await knex('test.orgs')
-      .insert({})
-      .returning('*');
+    const [org] = await knex("test.orgs").insert({}).returning("*");
 
-    await knex('test.test').truncate();
+    await knex("test.test").truncate();
     queries = [];
-    expect(await table.write(knex, { username: 'abc', orgId: org.id }, {}))
+    expect(await table.write(knex, { username: "abc", orgId: org.id }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "changes": Array [
@@ -3525,7 +3422,7 @@ describe('multitenancy', () => {
     queries = [];
     expect(
       await table
-        .write(knex, { id: '1', username: 'abc', orgId: org.id }, {})
+        .write(knex, { id: "1", username: "abc", orgId: org.id }, {})
         .catch((e: BadRequestError) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
@@ -3553,57 +3450,57 @@ describe('multitenancy', () => {
   });
 });
 
-describe('paranoid', () => {
-  it('errors when a table does not have a deletedAt column', async () => {
-    await knex.schema.withSchema('test').createTable('items', t => {
-      t.bigIncrements('id').primary();
+describe("paranoid", () => {
+  it("errors when a table does not have a deletedAt column", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
     });
 
     const items = new Table({
-      schemaName: 'test',
-      tableName: 'items',
+      schemaName: "test",
+      tableName: "items",
       paranoid: true,
     });
 
     await expect(items.init(knex)).rejects.toThrow();
   });
 
-  it('works with paranoid tables', async () => {
-    await knex.schema.withSchema('test').createTable('items', t => {
-      t.bigIncrements('id').primary();
-      t.timestamp('deleted_at', { useTz: true });
+  it("works with paranoid tables", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.timestamp("deleted_at", { useTz: true });
     });
-    await knex.schema.withSchema('test').createTable('subitems', t => {
-      t.bigIncrements('id').primary();
-      t.timestamp('deleted_at', { useTz: true });
-      t.bigInteger('item_id')
-        .references('id')
-        .inTable('test.items')
+    await knex.schema.withSchema("test").createTable("subitems", (t) => {
+      t.bigIncrements("id").primary();
+      t.timestamp("deleted_at", { useTz: true });
+      t.bigInteger("item_id")
+        .references("id")
+        .inTable("test.items")
         .notNullable();
     });
-    await knex.schema.withSchema('test').createTable('subsubitems', t => {
-      t.bigIncrements('id').primary();
-      t.bigInteger('subitem_id')
-        .references('id')
-        .inTable('test.subitems')
+    await knex.schema.withSchema("test").createTable("subsubitems", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("subitem_id")
+        .references("id")
+        .inTable("test.subitems")
         .notNullable();
     });
 
     const items = new Table({
-      schemaName: 'test',
-      tableName: 'items',
+      schemaName: "test",
+      tableName: "items",
       paranoid: true,
     });
 
     const subitems = new Table({
-      schemaName: 'test',
-      tableName: 'subitems',
+      schemaName: "test",
+      tableName: "subitems",
       paranoid: true,
     });
 
     const subsubitems = new Table({
-      schemaName: 'test',
-      tableName: 'subsubitems',
+      schemaName: "test",
+      tableName: "subsubitems",
     });
 
     await items.init(knex);
@@ -3637,11 +3534,11 @@ describe('paranoid', () => {
       }
     `);
 
-    const [subitem] = await knex('test.subitems')
+    const [subitem] = await knex("test.subitems")
       .insert({ itemId: 1 })
-      .returning('*');
-    await knex('test.subitems').insert({ itemId: 1 });
-    await knex('test.subsubitems').insert({ subitemId: subitem.id });
+      .returning("*");
+    await knex("test.subitems").insert({ itemId: 1 });
+    await knex("test.subsubitems").insert({ subitemId: subitem.id });
 
     expect(await items.write(knex, { id: 1, _delete: true }, {}))
       .toMatchInlineSnapshot(`
@@ -3702,59 +3599,80 @@ describe('paranoid', () => {
     expect((await items.read(knex, { id: 1 }, {}, false)).deletedAt).not.toBe(
       null
     );
+
+    expect(await items.read(knex, { withDeleted: true }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "data": Array [
+          Object {
+            "_links": Object {
+              "subitems": "/test/subitems?itemId=1",
+            },
+            "_type": "test/items",
+            "_url": "/test/items/1",
+            "deletedAt": 2021-03-20T01:43:23.037Z,
+            "id": 1,
+          },
+        ],
+        "meta": Object {
+          "_collection": "test/items",
+          "_links": Object {
+            "count": "/test/items/count?withDeleted=true",
+            "ids": "/test/items/ids?withDeleted=true",
+          },
+          "_type": "collection",
+          "_url": "/test/items?withDeleted=true",
+          "hasMore": false,
+          "limit": 50,
+          "page": 0,
+        },
+      }
+    `);
   });
 
-  it('cascades even with tenant ids', async () => {
-    await knex.schema.withSchema('test').createTable('orgs', t => {
-      t.bigIncrements('id').primary();
-      t.timestamp('deleted_at', { useTz: true });
+  it("cascades even with tenant ids", async () => {
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
+      t.timestamp("deleted_at", { useTz: true });
     });
 
-    await knex.schema.withSchema('test').createTable('items', t => {
-      t.bigIncrements('id').primary();
-      t.bigInteger('orgId')
-        .references('id')
-        .inTable('test.orgs')
-        .notNullable();
-      t.timestamp('deleted_at', { useTz: true });
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs").notNullable();
+      t.timestamp("deleted_at", { useTz: true });
     });
 
-    await knex.schema.withSchema('test').createTable('subitems', t => {
-      t.bigIncrements('id').primary();
-      t.bigInteger('orgId')
-        .references('id')
-        .inTable('test.orgs')
+    await knex.schema.withSchema("test").createTable("subitems", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs").notNullable();
+      t.bigInteger("itemId")
+        .references("id")
+        .inTable("test.items")
         .notNullable();
-      t.bigInteger('itemId')
-        .references('id')
-        .inTable('test.items')
-        .notNullable();
-      t.timestamp('deleted_at', { useTz: true });
+      t.timestamp("deleted_at", { useTz: true });
     });
 
-    const [org] = await knex('test.orgs')
-      .insert({})
-      .returning('*');
+    const [org] = await knex("test.orgs").insert({}).returning("*");
 
-    const [item] = await knex('test.items')
+    const [item] = await knex("test.items")
       .insert({ orgId: org.id })
-      .returning('*');
+      .returning("*");
 
-    await knex('test.subitems')
+    await knex("test.subitems")
       .insert({ orgId: org.id, itemId: item.id })
-      .returning('*');
+      .returning("*");
 
     const items = new Table({
-      schemaName: 'test',
-      tableName: 'items',
-      tenantIdColumnName: 'orgId',
+      schemaName: "test",
+      tableName: "items",
+      tenantIdColumnName: "orgId",
       paranoid: true,
     });
 
     const subitems = new Table({
-      schemaName: 'test',
-      tableName: 'subitems',
-      tenantIdColumnName: 'orgId',
+      schemaName: "test",
+      tableName: "subitems",
+      tenantIdColumnName: "orgId",
       paranoid: true,
     });
 
@@ -3806,23 +3724,21 @@ describe('paranoid', () => {
   });
 });
 
-describe('hidden columns', () => {
-  it('does not read hidden columns', async () => {
-    await knex.schema.withSchema('test').createTable('items', t => {
-      t.bigIncrements('id').primary();
-      t.text('hidden')
-        .notNullable()
-        .defaultTo('initial');
+describe("hidden columns", () => {
+  it("does not read hidden columns", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("hidden").notNullable().defaultTo("initial");
     });
 
-    await knex('test.items').insert({
-      hidden: 'secret',
+    await knex("test.items").insert({
+      hidden: "secret",
     });
 
     const items = new Table({
-      schemaName: 'test',
-      tableName: 'items',
-      hiddenColumns: ['hidden'],
+      schemaName: "test",
+      tableName: "items",
+      hiddenColumns: ["hidden"],
     });
 
     await items.init(knex);
@@ -3852,23 +3768,21 @@ describe('hidden columns', () => {
       }
     `);
   });
-  it('does not write hidden columns', async () => {
-    await knex.schema.withSchema('test').createTable('items', t => {
-      t.bigIncrements('id').primary();
-      t.text('hidden')
-        .notNullable()
-        .defaultTo('initial');
+  it("does not write hidden columns", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("hidden").notNullable().defaultTo("initial");
     });
 
     const items = new Table({
-      schemaName: 'test',
-      tableName: 'items',
-      hiddenColumns: ['hidden'],
+      schemaName: "test",
+      tableName: "items",
+      hiddenColumns: ["hidden"],
     });
 
     await items.init(knex);
 
-    expect(await items.write(knex, { hidden: 'value' }, {}))
+    expect(await items.write(knex, { hidden: "value" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "changes": Array [
@@ -3891,7 +3805,7 @@ describe('hidden columns', () => {
       }
     `);
 
-    expect(await knex('test.items')).toMatchInlineSnapshot(`
+    expect(await knex("test.items")).toMatchInlineSnapshot(`
       Array [
         Object {
           "hidden": "initial",
@@ -3902,18 +3816,18 @@ describe('hidden columns', () => {
   });
 });
 
-describe('uuid columns', () => {
-  const uuid = () => 'a8374dd3-0aa0-4ada-8c98-b7ade46900b8';
-  it('reads uuids', async () => {
-    await knex.schema.withSchema('test').createTable('items', t => {
-      t.uuid('id').primary();
+describe("uuid columns", () => {
+  const uuid = () => "a8374dd3-0aa0-4ada-8c98-b7ade46900b8";
+  it("reads uuids", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.uuid("id").primary();
     });
 
-    await knex('test.items').insert({ id: uuid() });
+    await knex("test.items").insert({ id: uuid() });
 
     const items = new Table({
-      schemaName: 'test',
-      tableName: 'items',
+      schemaName: "test",
+      tableName: "items",
       idGenerator: uuid,
     });
 
@@ -3945,14 +3859,14 @@ describe('uuid columns', () => {
     `);
   });
 
-  it('writes uuid', async () => {
-    await knex.schema.withSchema('test').createTable('items', t => {
-      t.uuid('id').primary();
+  it("writes uuid", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.uuid("id").primary();
     });
 
     const items = new Table({
-      schemaName: 'test',
-      tableName: 'items',
+      schemaName: "test",
+      tableName: "items",
       idGenerator: uuid,
     });
 
@@ -3979,7 +3893,7 @@ describe('uuid columns', () => {
       }
     `);
 
-    expect(await knex('test.items')).toMatchInlineSnapshot(`
+    expect(await knex("test.items")).toMatchInlineSnapshot(`
       Array [
         Object {
           "id": "a8374dd3-0aa0-4ada-8c98-b7ade46900b8",
@@ -3988,43 +3902,40 @@ describe('uuid columns', () => {
     `);
   });
 
-  it('writes uuid relations', async () => {
+  it("writes uuid relations", async () => {
     const uuids = [
-      '95489980-03fd-4ffd-88b9-fb281aa4465a',
-      'bed5cf57-1fd4-49f4-adce-1d9056420ca7',
-      '763ca006-2c84-463a-904c-ab6630497148',
-      'aea130e2-d027-485d-ba9d-f0d29c6311ba',
-      'ea0824b5-4856-47c7-b541-31b1a00ce1a1',
-      'bedaa8d1-20d2-4f09-adeb-d67ab0523af5',
-      'cf688dba-747b-4fbe-8a02-ff8730e2a7c9',
-      '3872e801-bf4c-4eb5-b4ab-c70cd9cd03d3',
-      '0ae89559-c579-4d1a-8382-0a44693c78d2',
-      '96435a51-7af8-4d08-94f3-892a99abd8cd',
+      "95489980-03fd-4ffd-88b9-fb281aa4465a",
+      "bed5cf57-1fd4-49f4-adce-1d9056420ca7",
+      "763ca006-2c84-463a-904c-ab6630497148",
+      "aea130e2-d027-485d-ba9d-f0d29c6311ba",
+      "ea0824b5-4856-47c7-b541-31b1a00ce1a1",
+      "bedaa8d1-20d2-4f09-adeb-d67ab0523af5",
+      "cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
+      "3872e801-bf4c-4eb5-b4ab-c70cd9cd03d3",
+      "0ae89559-c579-4d1a-8382-0a44693c78d2",
+      "96435a51-7af8-4d08-94f3-892a99abd8cd",
     ];
 
     const uuid = () => uuids.pop();
 
-    await knex.schema.withSchema('test').createTable('items', t => {
-      t.uuid('id').primary();
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.uuid("id").primary();
     });
 
-    await knex.schema.withSchema('test').createTable('subitems', t => {
-      t.uuid('id').primary();
-      t.uuid('parent_id')
-        .references('id')
-        .inTable('test.items')
-        .notNullable();
+    await knex.schema.withSchema("test").createTable("subitems", (t) => {
+      t.uuid("id").primary();
+      t.uuid("parent_id").references("id").inTable("test.items").notNullable();
     });
 
     const items = new Table({
-      schemaName: 'test',
-      tableName: 'items',
+      schemaName: "test",
+      tableName: "items",
       idGenerator: uuid,
     });
 
     const subitems = new Table({
-      schemaName: 'test',
-      tableName: 'subitems',
+      schemaName: "test",
+      tableName: "subitems",
       idGenerator: uuid,
     });
 
@@ -4174,13 +4085,11 @@ describe('uuid columns', () => {
   });
 });
 
-describe('beforeCommit', () => {
-  it('calls before commit correctly', async () => {
-    await knex.schema.withSchema('test').createTable('items', t => {
-      t.bigIncrements('id').primary();
-      t.text('body')
-        .defaultTo('')
-        .notNullable();
+describe("beforeCommit", () => {
+  it("calls before commit correctly", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("body").defaultTo("").notNullable();
     });
 
     type Context = {
@@ -4190,8 +4099,8 @@ describe('beforeCommit', () => {
     let results: [Context, Mode, any, any][] = [];
 
     const items = new Table<Context>({
-      schemaName: 'test',
-      tableName: 'items',
+      schemaName: "test",
+      tableName: "items",
       async afterUpdate(_trx, context, mode, next, previous) {
         results.push([context, mode, next, previous]);
       },
@@ -4238,7 +4147,7 @@ describe('beforeCommit', () => {
     `);
 
     results = [];
-    expect(await items.write(knex, { id: 1, body: 'abc' }, { id: 1 }))
+    expect(await items.write(knex, { id: 1, body: "abc" }, { id: 1 }))
       .toMatchInlineSnapshot(`
       Object {
         "changes": Array [
@@ -4316,21 +4225,19 @@ describe('beforeCommit', () => {
   });
 });
 
-describe('self references', () => {
-  it('can reference self', async () => {
-    await knex.schema.withSchema('test').createTable('items', t => {
-      t.bigIncrements('id').primary();
+describe("self references", () => {
+  it("can reference self", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
     });
 
-    await knex.schema.withSchema('test').alterTable('items', t => {
-      t.bigInteger('parent_item_id')
-        .references('id')
-        .inTable('test.items');
+    await knex.schema.withSchema("test").alterTable("items", (t) => {
+      t.bigInteger("parent_item_id").references("id").inTable("test.items");
     });
 
     const items = new Table({
-      schemaName: 'test',
-      tableName: 'items',
+      schemaName: "test",
+      tableName: "items",
     });
 
     await items.init(knex);
@@ -4416,7 +4323,7 @@ describe('self references', () => {
     `);
 
     queries = [];
-    expect(await items.read(knex, { include: 'parentItem' }, {}))
+    expect(await items.read(knex, { include: "parentItem" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -4490,7 +4397,7 @@ describe('self references', () => {
     `);
 
     queries = [];
-    expect(await items.read(knex, { include: 'items' }, {}))
+    expect(await items.read(knex, { include: "items" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -4570,31 +4477,27 @@ describe('self references', () => {
   });
 });
 
-describe('sorts', () => {
-  it('can sort', async () => {
-    await knex.schema.withSchema('test').createTable('items', t => {
-      t.bigIncrements('id').primary();
-      t.integer('key1')
-        .notNullable()
-        .defaultTo(0);
-      t.integer('key2')
-        .notNullable()
-        .defaultTo(0);
+describe("sorts", () => {
+  it("can sort", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.integer("key1").notNullable().defaultTo(0);
+      t.integer("key2").notNullable().defaultTo(0);
     });
 
-    await knex('test.items').insert({ key1: 1, key2: 3 });
-    await knex('test.items').insert({ key1: 5, key2: 2 });
-    await knex('test.items').insert({ key1: 4, key2: 7 });
+    await knex("test.items").insert({ key1: 1, key2: 3 });
+    await knex("test.items").insert({ key1: 5, key2: 2 });
+    await knex("test.items").insert({ key1: 4, key2: 7 });
 
     const items = new Table({
-      schemaName: 'test',
-      tableName: 'items',
+      schemaName: "test",
+      tableName: "items",
     });
 
     await items.init(knex);
 
     queries = [];
-    expect(await items.read(knex, { sort: '-key1' }, {}))
+    expect(await items.read(knex, { sort: "-key1" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -4644,7 +4547,7 @@ describe('sorts', () => {
     `);
 
     queries = [];
-    expect(await items.read(knex, { sort: ['key2', '-key1'] }, {}))
+    expect(await items.read(knex, { sort: ["key2", "-key1"] }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -4694,7 +4597,7 @@ describe('sorts', () => {
     `);
 
     queries = [];
-    expect(await items.read(knex, { sort: 'bogus' }, {}))
+    expect(await items.read(knex, { sort: "bogus" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -4745,32 +4648,28 @@ describe('sorts', () => {
   });
 });
 
-describe('pagination', () => {
+describe("pagination", () => {
   let seed: number = 1;
   function random(max: number) {
     const x = Math.sin(seed++) * 10000;
     return Math.floor((x - Math.floor(x)) * max);
   }
 
-  it('can paginate with cursors', async () => {
+  it("can paginate with cursors", async () => {
     seed = 1;
 
-    await knex.schema.withSchema('test').createTable('items', t => {
-      t.bigIncrements('id').primary();
-      t.integer('key1')
-        .notNullable()
-        .defaultTo(0);
-      t.integer('key2')
-        .notNullable()
-        .defaultTo(0);
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.integer("key1").notNullable().defaultTo(0);
+      t.integer("key2").notNullable().defaultTo(0);
     });
 
     for (let i = 0; i < 1000; i++)
-      await knex('test.items').insert({ key1: random(100), key2: random(100) });
+      await knex("test.items").insert({ key1: random(100), key2: random(100) });
 
     const items = new Table({
-      schemaName: 'test',
-      tableName: 'items',
+      schemaName: "test",
+      tableName: "items",
     });
 
     await items.init(knex);
@@ -4779,7 +4678,7 @@ describe('pagination', () => {
     const {
       data: [item1],
       meta: meta1,
-    } = await items.read(knex, { sort: ['-key1', 'key2'] }, {});
+    } = await items.read(knex, { sort: ["-key1", "key2"] }, {});
     expect(meta1).toMatchInlineSnapshot(`
       Object {
         "_collection": "test/items",
@@ -4811,7 +4710,7 @@ describe('pagination', () => {
       }
     `);
 
-    const url = new URL(meta1._links.nextPage, 'http://localhost');
+    const url = new URL(meta1._links.nextPage, "http://localhost");
     const params = QueryString.parse(url.search.slice(1));
 
     queries = [];
@@ -4852,14 +4751,14 @@ describe('pagination', () => {
   });
 });
 
-describe('in public schema', () => {
-  it('tables can exist in the public schema', async () => {
-    await knex.schema.createTable('test_table', t => {
-      t.bigIncrements('id').primary();
+describe("in public schema", () => {
+  it("tables can exist in the public schema", async () => {
+    await knex.schema.createTable("test_table", (t) => {
+      t.bigIncrements("id").primary();
     });
 
     const items = new Table({
-      tableName: 'testTable',
+      tableName: "testTable",
     });
 
     await items.init(knex);

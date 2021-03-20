@@ -1,8 +1,11 @@
 // import { EventEmitter } from 'events';
-import { Router } from 'express';
-import { Knex } from 'knex';
-import setValue from 'set-value';
-import qs from 'qs';
+
+import { Router } from "express";
+import { Knex } from "knex";
+import setValue from "set-value";
+import qs from "qs";
+import atob from "atob";
+import btoa from "btoa";
 import {
   Policy,
   YupSchema,
@@ -22,28 +25,28 @@ import {
   Mode,
   Mixed,
   ChangeSummary,
-} from './types';
+} from "./types";
 import {
   getColumnInfo,
   getUniqueColumnIndexes,
   getRelations,
-} from './inference';
-import { BadRequestError, UnauthorizedError, NotFoundError } from './Errors';
+} from "./inference";
+import { BadRequestError, UnauthorizedError, NotFoundError } from "./errors";
 import {
   object,
   array,
   ValidationError,
   ObjectSchema,
   StringSchema,
-} from 'yup';
-import { postgresTypesToYupType } from './lookups';
-import { ObjectShape } from 'yup/lib/object';
-import { toSnakeCase } from './case';
+} from "yup";
+import { postgresTypesToYupType } from "./lookups";
+import { ObjectShape } from "yup/lib/object";
+import { toSnakeCase } from "./case";
 
 function qsStringify(val: any) {
   return qs.stringify(val, {
     encodeValuesOnly: true,
-    arrayFormat: 'brackets',
+    arrayFormat: "brackets",
   });
 }
 
@@ -82,11 +85,11 @@ export class Table<Context> {
   idGenerator?: () => any;
   constructor(def: TableDef<Context>) {
     this.path =
-      def.path ?? [def.schemaName, def.tableName].filter(Boolean).join('/');
+      def.path ?? [def.schemaName, def.tableName].filter(Boolean).join("/");
     this.tableName = def.tableName;
-    this.schemaName = def.schemaName ?? 'public';
+    this.schemaName = def.schemaName ?? "public";
     this.tenantIdColumnName = def.tenantIdColumnName ?? null;
-    this.idColumnName = def.idColumnName ?? 'id';
+    this.idColumnName = def.idColumnName ?? "id";
     this.policy = def.policy ?? (async () => {});
     this.schema = def.schema ?? {};
     this.readOnlyColumns = def.readOnlyColumns ?? [];
@@ -108,7 +111,7 @@ export class Table<Context> {
     this.relatedTables = { hasMany: {}, hasOne: {} };
     this.beforeUpdate = def.beforeUpdate;
     this.afterUpdate = def.afterUpdate;
-    this.baseUrl = def.baseUrl ?? '/';
+    this.baseUrl = def.baseUrl ?? "/";
     this.forwardQueryParams = def.forwardQueryParams ?? [];
     this.idGenerator = def.idGenerator;
   }
@@ -140,7 +143,7 @@ export class Table<Context> {
     };
 
     this.uniqueColumns = [
-      ...uniqueConstraintIndexes.map(indexes =>
+      ...uniqueConstraintIndexes.map((indexes) =>
         indexes.map(
           (index: number) =>
             Object.keys(this.columns)[
@@ -154,9 +157,9 @@ export class Table<Context> {
 
     this.relations = { ...relations, ...this.relations };
 
-    if (this.paranoid && !('deletedAt' in this.columns))
+    if (this.paranoid && !("deletedAt" in this.columns))
       throw new Error(
-        'Tried to make a paranoid table without a deletedAt column'
+        "Tried to make a paranoid table without a deletedAt column"
       );
   }
 
@@ -173,12 +176,12 @@ export class Table<Context> {
       });
 
       const otherTable = tables.find(
-        otherTable => otherPath === getTablePath(otherTable)
+        (otherTable) => otherPath === getTablePath(otherTable)
       );
 
       if (!otherTable) continue;
 
-      const name = column.replace(/Id$/, '');
+      const name = column.replace(/Id$/, "");
       hasOne[name] = { relation, table: otherTable, name };
     }
 
@@ -264,7 +267,7 @@ export class Table<Context> {
   filterWritable(obj: any) {
     const result: { [key: string]: any } = {};
 
-    for (let key of Object.keys(obj).filter(key => key in this.columns)) {
+    for (let key of Object.keys(obj).filter((key) => key in this.columns)) {
       if (
         !this.readOnlyColumns.includes(key) &&
         !this.hiddenColumns.includes(key)
@@ -288,7 +291,7 @@ export class Table<Context> {
 
     const forwardedQueryParams: { [key: string]: string } = Object.fromEntries(
       this.forwardQueryParams
-        .map(key => [key, queryParams[key]])
+        .map((key) => [key, queryParams[key]])
         .filter(([_, v]) => v)
     );
 
@@ -418,7 +421,7 @@ export class Table<Context> {
       for (let [column, info] of Object.entries(table.columns!)) {
         let type = postgresTypesToYupType(info.type).nullable();
 
-        if (type.type === 'string' && info.length >= 0) {
+        if (type.type === "string" && info.length >= 0) {
           type = ((type as StringSchema).max(info.length) as unknown) as Mixed;
         }
 
@@ -426,7 +429,7 @@ export class Table<Context> {
           type = type.concat(table.schema[column].nullable());
         }
 
-        if (info.type.endsWith('[]')) {
+        if (info.type.endsWith("[]")) {
           type = array(type);
         }
 
@@ -438,9 +441,9 @@ export class Table<Context> {
         if (notNullable && (!hasDefault || isSetAsNull)) {
           type = type
             .test(
-              'is-null',
+              "is-null",
               // eslint-disable-next-line no-template-curly-in-string
-              '${path} is required',
+              "${path} is required",
               (value: any) => {
                 return value !== null && value !== undefined;
               }
@@ -456,20 +459,20 @@ export class Table<Context> {
           const g = obj;
           if (g[column] === undefined) continue;
           schema[column] = schema[column].test(
-            'unique',
+            "unique",
             // eslint-disable-next-line no-template-curly-in-string
-            '${path} is already in use',
+            "${path} is already in use",
             async function test() {
               const { parent } = this;
               const where = Object.fromEntries(
-                columns.map(column => [
+                columns.map((column) => [
                   `${table.alias}.${column}`,
                   parent[column],
                 ])
               );
 
               // if we don't have every column, abort and pass the test
-              if (!Object.values(where).every(v => v !== undefined))
+              if (!Object.values(where).every((v) => v !== undefined))
                 return true;
 
               const stmt = table.query(knex);
@@ -477,7 +480,7 @@ export class Table<Context> {
               // are found that are not visible to the user
 
               if (g[table.idColumnName]) {
-                stmt.whereNot(function() {
+                stmt.whereNot(function () {
                   this.where(
                     `${table.alias}.${[table.idColumnName]}`,
                     g[table.idColumnName]
@@ -516,17 +519,17 @@ export class Table<Context> {
         for (let key in schema.describe().fields) {
           if (graph[key] !== null && graph[key] !== undefined) {
             const validator = (schema.describe().fields as any)[key];
-            if (validator.type === 'number' && isNumeric(graph[key])) {
+            if (validator.type === "number" && isNumeric(graph[key])) {
               graph[key] = Number(graph[key]);
             }
             if (
-              validator.type === 'date' &&
+              validator.type === "date" &&
               !isNaN(new Date(graph[key]).getTime())
             ) {
               graph[key] = new Date(graph[key]);
             }
-            if (validator.type === 'boolean') {
-              graph[key] = Boolean(graph[key]) && graph[key] !== 'false';
+            if (validator.type === "boolean") {
+              graph[key] = Boolean(graph[key]) && graph[key] !== "false";
             }
           }
         }
@@ -545,16 +548,16 @@ export class Table<Context> {
         }
 
         err.inner
-          .map(e => {
+          .map((e) => {
             const REPLACE_BRACKETS = /\[([^[\]]+)\]/g;
             const LFT_RT_TRIM_DOTS = /^[.]*|[.]*$/g;
             const dotPath = e
-              .path!.replace(REPLACE_BRACKETS, '.$1')
-              .replace(LFT_RT_TRIM_DOTS, '');
+              .path!.replace(REPLACE_BRACKETS, ".$1")
+              .replace(LFT_RT_TRIM_DOTS, "");
 
             return {
               path: dotPath,
-              message: e.message.slice(e.message.indexOf(' ')).trim(),
+              message: e.message.slice(e.message.indexOf(" ")).trim(),
             };
           })
           .forEach(({ message, path }) => {
@@ -568,7 +571,7 @@ export class Table<Context> {
     let existingSchema = object();
     if (table.tenantIdColumnName) {
       if (!obj[table.tenantIdColumnName])
-        return { [table.tenantIdColumnName]: 'is required' };
+        return { [table.tenantIdColumnName]: "is required" };
       existingSchema = existingSchema.concat(
         object({
           [table.tenantIdColumnName]: postgresTypesToYupType(
@@ -603,7 +606,7 @@ export class Table<Context> {
         params[this.tenantIdColumnName] = obj[this.tenantIdColumnName];
 
       await this.where(stmt, context, params);
-      await this.applyPolicy(stmt, context, 'update');
+      await this.applyPolicy(stmt, context, "update");
 
       const existing = await stmt.first();
 
@@ -625,18 +628,18 @@ export class Table<Context> {
     let errors: Record<string, any> = {};
 
     const refPlaceholderNumber = 0;
-    const refPlaceholderUUID = '00000000-0000-0000-0000-000000000000';
+    const refPlaceholderUUID = "00000000-0000-0000-0000-000000000000";
 
     if (obj._delete) {
       if (this.tenantIdColumnName && !obj[this.tenantIdColumnName])
-        return { [this.tenantIdColumnName]: 'is required' };
+        return { [this.tenantIdColumnName]: "is required" };
 
       return;
     }
 
     const placeholderFor = (table: Table<Context>) => {
       return postgresTypesToYupType(table.columns![table.idColumnName].type)
-        .type === 'string'
+        .type === "string"
         ? refPlaceholderUUID
         : refPlaceholderNumber;
     };
@@ -718,14 +721,14 @@ export class Table<Context> {
       graph = this.filterWritable(graph);
 
       const readStmt = table.query(trx);
-      await table.applyPolicy(readStmt, context, 'update');
+      await table.applyPolicy(readStmt, context, "update");
 
       const row = await readStmt
         .where(
           `${table.alias}.${[table.idColumnName]}`,
           graph[table.idColumnName]
         )
-        .modify(function() {
+        .modify(function () {
           if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
             this.where(
               `${table.alias}.${table.tenantIdColumnName}`,
@@ -745,7 +748,7 @@ export class Table<Context> {
           table,
           trx,
           context,
-          'update',
+          "update",
           graph,
           row
         );
@@ -760,11 +763,11 @@ export class Table<Context> {
       );
 
       const stmt = table.query(trx);
-      await table.applyPolicy(stmt, context, 'update');
+      await table.applyPolicy(stmt, context, "update");
 
       if (
         Object.keys(filteredByChanged).length ||
-        Object.keys(table.setters).some(key => key in initialGraph)
+        Object.keys(table.setters).some((key) => key in initialGraph)
       ) {
         if (Object.keys(filteredByChanged).length)
           await stmt
@@ -772,7 +775,7 @@ export class Table<Context> {
               `${table.alias}.${[table.idColumnName]}`,
               graph[table.idColumnName]
             )
-            .modify(function() {
+            .modify(function () {
               if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
                 this.where(
                   `${table.alias}.${table.tenantIdColumnName}`,
@@ -784,14 +787,14 @@ export class Table<Context> {
 
         // in case an update now makes this row inaccessible
         const readStmt = table.query(trx);
-        await table.applyPolicy(readStmt, context, 'update');
+        await table.applyPolicy(readStmt, context, "update");
 
         const updatedRow = await readStmt
           .where(
             `${table.alias}.${table.idColumnName}`,
             row[table.idColumnName]
           )
-          .modify(function() {
+          .modify(function () {
             if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
               this.where(
                 `${table.alias}.${table.tenantIdColumnName}`,
@@ -806,7 +809,7 @@ export class Table<Context> {
         recordChange({
           tableName: table.tableName,
           schemaName: table.schemaName,
-          mode: 'update',
+          mode: "update",
           row: updatedRow,
         });
 
@@ -828,7 +831,7 @@ export class Table<Context> {
               table,
               trx,
               context,
-              'update',
+              "update",
               updatedRow,
               row
             );
@@ -852,7 +855,7 @@ export class Table<Context> {
           table,
           trx,
           context,
-          'insert',
+          "insert",
           graph,
           undefined
         );
@@ -862,22 +865,22 @@ export class Table<Context> {
       const row = await table
         .query(trx)
         .insert(graph)
-        .returning('*')
+        .returning("*")
         .then(([row]) => row);
 
       recordChange({
         tableName: table.tableName,
         schemaName: table.schemaName,
-        mode: 'insert',
+        mode: "insert",
         row,
       });
 
       const stmt = table.query(trx);
-      await table.applyPolicy(stmt, context, 'insert');
+      await table.applyPolicy(stmt, context, "insert");
 
       let updatedRow = await stmt
         .where(`${table.alias}.${table.idColumnName}`, row[table.idColumnName])
-        .modify(function() {
+        .modify(function () {
           if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
             this.where(
               `${table.alias}.${table.tenantIdColumnName}`,
@@ -907,7 +910,7 @@ export class Table<Context> {
             table,
             trx,
             context,
-            'insert',
+            "insert",
             updatedRow,
             undefined
           );
@@ -930,7 +933,7 @@ export class Table<Context> {
       }
 
       const stmt = table.query(trx);
-      await table.applyPolicy(stmt, context, 'delete');
+      await table.applyPolicy(stmt, context, "delete");
 
       if (table.tenantIdColumnName && tenantId !== undefined) {
         stmt.where(`${table.alias}.${table.tenantIdColumnName}`, tenantId);
@@ -947,7 +950,7 @@ export class Table<Context> {
           table,
           trx,
           context,
-          'delete',
+          "delete",
           undefined,
           row
         );
@@ -959,7 +962,7 @@ export class Table<Context> {
             table,
             trx,
             context,
-            'delete',
+            "delete",
             undefined,
             row
           );
@@ -980,7 +983,7 @@ export class Table<Context> {
           const stmt = otherTable
             .query(trx)
             .where(`${otherTable.alias}.${columnName}`, id)
-            .modify(function() {
+            .modify(function () {
               if (table.tenantIdColumnName && tenantId !== undefined) {
                 this.where(
                   `${otherTable.alias}.${otherTable.tenantIdColumnName}`,
@@ -1010,7 +1013,7 @@ export class Table<Context> {
       recordChange({
         tableName: table.tableName,
         schemaName: table.schemaName,
-        mode: 'delete',
+        mode: "delete",
         row,
       });
 
@@ -1112,7 +1115,7 @@ export class Table<Context> {
   async count(knex: Knex, queryParams: Record<string, any>, context: Context) {
     const stmt = this.query(knex);
     await this.where(stmt, context, queryParams);
-    await this.applyPolicy(stmt, context, 'read');
+    await this.applyPolicy(stmt, context, "read");
 
     stmt.clearSelect();
 
@@ -1124,7 +1127,7 @@ export class Table<Context> {
   async ids(knex: Knex, queryParams: Record<string, any>, context: Context) {
     const stmt = this.query(knex);
     await this.where(stmt, context, queryParams);
-    await this.applyPolicy(stmt, context, 'read');
+    await this.applyPolicy(stmt, context, "read");
 
     const page = Number(queryParams.page || 0);
     const limit = Math.max(
@@ -1145,7 +1148,7 @@ export class Table<Context> {
         _url: `${this.baseUrl}${this.path}/ids${
           Object.keys(queryParams).length > 0
             ? `?${qsStringify(queryParams)}`
-            : ''
+            : ""
         }`,
         _links: {
           ...(results.length >= limit && {
@@ -1175,7 +1178,7 @@ export class Table<Context> {
     const table = this;
     let { include = [] } = queryParams;
 
-    if (typeof include === 'string') include = [include];
+    if (typeof include === "string") include = [include];
 
     const withDeleted = Boolean(queryParams.withDeleted || !many);
     if (this.paranoid) queryParams.withDeleted = withDeleted;
@@ -1195,13 +1198,13 @@ export class Table<Context> {
       for (let includeTable of include) {
         let isOne = true;
         let ref = Object.values(table.relatedTables.hasOne).find(
-          ref => ref.name === includeTable
+          (ref) => ref.name === includeTable
         );
 
         if (!ref) {
           isOne = false;
           ref = Object.values(table.relatedTables.hasMany).find(
-            ref => ref.name === includeTable
+            (ref) => ref.name === includeTable
           );
         }
 
@@ -1243,7 +1246,7 @@ export class Table<Context> {
 
         const aliasOuter = `${alias}_sub_query`;
 
-        await table.withAlias(alias).applyPolicy(subQuery, context, 'read');
+        await table.withAlias(alias).applyPolicy(subQuery, context, "read");
 
         const { bindings, sql } = subQuery.toSQL();
 
@@ -1279,8 +1282,8 @@ export class Table<Context> {
         let eagerStmt = knex.queryBuilder();
         await fn.call(table, eagerStmt, context);
         const { bindings, sql, method } = eagerStmt.toSQL();
-        const isPluck = method === 'pluck';
-        const isOne = isPluck || method === 'first';
+        const isPluck = method === "pluck";
+        const isOne = isPluck || method === "first";
 
         const rawSql = isPluck
           ? sql
@@ -1300,20 +1303,20 @@ export class Table<Context> {
       const page = Number(queryParams.page || 0);
       const limit = Math.max(0, Math.min(250, Number(queryParams.limit) || 50));
 
-      const sorts: { column: string; order: 'asc' | 'desc' }[] = [];
+      const sorts: { column: string; order: "asc" | "desc" }[] = [];
       if (sort) {
         if (!Array.isArray(sort)) sort = [sort];
 
         sort.forEach((column: string) => {
-          let order = 'asc';
-          if (column.startsWith('-')) {
-            order = 'desc';
+          let order = "asc";
+          if (column.startsWith("-")) {
+            order = "desc";
             column = column.slice(1);
           }
 
           if (
             column in table.columns! &&
-            (order === 'asc' || order === 'desc')
+            (order === "asc" || order === "desc")
           ) {
             sorts.push({ column, order });
           }
@@ -1323,21 +1326,21 @@ export class Table<Context> {
       if (queryParams.cursor) {
         const cursor = JSON.parse(atob(queryParams.cursor));
         // keyset pagination
-        statement.where(function() {
+        statement.where(function () {
           sorts.forEach((sort, index) => {
-            this.orWhere(function() {
+            this.orWhere(function () {
               sorts
                 .slice(0, index)
                 .map(({ column }) =>
                   this.where(
                     `${table.tableName}.${column}`,
-                    '=',
+                    "=",
                     cursor[column]
                   )
                 );
               this.where(
                 `${table.tableName}.${sort.column}`,
-                sort.order === 'asc' ? '>' : '<',
+                sort.order === "asc" ? ">" : "<",
                 cursor[sort.column]
               );
             });
@@ -1350,10 +1353,10 @@ export class Table<Context> {
       statement.limit(limit);
 
       if (sorts.length === 0) {
-        sorts.push({ column: this.idColumnName, order: 'asc' });
+        sorts.push({ column: this.idColumnName, order: "asc" });
       }
 
-      sorts.forEach(s =>
+      sorts.forEach((s) =>
         statement.orderBy(`${table.alias}.${s.column}`, s.order)
       );
 
@@ -1384,10 +1387,10 @@ export class Table<Context> {
               }),
             }),
         count: `${table.baseUrl}${path}/count${
-          Object.keys(queryParams).length > 0 ? '?' : ''
+          Object.keys(queryParams).length > 0 ? "?" : ""
         }${qsStringify(queryParams)}`,
         ids: `${table.baseUrl}${path}/ids${
-          Object.keys(queryParams).length > 0 ? '?' : ''
+          Object.keys(queryParams).length > 0 ? "?" : ""
         }${qsStringify(queryParams)}`,
       };
 
@@ -1399,10 +1402,10 @@ export class Table<Context> {
           _url: `${table.baseUrl}${path}${
             Object.keys(queryParams).length > 0
               ? `?${qsStringify(queryParams)}`
-              : ''
+              : ""
           }`,
           _links: links,
-          _type: 'collection',
+          _type: "collection",
           _collection: path,
         },
         data: await Promise.all(
@@ -1416,7 +1419,7 @@ export class Table<Context> {
 
     const stmt = table.query(knex);
     await table.where(stmt, context, queryParams);
-    await table.applyPolicy(stmt, context, 'read');
+    await table.applyPolicy(stmt, context, "read");
     await includeRelated(stmt);
 
     if (many) {
@@ -1442,7 +1445,7 @@ export class Table<Context> {
 
     let trxRef: null | Knex.Transaction = null;
 
-    const result = await knex.transaction(async trx => {
+    const result = await knex.transaction(async (trx) => {
       // Needs to emit commit after this function finishes
       trxRef = trx;
 
@@ -1458,7 +1461,7 @@ export class Table<Context> {
       return result;
     });
 
-    trxRef!.emit('commit');
+    trxRef!.emit("commit");
 
     return { result, changes };
   }

@@ -1,19 +1,21 @@
-import knexHelpers from './knexHelpers';
-import { Table } from './Table';
+import knexHelpers from "./knexHelpers";
+import { Table } from "./Table";
+import { Core } from "./Core";
 import {
   StatusError,
   NotFoundError,
   BadRequestError,
-  UnauthorizedError,
-} from './Errors';
-import withTimestamps from './plugins/withTimestamps';
+  UnauthorizedError
+} from "./errors";
+import withTimestamps from "./plugins/withTimestamps";
 
 export {
-  knexHelpers,
+  Core,
   Table,
+  knexHelpers,
   StatusError,
   NotFoundError,
   BadRequestError,
   UnauthorizedError,
-  withTimestamps,
+  withTimestamps
 };
