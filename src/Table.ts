@@ -40,7 +40,7 @@ import {
 import { postgresTypesToYupType } from "./lookups";
 import { ObjectShape } from "yup/lib/object";
 import { toSnakeCase } from "./case";
-import { Result, CollectionResult } from "./Result";
+import { Result, CollectionResult, ChangeResult } from "./Result";
 
 function qsStringify(val: any) {
   return qs.stringify(val, {
@@ -716,7 +716,7 @@ export class Table<Context, T = any> {
     obj: any,
     context: Context,
     beforeCommitCallbacks: (() => Promise<void>)[],
-    recordChange: (change: ChangeSummary) => void
+    recordChange: (change: ChangeSummary<T>) => void
   ) {
     const update = async (graph: any) => {
       const table = this;
@@ -1112,7 +1112,7 @@ export class Table<Context, T = any> {
       }
     }
 
-    return row;
+    return row as T;
   }
 
   async count(knex: Knex, queryParams: Record<string, any>, context: Context) {
@@ -1459,19 +1459,19 @@ export class Table<Context, T = any> {
     return paginate(stmt);
   }
 
-  async write(knex: Knex, obj: any, context: Context) {
+  async write(knex: Knex, obj: T, context: Context) {
     const errors = await this.validateDeep(knex, obj, context);
     if (errors) {
       throw new BadRequestError({ errors });
     }
 
     const beforeCommitCallbacks: (() => Promise<void>)[] = [];
-    const changes: ChangeSummary[] = [];
-    const recordChange = (change: ChangeSummary) => changes.push(change);
+    const changes: ChangeSummary<T>[] = [];
+    const recordChange = (change: ChangeSummary<T>) => changes.push(change);
 
     let trxRef: null | Knex.Transaction = null;
 
-    const result = await knex.transaction(async (trx) => {
+    const data = await knex.transaction(async (trx) => {
       // Needs to emit commit after this function finishes
       trxRef = trx;
 
@@ -1489,6 +1489,7 @@ export class Table<Context, T = any> {
 
     trxRef!.emit("commit");
 
-    return { result, changes };
+    // return { data, changes };
+    return new ChangeResult(data, changes);
   }
 }

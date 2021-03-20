@@ -1,3 +1,5 @@
+import { ChangeSummary } from "./types";
+
 interface ToJSON {
   toJSON(): any;
 }
@@ -16,6 +18,7 @@ export class Result<T extends Record<string, any>> implements ToJSON {
     Object.assign(this, data);
     this[metaSym] = meta;
   }
+
   toJSON() {
     const { [metaSym]: meta, ...others } = this;
     return {
@@ -80,6 +83,23 @@ export class CollectionResult<T extends Record<string, any>>
     return {
       meta: this.meta,
       data: this.data,
+    };
+  }
+}
+
+export class ChangeResult<T> implements ToJSON {
+  data: T;
+  changes: ChangeSummary<T>[];
+
+  constructor(data: T, changes: ChangeSummary<T>[]) {
+    this.data = data;
+    this.changes = changes;
+  }
+
+  toJSON(this: ChangeResult<T>) {
+    return {
+      data: this.data,
+      changes: this.changes,
     };
   }
 }

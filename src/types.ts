@@ -24,17 +24,17 @@ export class Relation {
   }
 }
 
-export type ShouldEventBeSent<Context> = (
+export type ShouldEventBeSent<Context, T> = (
   isVisible: () => Promise<boolean>,
-  event: ChangeSummary,
+  event: ChangeSummary<T>,
   context: Context
 ) => Promise<boolean>;
 
-export type ChangeSummary = {
+export type ChangeSummary<T> = {
   mode: Mode;
   schemaName: string;
   tableName: string;
-  row: any;
+  row: T;
 };
 
 export interface ContextFactory<Context> {

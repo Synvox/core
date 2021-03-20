@@ -199,7 +199,7 @@ describe("listens on server", () => {
             "tableName": "test",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "coreTest/test",
           "_url": "/coreTest/test/1",
@@ -257,7 +257,7 @@ describe("listens on server", () => {
             "tableName": "test",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "coreTest/test",
           "_url": "/coreTest/test/1",
@@ -447,7 +447,7 @@ describe("listens on server", () => {
             "tableName": "test",
           },
         ],
-        "result": null,
+        "data": null,
       }
     `);
   });

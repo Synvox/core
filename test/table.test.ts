@@ -954,7 +954,7 @@ describe("without policies", () => {
             "tableName": "test",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -1053,7 +1053,7 @@ describe("without policies", () => {
             "tableName": "test",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -1098,7 +1098,7 @@ describe("without policies", () => {
             "tableName": "test",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -1227,7 +1227,7 @@ describe("without policies", () => {
             "tableName": "test",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -1272,7 +1272,7 @@ describe("without policies", () => {
             "tableName": "test",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -1340,7 +1340,7 @@ describe("without policies", () => {
             "tableName": "test",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -1379,7 +1379,7 @@ describe("without policies", () => {
             "tableName": "test",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -1415,7 +1415,7 @@ describe("without policies", () => {
             "tableName": "test",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -1464,7 +1464,7 @@ describe("without policies", () => {
     expect(queries).toMatchInlineSnapshot(`Array []`);
 
     await knex("test.test").truncate();
-    const { result: row } = await table.write(
+    const { data: row } = await table.write(
       knex,
       { username: "xyz", org: "org" },
       {}
@@ -1487,7 +1487,7 @@ describe("without policies", () => {
             "tableName": "test",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -1524,7 +1524,7 @@ describe("without policies", () => {
             "tableName": "test",
           },
         ],
-        "result": null,
+        "data": null,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -1609,7 +1609,7 @@ describe("without policies", () => {
             "tableName": "users",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {
             "posts": "/test/posts?userId=1",
           },
@@ -1667,7 +1667,7 @@ describe("without policies", () => {
             "tableName": "posts",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {
             "posts": "/test/posts?userId=2",
           },
@@ -1755,7 +1755,7 @@ describe("without policies", () => {
             "tableName": "posts",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {
             "user": "/test/users/3",
           },
@@ -1801,7 +1801,7 @@ describe("without policies", () => {
             "tableName": "users",
           },
         ],
-        "result": null,
+        "data": null,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -1840,7 +1840,7 @@ describe("without policies", () => {
             "tableName": "posts",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {
             "posts": "/test/posts?userId=4",
           },
@@ -2172,7 +2172,7 @@ describe("without policies", () => {
             "tableName": "test",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -2211,7 +2211,7 @@ describe("without policies", () => {
             "tableName": "test",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -2768,7 +2768,7 @@ describe("with policies", () => {
             "tableName": "posts",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "test/posts",
           "_url": "/test/posts/4",
@@ -2791,7 +2791,7 @@ describe("with policies", () => {
       .toMatchInlineSnapshot(`
       Object {
         "changes": Array [],
-        "result": Object {
+        "data": Object {
           "_links": Object {
             "user": "/test/users/1",
           },
@@ -2833,7 +2833,7 @@ describe("with policies", () => {
             "tableName": "posts",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {
             "user": "/test/users/1",
           },
@@ -2875,7 +2875,7 @@ describe("with policies", () => {
             "tableName": "posts",
           },
         ],
-        "result": null,
+        "data": null,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -3216,7 +3216,7 @@ describe("multitenancy", () => {
             "tableName": "items",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "test/items",
           "_url": "/test/items/2?orgId=1",
@@ -3243,7 +3243,7 @@ describe("multitenancy", () => {
             "tableName": "items",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "test/items",
           "_url": "/test/items/1?orgId=1",
@@ -3270,7 +3270,7 @@ describe("multitenancy", () => {
             "tableName": "items",
           },
         ],
-        "result": null,
+        "data": null,
       }
     `);
   });
@@ -3389,7 +3389,7 @@ describe("multitenancy", () => {
             "tableName": "test",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {
             "org": "/test/orgs/1",
           },
@@ -3418,7 +3418,7 @@ describe("multitenancy", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "changes": Array [],
-        "result": Object {
+        "data": Object {
           "_links": Object {
             "org": "/test/orgs/1",
           },
@@ -3513,7 +3513,7 @@ describe("paranoid", () => {
             "tableName": "items",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {
             "subitems": "/test/subitems?itemId=1",
           },
@@ -3565,7 +3565,7 @@ describe("paranoid", () => {
             "tableName": "subitems",
           },
         ],
-        "result": null,
+        "data": null,
       }
     `);
 
@@ -3676,7 +3676,7 @@ describe("paranoid", () => {
             "tableName": "subitems",
           },
         ],
-        "result": null,
+        "data": null,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -3763,7 +3763,7 @@ describe("hidden columns", () => {
             "tableName": "items",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "test/items",
           "_url": "/test/items/1",
@@ -3851,7 +3851,7 @@ describe("uuid columns", () => {
             "tableName": "items",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "test/items",
           "_url": "/test/items/a8374dd3-0aa0-4ada-8c98-b7ade46900b8",
@@ -3951,7 +3951,7 @@ describe("uuid columns", () => {
             "tableName": "subitems",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {
             "subitems": "/test/subitems?parentId=96435a51-7af8-4d08-94f3-892a99abd8cd",
           },
@@ -4022,7 +4022,7 @@ describe("uuid columns", () => {
             "tableName": "subitems",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {
             "parent": "/test/items/cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
           },
@@ -4088,7 +4088,7 @@ describe("beforeCommit", () => {
             "tableName": "items",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "test/items",
           "_url": "/test/items/1",
@@ -4128,7 +4128,7 @@ describe("beforeCommit", () => {
             "tableName": "items",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "test/items",
           "_url": "/test/items/1",
@@ -4171,7 +4171,7 @@ describe("beforeCommit", () => {
             "tableName": "items",
           },
         ],
-        "result": null,
+        "data": null,
       }
     `);
     expect(results).toMatchInlineSnapshot(`
@@ -4223,7 +4223,7 @@ describe("self references", () => {
             "tableName": "items",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {
             "items": "/test/items?parentItemId=1",
           },
@@ -4249,7 +4249,7 @@ describe("self references", () => {
             "tableName": "items",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {
             "items": "/test/items?parentItemId=2",
             "parentItem": "/test/items/1",
@@ -4276,7 +4276,7 @@ describe("self references", () => {
             "tableName": "items",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {
             "items": "/test/items?parentItemId=3",
             "parentItem": "/test/items/1",
@@ -4743,7 +4743,7 @@ describe("in public schema", () => {
             "tableName": "testTable",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "testTable",
           "_url": "/testTable/1",

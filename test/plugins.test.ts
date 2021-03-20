@@ -134,7 +134,7 @@ describe("withTimestamps plugin", () => {
             "tableName": "posts",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {
             "posts": "/testPlugins/posts?userId=1",
           },
@@ -210,7 +210,7 @@ describe("withTimestamps plugin", () => {
             "tableName": "users",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {
             "posts": "/testPlugins/posts?userId=1",
           },
@@ -257,7 +257,7 @@ describe("withTimestamps plugin", () => {
             "tableName": "posts",
           },
         ],
-        "result": null,
+        "data": null,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -304,7 +304,7 @@ describe("withTimestamps plugin", () => {
             "tableName": "items",
           },
         ],
-        "result": Object {
+        "data": Object {
           "_links": Object {},
           "_type": "testPlugins/items",
           "_url": "/testPlugins/items/1",
