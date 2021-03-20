@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { classify } from "inflection";
 import { Knex } from "knex";
 import setValue from "set-value";
 import qs from "qs";
@@ -48,6 +49,12 @@ function qsStringify(val: any) {
     arrayFormat: "brackets",
   });
 }
+
+export type SavedTable = {
+  columns: Columns;
+  uniqueColumns: string[][];
+  relations: Relations;
+};
 
 export class Table<Context, T = any> {
   path: string;
@@ -218,6 +225,10 @@ export class Table<Context, T = any> {
 
   get tablePath() {
     return `${this.schemaName}.${this.tableName}`;
+  }
+
+  get className() {
+    return classify(this.tableName);
   }
 
   query(knex: Knex) {

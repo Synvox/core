@@ -1,7 +1,7 @@
-import { Knex } from 'knex';
-import { caseMethods, transformKey } from './knexHelpers';
-import { Column, Columns, Relation, Relations } from './types';
-import { toSnakeCase, toCamelCase } from './case';
+import { Knex } from "knex";
+import { caseMethods, transformKey } from "./knexHelpers";
+import { Column, Columns, Relation, Relations } from "./types";
+import { toSnakeCase, toCamelCase } from "./case";
 
 export async function getColumnInfo(
   knex: Knex,
@@ -15,7 +15,7 @@ export async function getColumnInfo(
         pg_catalog.format_type(a.atttypid, a.atttypmod) as "type",
         not a.attnotnull as "nullable",
         pg_get_expr(d.adbin, d.adrelid) as "default_value",
-        atttypmod - 4 as length
+        greatest(atttypmod - 4, -1) as length
       from pg_catalog.pg_attribute a
       left join pg_attrdef d on a.attnum = d.adnum and d.adrelid = a.attrelid
       where a.attnum > 0
@@ -27,7 +27,7 @@ export async function getColumnInfo(
           where n.nspname = ?
             and c.relname = ?)
       order by a.attnum;`
-      .replace(/\s\s+/g, ' ')
+      .replace(/\s\s+/g, " ")
       .trim(),
     [toSnakeCase(schemaName), toSnakeCase(tableName)]
   );
@@ -39,11 +39,11 @@ export async function getColumnInfo(
   } = await stmt;
 
   const formatted: Columns = columns
-    .map(column => ({
+    .map((column) => ({
       ...column,
       name: transformKey(column.name, caseMethods.camel),
-      type: column.type.startsWith('character varying')
-        ? 'character varying'
+      type: column.type.startsWith("character varying")
+        ? "character varying"
         : column.type,
     }))
     .reduce(
@@ -58,14 +58,14 @@ export async function getUniqueColumnIndexes(
   schemaName: string,
   tableName: string
 ) {
-  return await knex('pg_catalog.pg_constraint as con')
-    .join('pg_catalog.pg_class as rel', 'rel.oid', 'con.conrelid')
-    .join('pg_catalog.pg_namespace as nsp', 'nsp.oid', 'connamespace')
-    .where('nsp.nspname', toSnakeCase(schemaName))
-    .where('rel.relname', toSnakeCase(tableName))
-    .where('con.contype', 'u')
-    .select('con.conkey as indexes')
-    .then(rows => rows.map(r => r.indexes as number[]));
+  return await knex("pg_catalog.pg_constraint as con")
+    .join("pg_catalog.pg_class as rel", "rel.oid", "con.conrelid")
+    .join("pg_catalog.pg_namespace as nsp", "nsp.oid", "connamespace")
+    .where("nsp.nspname", toSnakeCase(schemaName))
+    .where("rel.relname", toSnakeCase(tableName))
+    .where("con.contype", "u")
+    .select("con.conkey as indexes")
+    .then((rows) => rows.map((r) => r.indexes as number[]));
 }
 export async function getRelations(
   knex: Knex,
@@ -100,7 +100,7 @@ export async function getRelations(
       and kcu.table_schema = ?
       and kcu.table_name = ?
     `
-      .replace(/\s\s+/g, ' ')
+      .replace(/\s\s+/g, " ")
       .trim(),
     [toSnakeCase(schemaName), toSnakeCase(tableName)]
   );
