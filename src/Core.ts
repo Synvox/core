@@ -335,5 +335,5 @@ export async function saveTsTypes(
     types += `};\n\n`;
   }
 
-  await fs.writeFile(path, types);
+  await fs.writeFile(path, types.trim() + "\n");
 }

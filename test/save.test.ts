@@ -270,7 +270,6 @@ describe("saves to files", () => {
           parent: string;
         };
       };
-
       "
     `);
   });
@@ -309,7 +308,6 @@ describe("saves to files", () => {
         parentId: number;
         arr: number[] | null;
       };
-
       "
     `);
   });
@@ -350,7 +348,6 @@ describe("saves to files", () => {
         arr: number[] | null;
         parent: Test;
       };
-
       "
     `);
   });
