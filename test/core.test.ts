@@ -604,3 +604,72 @@ describe("listens on server", () => {
     `);
   });
 });
+
+describe("gets tenant id", () => {
+  beforeEach(async () => {
+    await knex.schema.withSchema("core_test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
+    });
+    await knex.schema.withSchema("core_test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId")
+        .references("id")
+        .inTable("coreTest.orgs")
+        .notNullable();
+    });
+  });
+
+  it("gets tenant id", async () => {
+    const [org] = await knex("coreTest.orgs").insert({}).returning("*");
+    await knex("coreTest.test").insert({ orgId: org.id });
+
+    type Context = {};
+
+    const core = new Core<Context>(
+      () => {
+        return {};
+      },
+      async () => knex
+    );
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+      tenantIdColumnName: "orgId",
+    });
+
+    const app = express();
+    app.use("/:orgId", core.router());
+    const url = await listen(app);
+
+    const axios = Axios.create({ baseURL: url });
+
+    expect(
+      (await axios.get(`/${org.id}/coreTest/test`).catch((e) => e.response))
+        .data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "data": Array [
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/1?orgId=1",
+            "id": 1,
+            "orgId": 1,
+          },
+        ],
+        "meta": Object {
+          "_links": Object {
+            "count": "/coreTest/test/count?orgId=1",
+            "ids": "/coreTest/test/ids?orgId=1",
+          },
+          "_type": "coreTest/test",
+          "_url": "/coreTest/test?orgId=1",
+          "hasMore": false,
+          "limit": 50,
+          "page": 0,
+        },
+      }
+    `);
+  });
+});

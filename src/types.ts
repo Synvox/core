@@ -37,18 +37,12 @@ export type ChangeSummary<T> = {
   row: T;
 };
 
-export interface ContextFactory<Context> {
-  (req: Request, res: Response): Context;
-}
+export type ContextFactory<Context> = (req: Request, res: Response) => Context;
 
 export type Mixed = ReturnType<typeof mixed>;
 export type ObjectSchema = ReturnType<typeof object>;
 
 export type Mode = "insert" | "read" | "update" | "delete";
-
-export interface ContextFactory<Context> {
-  (req: Request, res: Response): Context;
-}
 
 export type Policy<Context> = (
   this: Table<Context>,

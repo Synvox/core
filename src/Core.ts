@@ -87,7 +87,7 @@ export class Core<Context> {
   }
 
   router() {
-    const router = Router();
+    const router = Router({ mergeParams: true });
 
     router.use(
       wrap(async (_req, _res, next) => {
@@ -108,7 +108,7 @@ export class Core<Context> {
           const context = this.getContext(req, res);
           return await table.ids(
             knex,
-            { ...req.query, ...req.params },
+            { ...req.params, ...req.query },
             context
           );
         })
@@ -121,7 +121,7 @@ export class Core<Context> {
           const context = this.getContext(req, res);
           const count = await table.count(
             knex,
-            { ...req.query, ...req.params },
+            { ...req.params, ...req.query },
             context
           );
 
@@ -145,7 +145,11 @@ export class Core<Context> {
             const context = this.getContext(req, res);
             const row = await table.readOne(
               knex,
-              { ...req.query, ...req.params, include: [getterName] },
+              {
+                ...req.params,
+                ...req.query,
+                include: [getterName],
+              },
               context
             );
 
@@ -169,7 +173,7 @@ export class Core<Context> {
           return {
             data: await table.readOne(
               knex,
-              { ...req.query, ...req.params },
+              { ...req.params, ...req.query },
               context
             ),
           };
@@ -181,7 +185,11 @@ export class Core<Context> {
         wrap(async (req, res) => {
           const knex = await this.getKnex("read");
           const context = this.getContext(req, res);
-          return await table.readMany(knex, req.query, context);
+          return await table.readMany(
+            knex,
+            { ...req.params, ...req.query },
+            context
+          );
         })
       );
 
@@ -190,7 +198,11 @@ export class Core<Context> {
         wrap(async (req, res) => {
           const knex = await this.getKnex("write");
           const context = this.getContext(req, res);
-          return await table.write(knex, req.body, context);
+          return await table.write(
+            knex,
+            { ...req.params, ...req.query },
+            context
+          );
         })
       );
 
@@ -201,7 +213,7 @@ export class Core<Context> {
           const context = this.getContext(req, res);
           return await table.write(
             knex,
-            { ...req.body, ...req.params },
+            { ...req.body, ...req.params, ...req.query },
             context
           );
         })
@@ -214,7 +226,12 @@ export class Core<Context> {
           const context = this.getContext(req, res);
           return await table.write(
             knex,
-            { ...req.body, ...req.params, _delete: true },
+            {
+              ...req.body,
+              ...req.params,
+              ...req.query,
+              _delete: true,
+            },
             context
           );
         })
