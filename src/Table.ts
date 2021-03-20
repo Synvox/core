@@ -1,5 +1,3 @@
-// import { EventEmitter } from 'events';
-
 import { Router } from "express";
 import { Knex } from "knex";
 import setValue from "set-value";
@@ -42,6 +40,7 @@ import {
 import { postgresTypesToYupType } from "./lookups";
 import { ObjectShape } from "yup/lib/object";
 import { toSnakeCase } from "./case";
+import { Result, CollectionResult } from "./Result";
 
 function qsStringify(val: any) {
   return qs.stringify(val, {
@@ -50,7 +49,7 @@ function qsStringify(val: any) {
   });
 }
 
-export class Table<Context> {
+export class Table<Context, T = any> {
   path: string;
   tableName: string;
   schemaName: string;
@@ -115,9 +114,10 @@ export class Table<Context> {
     this.forwardQueryParams = def.forwardQueryParams ?? [];
     this.idGenerator = def.idGenerator;
   }
-  withAlias(alias: string) {
-    return Object.assign(new Table(this), this, { alias });
+  private withAlias(alias: string) {
+    return Object.assign(new Table<Context, T>(this), this, { alias });
   }
+
   async init(knex: Knex) {
     const [columns, uniqueConstraintIndexes, relations] = await Promise.all([
       getColumnInfo(
@@ -233,7 +233,7 @@ export class Table<Context> {
     return stmt;
   }
 
-  async where(
+  private async where(
     stmt: Knex.QueryBuilder,
     context: Context,
     params: Record<string, any>
@@ -260,11 +260,15 @@ export class Table<Context> {
     }
   }
 
-  async applyPolicy(stmt: Knex.QueryBuilder, context: Context, mode: Mode) {
+  private async applyPolicy(
+    stmt: Knex.QueryBuilder,
+    context: Context,
+    mode: Mode
+  ) {
     await this.policy(stmt, context, mode);
   }
 
-  filterWritable(obj: any) {
+  private filterWritable(obj: any) {
     const result: { [key: string]: any } = {};
 
     for (let key of Object.keys(obj).filter((key) => key in this.columns)) {
@@ -284,7 +288,7 @@ export class Table<Context> {
     context: Context,
     inputRow: any,
     include: string[] = []
-  ) {
+  ): Promise<Result<T> & T> {
     let tenantId = this.tenantIdColumnName
       ? inputRow[this.tenantIdColumnName]
       : null;
@@ -404,12 +408,11 @@ export class Table<Context> {
       selfUrl += `?${qsStringify(rowQueryParams)}`;
     }
 
-    return {
-      ...outputRow,
-      _url: selfUrl,
-      _links: result,
-      _type: this.path,
-    };
+    return new Result<T>(outputRow, {
+      url: selfUrl,
+      links: result,
+      type: this.path,
+    }) as Result<T> & T;
   }
 
   async validate(knex: Knex, obj: any, context: Context) {
@@ -708,7 +711,7 @@ export class Table<Context> {
     return errors;
   }
 
-  async updateDeep(
+  private async updateDeep(
     trx: Knex.Transaction,
     obj: any,
     context: Context,
@@ -1173,15 +1176,14 @@ export class Table<Context> {
     knex: Knex,
     queryParams: Record<string, any>,
     context: Context,
-    many: boolean = true
+    {
+      withDeleted = queryParams.withDeleted ?? false,
+    }: { withDeleted?: boolean } = {}
   ) {
     const table = this;
     let { include = [] } = queryParams;
 
     if (typeof include === "string") include = [include];
-
-    const withDeleted = Boolean(queryParams.withDeleted || !many);
-    if (this.paranoid) queryParams.withDeleted = withDeleted;
 
     if (table.tenantIdColumnName) {
       const tenantId = queryParams[table.tenantIdColumnName];
@@ -1297,7 +1299,46 @@ export class Table<Context> {
       }
     };
 
+    const stmt = table.query(knex);
+    await table.where(stmt, context, { ...queryParams, withDeleted });
+    await table.applyPolicy(stmt, context, "read");
+    await includeRelated(stmt);
+
+    return { stmt };
+  }
+
+  async readOne(
+    knex: Knex,
+    queryParams: Record<string, any>,
+    context: Context
+  ) {
+    let { include = [] } = queryParams;
+
+    if (typeof include === "string") include = [include];
+
+    const { stmt } = await this.read(knex, queryParams, context, {
+      withDeleted: true,
+    });
+    const data = await stmt.first();
+
+    if (!data) throw new NotFoundError();
+
+    return await this.processTableRow(queryParams, context, data, include);
+  }
+
+  async readMany(
+    knex: Knex,
+    queryParams: Record<string, any>,
+    context: Context
+  ) {
+    let { include = [] } = queryParams;
+
+    if (typeof include === "string") include = [include];
+
+    const { stmt } = await this.read(knex, queryParams, context);
+
     const paginate = async (statement: Knex.QueryBuilder) => {
+      const table = this;
       const path = table.path;
       let { sort } = queryParams;
       const page = Number(queryParams.page || 0);
@@ -1394,43 +1435,28 @@ export class Table<Context> {
         }${qsStringify(queryParams)}`,
       };
 
-      return {
-        meta: {
-          page,
-          limit,
-          hasMore: results.length >= limit,
-          _url: `${table.baseUrl}${path}${
-            Object.keys(queryParams).length > 0
-              ? `?${qsStringify(queryParams)}`
-              : ""
-          }`,
-          _links: links,
-          _type: "collection",
-          _collection: path,
-        },
-        data: await Promise.all(
-          results.map(
-            async (item: any) =>
-              await this.processTableRow(queryParams, context, item, include)
-          )
-        ),
-      };
+      const processedResults: any[] = await Promise.all(
+        results.map(
+          async (item: any) =>
+            await this.processTableRow(queryParams, context, item, include)
+        )
+      );
+      return new CollectionResult(processedResults, {
+        page,
+        limit,
+        hasMore: results.length >= limit,
+        url: `${table.baseUrl}${path}${
+          Object.keys(queryParams).length > 0
+            ? `?${qsStringify(queryParams)}`
+            : ""
+        }`,
+        links: links,
+        type: "collection",
+        collection: path,
+      });
     };
 
-    const stmt = table.query(knex);
-    await table.where(stmt, context, queryParams);
-    await table.applyPolicy(stmt, context, "read");
-    await includeRelated(stmt);
-
-    if (many) {
-      return paginate(stmt);
-    } else {
-      const data = await stmt.first();
-
-      if (!data) throw new NotFoundError();
-
-      return await table.processTableRow(queryParams, context, data, include);
-    }
+    return paginate(stmt);
   }
 
   async write(knex: Knex, obj: any, context: Context) {
@@ -1466,15 +1492,3 @@ export class Table<Context> {
     return { result, changes };
   }
 }
-
-// export function notifyChange(
-//   emitter: EventEmitter,
-//   { mode, schemaName, tableName, row }: ChangeSummary
-// ) {
-//   emitter.emit('change', {
-//     mode,
-//     tableName: tableName,
-//     schemaName: schemaName,
-//     row,
-//   });
-// }

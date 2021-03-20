@@ -70,7 +70,7 @@ describe("without policies", () => {
     for (let i = 0; i < 2; i++) await knex("test.test").insert({});
 
     queries = [];
-    expect(await table.read(knex, {}, {})).toMatchInlineSnapshot(`
+    expect(await table.readMany(knex, {}, {})).toMatchInlineSnapshot(`
       Object {
         "data": Array [
           Object {
@@ -113,7 +113,7 @@ describe("without policies", () => {
     `);
 
     queries = [];
-    expect(await table.read(knex, { id: 1 }, {}, false)).toMatchInlineSnapshot(`
+    expect(await table.readOne(knex, { id: 1 }, {})).toMatchInlineSnapshot(`
       Object {
         "_links": Object {},
         "_type": "test/test",
@@ -131,7 +131,7 @@ describe("without policies", () => {
     `);
 
     queries = [];
-    expect(await table.read(knex, { id: [1] }, {})).toMatchInlineSnapshot(`
+    expect(await table.readMany(knex, { id: [1] }, {})).toMatchInlineSnapshot(`
       Object {
         "data": Array [
           Object {
@@ -166,7 +166,7 @@ describe("without policies", () => {
 
     await knex("test.test").update({ isBoolean: true }).where("id", 1);
     queries = [];
-    expect(await table.read(knex, { isBoolean: "true" }, {}))
+    expect(await table.readMany(knex, { isBoolean: "true" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -204,7 +204,7 @@ describe("without policies", () => {
       .update({ isBoolean: false, numberCount: 1 })
       .where("id", 1);
     queries = [];
-    expect(await table.read(knex, { numberCount: 1 }, {}))
+    expect(await table.readMany(knex, { numberCount: 1 }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -241,7 +241,7 @@ describe("without policies", () => {
     queries = [];
     expect(
       await table
-        .read(knex, { id: 123 }, {})
+        .readMany(knex, { id: 123 }, {})
         .catch((e: NotFoundError) => [e.statusCode, e.message])
     ).toMatchInlineSnapshot(`
       Object {
@@ -269,7 +269,7 @@ describe("without policies", () => {
     queries = [];
     expect(
       await table
-        .read(knex, { id: 123 }, {}, false)
+        .readOne(knex, { id: 123 }, {})
         .catch((e: NotFoundError) => [e.statusCode, e.message])
     ).toMatchInlineSnapshot(`
       Array [
@@ -314,7 +314,7 @@ describe("without policies", () => {
     await knex("test.posts").insert({ userId: user.id }).returning("*");
 
     queries = [];
-    expect(await users.read(knex, {}, {})).toMatchInlineSnapshot(`
+    expect(await users.readMany(knex, {}, {})).toMatchInlineSnapshot(`
       Object {
         "data": Array [
           Object {
@@ -347,7 +347,7 @@ describe("without policies", () => {
     `);
 
     queries = [];
-    expect(await posts.read(knex, {}, {})).toMatchInlineSnapshot(`
+    expect(await posts.readMany(knex, {}, {})).toMatchInlineSnapshot(`
       Object {
         "data": Array [
           Object {
@@ -381,7 +381,7 @@ describe("without policies", () => {
     `);
 
     queries = [];
-    expect(await posts.read(knex, { include: "user", id: 1 }, {}, false))
+    expect(await posts.readOne(knex, { include: "user", id: 1 }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
@@ -408,7 +408,7 @@ describe("without policies", () => {
     `);
 
     queries = [];
-    expect(await users.read(knex, { include: "posts", id: 1 }, {}, false))
+    expect(await users.readOne(knex, { include: "posts", id: 1 }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
@@ -437,7 +437,7 @@ describe("without policies", () => {
     `);
 
     queries = [];
-    expect(await users.read(knex, { include: "bogus" }, {}))
+    expect(await users.readMany(knex, { include: "bogus" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -512,7 +512,8 @@ describe("without policies", () => {
     await knex("test.posts").insert({ userId: user.id }).returning("*");
 
     queries = [];
-    expect(await users.read(knex, { token: "123" }, {})).toMatchInlineSnapshot(`
+    expect(await users.readMany(knex, { token: "123" }, {}))
+      .toMatchInlineSnapshot(`
       Object {
         "data": Array [
           Object {
@@ -546,7 +547,8 @@ describe("without policies", () => {
     `);
 
     queries = [];
-    expect(await posts.read(knex, { token: "123" }, {})).toMatchInlineSnapshot(`
+    expect(await posts.readMany(knex, { token: "123" }, {}))
+      .toMatchInlineSnapshot(`
       Object {
         "data": Array [
           Object {
@@ -581,12 +583,7 @@ describe("without policies", () => {
 
     queries = [];
     expect(
-      await posts.read(
-        knex,
-        { include: "user", id: 1, token: "123" },
-        {},
-        false
-      )
+      await posts.readOne(knex, { include: "user", id: 1, token: "123" }, {})
     ).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
@@ -615,12 +612,7 @@ describe("without policies", () => {
 
     queries = [];
     expect(
-      await users.read(
-        knex,
-        { include: "posts", id: 1, token: "123" },
-        {},
-        false
-      )
+      await users.readOne(knex, { include: "posts", id: 1, token: "123" }, {})
     ).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
@@ -651,11 +643,10 @@ describe("without policies", () => {
 
     queries = [];
     expect(
-      await users.read(
+      await users.readOne(
         knex,
         { include: ["posts", "postCount"], id: 1, token: "123" },
-        {},
-        false
+        {}
       )
     ).toMatchInlineSnapshot(`
       Object {
@@ -689,7 +680,7 @@ describe("without policies", () => {
     `);
 
     queries = [];
-    expect(await users.read(knex, { include: "bogus", token: "123" }, {}))
+    expect(await users.readMany(knex, { include: "bogus", token: "123" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -812,8 +803,9 @@ describe("without policies", () => {
     docs.linkTables([versions, docs]);
 
     queries = [];
-    expect(await docs.read(knex, { include: ["version", "firstVersion"] }, {}))
-      .toMatchInlineSnapshot(`
+    expect(
+      await docs.readMany(knex, { include: ["version", "firstVersion"] }, {})
+    ).toMatchInlineSnapshot(`
       Object {
         "data": Array [
           Object {
@@ -868,7 +860,7 @@ describe("without policies", () => {
 
     queries = [];
     expect(
-      await versions.read(knex, { include: ["headDocs", "firstDocs"] }, {})
+      await versions.readMany(knex, { include: ["headDocs", "firstDocs"] }, {})
     ).toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -1975,7 +1967,7 @@ describe("without policies", () => {
     jobs.linkTables([users]);
 
     queries = [];
-    expect(await users.read(knex, { include: "activeJob" }, {}))
+    expect(await users.readMany(knex, { include: "activeJob" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -2017,7 +2009,7 @@ describe("without policies", () => {
     `);
 
     queries = [];
-    expect(await users.read(knex, { include: "activeJobs" }, {}))
+    expect(await users.readMany(knex, { include: "activeJobs" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -2062,7 +2054,7 @@ describe("without policies", () => {
 
     queries = [];
     expect(
-      await users.read(
+      await users.readMany(
         knex,
         { include: ["activeJob", "activeJobs", "activeJobId"] },
         {}
@@ -2135,9 +2127,8 @@ describe("without policies", () => {
 
     await table.init(knex);
 
-    expect(
-      await table.read(knex, { include: "dynamic", id: item.id }, {}, false)
-    ).toMatchInlineSnapshot(`
+    expect(await table.readOne(knex, { include: "dynamic", id: item.id }, {}))
+      .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
           "dynamic": "/test/test/1/dynamic",
@@ -2265,8 +2256,7 @@ describe("without policies", () => {
     await table.init(knex);
 
     queries = [];
-    expect(await table.read(knex, { id: "me" }, {}, false))
-      .toMatchInlineSnapshot(`
+    expect(await table.readOne(knex, { id: "me" }, {})).toMatchInlineSnapshot(`
       Object {
         "_links": Object {},
         "_type": "test/users",
@@ -2303,7 +2293,7 @@ describe("without policies", () => {
     await table.init(knex);
 
     queries = [];
-    expect(await table.read(knex, { active: true }, {}, false))
+    expect(await table.readOne(knex, { active: true }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {},
@@ -2320,7 +2310,7 @@ describe("without policies", () => {
     `);
 
     queries = [];
-    expect(await table.read(knex, { active: false }, {}, false))
+    expect(await table.readOne(knex, { active: false }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {},
@@ -2356,7 +2346,7 @@ describe("without policies", () => {
     await table.init(knex);
 
     queries = [];
-    expect(await table.read(knex, { limit: 2 }, {})).toMatchInlineSnapshot(`
+    expect(await table.readMany(knex, { limit: 2 }, {})).toMatchInlineSnapshot(`
       Object {
         "data": Array [
           Object {
@@ -2396,7 +2386,7 @@ describe("without policies", () => {
     `);
 
     queries = [];
-    expect(await table.read(knex, { limit: 2, page: 1 }, {}))
+    expect(await table.readMany(knex, { limit: 2, page: 1 }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -2438,7 +2428,7 @@ describe("without policies", () => {
     `);
 
     queries = [];
-    expect(await table.read(knex, { limit: 2, page: 100 }, {}))
+    expect(await table.readMany(knex, { limit: 2, page: 100 }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [],
@@ -2532,7 +2522,7 @@ describe("with policies", () => {
       .returning("*");
 
     queries = [];
-    expect(await users.read(knex, { include: "posts" }, { orgId: 1 }))
+    expect(await users.readMany(knex, { include: "posts" }, { orgId: 1 }))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -2579,7 +2569,7 @@ describe("with policies", () => {
     `);
 
     queries = [];
-    expect(await posts.read(knex, { include: ["user"] }, { orgId: 1 }))
+    expect(await posts.readMany(knex, { include: ["user"] }, { orgId: 1 }))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -3043,14 +3033,15 @@ describe("multitenancy", () => {
     items.linkTables([orgs, items]);
     orgs.linkTables([items, orgs]);
 
-    expect(await items.read(knex, {}, {}).catch((e: BadRequestError) => e.body))
-      .toMatchInlineSnapshot(`
+    expect(
+      await items.readMany(knex, {}, {}).catch((e: BadRequestError) => e.body)
+    ).toMatchInlineSnapshot(`
       Object {
         "error": "orgId is required",
       }
     `);
 
-    expect(await items.read(knex, { orgId: org.id }, {}))
+    expect(await items.readMany(knex, { orgId: org.id }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -3113,7 +3104,7 @@ describe("multitenancy", () => {
       await items.count(knex, { orgId: org.id }, {})
     ).toMatchInlineSnapshot(`1`);
 
-    expect(await items.read(knex, { orgId: org.id, include: ["org"] }, {}))
+    expect(await items.readMany(knex, { orgId: org.id, include: ["org"] }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -3320,7 +3311,7 @@ describe("multitenancy", () => {
     items.linkTables([orgs, items]);
     orgs.linkTables([items, orgs]);
 
-    expect(await items.read(knex, { orgId: org.id }, {}))
+    expect(await items.readMany(knex, { orgId: org.id }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -3578,17 +3569,17 @@ describe("paranoid", () => {
       }
     `);
 
-    expect(await items.read(knex, { id: 1 }, {})).toMatchInlineSnapshot(`
+    expect(await items.readMany(knex, { id: 1 }, {})).toMatchInlineSnapshot(`
       Object {
         "data": Array [],
         "meta": Object {
           "_collection": "test/items",
           "_links": Object {
-            "count": "/test/items/count?id=1&withDeleted=false",
-            "ids": "/test/items/ids?id=1&withDeleted=false",
+            "count": "/test/items/count?id=1",
+            "ids": "/test/items/ids?id=1",
           },
           "_type": "collection",
-          "_url": "/test/items?id=1&withDeleted=false",
+          "_url": "/test/items?id=1",
           "hasMore": false,
           "limit": 50,
           "page": 0,
@@ -3596,15 +3587,13 @@ describe("paranoid", () => {
       }
     `);
 
-    expect((await items.read(knex, { id: 1 }, {}, false)).deletedAt).not.toBe(
-      null
-    );
+    expect((await items.readOne(knex, { id: 1 }, {})).deletedAt).not.toBe(null);
 
     expect(
-      (await items.read(knex, { withDeleted: true }, {})).data.length
+      (await items.readMany(knex, { withDeleted: true }, {})).length
     ).toMatchInlineSnapshot(`1`);
     expect(
-      (await items.read(knex, { withDeleted: false }, {})).data.length
+      (await items.readMany(knex, { withDeleted: false }, {})).length
     ).toMatchInlineSnapshot(`0`);
   });
 
@@ -3721,7 +3710,7 @@ describe("hidden columns", () => {
 
     await items.init(knex);
 
-    expect(await items.read(knex, {}, {})).toMatchInlineSnapshot(`
+    expect(await items.readMany(knex, {}, {})).toMatchInlineSnapshot(`
       Object {
         "data": Array [
           Object {
@@ -3811,7 +3800,7 @@ describe("uuid columns", () => {
 
     await items.init(knex);
 
-    expect(await items.read(knex, {}, {})).toMatchInlineSnapshot(`
+    expect(await items.readMany(knex, {}, {})).toMatchInlineSnapshot(`
       Object {
         "data": Array [
           Object {
@@ -4301,7 +4290,7 @@ describe("self references", () => {
     `);
 
     queries = [];
-    expect(await items.read(knex, { include: "parentItem" }, {}))
+    expect(await items.readMany(knex, { include: "parentItem" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -4375,7 +4364,7 @@ describe("self references", () => {
     `);
 
     queries = [];
-    expect(await items.read(knex, { include: "items" }, {}))
+    expect(await items.readMany(knex, { include: "items" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -4475,7 +4464,7 @@ describe("sorts", () => {
     await items.init(knex);
 
     queries = [];
-    expect(await items.read(knex, { sort: "-key1" }, {}))
+    expect(await items.readMany(knex, { sort: "-key1" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -4525,7 +4514,7 @@ describe("sorts", () => {
     `);
 
     queries = [];
-    expect(await items.read(knex, { sort: ["key2", "-key1"] }, {}))
+    expect(await items.readMany(knex, { sort: ["key2", "-key1"] }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -4575,7 +4564,7 @@ describe("sorts", () => {
     `);
 
     queries = [];
-    expect(await items.read(knex, { sort: "bogus" }, {}))
+    expect(await items.readMany(knex, { sort: "bogus" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -4656,7 +4645,7 @@ describe("pagination", () => {
     const {
       data: [item1],
       meta: meta1,
-    } = await items.read(knex, { sort: ["-key1", "key2"] }, {});
+    } = await items.readMany(knex, { sort: ["-key1", "key2"] }, {});
     expect(meta1).toMatchInlineSnapshot(`
       Object {
         "_collection": "test/items",
@@ -4695,7 +4684,7 @@ describe("pagination", () => {
     const {
       data: [item2],
       meta: meta2,
-    } = await items.read(knex, params, {});
+    } = await items.readMany(knex, params, {});
     expect(meta2).toMatchInlineSnapshot(`
       Object {
         "_collection": "test/items",
@@ -4770,7 +4759,7 @@ describe("in public schema", () => {
     `);
 
     queries = [];
-    expect(await items.read(knex, {}, {})).toMatchInlineSnapshot(`
+    expect(await items.readMany(knex, {}, {})).toMatchInlineSnapshot(`
       Object {
         "data": Array [
           Object {

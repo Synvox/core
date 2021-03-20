@@ -1,12 +1,12 @@
-import Knex from 'knex';
-import { knexHelpers } from '../src';
-import { Table } from '../src/Table';
-import withTimestamps from '../src/plugins/withTimestamps';
+import Knex from "knex";
+import { knexHelpers } from "../src";
+import { Table } from "../src/Table";
+import withTimestamps from "../src/plugins/withTimestamps";
 
 let queries: string[] = [];
 
 const knex = Knex({
-  client: 'pg',
+  client: "pg",
   connection: {
     database: process.env.USER,
   },
@@ -18,8 +18,8 @@ const knex = Knex({
     },
   },
   pool: {
-    afterCreate: function(conn: any, done: any) {
-      conn.query('SET TIME ZONE -6;', function(err: any) {
+    afterCreate: function (conn: any, done: any) {
+      conn.query("SET TIME ZONE -6;", function (err: any) {
         done(err, conn);
       });
     },
@@ -41,50 +41,40 @@ afterAll(async () => {
   await knex.destroy();
 });
 
-describe('withTimestamps plugin', () => {
+describe("withTimestamps plugin", () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('updates timestamps on write', async () => {
-    await knex.schema.withSchema('test_plugins').createTable('users', t => {
-      t.bigIncrements('id').primary();
-      t.timestamp('updated_at')
-        .defaultTo('1999-01-08 04:05:06')
-        .notNullable();
-      t.timestamp('created_at')
-        .defaultTo('1999-01-08 04:05:06')
-        .notNullable();
+  it("updates timestamps on write", async () => {
+    await knex.schema.withSchema("test_plugins").createTable("users", (t) => {
+      t.bigIncrements("id").primary();
+      t.timestamp("updated_at").defaultTo("1999-01-08 04:05:06").notNullable();
+      t.timestamp("created_at").defaultTo("1999-01-08 04:05:06").notNullable();
     });
 
-    await knex.schema.withSchema('test_plugins').createTable('posts', t => {
-      t.bigIncrements('id').primary();
-      t.bigInteger('user_id')
-        .references('id')
-        .inTable('test_plugins.users')
+    await knex.schema.withSchema("test_plugins").createTable("posts", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("user_id")
+        .references("id")
+        .inTable("test_plugins.users")
         .notNullable();
-      t.text('body')
-        .notNullable()
-        .defaultTo('');
-      t.timestamp('updated_at')
-        .defaultTo('1999-01-08 04:05:06')
-        .notNullable();
-      t.timestamp('created_at')
-        .defaultTo('1999-01-08 04:05:06')
-        .notNullable();
+      t.text("body").notNullable().defaultTo("");
+      t.timestamp("updated_at").defaultTo("1999-01-08 04:05:06").notNullable();
+      t.timestamp("created_at").defaultTo("1999-01-08 04:05:06").notNullable();
     });
 
     const users = new Table(
       withTimestamps({
-        schemaName: 'testPlugins',
-        tableName: 'users',
+        schemaName: "testPlugins",
+        tableName: "users",
       })
     );
 
     const posts = new Table(
       withTimestamps({
-        schemaName: 'testPlugins',
-        tableName: 'posts',
+        schemaName: "testPlugins",
+        tableName: "posts",
       })
     );
 
@@ -94,8 +84,8 @@ describe('withTimestamps plugin', () => {
     posts.linkTables([users, posts]);
 
     jest
-      .spyOn(global.Date, 'now')
-      .mockImplementation(() => Date.parse('2021-01-01T01:01:00.000Z'));
+      .spyOn(global.Date, "now")
+      .mockImplementation(() => Date.parse("2021-01-01T01:01:00.000Z"));
 
     queries = [];
     expect(
@@ -194,8 +184,8 @@ describe('withTimestamps plugin', () => {
     `);
 
     jest
-      .spyOn(global.Date, 'now')
-      .mockImplementation(() => Date.parse('2021-01-02T01:01:00.000Z'));
+      .spyOn(global.Date, "now")
+      .mockImplementation(() => Date.parse("2021-01-02T01:01:00.000Z"));
 
     queries = [];
     expect(
@@ -278,22 +268,18 @@ describe('withTimestamps plugin', () => {
     `);
   });
 
-  it('does not break beforeUpdate', async () => {
-    await knex.schema.withSchema('test_plugins').createTable('items', t => {
-      t.bigIncrements('id').primary();
-      t.timestamp('updated_at')
-        .defaultTo('1999-01-08 04:05:06')
-        .notNullable();
-      t.timestamp('created_at')
-        .defaultTo('1999-01-08 04:05:06')
-        .notNullable();
+  it("does not break beforeUpdate", async () => {
+    await knex.schema.withSchema("test_plugins").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.timestamp("updated_at").defaultTo("1999-01-08 04:05:06").notNullable();
+      t.timestamp("created_at").defaultTo("1999-01-08 04:05:06").notNullable();
     });
 
     const result: any[][] = [];
     const items = new Table<any>(
       withTimestamps({
-        schemaName: 'testPlugins',
-        tableName: 'items',
+        schemaName: "testPlugins",
+        tableName: "items",
         async beforeUpdate(_trx, context, mode, draft, current) {
           result.push([context, mode, draft, current]);
         },
@@ -303,7 +289,7 @@ describe('withTimestamps plugin', () => {
     await items.init(knex);
 
     queries = [];
-    expect(await items.write(knex, {}, { context: 'value' }))
+    expect(await items.write(knex, {}, { context: "value" }))
       .toMatchInlineSnapshot(`
       Object {
         "changes": Array [
@@ -351,34 +337,30 @@ describe('withTimestamps plugin', () => {
     `);
   });
 
-  it('provides ?since param', async () => {
-    await knex.schema.withSchema('test_plugins').createTable('items', t => {
-      t.bigIncrements('id').primary();
-      t.timestamp('updated_at')
-        .defaultTo('1999-01-08 04:05:06')
-        .notNullable();
-      t.timestamp('created_at')
-        .defaultTo('1999-01-08 04:05:06')
-        .notNullable();
+  it("provides ?since param", async () => {
+    await knex.schema.withSchema("test_plugins").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.timestamp("updated_at").defaultTo("1999-01-08 04:05:06").notNullable();
+      t.timestamp("created_at").defaultTo("1999-01-08 04:05:06").notNullable();
     });
 
-    await knex('testPlugins.items').insert({});
+    await knex("testPlugins.items").insert({});
 
-    await knex('testPlugins.items').insert({
-      updatedAt: '1999-01-12 04:05:06',
+    await knex("testPlugins.items").insert({
+      updatedAt: "1999-01-12 04:05:06",
     });
 
     const items = new Table<any>(
       withTimestamps({
-        schemaName: 'testPlugins',
-        tableName: 'items',
+        schemaName: "testPlugins",
+        tableName: "items",
       })
     );
 
     await items.init(knex);
 
     queries = [];
-    expect(await items.read(knex, { since: '1999-01-01 04:05:06' }, {}))
+    expect(await items.readMany(knex, { since: "1999-01-01 04:05:06" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -420,7 +402,7 @@ describe('withTimestamps plugin', () => {
     `);
 
     queries = [];
-    expect(await items.read(knex, { since: '1999-01-10 04:05:06' }, {}))
+    expect(await items.readMany(knex, { since: "1999-01-10 04:05:06" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [
@@ -454,7 +436,7 @@ describe('withTimestamps plugin', () => {
     `);
 
     queries = [];
-    expect(await items.read(knex, { since: 'something bogus' }, {}))
+    expect(await items.readMany(knex, { since: "something bogus" }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "data": Array [

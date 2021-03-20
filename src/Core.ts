@@ -135,11 +135,10 @@ export class Core<Context> {
           wrap(async (req, res) => {
             const knex = await this.getKnex("read");
             const context = this.getContext(req, res);
-            const row = await table.read(
+            const row = await table.readOne(
               knex,
               { ...req.query, ...req.params, include: [getterName] },
-              context,
-              false
+              context
             );
 
             return {
@@ -160,11 +159,10 @@ export class Core<Context> {
           const knex = await this.getKnex("read");
           const context = this.getContext(req, res);
           return {
-            data: await table.read(
+            data: await table.readOne(
               knex,
               { ...req.query, ...req.params },
-              context,
-              false
+              context
             ),
           };
         })
@@ -175,7 +173,7 @@ export class Core<Context> {
         wrap(async (req, res) => {
           const knex = await this.getKnex("read");
           const context = this.getContext(req, res);
-          return await table.read(knex, req.query, context);
+          return await table.readMany(knex, req.query, context);
         })
       );
 
