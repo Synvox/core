@@ -1,8 +1,8 @@
-import { Request, Response } from 'express';
-import aws from 'aws-sdk';
-import { wrap } from './Core';
+import { Request, Response } from "express";
+import aws from "aws-sdk";
+import { wrap } from "./wrap";
 
-export default function uploads(
+export default function upload(
   handler: (
     req: Request,
     res: Response,
@@ -13,9 +13,9 @@ export default function uploads(
   ) => Promise<any>,
   {
     endpointUrl,
-    S3_BUCKET = process.env.S3_BUCKET || '',
-    AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID || '',
-    AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY || '',
+    S3_BUCKET = process.env.S3_BUCKET,
+    AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID || "",
+    AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY || "",
   }: {
     endpointUrl: string;
     S3_BUCKET?: string;
@@ -34,8 +34,7 @@ export default function uploads(
       const endpoint = new aws.Endpoint(endpointUrl);
 
       const s3 = new aws.S3({
-        // s3 doesn't seem to have this typed right
-        endpoint: (endpoint as unknown) as string,
+        endpoint: endpoint,
         accessKeyId: AWS_ACCESS_KEY_ID,
         secretAccessKey: AWS_SECRET_ACCESS_KEY,
       });
@@ -45,19 +44,18 @@ export default function uploads(
         Key: fileName,
         Expires: 60,
         ContentType: fileType,
-        ACL: 'public-read',
+        ACL: "public-read",
       };
 
       const getSignedUrl = (name: string, params: any) =>
         new Promise((resolve, reject) => {
-          //@ts-ignore
           s3.getSignedUrl(name, params, (err, data) => {
             if (err) return reject(err);
             resolve(data);
           });
         });
 
-      const signedUrl = (await getSignedUrl('putObject', s3Params)) as string;
+      const signedUrl = (await getSignedUrl("putObject", s3Params)) as string;
 
       return signedUrl;
     };

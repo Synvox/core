@@ -1,0 +1,175 @@
+import { EventEmitter } from "events";
+import { Request, Response, Router } from "express";
+import { Knex } from "knex";
+import { mixed, object, BaseSchema } from "yup";
+import { Table } from "./Table";
+
+export class Relation {
+  schemaName: string;
+  tableName: string;
+  columnName: string;
+  referencesSchema: string;
+  referencesTable: string;
+  referencesColumnName: string;
+  deleteRule: string;
+  updateRule: string;
+  constructor(def: RelationDef) {
+    this.schemaName = def.schemaName;
+    this.tableName = def.tableName;
+    this.columnName = def.columnName;
+    this.referencesSchema = def.referencesSchema;
+    this.referencesTable = def.referencesTable;
+    this.referencesColumnName = def.referencesColumnName;
+    this.deleteRule = def.deleteRule;
+    this.updateRule = def.updateRule;
+  }
+}
+
+export type ShouldEventBeSent<Context, T> = (
+  isVisible: () => Promise<boolean>,
+  event: ChangeSummary<T>,
+  context: Context
+) => Promise<boolean>;
+
+export type ChangeSummary<T> = {
+  mode: Mode;
+  schemaName: string;
+  tableName: string;
+  row: T;
+};
+
+export type ContextFactory<Context> = (req: Request, res: Response) => Context;
+
+export type Mixed = ReturnType<typeof mixed>;
+export type ObjectSchema = ReturnType<typeof object>;
+
+export type Mode = "insert" | "read" | "update" | "delete";
+
+export type Policy<Context> = (
+  this: Table<Context>,
+  query: Knex.QueryBuilder,
+  context: Context,
+  mode: Mode
+) => Promise<void>;
+
+export type YupSchema = { [columnName: string]: BaseSchema };
+
+export type IdModifier<Context> = (
+  this: Table<Context>,
+  query: Knex.QueryBuilder,
+  context: Context
+) => Promise<void>;
+
+export type IdModifiers<Context> = Record<string, IdModifier<Context>>;
+
+export type QueryModifier<Context> = (
+  this: Table<Context>,
+  value: any,
+  query: Knex.QueryBuilder,
+  context: Context
+) => Promise<void>;
+export type QueryModifiers<Context> = Record<string, QueryModifier<Context>>;
+
+export type Setter<Context> = (
+  trx: Knex.Transaction,
+  value: any,
+  row: any,
+  context: Context
+) => Promise<void>;
+
+export type Setters<Context> = Record<string, Setter<Context>>;
+
+export type EagerGetter<Context> = (
+  this: Table<Context>,
+  stmt: Knex.QueryBuilder,
+  context: Context
+) => Promise<void>;
+
+export type EagerGetters<Context> = Record<string, EagerGetter<Context>>;
+
+export type Getter<Context> = (row: any, context: Context) => Promise<any>;
+
+export type Getters<Context> = Record<string, Getter<Context>>;
+
+export type BeforeUpdate<Context> = (
+  this: Table<Context>,
+  trx: Knex.Transaction,
+  context: ReturnType<ContextFactory<Context>>,
+  mode: "insert" | "update" | "delete",
+  draft: any,
+  current: any
+) => Promise<void>;
+
+export type AfterUpdate<Context> = (
+  this: Table<Context>,
+  trx: Knex.Transaction,
+  context: ReturnType<ContextFactory<Context>>,
+  mode: "insert" | "update" | "delete",
+  next: any,
+  previous: any
+) => Promise<void>;
+
+export type Column = {
+  name: string;
+  type: string;
+  nullable: boolean;
+  defaultValue: string | null;
+  length: number;
+};
+
+export type Columns = Record<string, Column>;
+
+export type RelationDef = {
+  schemaName: string;
+  tableName: string;
+  columnName: string;
+  referencesSchema: string;
+  referencesTable: string;
+  referencesColumnName: string;
+  deleteRule: string;
+  updateRule: string;
+};
+
+export type Relations = Record<string, Relation>;
+
+export type RelatedTable<Context> = {
+  name: string;
+  relation: Relation;
+  table: Table<Context>;
+};
+
+export type RelatedTables<Context> = Record<string, RelatedTable<Context>>;
+
+export type TableDef<T> = { tableName: string } & Partial<{
+  schemaName: string;
+  tenantIdColumnName: string | null;
+  idColumnName: string;
+  policy: Policy<T>;
+  schema: YupSchema;
+  path: string;
+  readOnlyColumns: string[];
+  hiddenColumns: string[];
+  paranoid: boolean;
+  router: Router;
+  idModifiers: IdModifiers<T>;
+  queryModifiers: QueryModifiers<T>;
+  setters: Setters<T>;
+  eagerGetters: EagerGetters<T>;
+  getters: Getters<T>;
+  inverseOfColumnName: Record<string, string>;
+  beforeUpdate: BeforeUpdate<T>;
+  afterUpdate: AfterUpdate<T>;
+  baseUrl: string;
+  forwardQueryParams: string[];
+  columns: Columns;
+  uniqueColumns: string[][];
+  relations: Relations;
+  idGenerator?: () => any;
+  eventEmitter?: EventEmitter;
+  defaultParams?: (
+    context: T,
+    mode: Omit<Mode, "delete">
+  ) => Promise<Partial<any>>;
+}>;
+
+export type KnexGetter = (mode: "read" | "write" | "schema") => Promise<Knex>;

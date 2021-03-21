@@ -5,3 +5,8 @@ dist
 coverage
 __test_schema.json
 __ts_out
+
+test.ignore.json
+test.ignore1.ts
+test.ignore2.ts
+test.ignore3.ts

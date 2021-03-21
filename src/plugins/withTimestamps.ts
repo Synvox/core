@@ -1,15 +1,13 @@
-import { PartialTable } from '../Table';
+import { TableDef } from '../types';
 
 /**
  * Updates created_at and updated_at timestamps on update and insert
  * Adds a ?since=timestamp query parameter
  * @example
- *     core.register(withTimestamps({ ... table config ... }))
+ *     core.table(withTimestamps({ ... table config ... }))
  * @param table
  */
-export default function withTimestamps<T>(
-  table: PartialTable<T>
-): PartialTable<T> {
+export default function withTimestamps<T>(table: TableDef<T>): TableDef<T> {
   return {
     ...table,
     queryModifiers: {
