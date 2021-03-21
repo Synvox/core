@@ -5,9 +5,10 @@ import {
   StatusError,
   NotFoundError,
   BadRequestError,
-  UnauthorizedError
+  UnauthorizedError,
 } from "./errors";
 import withTimestamps from "./plugins/withTimestamps";
+import upload from "./upload";
 
 export {
   Core,
@@ -17,5 +18,6 @@ export {
   NotFoundError,
   BadRequestError,
   UnauthorizedError,
-  withTimestamps
+  withTimestamps,
+  upload,
 };
