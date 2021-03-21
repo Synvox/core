@@ -91,14 +91,6 @@ export type Getter<Context> = (row: any, context: Context) => Promise<any>;
 
 export type Getters<Context> = Record<string, Getter<Context>>;
 
-export type Method<Context> = (
-  row: any,
-  context: Context,
-  body: any
-) => Promise<any>;
-
-export type Methods<Context> = Record<string, Method<Context>>;
-
 export type BeforeUpdate<Context> = (
   this: Table<Context>,
   trx: Knex.Transaction,
@@ -158,14 +150,12 @@ export type TableDef<T> = { tableName: string } & Partial<{
   readOnlyColumns: string[];
   hiddenColumns: string[];
   paranoid: boolean;
-  allowUpserts: boolean;
   router: Router;
   idModifiers: IdModifiers<T>;
   queryModifiers: QueryModifiers<T>;
   setters: Setters<T>;
   eagerGetters: EagerGetters<T>;
   getters: Getters<T>;
-  methods: Methods<T>;
   inverseOfColumnName: Record<string, string>;
   beforeUpdate: BeforeUpdate<T>;
   afterUpdate: AfterUpdate<T>;
@@ -176,6 +166,10 @@ export type TableDef<T> = { tableName: string } & Partial<{
   relations: Relations;
   idGenerator?: () => any;
   eventEmitter?: EventEmitter;
+  defaultParams?: (
+    context: T,
+    mode: Omit<Mode, "delete">
+  ) => Promise<Partial<any>>;
 }>;
 
 export type KnexGetter = (mode: "read" | "write" | "schema") => Promise<Knex>;

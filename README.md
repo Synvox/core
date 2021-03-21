@@ -1,103 +1,126 @@
-# TSDX User Guide
+# `@synvox/core`
 
-Congrats! You just saved yourself hours of work by bootstrapping this project with TSDX. Let’s get you oriented with what’s here and how to use it.
+Core is a middleware for `express` that creates restful endpoints automatically. In development, Core will read your database schema and store its structure in a JSON file. It uses this information to create endpoints to read and write to these tables.
 
-> This TSDX setup is meant for developing libraries (not apps!) that can be published to NPM. If you’re looking to build a Node app, you could use `ts-node-dev`, plain `ts-node`, or simple `tsc`.
-
-> If you’re new to TypeScript, checkout [this handy cheatsheet](https://devhints.io/typescript)
-
-## Commands
-
-TSDX scaffolds your new library inside `/src`.
-
-To run TSDX, use:
-
-```bash
-npm start # or yarn start
-```
-
-This builds to `/dist` and runs the project in watch mode so any edits you save inside `src` causes a rebuild to `/dist`.
-
-To do a one-off build, use `npm run build` or `yarn build`.
-
-To run tests, use `npm test` or `yarn test`.
-
-## Configuration
-
-Code quality is set up for you with `prettier`, `husky`, and `lint-staged`. Adjust the respective fields in `package.json` accordingly.
-
-### Jest
-
-Jest tests are set up to run with `npm test` or `yarn test`.
-
-### Bundle Analysis
-
-[`size-limit`](https://github.com/ai/size-limit) is set up to calculate the real cost of your library with `npm run size` and visualize the bundle with `npm run analyze`.
-
-#### Setup Files
-
-This is the folder structure we set up for you:
-
-```txt
-/src
-  index.tsx       # EDIT THIS
-/test
-  blah.test.tsx   # EDIT THIS
-.gitignore
-package.json
-README.md         # EDIT THIS
-tsconfig.json
-```
-
-### Rollup
-
-TSDX uses [Rollup](https://rollupjs.org) as a bundler and generates multiple rollup configs for various module formats and build settings. See [Optimizations](#optimizations) for details.
-
-### TypeScript
-
-`tsconfig.json` is set up to interpret `dom` and `esnext` types, as well as `react` for `jsx`. Adjust according to your needs.
-
-## Continuous Integration
-
-### GitHub Actions
-
-Two actions are added by default:
-
-- `main` which installs deps w/ cache, lints, tests, and builds on all pushes against a Node and OS matrix
-- `size` which comments cost comparison of your library on every pull request using [`size-limit`](https://github.com/ai/size-limit)
-
-## Optimizations
-
-Please see the main `tsdx` [optimizations docs](https://github.com/palmerhq/tsdx#optimizations). In particular, know that you can take advantage of development-only optimizations:
+## Authentication
 
 ```js
-// ./types/index.d.ts
-declare var __DEV__: boolean;
+const core = new Core((req, res) => {
+  return {
+    async getUser() {
+      return await findUser(req.headers.authorization);
+    },
+  };
+});
 
-// inside your code...
-if (__DEV__) {
-  console.log('foo');
-}
+app.use("/api", core.router());
 ```
 
-You can also choose to install and use [invariant](https://github.com/palmerhq/tsdx#invariant) and [warning](https://github.com/palmerhq/tsdx#warning) functions.
+Core will create a `context` for each request. This `context` is created from the `req` and `res` objects and should provide enough information about the client sending the request, including information about the entity they are authenticating as.
 
-## Module Formats
+You can use any type of authentication library here to populate the `context` object.
 
-CJS, ESModules, and UMD module formats are supported.
+## Authorization
 
-The appropriate paths are configured in `package.json` and `dist/index.js` accordingly. Please report if any issues are found.
+```js
+const core = new Core((req, res) => {
+  return {
+    async getUser() {
+      return await findUser(req.headers.authorization);
+    },
+  };
+});
 
-## Named Exports
+core.table({
+  tableName: "users",
+  async policy(stmt, context, mode) {
+    const user = await context.getUser();
+    stmt.where(`users.id`, user.id);
+  },
+});
 
-Per Palmer Group guidelines, [always use named exports.](https://github.com/palmerhq/typescript#exports) Code split inside your React app instead of your React library.
+app.use("/api", core.router());
 
-## Including Styles
+// GET /api/users -> 200
+```
 
-There are many ways to ship styles, including with CSS-in-JS. TSDX has no opinion on this, configure how you like.
+Core tables have a policy method, where you can modify the query with the context defined earlier. In this case every query to `users` will now have `where users.id = ?` appended with `user.id` added as a binding.
 
-For vanilla CSS, you can include it at the root directory and add it to the `files` section in your `package.json`, so that it can be imported separately by your users and run through their bundler's loader.
+A request's `mode` is also given which is `"insert" | "read" | "update" | "delete"`. You can use this to create common authorization schemes like a twitter clone:
 
-## Publishing to NPM
+```js
+const core = new Core((req, res) => {
+  return {
+    async getUser() {
+      return await findUser(req.headers.authorization);
+    },
+  };
+});
 
-We recommend using [np](https://github.com/sindresorhus/np).
+core.table({
+  tableName: "tweets",
+  async policy(stmt, context, mode) {
+    if (mode === "update") throw new NotAuthorizedError();
+
+    if (mode !== "read") {
+      const user = await context.getUser();
+      stmt.where(`users.id`, user.id);
+    }
+  },
+  async defaultParams(context, mode) {
+    const user = await context.getUser();
+    switch(mode){
+      case: 'insert':
+        return {
+          userId: user.id
+        }
+      default:
+        return {}
+    }
+  },
+});
+
+app.use("/api", core.router());
+
+// POST /api/tweets { body: 'Hello World' } -> 200
+// PUT /api/tweets/:id { body: 'Update' } -> 401
+// GET /api/tweets/:id -> 200
+```
+
+## Querying
+
+```js
+const core = new Core((req, res) => {
+  return {
+    async getUser() {
+      return await findUser(req.headers.authorization);
+    },
+  };
+});
+
+core.table({
+  tableName: "people",
+});
+
+app.use("/api", core.router());
+```
+
+If a client requests
+
+```
+GET /api/products?name=Paper
+```
+
+Core will build a query like:
+
+```sql
+select
+  products.name,
+  products.price
+from products
+where products.name = ?
+order by products.id
+limit ?
+```
+
+Filters for each column on `persons` are avalible as a query param. Additionally, if you need to query given multiple values, use bracket notation: `?id[]=1&id[]=2`.

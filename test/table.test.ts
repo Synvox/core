@@ -4755,3 +4755,125 @@ describe("in public schema", () => {
     `);
   });
 });
+
+describe("defaultParams", () => {
+  it("read", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("userId");
+    });
+
+    await knex("test.items").insert({ userId: "user1" });
+    await knex("test.items").insert({ userId: "user2" });
+    await knex("test.items").insert({ userId: "user3" });
+
+    type Context = {
+      token: string;
+    };
+
+    const items = new Table<Context>({
+      schemaName: "test",
+      tableName: "items",
+      async defaultParams(context, mode) {
+        if (mode === "read")
+          return {
+            userId: context.token,
+          };
+
+        return {};
+      },
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    await items.readMany(knex, {}, { token: "user1" });
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.user_id from test.items where items.user_id = ? order by items.id asc limit ?",
+      ]
+    `);
+  });
+
+  it("insert", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("userId").notNullable();
+    });
+
+    type Context = {
+      token: string;
+    };
+
+    const items = new Table<Context>({
+      schemaName: "test",
+      tableName: "items",
+      async defaultParams(context, mode) {
+        if (mode === "insert")
+          return {
+            userId: context.token,
+          };
+
+        return {};
+      },
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    await items.write(knex, {}, { token: "user1" });
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "insert into test.items (user_id) values (?) returning *",
+        "select items.id, items.user_id from test.items where items.id = ? limit ?",
+      ]
+    `);
+  });
+
+  it("updates", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("userId").notNullable();
+    });
+
+    const [row] = await knex("test.items")
+      .insert({ userId: "old" })
+      .returning("*");
+
+    type Context = {
+      token: string;
+    };
+
+    const items = new Table<Context>({
+      schemaName: "test",
+      tableName: "items",
+      async defaultParams(context, mode) {
+        if (mode === "update")
+          return {
+            userId: context.token,
+          };
+
+        return {};
+      },
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    await items.write(knex, { id: row.id }, { token: "user1" });
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.user_id from test.items where items.id = ? limit ?",
+        "select items.id, items.user_id from test.items where items.id = ? limit ?",
+        "update test.items set user_id = ? where items.id = ?",
+        "select items.id, items.user_id from test.items where items.id = ? limit ?",
+      ]
+    `);
+    expect(await knex("test.items").first()).toMatchInlineSnapshot(`
+      Object {
+        "id": 1,
+        "userId": "user1",
+      }
+    `);
+  });
+});

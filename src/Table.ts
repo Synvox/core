@@ -14,7 +14,6 @@ import {
   Setters,
   EagerGetters,
   Getters,
-  Methods,
   Columns,
   Relations,
   RelatedTable,
@@ -68,14 +67,12 @@ export class Table<Context, T = any> {
   readOnlyColumns: string[];
   hiddenColumns: string[];
   paranoid: boolean;
-  allowUpserts: boolean;
   router: Router;
   idModifiers: IdModifiers<Context>;
   queryModifiers: QueryModifiers<Context>;
   setters: Setters<Context>;
   eagerGetters: EagerGetters<Context>;
   getters: Getters<Context>;
-  methods: Methods<Context>;
   inverseOfColumnName: Record<string, string>;
   columns: Columns;
   uniqueColumns: string[][];
@@ -91,6 +88,10 @@ export class Table<Context, T = any> {
   forwardQueryParams: string[];
   idGenerator?: () => any;
   eventEmitter?: EventEmitter;
+  defaultParams: (
+    context: Context,
+    mode: Omit<Mode, "delete">
+  ) => Promise<Partial<T>>;
   constructor(def: TableDef<Context>) {
     this.path =
       def.path ?? [def.schemaName, def.tableName].filter(Boolean).join("/");
@@ -103,14 +104,12 @@ export class Table<Context, T = any> {
     this.readOnlyColumns = def.readOnlyColumns ?? [];
     this.hiddenColumns = def.hiddenColumns ?? [];
     this.paranoid = def.paranoid ?? false;
-    this.allowUpserts = def.allowUpserts ?? false;
     this.router = def.router ?? Router();
     this.idModifiers = def.idModifiers ?? {};
     this.queryModifiers = def.queryModifiers ?? {};
     this.setters = def.setters ?? {};
     this.eagerGetters = def.eagerGetters ?? {};
     this.getters = def.getters ?? {};
-    this.methods = def.methods ?? {};
     this.inverseOfColumnName = def.inverseOfColumnName ?? {};
     this.columns = def.columns ?? {};
     this.uniqueColumns = def.uniqueColumns ?? [];
@@ -123,6 +122,7 @@ export class Table<Context, T = any> {
     this.forwardQueryParams = def.forwardQueryParams ?? [];
     this.idGenerator = def.idGenerator;
     this.eventEmitter = def.eventEmitter;
+    this.defaultParams = def.defaultParams ?? (async () => ({}));
   }
   private withAlias(alias: string) {
     return Object.assign(new Table<Context, T>(this), this, { alias });
@@ -429,8 +429,18 @@ export class Table<Context, T = any> {
     }) as Result<T> & T;
   }
 
-  async validate(knex: Knex, obj: any, context: Context) {
+  async validate(
+    knex: Knex,
+    obj: any,
+    context: Context
+  ): Promise<[any, Record<string, string>]> {
     const table = this;
+
+    if (obj[this.idColumnName]) {
+      obj = { ...(await this.defaultParams(context, "update")), ...obj };
+    } else {
+      obj = { ...(await this.defaultParams(context, "insert")), ...obj };
+    }
 
     const getYupSchema = () => {
       const schema: { [key: string]: Mixed } = {};
@@ -588,7 +598,7 @@ export class Table<Context, T = any> {
     let existingSchema = object();
     if (table.tenantIdColumnName) {
       if (!obj[table.tenantIdColumnName])
-        return { [table.tenantIdColumnName]: "is required" };
+        return [obj, { [table.tenantIdColumnName]: "is required" }];
       existingSchema = existingSchema.concat(
         object({
           [table.tenantIdColumnName]: postgresTypesToYupType(
@@ -609,7 +619,7 @@ export class Table<Context, T = any> {
 
       const preValidate = await validateGraphAgainstSchema(existingSchema, obj);
 
-      if (Object.keys(preValidate).length > 0) return preValidate;
+      if (Object.keys(preValidate).length > 0) return [obj, preValidate];
 
       const stmt = this.query(knex);
       const params: Record<string, any> = {
@@ -638,10 +648,14 @@ export class Table<Context, T = any> {
     }
 
     const errors = await validateGraphAgainstSchema(getYupSchema(), obj);
-    return errors;
+    return [obj, errors];
   }
 
-  async validateDeep(knex: Knex, obj: any, context: Context) {
+  async validateDeep(
+    knex: Knex,
+    obj: any,
+    context: Context
+  ): Promise<[any, Record<string, string> | undefined]> {
     let errors: Record<string, any> = {};
 
     const refPlaceholderNumber = 0;
@@ -649,9 +663,9 @@ export class Table<Context, T = any> {
 
     if (obj._delete) {
       if (this.tenantIdColumnName && !obj[this.tenantIdColumnName])
-        return { [this.tenantIdColumnName]: "is required" };
+        return [obj, { [this.tenantIdColumnName]: "is required" }];
 
-      return;
+      return [obj, undefined];
     }
 
     const placeholderFor = (table: Table<Context>) => {
@@ -671,20 +685,33 @@ export class Table<Context, T = any> {
       const otherGraph = obj[name];
       if (otherGraph === undefined) continue;
 
-      const otherErrors = await otherTable.validateDeep(
+      const [otherGraphValidated, otherErrors] = await otherTable.validateDeep(
         knex,
         otherGraph,
         context
       );
+
+      obj[name] = otherGraphValidated;
 
       obj[columnName] =
         (otherGraph as any)[this.idColumnName] || placeholderFor(otherTable);
       if (otherErrors) errors[name] = otherErrors;
     }
 
+    const [objValidated, objErrors] = await this.validate(
+      knex,
+      this.filterWritable(obj),
+      context
+    );
+
     errors = {
       ...errors,
-      ...(await this.validate(knex, this.filterWritable(obj), context)),
+      ...objErrors,
+    };
+
+    obj = {
+      ...obj,
+      ...objValidated,
     };
 
     for (let [
@@ -701,7 +728,10 @@ export class Table<Context, T = any> {
       let hadError = false;
 
       for (let [index, otherGraph] of Object.entries(otherGraphs)) {
-        const otherErrors = await otherTable.validateDeep(
+        const [
+          otherGraphValidated,
+          otherErrors,
+        ] = await otherTable.validateDeep(
           knex,
           {
             ...otherGraph,
@@ -710,6 +740,10 @@ export class Table<Context, T = any> {
           },
           context
         );
+
+        //@TODO come back to this
+        // @ts-expect-error
+        otherGraphs[index] = otherGraphValidated;
 
         if (otherErrors) {
           hadError = true;
@@ -720,9 +754,9 @@ export class Table<Context, T = any> {
       if (!hadError) delete errors[name];
     }
 
-    if (Object.keys(errors).length === 0) return undefined;
+    if (Object.keys(errors).length === 0) return [obj, undefined];
 
-    return errors;
+    return [obj, errors];
   }
 
   private async updateDeep(
@@ -1130,6 +1164,11 @@ export class Table<Context, T = any> {
   }
 
   async count(knex: Knex, queryParams: Record<string, any>, context: Context) {
+    queryParams = {
+      ...(await this.defaultParams(context, "read")),
+      ...queryParams,
+    };
+
     const stmt = this.query(knex);
     await this.where(stmt, context, queryParams);
     await this.applyPolicy(stmt, context, "read");
@@ -1142,6 +1181,11 @@ export class Table<Context, T = any> {
   }
 
   async ids(knex: Knex, queryParams: Record<string, any>, context: Context) {
+    queryParams = {
+      ...(await this.defaultParams(context, "read")),
+      ...queryParams,
+    };
+
     const stmt = this.query(knex);
     await this.where(stmt, context, queryParams);
     await this.applyPolicy(stmt, context, "read");
@@ -1194,6 +1238,11 @@ export class Table<Context, T = any> {
       withDeleted = queryParams.withDeleted ?? false,
     }: { withDeleted?: boolean } = {}
   ) {
+    queryParams = {
+      ...(await this.defaultParams(context, "read")),
+      ...queryParams,
+    };
+
     const table = this;
     let { include = [] } = queryParams;
 
@@ -1326,6 +1375,11 @@ export class Table<Context, T = any> {
     queryParams: Record<string, any>,
     context: Context
   ) {
+    queryParams = {
+      ...(await this.defaultParams(context, "read")),
+      ...queryParams,
+    };
+
     let { include = [] } = queryParams;
 
     if (typeof include === "string") include = [include];
@@ -1345,6 +1399,11 @@ export class Table<Context, T = any> {
     queryParams: Record<string, any>,
     context: Context
   ) {
+    queryParams = {
+      ...(await this.defaultParams(context, "read")),
+      ...queryParams,
+    };
+
     let { include = [] } = queryParams;
 
     if (typeof include === "string") include = [include];
@@ -1473,7 +1532,8 @@ export class Table<Context, T = any> {
   }
 
   async write(knex: Knex, obj: T, context: Context) {
-    const errors = await this.validateDeep(knex, obj, context);
+    const [objValidated, errors] = await this.validateDeep(knex, obj, context);
+    obj = objValidated;
     if (errors) {
       throw new BadRequestError({ errors });
     }
