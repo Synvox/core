@@ -9,6 +9,7 @@ import {
 } from "./errors";
 import withTimestamps from "./plugins/withTimestamps";
 import upload from "./upload";
+export * from "./types";
 
 export {
   Core,

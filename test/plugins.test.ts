@@ -1,7 +1,5 @@
 import Knex from "knex";
-import { knexHelpers } from "../src";
-import { Table } from "../src/Table";
-import withTimestamps from "../src/plugins/withTimestamps";
+import { knexHelpers, Table, withTimestamps } from "../src";
 
 let queries: string[] = [];
 
