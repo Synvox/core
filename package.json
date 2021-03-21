@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "main": "./dist/index.js",
   "source": "./src/index.ts",
@@ -9,7 +9,7 @@
     "test": "jest"
   },
   "prettier": {},
-  "name": "core",
+  "name": "@synvox/core",
   "author": "Ryan Allred",
   "devDependencies": {
     "@size-limit/preset-small-lib": "^4.10.1",
