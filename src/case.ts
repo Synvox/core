@@ -1,6 +1,4 @@
-import { caseMethods, transformKey } from './knexHelpers';
+import { camelize, underscore } from "inflection";
 
-export const toCamelCase = (str: string) =>
-  transformKey(str, caseMethods.camel);
-export const toSnakeCase = (str: string) =>
-  transformKey(str, caseMethods.snake);
+export const toCamelCase = (str: string = "") => camelize(str, true);
+export const toSnakeCase = (str: string = "") => underscore(str, false);

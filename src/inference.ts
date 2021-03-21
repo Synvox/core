@@ -1,5 +1,4 @@
 import { Knex } from "knex";
-import { caseMethods, transformKey } from "./knexHelpers";
 import { Column, Columns, Relation, Relations } from "./types";
 import { toSnakeCase, toCamelCase } from "./case";
 
@@ -41,7 +40,7 @@ export async function getColumnInfo(
   const formatted: Columns = columns
     .map((column) => ({
       ...column,
-      name: transformKey(column.name, caseMethods.camel),
+      name: toCamelCase(column.name),
       type: column.type.startsWith("character varying")
         ? "character varying"
         : column.type,
