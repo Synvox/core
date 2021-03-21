@@ -3,7 +3,9 @@ import { createServer } from "http";
 import testListen from "test-listen";
 import express, { Application } from "express";
 import Axios from "axios";
+import EventSource from "eventsource";
 import { knexHelpers, Core, StatusError } from "../src";
+import compression from "compression";
 
 let queries: string[] = [];
 let server: null | ReturnType<typeof createServer> = null;
@@ -605,7 +607,7 @@ describe("listens on server", () => {
   });
 });
 
-describe("gets tenant id", () => {
+describe("forwards params", () => {
   beforeEach(async () => {
     await knex.schema.withSchema("core_test").createTable("orgs", (t) => {
       t.bigIncrements("id").primary();
@@ -671,5 +673,288 @@ describe("gets tenant id", () => {
         },
       }
     `);
+  });
+});
+
+describe("sse", () => {
+  beforeEach(async () => {
+    await knex.schema.withSchema("core_test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
+    });
+    await knex.schema.withSchema("core_test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId")
+        .references("id")
+        .inTable("coreTest.orgs")
+        .notNullable();
+    });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it("provides an sse endpoint", async () => {
+    const [org] = await knex("coreTest.orgs").insert({}).returning("*");
+    await knex("coreTest.test").insert({ orgId: org.id });
+
+    type Context = {};
+
+    const core = new Core<Context>(
+      () => {
+        return {};
+      },
+      async () => knex
+    );
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+      tenantIdColumnName: "orgId",
+    });
+
+    const app = express();
+    app.use("/sse", core.sse());
+    app.use("/:orgId", core.router());
+    const url = await listen(app);
+
+    const axios = Axios.create({ baseURL: url });
+
+    let messages: any[] = [];
+    const eventSource = new EventSource(`${url}/sse`);
+    eventSource.addEventListener("update", (m: any) => {
+      messages.push(JSON.parse(m.data));
+    });
+
+    await axios.post(`/${org.id}/coreTest/test`, {});
+
+    await new Promise<void>((r) => {
+      let count = messages.length;
+      const int = setInterval(() => {
+        if (messages.length !== count) {
+          clearInterval(int);
+          r();
+        }
+      }, 100);
+    });
+
+    expect(messages).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          Object {
+            "mode": "insert",
+            "row": Object {
+              "id": 2,
+              "orgId": 1,
+            },
+            "schemaName": "coreTest",
+            "tableName": "test",
+          },
+        ],
+      ]
+    `);
+
+    eventSource.close();
+  });
+
+  it("works with compression", async () => {
+    const [org] = await knex("coreTest.orgs").insert({}).returning("*");
+    await knex("coreTest.test").insert({ orgId: org.id });
+
+    type Context = {};
+
+    const core = new Core<Context>(
+      () => {
+        return {};
+      },
+      async () => knex
+    );
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+      tenantIdColumnName: "orgId",
+    });
+
+    const app = express();
+    app.use(compression());
+    app.use("/sse", core.sse());
+    app.use("/:orgId", core.router());
+    const url = await listen(app);
+
+    const axios = Axios.create({ baseURL: url });
+
+    let messages: any[] = [];
+    const eventSource = new EventSource(`${url}/sse`);
+    eventSource.addEventListener("update", (m: any) => {
+      messages.push(JSON.parse(m.data));
+    });
+
+    await axios.post(`/${org.id}/coreTest/test`, {});
+
+    await new Promise<void>((r) => {
+      let count = messages.length;
+      const int = setInterval(() => {
+        if (messages.length !== count) {
+          clearInterval(int);
+          r();
+        }
+      }, 100);
+    });
+
+    expect(messages).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          Object {
+            "mode": "insert",
+            "row": Object {
+              "id": 2,
+              "orgId": 1,
+            },
+            "schemaName": "coreTest",
+            "tableName": "test",
+          },
+        ],
+      ]
+    `);
+
+    eventSource.close();
+  });
+
+  it("respects policy", async () => {
+    const [org1] = await knex("coreTest.orgs").insert({}).returning("*");
+    const [org2] = await knex("coreTest.orgs").insert({}).returning("*");
+
+    type Context = { orgId: number };
+
+    const core = new Core<Context>(
+      (req) => {
+        return {
+          orgId: Number(req.params.orgId),
+        };
+      },
+      async () => knex
+    );
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+      tenantIdColumnName: "orgId",
+    });
+
+    const app = express();
+    app.use(compression());
+    app.use(
+      "/:orgId/sse",
+      core.sse(async (isVisible, event, context) => {
+        if (event.row.orgId === context.orgId) return await isVisible();
+        return false;
+      })
+    );
+
+    app.use("/:orgId", core.router());
+    const url = await listen(app);
+
+    const axios = Axios.create({ baseURL: url });
+
+    let messages: any[] = [];
+    const eventSource = new EventSource(`${url}/${org1.id}/sse`);
+    eventSource.addEventListener("update", (m: any) => {
+      messages.push(JSON.parse(m.data));
+    });
+
+    const count = messages.length;
+    await axios.post(`/${org1.id}/coreTest/test`, {});
+    await axios.post(`/${org2.id}/coreTest/test`, {});
+
+    await new Promise<void>((r) => {
+      const int = setInterval(() => {
+        if (messages.length !== count) {
+          clearInterval(int);
+          r();
+        }
+      }, 100);
+    });
+
+    expect(messages).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          Object {
+            "mode": "insert",
+            "row": Object {
+              "id": 1,
+              "orgId": 1,
+            },
+            "schemaName": "coreTest",
+            "tableName": "test",
+          },
+        ],
+      ]
+    `);
+
+    eventSource.close();
+  });
+
+  it("works without a tenant id", async () => {
+    const [org] = await knex("coreTest.orgs").insert({}).returning("*");
+
+    type Context = {};
+
+    const core = new Core<Context>(
+      () => {
+        return {};
+      },
+      async () => knex
+    );
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+    });
+
+    const app = express();
+    app.use(compression());
+    app.use("/sse", core.sse());
+
+    app.use(core.router());
+    const url = await listen(app);
+
+    const axios = Axios.create({ baseURL: url });
+
+    let messages: any[] = [];
+    const eventSource = new EventSource(`${url}/sse`);
+    eventSource.addEventListener("update", (m: any) => {
+      messages.push(JSON.parse(m.data));
+    });
+
+    const count = messages.length;
+    await axios.post(`/coreTest/test?orgId=${org.id}`, {});
+
+    await new Promise<void>((r) => {
+      const int = setInterval(() => {
+        if (messages.length !== count) {
+          clearInterval(int);
+          r();
+        }
+      }, 100);
+    });
+
+    expect(messages).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          Object {
+            "mode": "insert",
+            "row": Object {
+              "id": 1,
+              "orgId": 1,
+            },
+            "schemaName": "coreTest",
+            "tableName": "test",
+          },
+        ],
+      ]
+    `);
+
+    eventSource.close();
   });
 });

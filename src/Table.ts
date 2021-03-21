@@ -1,3 +1,4 @@
+import { EventEmitter } from "events";
 import { Router } from "express";
 import { classify } from "inflection";
 import { Knex } from "knex";
@@ -89,6 +90,7 @@ export class Table<Context, T = any> {
   baseUrl: string;
   forwardQueryParams: string[];
   idGenerator?: () => any;
+  eventEmitter?: EventEmitter;
   constructor(def: TableDef<Context>) {
     this.path =
       def.path ?? [def.schemaName, def.tableName].filter(Boolean).join("/");
@@ -120,6 +122,7 @@ export class Table<Context, T = any> {
     this.baseUrl = def.baseUrl ?? "/";
     this.forwardQueryParams = def.forwardQueryParams ?? [];
     this.idGenerator = def.idGenerator;
+    this.eventEmitter = def.eventEmitter;
   }
   private withAlias(alias: string) {
     return Object.assign(new Table<Context, T>(this), this, { alias });
@@ -1498,6 +1501,8 @@ export class Table<Context, T = any> {
     });
 
     trxRef!.emit("commit");
+
+    if (this.eventEmitter) this.eventEmitter.emit("change", changes);
 
     // return { data, changes };
     return new ChangeResult(data, changes);

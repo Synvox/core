@@ -1,3 +1,4 @@
+import { EventEmitter } from "events";
 import { Request, Response, Router } from "express";
 import { Knex } from "knex";
 import { mixed, object, BaseSchema } from "yup";
@@ -174,6 +175,7 @@ export type TableDef<T> = { tableName: string } & Partial<{
   uniqueColumns: string[][];
   relations: Relations;
   idGenerator?: () => any;
+  eventEmitter?: EventEmitter;
 }>;
 
 export type KnexGetter = (mode: "read" | "write" | "schema") => Promise<Knex>;

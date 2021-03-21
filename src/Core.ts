@@ -1,16 +1,21 @@
 import { EventEmitter } from "events";
 import { promises as fs } from "fs";
-import { ContextFactory, KnexGetter, TableDef } from "./types";
-import { Table } from ".";
-import express, { Router } from "express";
+import express, { Router, Request, Response } from "express";
+import {
+  ChangeSummary,
+  ContextFactory,
+  KnexGetter,
+  ShouldEventBeSent,
+  TableDef,
+} from "./types";
+import { Table, SavedTable } from "./Table";
 import { wrap } from "./wrap";
 import { postgresTypesToJSONTsTypes } from "./lookups";
-import { SavedTable } from "./Table";
 
 export class Core<Context> {
   getContext: ContextFactory<Context>;
   getKnex: KnexGetter;
-  emitter: EventEmitter;
+  eventEmitter: EventEmitter;
   schemaFilePath: string | null;
   loadSchemaFromFile: boolean;
   baseUrl: string;
@@ -23,7 +28,7 @@ export class Core<Context> {
     getContext: ContextFactory<Context>,
     getKnex: KnexGetter,
     options: {
-      emitter?: EventEmitter;
+      eventEmitter?: EventEmitter;
       schemaFilePath?: string | null;
       loadSchemaFromFile?: boolean;
       baseUrl?: string;
@@ -32,7 +37,7 @@ export class Core<Context> {
   ) {
     this.getContext = getContext;
     this.getKnex = getKnex;
-    this.emitter = new EventEmitter();
+    this.eventEmitter = options.eventEmitter ?? new EventEmitter();
     this.schemaFilePath = options.schemaFilePath ?? null;
     this.loadSchemaFromFile =
       options.loadSchemaFromFile ?? process.env.NODE_ENV === "production";
@@ -46,12 +51,112 @@ export class Core<Context> {
     const table = new Table({
       baseUrl: this.baseUrl,
       forwardQueryParams: this.forwardQueryParams,
+      eventEmitter: this.eventEmitter,
       ...tableDef,
     });
 
     this.tables.push(table);
 
     return table;
+  }
+
+  sse(shouldEventBeSent?: ShouldEventBeSent<Context, any>) {
+    const emitter = this.eventEmitter;
+    const sseHandlers = new Set<(changes: ChangeSummary<any>[]) => void>();
+
+    emitter.on("change", (changes: ChangeSummary<any>[]) => {
+      sseHandlers.forEach((handler) => handler(changes));
+    });
+
+    return wrap(async (req: Request, res: Response) => {
+      const knex = await this.getKnex("read");
+
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      });
+
+      res.write("\n");
+      if (res.flush) res.flush();
+
+      const context = this.getContext(req, res);
+
+      const handler = async (changes: ChangeSummary<any>[]) => {
+        const isVisible = async (change: ChangeSummary<any>) => {
+          const table = this.tables.find(
+            (t) =>
+              t.tableName === change.tableName &&
+              t.schemaName === change.schemaName
+          );
+
+          if (!table) return false;
+
+          const stmt = knex(`${table.schemaName}.${table.tableName}`)
+            .where(
+              `${table.tableName}.${table.idColumnName}`,
+              change.row[table.idColumnName]
+            )
+            .first();
+
+          if (table.tenantIdColumnName) {
+            stmt.where(
+              `${table.tableName}.${table.tenantIdColumnName}`,
+              change.row[table.tenantIdColumnName]
+            );
+          }
+
+          await table.policy(stmt, context, "read");
+
+          return Boolean(await stmt);
+        };
+
+        const visibleChanges = (
+          await Promise.all(
+            changes.map(async (change) => {
+              const shouldSend = shouldEventBeSent
+                ? await shouldEventBeSent(
+                    () => isVisible(change),
+                    change,
+                    context
+                  )
+                : await isVisible(change);
+              return shouldSend ? change : null;
+            })
+          )
+        ).filter(Boolean);
+
+        if (visibleChanges.length === 0) return;
+
+        const batch =
+          [
+            `id: ${Date.now()}`,
+            "event: update",
+            `data: ${JSON.stringify(visibleChanges)}`,
+          ].join("\n") + "\n\n";
+
+        res.write(batch);
+
+        if (res.flush) res.flush();
+      };
+
+      const heartbeat = () => {
+        res.write(":\n\n");
+        if (res.flush) res.flush();
+      };
+
+      heartbeat();
+      const interval = setInterval(heartbeat, 10000);
+
+      const onEnd = () => {
+        sseHandlers.delete(handler);
+        clearInterval(interval);
+      };
+
+      sseHandlers.add(handler);
+      req.on("end", onEnd);
+      req.on("close", onEnd);
+    });
   }
 
   private async init() {
