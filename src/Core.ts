@@ -23,6 +23,7 @@ export class Core<Context> {
   tables: Table<Context>[];
   initialized: boolean;
   initializationPromise?: Promise<void>;
+  complexityLimit: number;
 
   constructor(
     getContext: ContextFactory<Context>,
@@ -33,6 +34,7 @@ export class Core<Context> {
       loadSchemaFromFile?: boolean;
       baseUrl?: string;
       forwardQueryParams?: string[];
+      complexityLimit?: number;
     } = {}
   ) {
     this.getContext = getContext;
@@ -45,6 +47,7 @@ export class Core<Context> {
     this.forwardQueryParams = options.forwardQueryParams ?? [];
     this.tables = [];
     this.initialized = false;
+    this.complexityLimit = options.complexityLimit ?? 500;
   }
 
   table(tableDef: TableDef<Context>) {
@@ -52,6 +55,7 @@ export class Core<Context> {
       baseUrl: this.baseUrl,
       forwardQueryParams: this.forwardQueryParams,
       eventEmitter: this.eventEmitter,
+      complexityLimit: this.complexityLimit,
       ...tableDef,
     });
 

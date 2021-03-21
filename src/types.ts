@@ -171,6 +171,8 @@ export type TableDef<T> = { tableName: string } & Partial<{
     mode: Omit<Mode, "delete">
   ) => Promise<Partial<any>>;
   allowUpserts?: boolean;
+  complexityLimit?: number;
+  complexityWeight?: number;
 }>;
 
 export type KnexGetter = (mode: "read" | "write" | "schema") => Promise<Knex>;

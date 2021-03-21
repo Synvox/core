@@ -9,6 +9,7 @@ import {
 import { string } from "yup";
 import { Mode } from "../src/types";
 import QueryString from "qs";
+import { ComplexityError } from "../src/errors";
 
 let queries: string[] = [];
 
@@ -5090,5 +5091,58 @@ describe("upsert", () => {
         "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where contacts.id = ? and contacts.org_id = ? limit ?",
       ]
     `);
+  });
+});
+
+describe("complexity limits", () => {
+  it("stops after a complexity limit is reached", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+    });
+
+    await knex.schema.withSchema("test").alterTable("items", (t) => {
+      t.bigInteger("parentId").references("id").inTable("test.items");
+    });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      complexityLimit: 3,
+    });
+
+    await items.init(knex);
+    items.linkTables([items]);
+
+    queries = [];
+    expect(
+      await items
+        .write(
+          knex,
+          { items: [{ items: [{ items: [{ items: [{ items: [] }] }] }] }] },
+          {}
+        )
+        .catch((e: ComplexityError) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "error": "Complexity limit reached",
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`Array []`);
+
+    queries = [];
+    expect(
+      await items
+        .write(
+          knex,
+          { parent: { parent: { parent: { parent: { parent: {} } } } } },
+          {}
+        )
+        .catch((e: ComplexityError) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "error": "Complexity limit reached",
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`Array []`);
   });
 });

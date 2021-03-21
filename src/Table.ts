@@ -30,7 +30,12 @@ import {
   getUniqueColumnIndexes,
   getRelations,
 } from "./inference";
-import { BadRequestError, UnauthorizedError, NotFoundError } from "./errors";
+import {
+  BadRequestError,
+  UnauthorizedError,
+  NotFoundError,
+  ComplexityError,
+} from "./errors";
 import {
   object,
   array,
@@ -93,6 +98,9 @@ export class Table<Context, T = any> {
     mode: Omit<Mode, "delete">
   ) => Promise<Partial<T>>;
   allowUpserts: boolean;
+  complexityLimit: number;
+  complexityWeight: number;
+
   constructor(def: TableDef<Context>) {
     this.path =
       def.path ?? [def.schemaName, def.tableName].filter(Boolean).join("/");
@@ -125,6 +133,8 @@ export class Table<Context, T = any> {
     this.eventEmitter = def.eventEmitter;
     this.defaultParams = def.defaultParams ?? (async () => ({}));
     this.allowUpserts = def.allowUpserts ?? false;
+    this.complexityLimit = def.complexityLimit ?? 500;
+    this.complexityWeight = def.complexityWeight ?? 1;
   }
   private withAlias(alias: string) {
     return Object.assign(new Table<Context, T>(this), this, { alias });
@@ -656,12 +666,16 @@ export class Table<Context, T = any> {
   async validateDeep(
     knex: Knex,
     obj: any,
-    context: Context
+    context: Context,
+    changesRemaining: number = this.complexityLimit
   ): Promise<[any, Record<string, string> | undefined]> {
     let errors: Record<string, any> = {};
 
     const refPlaceholderNumber = 0;
     const refPlaceholderUUID = "00000000-0000-0000-0000-000000000000";
+
+    changesRemaining -= this.complexityWeight;
+    if (changesRemaining <= 0) throw new ComplexityError();
 
     if (obj._delete) {
       if (this.tenantIdColumnName && !obj[this.tenantIdColumnName])
@@ -690,7 +704,8 @@ export class Table<Context, T = any> {
       const [otherGraphValidated, otherErrors] = await otherTable.validateDeep(
         knex,
         otherGraph,
-        context
+        context,
+        changesRemaining
       );
 
       obj[name] = otherGraphValidated;
@@ -740,7 +755,8 @@ export class Table<Context, T = any> {
             [columnName]:
               (obj as any)[this.idColumnName] || placeholderFor(otherTable),
           },
-          context
+          context,
+          changesRemaining
         );
 
         //@TODO come back to this
