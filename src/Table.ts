@@ -92,6 +92,7 @@ export class Table<Context, T = any> {
     context: Context,
     mode: Omit<Mode, "delete">
   ) => Promise<Partial<T>>;
+  allowUpserts: boolean;
   constructor(def: TableDef<Context>) {
     this.path =
       def.path ?? [def.schemaName, def.tableName].filter(Boolean).join("/");
@@ -123,6 +124,7 @@ export class Table<Context, T = any> {
     this.idGenerator = def.idGenerator;
     this.eventEmitter = def.eventEmitter;
     this.defaultParams = def.defaultParams ?? (async () => ({}));
+    this.allowUpserts = def.allowUpserts ?? false;
   }
   private withAlias(alias: string) {
     return Object.assign(new Table<Context, T>(this), this, { alias });
@@ -1531,9 +1533,94 @@ export class Table<Context, T = any> {
     return paginate(stmt);
   }
 
+  private async fixUpserts(knex: Knex, input: any, context: Context) {
+    const obj = { ...input };
+    const { hasOne, hasMany } = this.relatedTables;
+
+    for (let [
+      key,
+      {
+        relation: { columnName: column },
+        table: otherTable,
+      },
+    ] of Object.entries(hasOne)) {
+      const otherObj = obj[key];
+      if (otherObj === undefined) continue;
+      if (otherObj[otherTable.idColumnName])
+        obj[column] = otherObj[otherTable.idColumnName];
+      obj[key] = await otherTable.fixUpserts(knex, otherObj, context);
+    }
+
+    for (let [
+      key,
+      {
+        relation: { columnName: column },
+        table: otherTable,
+      },
+    ] of Object.entries(hasMany)) {
+      const otherObjs = obj[key];
+      if (otherObjs === undefined || !Array.isArray(otherObjs)) continue;
+
+      obj[key] = await Promise.all(
+        obj[key].map((otherObj: any) =>
+          otherTable.fixUpserts(
+            knex,
+            {
+              ...otherObj,
+              [column]: obj[this.idColumnName] || otherObj[column],
+            },
+            context
+          )
+        )
+      );
+    }
+
+    if (
+      !this.allowUpserts ||
+      obj._delete ||
+      obj[this.idColumnName] ||
+      !this.uniqueColumns.every((columns) =>
+        columns.every((column) => obj[column] != null)
+      )
+    ) {
+      return obj;
+    }
+
+    // if there is a row, see if we can upsert to it
+    for (let columns of this.uniqueColumns) {
+      const upsertCheckStmt = this.query(knex);
+
+      if (this.tenantIdColumnName && obj[this.tenantIdColumnName]) {
+        upsertCheckStmt.where(
+          `${this.alias}.${this.tenantIdColumnName}`,
+          obj[this.tenantIdColumnName]
+        );
+      }
+
+      for (let column of columns) {
+        upsertCheckStmt.where(`${this.alias}.${column}`, obj[column]);
+      }
+
+      this.applyPolicy(upsertCheckStmt, context, "update");
+
+      const visibleConflict = await upsertCheckStmt.first();
+
+      if (visibleConflict) {
+        return {
+          ...visibleConflict,
+          ...obj,
+        };
+      }
+    }
+
+    return obj;
+  }
+
   async write(knex: Knex, obj: T, context: Context) {
+    obj = await this.fixUpserts(knex, obj, context);
     const [objValidated, errors] = await this.validateDeep(knex, obj, context);
     obj = objValidated;
+
     if (errors) {
       throw new BadRequestError({ errors });
     }

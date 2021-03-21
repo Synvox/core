@@ -4877,3 +4877,218 @@ describe("defaultParams", () => {
     `);
   });
 });
+
+describe("upsert", () => {
+  it("allows upserts", async () => {
+    await knex.schema.withSchema("test").createTable("contacts", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("name");
+      t.text("phone").notNullable().unique();
+    });
+
+    await knex("test.contacts").insert({ name: "name1", phone: "123" });
+    await knex("test.contacts").insert({ name: "name2", phone: "456" });
+    await knex("test.contacts").insert({ name: "name3", phone: "789" });
+
+    const contacts = new Table({
+      schemaName: "test",
+      tableName: "contacts",
+      allowUpserts: true,
+    });
+
+    await contacts.init(knex);
+
+    queries = [];
+    expect(await contacts.write(knex, { phone: "123", name: "updated" }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "row": Object {
+              "id": 1,
+              "name": "updated",
+              "phone": "123",
+            },
+            "schemaName": "test",
+            "tableName": "contacts",
+          },
+        ],
+        "data": Object {
+          "_links": Object {},
+          "_type": "test/contacts",
+          "_url": "/test/contacts/1",
+          "id": 1,
+          "name": "updated",
+          "phone": "123",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.phone = ? limit ?",
+        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
+        "select contacts.id, contacts.name, contacts.phone from test.contacts where not (contacts.id = ?) and contacts.phone = ? limit ?",
+        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
+        "update test.contacts set name = ? where contacts.id = ?",
+        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
+      ]
+    `);
+  });
+
+  it("passes through when conflict isn't found", async () => {
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
+    });
+
+    await knex.schema.withSchema("test").createTable("contacts", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs").notNullable();
+      t.text("name");
+      t.text("phone").notNullable().unique();
+    });
+    const [org] = await knex("test.orgs").insert({}).returning("*");
+    const [org2] = await knex("test.orgs").insert({}).returning("*");
+    await knex("test.contacts")
+      .insert({
+        orgId: org2.id,
+        name: "name1",
+        phone: "123",
+      })
+      .returning("*");
+    await knex("test.contacts").insert({
+      orgId: org.id,
+      name: "name2",
+      phone: "456",
+    });
+    await knex("test.contacts").insert({
+      orgId: org2.id,
+      name: "name3",
+      phone: "789",
+    });
+
+    type Context = {
+      orgId: number;
+    };
+
+    const contacts = new Table<Context>({
+      schemaName: "test",
+      tableName: "contacts",
+      allowUpserts: true,
+      async policy(stmt, context) {
+        stmt.where("contacts.orgId", context.orgId);
+      },
+      async defaultParams(context) {
+        return {
+          orgId: context.orgId,
+        };
+      },
+    });
+
+    await contacts.init(knex);
+
+    queries = [];
+    expect(
+      await contacts
+        .write(knex, { name: "updated again", phone: "123" }, { orgId: org.id })
+        .catch((e: BadRequestError) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "phone": "is already in use",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where contacts.phone = ? and contacts.org_id = ? limit ?",
+        "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where contacts.phone = ? limit ?",
+      ]
+    `);
+  });
+
+  it("works with tenant ids", async () => {
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
+    });
+
+    await knex.schema.withSchema("test").createTable("contacts", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs").notNullable();
+      t.text("name");
+      t.text("phone").notNullable();
+      t.unique(["orgId", "phone"]);
+    });
+
+    const [org] = await knex("test.orgs").insert({}).returning("*");
+    await knex("test.contacts").insert({
+      orgId: org.id,
+      name: "name1",
+      phone: "123",
+    });
+    await knex("test.contacts").insert({
+      orgId: org.id,
+      name: "name2",
+      phone: "456",
+    });
+    await knex("test.contacts").insert({
+      orgId: org.id,
+      name: "name3",
+      phone: "789",
+    });
+
+    const contacts = new Table({
+      schemaName: "test",
+      tableName: "contacts",
+      allowUpserts: true,
+      tenantIdColumnName: "orgId",
+    });
+
+    await contacts.init(knex);
+
+    queries = [];
+    expect(
+      await contacts.write(
+        knex,
+        { orgId: org.id, phone: "123", name: "updated" },
+        {}
+      )
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "row": Object {
+              "id": 1,
+              "name": "updated",
+              "orgId": 1,
+              "phone": "123",
+            },
+            "schemaName": "test",
+            "tableName": "contacts",
+          },
+        ],
+        "data": Object {
+          "_links": Object {},
+          "_type": "test/contacts",
+          "_url": "/test/contacts/1?orgId=1",
+          "id": 1,
+          "name": "updated",
+          "orgId": 1,
+          "phone": "123",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where contacts.org_id = ? and contacts.org_id = ? and contacts.phone = ? limit ?",
+        "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where contacts.id = ? and contacts.org_id = ? limit ?",
+        "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where not (contacts.id = ? and contacts.org_id = ?) and contacts.org_id = ? and contacts.phone = ? limit ?",
+        "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where not (contacts.id = ? and contacts.org_id = ?) and contacts.org_id = ? and contacts.phone = ? limit ?",
+        "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where contacts.id = ? and contacts.org_id = ? limit ?",
+        "update test.contacts set name = ? where contacts.id = ? and contacts.org_id = ?",
+        "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where contacts.id = ? and contacts.org_id = ? limit ?",
+      ]
+    `);
+  });
+});
