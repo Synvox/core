@@ -86,7 +86,10 @@ describe("listens on server", () => {
 
     const core = new Core(
       () => ({}),
-      async () => knex
+      async () => knex,
+      {
+        baseUrl: "http://localhost",
+      }
     );
 
     core.table({
@@ -107,7 +110,7 @@ describe("listens on server", () => {
           Object {
             "_links": Object {},
             "_type": "coreTest/test",
-            "_url": "/coreTest/test/1",
+            "_url": "http://localhost/coreTest/test/1",
             "id": 1,
             "isBoolean": false,
             "numberCount": 0,
@@ -116,11 +119,11 @@ describe("listens on server", () => {
         ],
         "meta": Object {
           "_links": Object {
-            "count": "/coreTest/test/count",
-            "ids": "/coreTest/test/ids",
+            "count": "http://localhost/coreTest/test/count",
+            "ids": "http://localhost/coreTest/test/ids",
           },
           "_type": "coreTest/test",
-          "_url": "/coreTest/test",
+          "_url": "http://localhost/coreTest/test",
           "hasMore": false,
           "limit": 50,
           "page": 0,

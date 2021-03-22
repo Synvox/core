@@ -5,8 +5,9 @@
   "source": "./src/index.ts",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "test": "jest"
+    "build": "rm -rf dist && tsc",
+    "test": "jest",
+    "prepublishOnly": "npm run build"
   },
   "prettier": {},
   "name": "@synvox/core",
