@@ -222,7 +222,7 @@ describe("withTimestamps plugin", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id, users.updated_at, users.created_at from test_plugins.users where users.id = ? limit ?",
+        "select users.id, users.updated_at, users.created_at from test_plugins.users where (users.id = ?) limit ?",
         "select users.id, users.updated_at, users.created_at from test_plugins.users where users.id = ? limit ?",
         "update test_plugins.users set updated_at = ? where users.id = ?",
         "select users.id, users.updated_at, users.created_at from test_plugins.users where users.id = ? limit ?",

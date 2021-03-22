@@ -163,7 +163,7 @@ export class Core<Context> {
     });
   }
 
-  private async init() {
+  async init() {
     if (this.initialized) return;
     if (this.initializationPromise) return this.initializationPromise;
 

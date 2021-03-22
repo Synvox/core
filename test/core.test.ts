@@ -958,3 +958,415 @@ describe("sse", () => {
     eventSource.close();
   });
 });
+
+describe("handles advanced queries", () => {
+  beforeEach(async () => {
+    await knex.schema.withSchema("core_test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+      t.boolean("is_boolean").notNullable().defaultTo(false);
+      t.integer("number_count").notNullable().defaultTo(0);
+      t.text("text").notNullable().defaultTo("text");
+    });
+  });
+
+  it("works with filters like < and >", async () => {
+    await knex("coreTest.test").insert({
+      isBoolean: true,
+      numberCount: 10,
+    });
+    await knex("coreTest.test").insert({
+      isBoolean: false,
+      numberCount: 5,
+      text: "quick brown fox",
+    });
+    await knex("coreTest.test").insert({
+      isBoolean: false,
+      numberCount: 2,
+    });
+
+    type Context = {};
+
+    const core = new Core<Context>(
+      () => {
+        return {};
+      },
+      async () => knex
+    );
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+    });
+
+    const app = express();
+    app.use(core.router());
+    await core.init();
+    const url = await listen(app);
+
+    const axios = Axios.create({ baseURL: url });
+
+    queries = [];
+    expect(
+      (
+        await axios
+          .get(`/coreTest/test?numberCount.lte=5`)
+          .catch((e) => e.response)
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "data": Array [
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/2",
+            "id": 2,
+            "isBoolean": false,
+            "numberCount": 5,
+            "text": "quick brown fox",
+          },
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/3",
+            "id": 3,
+            "isBoolean": false,
+            "numberCount": 2,
+            "text": "text",
+          },
+        ],
+        "meta": Object {
+          "_links": Object {
+            "count": "/coreTest/test/count?numberCount.lte=5",
+            "ids": "/coreTest/test/ids?numberCount.lte=5",
+          },
+          "_type": "coreTest/test",
+          "_url": "/coreTest/test?numberCount.lte=5",
+          "hasMore": false,
+          "limit": 50,
+          "page": 0,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.number_count <= ?) order by test.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      (
+        await axios
+          .get(`/coreTest/test?numberCount.lt=5`)
+          .catch((e) => e.response)
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "data": Array [
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/3",
+            "id": 3,
+            "isBoolean": false,
+            "numberCount": 2,
+            "text": "text",
+          },
+        ],
+        "meta": Object {
+          "_links": Object {
+            "count": "/coreTest/test/count?numberCount.lt=5",
+            "ids": "/coreTest/test/ids?numberCount.lt=5",
+          },
+          "_type": "coreTest/test",
+          "_url": "/coreTest/test?numberCount.lt=5",
+          "hasMore": false,
+          "limit": 50,
+          "page": 0,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.number_count < ?) order by test.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      (
+        await axios
+          .get(`/coreTest/test?numberCount.gte=5`)
+          .catch((e) => e.response)
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "data": Array [
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/1",
+            "id": 1,
+            "isBoolean": true,
+            "numberCount": 10,
+            "text": "text",
+          },
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/2",
+            "id": 2,
+            "isBoolean": false,
+            "numberCount": 5,
+            "text": "quick brown fox",
+          },
+        ],
+        "meta": Object {
+          "_links": Object {
+            "count": "/coreTest/test/count?numberCount.gte=5",
+            "ids": "/coreTest/test/ids?numberCount.gte=5",
+          },
+          "_type": "coreTest/test",
+          "_url": "/coreTest/test?numberCount.gte=5",
+          "hasMore": false,
+          "limit": 50,
+          "page": 0,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.number_count >= ?) order by test.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      (
+        await axios
+          .get(`/coreTest/test?numberCount.gt=5`)
+          .catch((e) => e.response)
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "data": Array [
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/1",
+            "id": 1,
+            "isBoolean": true,
+            "numberCount": 10,
+            "text": "text",
+          },
+        ],
+        "meta": Object {
+          "_links": Object {
+            "count": "/coreTest/test/count?numberCount.gt=5",
+            "ids": "/coreTest/test/ids?numberCount.gt=5",
+          },
+          "_type": "coreTest/test",
+          "_url": "/coreTest/test?numberCount.gt=5",
+          "hasMore": false,
+          "limit": 50,
+          "page": 0,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.number_count > ?) order by test.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      (
+        await axios
+          .get(`/coreTest/test?numberCount.neq=5`)
+          .catch((e) => e.response)
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "data": Array [
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/1",
+            "id": 1,
+            "isBoolean": true,
+            "numberCount": 10,
+            "text": "text",
+          },
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/3",
+            "id": 3,
+            "isBoolean": false,
+            "numberCount": 2,
+            "text": "text",
+          },
+        ],
+        "meta": Object {
+          "_links": Object {
+            "count": "/coreTest/test/count?numberCount.neq=5",
+            "ids": "/coreTest/test/ids?numberCount.neq=5",
+          },
+          "_type": "coreTest/test",
+          "_url": "/coreTest/test?numberCount.neq=5",
+          "hasMore": false,
+          "limit": 50,
+          "page": 0,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.number_count <> ?) order by test.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      (
+        await axios
+          .get(`/coreTest/test?numberCount.not.eq=5`)
+          .catch((e) => e.response)
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "data": Array [
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/1",
+            "id": 1,
+            "isBoolean": true,
+            "numberCount": 10,
+            "text": "text",
+          },
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/3",
+            "id": 3,
+            "isBoolean": false,
+            "numberCount": 2,
+            "text": "text",
+          },
+        ],
+        "meta": Object {
+          "_links": Object {
+            "count": "/coreTest/test/count?numberCount.not.eq=5",
+            "ids": "/coreTest/test/ids?numberCount.not.eq=5",
+          },
+          "_type": "coreTest/test",
+          "_url": "/coreTest/test?numberCount.not.eq=5",
+          "hasMore": false,
+          "limit": 50,
+          "page": 0,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (not test.number_count = ?) order by test.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      (
+        await axios
+          .get(`/coreTest/test?text.ilike=%Brown%`)
+          .catch((e) => e.response)
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "data": Array [
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/2",
+            "id": 2,
+            "isBoolean": false,
+            "numberCount": 5,
+            "text": "quick brown fox",
+          },
+        ],
+        "meta": Object {
+          "_links": Object {
+            "count": "/coreTest/test/count?text.ilike=%25Brown%25",
+            "ids": "/coreTest/test/ids?text.ilike=%25Brown%25",
+          },
+          "_type": "coreTest/test",
+          "_url": "/coreTest/test?text.ilike=%25Brown%25",
+          "hasMore": false,
+          "limit": 50,
+          "page": 0,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.text ilike ?) order by test.id asc limit ?",
+      ]
+    `);
+  });
+
+  it("handles 'or's and 'and's", async () => {
+    await knex("coreTest.test").insert({
+      isBoolean: true,
+      numberCount: 10,
+    });
+    await knex("coreTest.test").insert({
+      isBoolean: false,
+      numberCount: 5,
+      text: "quick brown fox",
+    });
+    await knex("coreTest.test").insert({
+      isBoolean: false,
+      numberCount: 2,
+    });
+
+    type Context = {};
+
+    const core = new Core<Context>(
+      () => {
+        return {};
+      },
+      async () => knex
+    );
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+    });
+
+    const app = express();
+    app.use(core.router());
+    await core.init();
+    const url = await listen(app);
+
+    const axios = Axios.create({ baseURL: url });
+
+    queries = [];
+    await axios.get(
+      `/coreTest/test?text.like=%brown%&or[numberCount]=10&or[numberCount.lt]=3`
+    );
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.text like ? or (test.number_count = ? and test.number_count < ?)) order by test.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    await axios.get(`/coreTest/test?id[]=1&or[id][]=2&and[id.not][]=3`);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.id in (?) or (test.id in (?)) and (test.id not in (?))) order by test.id asc limit ?",
+      ]
+    `);
+  });
+});

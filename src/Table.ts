@@ -269,17 +269,72 @@ export class Table<Context, T = any> {
         error: `${this.tenantIdColumnName} is required`,
       });
 
+    function translateOp<Opts extends Record<string, string>>(
+      opts: Opts,
+      selected: string,
+      defaultKey: keyof Opts
+    ) {
+      return opts[selected] ?? opts[defaultKey];
+    }
+
+    const applyFilter = (
+      stmt: Knex.QueryBuilder,
+      params: Record<string, any>
+    ) => {
+      for (let [key, value] of Object.entries(params)) {
+        const [columnName, ...operands] = key.split(".");
+        let not = false;
+        if (operands[0] === "not") {
+          operands.shift();
+          not = true;
+        }
+
+        if (columnName === this.idColumnName && value in this.idModifiers) {
+          // this is an id modifier, and it is async. Ignore it here.
+        } else if (columnName === "or") {
+          stmt.orWhere((stmt) => applyFilter(stmt, value));
+        } else if (columnName === "and") {
+          stmt.andWhere((stmt) => applyFilter(stmt, value));
+        } else if (this.columns[columnName]) {
+          if (Array.isArray(value)) {
+            const method = not ? "whereNotIn" : "whereIn";
+            stmt[method](`${this.alias}.${columnName}`, value);
+          } else {
+            const method = not ? "whereNot" : "where";
+            stmt[method](
+              `${this.alias}.${columnName}`,
+              translateOp(
+                {
+                  eq: "=",
+                  neq: "<>",
+                  lt: "<",
+                  lte: "<=",
+                  gt: ">",
+                  gte: ">=",
+                  like: "like",
+                  ilike: "ilike",
+                },
+                operands[0],
+                "eq"
+              ),
+              value
+            );
+          }
+        }
+      }
+    };
+
     for (let [columnName, value] of Object.entries(params)) {
       if (columnName === this.idColumnName && value in this.idModifiers) {
         await this.idModifiers[value].call(this, stmt, context);
-      } else if (this.columns[columnName]) {
-        if (Array.isArray(value))
-          stmt.whereIn(`${this.alias}.${columnName}`, value);
-        else stmt.where(`${this.alias}.${columnName}`, value);
       } else if (this.queryModifiers[columnName]) {
         await this.queryModifiers[columnName].call(this, value, stmt, context);
       }
     }
+
+    stmt.where((stmt) => {
+      applyFilter(stmt, params);
+    });
 
     if (this.paranoid) {
       if (!params.withDeleted) stmt.where(`${this.alias}.deletedAt`, null);
@@ -309,7 +364,7 @@ export class Table<Context, T = any> {
     return result;
   }
 
-  async processTableRow(
+  private async processTableRow(
     queryParams: Record<string, any>,
     context: Context,
     inputRow: any,
@@ -441,7 +496,7 @@ export class Table<Context, T = any> {
     }) as Result<T> & T;
   }
 
-  async validate(
+  private async validate(
     knex: Knex,
     obj: any,
     context: Context
@@ -663,7 +718,7 @@ export class Table<Context, T = any> {
     return [obj, errors];
   }
 
-  async validateDeep(
+  private async validateDeep(
     knex: Knex,
     obj: any,
     context: Context,
