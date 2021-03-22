@@ -43,7 +43,7 @@ export class Core<Context> {
     this.schemaFilePath = options.schemaFilePath ?? null;
     this.loadSchemaFromFile =
       options.loadSchemaFromFile ?? process.env.NODE_ENV === "production";
-    this.baseUrl = options.baseUrl ?? "/";
+    this.baseUrl = options.baseUrl ?? "";
     this.forwardQueryParams = options.forwardQueryParams ?? [];
     this.tables = [];
     this.initialized = false;
@@ -236,7 +236,7 @@ export class Core<Context> {
 
           return {
             meta: {
-              _url: `${table.baseUrl}${table.path}/count`,
+              _url: `${table.baseUrl}/${table.path}/count`,
             },
             data: count,
           };
@@ -264,7 +264,7 @@ export class Core<Context> {
 
             return {
               meta: {
-                _url: `${table.baseUrl}${table.path}/${
+                _url: `${table.baseUrl}/${table.path}/${
                   row[table.idColumnName]
                 }/${getterName}`,
               },

@@ -127,7 +127,7 @@ export class Table<Context, T = any> {
     this.relatedTables = { hasMany: {}, hasOne: {} };
     this.beforeUpdate = def.beforeUpdate;
     this.afterUpdate = def.afterUpdate;
-    this.baseUrl = def.baseUrl ?? "/";
+    this.baseUrl = def.baseUrl ?? "";
     this.forwardQueryParams = def.forwardQueryParams ?? [];
     this.idGenerator = def.idGenerator;
     this.eventEmitter = def.eventEmitter;
@@ -394,7 +394,7 @@ export class Table<Context, T = any> {
       },
     ] of Object.entries(hasOne)) {
       if (row[column] === null) continue;
-      result[key] = `${table.baseUrl}${table.path}/${row[column]}`;
+      result[key] = `${table.baseUrl}/${table.path}/${row[column]}`;
       const params: { [key: string]: string } = { ...forwardedQueryParams };
       if (tenantId && table.tenantIdColumnName)
         params[table.tenantIdColumnName] = tenantId;
@@ -418,7 +418,7 @@ export class Table<Context, T = any> {
       if (tenantId && table.tenantIdColumnName)
         params[table.tenantIdColumnName] = tenantId;
 
-      result[key] = `${table.baseUrl}${table.path}?${qsStringify(params)}`;
+      result[key] = `${table.baseUrl}/${table.path}?${qsStringify(params)}`;
 
       if (row[key] !== undefined)
         row[key] = await Promise.all(
@@ -446,7 +446,7 @@ export class Table<Context, T = any> {
           context
         );
       }
-      result[getterName] = `${this.baseUrl}${this.path}/${
+      result[getterName] = `${this.baseUrl}/${this.path}/${
         row[this.idColumnName]
       }/${getterName}`;
       const params: { [key: string]: string } = { ...forwardedQueryParams };
@@ -461,7 +461,7 @@ export class Table<Context, T = any> {
     }
 
     for (let getterName in this.eagerGetters) {
-      result[getterName] = `${this.baseUrl}${this.path}/${
+      result[getterName] = `${this.baseUrl}/${this.path}/${
         row[this.idColumnName]
       }/${getterName}`;
       const params: { [key: string]: string } = { ...forwardedQueryParams };
@@ -483,7 +483,7 @@ export class Table<Context, T = any> {
       rowQueryParams.include = selectedGetters;
     }
 
-    let selfUrl = `${this.baseUrl}${this.path}/${row[this.idColumnName]}`;
+    let selfUrl = `${this.baseUrl}/${this.path}/${row[this.idColumnName]}`;
 
     if (Object.keys(rowQueryParams).length > 0) {
       selfUrl += `?${qsStringify(rowQueryParams)}`;
@@ -1279,20 +1279,20 @@ export class Table<Context, T = any> {
         page,
         limit,
         hasMore: results.length >= limit,
-        _url: `${this.baseUrl}${this.path}/ids${
+        _url: `${this.baseUrl}/${this.path}/ids${
           Object.keys(queryParams).length > 0
             ? `?${qsStringify(queryParams)}`
             : ""
         }`,
         _links: {
           ...(results.length >= limit && {
-            nextPage: `${this.baseUrl}${this.path}/ids?${qs.stringify({
+            nextPage: `${this.baseUrl}/${this.path}/ids?${qs.stringify({
               ...queryParams,
               page: page + 1,
             })}`,
           }),
           ...(page !== 0 && {
-            previousPage: `${this.baseUrl}${this.path}/ids?${qs.stringify({
+            previousPage: `${this.baseUrl}/${this.path}/ids?${qs.stringify({
               ...queryParams,
               page: page - 1,
             })}`,
@@ -1553,7 +1553,7 @@ export class Table<Context, T = any> {
         ...(!queryParams.page
           ? {
               ...(results.length >= limit && {
-                nextPage: `${table.baseUrl}${path}?${qsStringify({
+                nextPage: `${table.baseUrl}/${path}?${qsStringify({
                   ...queryParams,
                   cursor: btoa(JSON.stringify(results[results.length - 1])),
                 })}`,
@@ -1561,22 +1561,22 @@ export class Table<Context, T = any> {
             }
           : {
               ...(results.length >= limit && {
-                nextPage: `${table.baseUrl}${path}?${qsStringify({
+                nextPage: `${table.baseUrl}/${path}?${qsStringify({
                   ...queryParams,
                   page: page + 1,
                 })}`,
               }),
               ...(page !== 0 && {
-                previousPage: `${table.baseUrl}${path}?${qsStringify({
+                previousPage: `${table.baseUrl}/${path}?${qsStringify({
                   ...queryParams,
                   page: page - 1,
                 })}`,
               }),
             }),
-        count: `${table.baseUrl}${path}/count${
+        count: `${table.baseUrl}/${path}/count${
           Object.keys(queryParams).length > 0 ? "?" : ""
         }${qsStringify(queryParams)}`,
-        ids: `${table.baseUrl}${path}/ids${
+        ids: `${table.baseUrl}/${path}/ids${
           Object.keys(queryParams).length > 0 ? "?" : ""
         }${qsStringify(queryParams)}`,
       };
@@ -1591,7 +1591,7 @@ export class Table<Context, T = any> {
         page,
         limit,
         hasMore: results.length >= limit,
-        url: `${table.baseUrl}${path}${
+        url: `${table.baseUrl}/${path}${
           Object.keys(queryParams).length > 0
             ? `?${qsStringify(queryParams)}`
             : ""
