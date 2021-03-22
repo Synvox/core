@@ -1335,9 +1335,9 @@ export class Table<Context, T = any> {
 
       for (let includeTable of include) {
         let isOne = true;
-        let ref = Object.values(table.relatedTables.hasOne).find(
-          (ref) => ref.name === includeTable
-        );
+        let ref: RelatedTable<Context> | undefined = Object.values(
+          table.relatedTables.hasOne
+        ).find((ref) => ref.name === includeTable);
 
         if (!ref) {
           isOne = false;
@@ -1369,7 +1369,7 @@ export class Table<Context, T = any> {
         if (isOne) {
           subQuery
             .where(
-              `${alias}.${table.idColumnName}`,
+              `${alias}.${ref.table.idColumnName}`,
               knex.ref(`${table.alias}.${ref.relation.columnName}`)
             )
             .limit(1);
@@ -1384,7 +1384,7 @@ export class Table<Context, T = any> {
 
         const aliasOuter = `${alias}_sub_query`;
 
-        await table.withAlias(alias).applyPolicy(subQuery, context, "read");
+        await ref.table.withAlias(alias).applyPolicy(subQuery, context, "read");
 
         const { bindings, sql } = subQuery.toSQL();
 
