@@ -533,16 +533,7 @@ export class Table<Context, T = any> {
           (column === this.idColumnName && this.idGenerator);
         const isSetAsNull = obj[column] === null;
         if (notNullable && (!hasDefault || isSetAsNull)) {
-          type = type
-            .test(
-              "is-null",
-              // eslint-disable-next-line no-template-curly-in-string
-              "${path} is required",
-              (value: any) => {
-                return value !== null && value !== undefined;
-              }
-            )
-            .required();
+          type = type.required();
         }
 
         schema[column] = type;
@@ -599,41 +590,19 @@ export class Table<Context, T = any> {
       return object(schema);
     };
 
-    const validateGraphAgainstSchema = async (
+    const validateGraphAgainstSchema: (
       schema: ObjectSchema<ObjectShape>,
       graph: any
-    ) => {
+    ) => Promise<[any, any]> = async (schema, graph) => {
       let errors: Record<string, any> = {};
-
-      function isNumeric(str: string) {
-        return !isNaN((str as unknown) as number) && !isNaN(parseFloat(str));
-      }
-
       try {
-        for (let key in schema.describe().fields) {
-          if (graph[key] !== null && graph[key] !== undefined) {
-            const validator = (schema.describe().fields as any)[key];
-            if (validator.type === "number" && isNumeric(graph[key])) {
-              graph[key] = Number(graph[key]);
-            }
-            if (
-              validator.type === "date" &&
-              !isNaN(new Date(graph[key]).getTime())
-            ) {
-              graph[key] = new Date(graph[key]);
-            }
-            if (validator.type === "boolean") {
-              graph[key] = Boolean(graph[key]) && graph[key] !== "false";
-            }
-          }
-        }
-
-        await schema.validate(graph, {
+        const castValue = await schema.validate(graph, {
           abortEarly: false,
-          strict: true,
+          strict: false,
+          context,
         });
 
-        return {};
+        return [castValue, {}];
       } catch (err) {
         // in case a validator crashes we want to surface that through express
         /* istanbul ignore next */
@@ -658,7 +627,7 @@ export class Table<Context, T = any> {
             setValue(errors, path, message);
           });
 
-        return errors;
+        return [graph, errors];
       }
     };
 
@@ -684,7 +653,11 @@ export class Table<Context, T = any> {
         })
       );
 
-      const preValidate = await validateGraphAgainstSchema(existingSchema, obj);
+      const [objCast, preValidate] = await validateGraphAgainstSchema(
+        existingSchema,
+        obj
+      );
+      obj = objCast;
 
       if (Object.keys(preValidate).length > 0) return [obj, preValidate];
 
@@ -714,11 +687,10 @@ export class Table<Context, T = any> {
       };
     }
 
-    const errors = await validateGraphAgainstSchema(getYupSchema(), obj);
-    return [obj, errors];
+    return await validateGraphAgainstSchema(getYupSchema(), obj);
   }
 
-  private async validateDeep(
+  async validateDeep(
     knex: Knex,
     obj: any,
     context: Context,

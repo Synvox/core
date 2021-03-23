@@ -304,7 +304,7 @@ describe("listens on server", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "errors": Object {
-          "numberCount": "must be a \`number\` type, but the final value was: \`\\"not a number\\"\`.",
+          "numberCount": "must be a \`number\` type, but the final value was: \`NaN\` (cast from the value \`\\"not a number\\"\`).",
         },
       }
     `);

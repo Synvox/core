@@ -1002,7 +1002,7 @@ describe("without policies", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "errors": Object {
-          "numberCount": "must be a \`number\` type, but the final value was: \`\\"a\\"\`.",
+          "numberCount": "must be a \`number\` type, but the final value was: \`NaN\` (cast from the value \`\\"a\\"\`).",
         },
       }
     `);
@@ -1115,8 +1115,6 @@ describe("without policies", () => {
       Object {
         "errors": Object {
           "arr": Object {
-            "0": "must be a \`string\` type, but the final value was: \`true\`.",
-            "1": "must be a \`string\` type, but the final value was: \`1\`.",
             "3": "must be a \`string\` type, but the final value was: \`[]\`.",
           },
         },
@@ -1132,7 +1130,7 @@ describe("without policies", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "errors": Object {
-          "id": "must be a \`number\` type, but the final value was: \`\\"abc\\"\`.",
+          "id": "must be a \`number\` type, but the final value was: \`NaN\` (cast from the value \`\\"abc\\"\`).",
         },
       }
     `);
