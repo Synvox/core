@@ -278,6 +278,20 @@ describe("without policies", () => {
         "select test.id, test.is_boolean, test.number_count, test.text from test.test where (test.id = ?) limit ?",
       ]
     `);
+
+    queries = [];
+    expect(
+      await table
+        .readOne(knex, { id: "abc" }, {})
+        .catch((e: BadRequestError) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "id": "must be a \`number\` type, but the final value was: \`NaN\` (cast from the value \`\\"abc\\"\`).",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`Array []`);
   });
 
   it("read relations", async () => {
@@ -3793,6 +3807,62 @@ describe("uuid columns", () => {
           "hasMore": false,
           "limit": 50,
           "page": 0,
+        },
+      }
+    `);
+  });
+
+  it("fails when an invalid type is given", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.uuid("id").primary();
+    });
+
+    await knex("test.items").insert({ id: uuid() });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      idGenerator: uuid,
+    });
+
+    await items.init(knex);
+
+    expect(
+      await items
+        .readOne(knex, { id: "123" }, {})
+        .catch((e: BadRequestError) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "id": "must be a valid UUID",
+        },
+      }
+    `);
+  });
+
+  it("fails when an invalid type is given in a complex query", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.uuid("id").primary();
+    });
+
+    await knex("test.items").insert({ id: uuid() });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      idGenerator: uuid,
+    });
+
+    await items.init(knex);
+
+    expect(
+      await items
+        .readOne(knex, { id: uuid(), or: { id: "abc" } }, {})
+        .catch((e: BadRequestError) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "id": "must be a valid UUID",
         },
       }
     `);

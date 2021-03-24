@@ -302,6 +302,54 @@ export class Table<Context, T = any> {
     return stmt;
   }
 
+  private async validateWhere(
+    params: any,
+    context: Context
+  ): Promise<[any, Record<string, string>]> {
+    const errors: Record<string, string> = {};
+    const clone = { ...params };
+
+    for (let [key, value] of Object.entries(params)) {
+      const [columnName] = key.split(".");
+      if (columnName === "and" || columnName === "or") {
+        const [val, err] = await this.validateWhere(value, context);
+        clone[key] = val;
+        Object.assign(errors, err);
+        continue;
+      }
+
+      if (!(columnName in this.columns)) continue;
+
+      if (
+        columnName === this.idColumnName &&
+        (value as string) in this.idModifiers
+      )
+        continue;
+
+      const schema = object({
+        [columnName]: this.getYupTypeForColumn(columnName),
+      });
+
+      const isArray = Array.isArray(value);
+      const arr: any[] = isArray ? (value as any[]) : [value];
+      const result: any[] = [];
+
+      for (let value of arr) {
+        const [
+          { [columnName]: castValue },
+          columnErrors,
+        ] = await validateAgainst(schema, { [columnName]: value }, context);
+
+        Object.assign(errors, columnErrors);
+        result.push(castValue);
+      }
+
+      Object.assign(clone, { [key]: isArray ? result : result[0] });
+    }
+
+    return [clone, errors];
+  }
+
   private async where(
     stmt: Knex.QueryBuilder,
     context: Context,
@@ -549,23 +597,11 @@ export class Table<Context, T = any> {
     const schema: { [key: string]: Mixed } = {};
 
     for (let [column, info] of Object.entries(table.columns!)) {
-      let type = postgresTypesToYupType(info.type).nullable();
+      let type = this.getYupTypeForColumn(column);
       const notNullable = !info.nullable;
       const hasDefault =
         info.defaultValue !== null ||
         (column === this.idColumnName && this.idGenerator);
-
-      if (type.type === "string" && info.length >= 0) {
-        type = ((type as StringSchema).max(info.length) as unknown) as Mixed;
-      }
-
-      if (table.schema[column]) {
-        type = type.concat(table.schema[column].nullable());
-      }
-
-      if (info.type.endsWith("[]")) {
-        type = array(type);
-      }
 
       if (notNullable && !partial) {
         type = type.test(
@@ -581,6 +617,25 @@ export class Table<Context, T = any> {
     }
 
     return object(schema);
+  }
+
+  getYupTypeForColumn(column: string) {
+    const info = this.columns[column];
+    let type = postgresTypesToYupType(info.type).nullable();
+
+    if (type.type === "string" && info.length >= 0) {
+      type = ((type as StringSchema).max(info.length) as unknown) as Mixed;
+    }
+
+    if (this.schema[column]) {
+      type = type.concat(this.schema[column].nullable());
+    }
+
+    if (info.type.endsWith("[]")) {
+      type = array(type);
+    }
+
+    return type;
   }
 
   private getYupSchemaWithUniqueKeys(knex: Knex) {
@@ -1301,12 +1356,14 @@ export class Table<Context, T = any> {
 
   async read(
     knex: Knex,
-    queryParams: Record<string, any>,
+    input: Record<string, any>,
     context: Context,
-    {
-      withDeleted = queryParams.withDeleted ?? false,
-    }: { withDeleted?: boolean } = {}
+    { withDeleted = input.withDeleted ?? false }: { withDeleted?: boolean } = {}
   ) {
+    let [queryParams, errors] = await this.validateWhere(input, context);
+
+    if (Object.keys(errors).length) throw new BadRequestError({ errors });
+
     queryParams = {
       ...(await this.defaultParams(context, "read")),
       ...queryParams,
