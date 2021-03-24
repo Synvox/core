@@ -318,7 +318,8 @@ export class Table<Context, T = any> {
         continue;
       }
 
-      if (!(columnName in this.columns)) continue;
+      if (!(columnName in this.columns) && !(columnName in this.schema))
+        continue;
 
       if (
         columnName === this.idColumnName &&
