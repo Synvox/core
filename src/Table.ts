@@ -42,6 +42,7 @@ import {
   ValidationError,
   ObjectSchema,
   StringSchema,
+  mixed,
 } from "yup";
 import { postgresTypesToYupType } from "./lookups";
 import { ObjectShape } from "yup/lib/object";
@@ -53,6 +54,48 @@ function qsStringify(val: any) {
     encodeValuesOnly: true,
     arrayFormat: "brackets",
   });
+}
+
+async function validateAgainst<T>(
+  schema: ObjectSchema<ObjectShape>,
+  graph: any,
+  context: T
+): Promise<[any, Record<string, string>]> {
+  let errors: Record<string, any> = {};
+  try {
+    const castValue = await schema.validate(graph, {
+      abortEarly: false,
+      strict: false,
+      context,
+    });
+
+    return [castValue, {}];
+  } catch (err) {
+    // in case a validator crashes we want to surface that through express
+    /* istanbul ignore next */
+    if (!(err instanceof ValidationError)) {
+      throw err;
+    }
+
+    err.inner
+      .map((e) => {
+        const REPLACE_BRACKETS = /\[([^[\]]+)\]/g;
+        const LFT_RT_TRIM_DOTS = /^[.]*|[.]*$/g;
+        const dotPath = e
+          .path!.replace(REPLACE_BRACKETS, ".$1")
+          .replace(LFT_RT_TRIM_DOTS, "");
+
+        return {
+          path: dotPath,
+          message: e.message.slice(e.message.indexOf(" ")).trim(),
+        };
+      })
+      .forEach(({ message, path }) => {
+        setValue(errors, path, message);
+      });
+
+    return [graph, errors];
+  }
 }
 
 export type SavedTable = {
@@ -496,6 +539,104 @@ export class Table<Context, T = any> {
     }) as Result<T> & T;
   }
 
+  getYupSchema({
+    partial = false,
+  }: {
+    partial?: boolean;
+  } = {}) {
+    const table = this;
+
+    const schema: { [key: string]: Mixed } = {};
+
+    for (let [column, info] of Object.entries(table.columns!)) {
+      let type = postgresTypesToYupType(info.type).nullable();
+      const notNullable = !info.nullable;
+      const hasDefault =
+        info.defaultValue !== null ||
+        (column === this.idColumnName && this.idGenerator);
+
+      if (type.type === "string" && info.length >= 0) {
+        type = ((type as StringSchema).max(info.length) as unknown) as Mixed;
+      }
+
+      if (table.schema[column]) {
+        type = type.concat(table.schema[column].nullable());
+      }
+
+      if (info.type.endsWith("[]")) {
+        type = array(type);
+      }
+
+      if (notNullable && !partial) {
+        type = type.test(
+          "null",
+          "${path} is a required field",
+          (v: any) => v !== null
+        );
+
+        if (!hasDefault) type = type.required();
+      }
+
+      schema[column] = type;
+    }
+
+    return object(schema);
+  }
+
+  private getYupSchemaWithUniqueKeys(knex: Knex) {
+    const table = this;
+
+    const schema: { [key: string]: Mixed } = {};
+    for (let columns of table.uniqueColumns) {
+      for (let column of columns) {
+        schema[column] = mixed().test(
+          "unique",
+          // eslint-disable-next-line no-template-curly-in-string
+          "${path} is already in use",
+          async function test(value) {
+            if (value === undefined) return true;
+            const { parent } = this;
+            const where = Object.fromEntries(
+              columns.map((column) => [
+                `${table.alias}.${column}`,
+                parent[column],
+              ])
+            );
+
+            // if we don't have every column, abort and pass the test
+            if (!Object.values(where).every((v) => v !== undefined))
+              return true;
+
+            const stmt = table.query(knex);
+            // There is no policy check here so rows that conflict
+            // are found that are not visible to the user
+
+            if (parent[table.idColumnName]) {
+              stmt.whereNot(function () {
+                this.where(
+                  `${table.alias}.${[table.idColumnName]}`,
+                  parent[table.idColumnName]
+                );
+                if (table.tenantIdColumnName) {
+                  this.where(
+                    `${table.alias}.${table.tenantIdColumnName}`,
+                    parent[table.tenantIdColumnName]
+                  );
+                }
+              });
+            }
+
+            const existingRow = await stmt.where(where).first();
+
+            return !existingRow;
+          }
+        );
+      }
+    }
+
+    return object(schema).concat(this.getYupSchema());
+  }
+
   private async validate(
     knex: Knex,
     obj: any,
@@ -508,128 +649,6 @@ export class Table<Context, T = any> {
     } else {
       obj = { ...(await this.defaultParams(context, "insert")), ...obj };
     }
-
-    const getYupSchema = () => {
-      const schema: { [key: string]: Mixed } = {};
-
-      for (let [column, info] of Object.entries(table.columns!)) {
-        let type = postgresTypesToYupType(info.type).nullable();
-
-        if (type.type === "string" && info.length >= 0) {
-          type = ((type as StringSchema).max(info.length) as unknown) as Mixed;
-        }
-
-        if (table.schema[column]) {
-          type = type.concat(table.schema[column].nullable());
-        }
-
-        if (info.type.endsWith("[]")) {
-          type = array(type);
-        }
-
-        const notNullable = !info.nullable;
-        const hasDefault =
-          info.defaultValue !== null ||
-          (column === this.idColumnName && this.idGenerator);
-        const isSetAsNull = obj[column] === null;
-        if (notNullable && (!hasDefault || isSetAsNull)) {
-          type = type.required();
-        }
-
-        schema[column] = type;
-      }
-
-      for (let columns of table.uniqueColumns) {
-        for (let column of columns) {
-          const g = obj;
-          if (g[column] === undefined) continue;
-          schema[column] = schema[column].test(
-            "unique",
-            // eslint-disable-next-line no-template-curly-in-string
-            "${path} is already in use",
-            async function test() {
-              const { parent } = this;
-              const where = Object.fromEntries(
-                columns.map((column) => [
-                  `${table.alias}.${column}`,
-                  parent[column],
-                ])
-              );
-
-              // if we don't have every column, abort and pass the test
-              if (!Object.values(where).every((v) => v !== undefined))
-                return true;
-
-              const stmt = table.query(knex);
-              // There is no policy check here so rows that conflict
-              // are found that are not visible to the user
-
-              if (g[table.idColumnName]) {
-                stmt.whereNot(function () {
-                  this.where(
-                    `${table.alias}.${[table.idColumnName]}`,
-                    g[table.idColumnName]
-                  );
-                  if (table.tenantIdColumnName) {
-                    this.where(
-                      `${table.alias}.${table.tenantIdColumnName}`,
-                      g[table.tenantIdColumnName]
-                    );
-                  }
-                });
-              }
-
-              const existingRow = await stmt.where(where).first();
-
-              return !existingRow;
-            }
-          );
-        }
-      }
-
-      return object(schema);
-    };
-
-    const validateGraphAgainstSchema: (
-      schema: ObjectSchema<ObjectShape>,
-      graph: any
-    ) => Promise<[any, any]> = async (schema, graph) => {
-      let errors: Record<string, any> = {};
-      try {
-        const castValue = await schema.validate(graph, {
-          abortEarly: false,
-          strict: false,
-          context,
-        });
-
-        return [castValue, {}];
-      } catch (err) {
-        // in case a validator crashes we want to surface that through express
-        /* istanbul ignore next */
-        if (!(err instanceof ValidationError)) {
-          throw err;
-        }
-
-        err.inner
-          .map((e) => {
-            const REPLACE_BRACKETS = /\[([^[\]]+)\]/g;
-            const LFT_RT_TRIM_DOTS = /^[.]*|[.]*$/g;
-            const dotPath = e
-              .path!.replace(REPLACE_BRACKETS, ".$1")
-              .replace(LFT_RT_TRIM_DOTS, "");
-
-            return {
-              path: dotPath,
-              message: e.message.slice(e.message.indexOf(" ")).trim(),
-            };
-          })
-          .forEach(({ message, path }) => {
-            setValue(errors, path, message);
-          });
-
-        return [graph, errors];
-      }
-    };
 
     let existingSchema = object();
     if (table.tenantIdColumnName) {
@@ -653,9 +672,10 @@ export class Table<Context, T = any> {
         })
       );
 
-      const [objCast, preValidate] = await validateGraphAgainstSchema(
+      const [objCast, preValidate] = await validateAgainst(
         existingSchema,
-        obj
+        obj,
+        context
       );
       obj = objCast;
 
@@ -687,7 +707,11 @@ export class Table<Context, T = any> {
       };
     }
 
-    return await validateGraphAgainstSchema(getYupSchema(), obj);
+    return await validateAgainst(
+      this.getYupSchemaWithUniqueKeys(knex),
+      obj,
+      context
+    );
   }
 
   async validateDeep(
