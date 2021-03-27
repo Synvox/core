@@ -1514,6 +1514,9 @@ describe("without policies", () => {
           Object {
             "mode": "update",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/test",
+              "_url": "/test/test/1",
               "id": 1,
               "org": "org",
               "username": "xyb",
@@ -1935,18 +1938,40 @@ describe("without policies", () => {
     for (let i = 0; i < 100; i++) await knex("test.test").insert({});
 
     queries = [];
-    expect((await table.ids(knex, {}, {})).meta).toMatchInlineSnapshot(`
+    expect((await table.ids(knex, { limit: 50 }, {})).meta)
+      .toMatchInlineSnapshot(`
       Object {
-        "_links": Object {},
-        "_url": "/test/test/ids",
-        "hasMore": false,
-        "limit": 1000,
+        "_links": Object {
+          "nextPage": "/test/test/ids?limit=50&page=1",
+        },
+        "_url": "/test/test/ids?limit=50",
+        "hasMore": true,
+        "limit": 50,
         "page": 0,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select test.id from test.test limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect((await table.ids(knex, { limit: 51, page: 1 }, {})).meta)
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "previousPage": "/test/test/ids?limit=51&page=0",
+        },
+        "_url": "/test/test/ids?limit=51&page=1",
+        "hasMore": false,
+        "limit": 51,
+        "page": 1,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id from test.test limit ? offset ?",
       ]
     `);
   });
@@ -2237,6 +2262,9 @@ describe("without policies", () => {
           Object {
             "mode": "update",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/test",
+              "_url": "/test/test/1",
               "id": 1,
             },
             "schemaName": "test",
@@ -2851,6 +2879,11 @@ describe("with policies", () => {
           Object {
             "mode": "update",
             "row": Object {
+              "_links": Object {
+                "user": "/test/users/1",
+              },
+              "_type": "test/posts",
+              "_url": "/test/posts/1",
               "body": "Body",
               "id": 1,
               "orgId": 1,
@@ -3260,6 +3293,9 @@ describe("multitenancy", () => {
           Object {
             "mode": "update",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/items",
+              "_url": "/test/items/1?orgId=1",
               "body": "body",
               "id": 1,
               "orgId": 1,
@@ -4210,6 +4246,9 @@ describe("beforeCommit", () => {
           Object {
             "mode": "update",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/items",
+              "_url": "/test/items/1",
               "body": "abc",
               "id": 1,
             },
@@ -5022,6 +5061,9 @@ describe("upsert", () => {
           Object {
             "mode": "update",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/contacts",
+              "_url": "/test/contacts/1",
               "id": 1,
               "name": "updated",
               "phone": "123",
@@ -5175,6 +5217,9 @@ describe("upsert", () => {
           Object {
             "mode": "update",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/contacts",
+              "_url": "/test/contacts/1?orgId=1",
               "id": 1,
               "name": "updated",
               "orgId": 1,

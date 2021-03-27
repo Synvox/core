@@ -200,6 +200,11 @@ describe("withTimestamps plugin", () => {
           Object {
             "mode": "update",
             "row": Object {
+              "_links": Object {
+                "posts": "/testPlugins/posts?userId=1",
+              },
+              "_type": "testPlugins/users",
+              "_url": "/testPlugins/users/1",
               "createdAt": 2021-01-01T01:01:00.000Z,
               "id": 1,
               "updatedAt": 2021-01-02T01:01:00.000Z,

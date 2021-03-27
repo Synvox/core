@@ -1,10 +1,11 @@
 import Knex from "knex";
+import { EventEmitter } from "events";
 import { createServer } from "http";
 import testListen from "test-listen";
 import express, { Application } from "express";
 import Axios from "axios";
 import EventSource from "eventsource";
-import { knexHelpers, Core, StatusError } from "../src";
+import { knexHelpers, Core, StatusError, ChangeSummary } from "../src";
 import compression from "compression";
 
 let queries: string[] = [];
@@ -269,6 +270,9 @@ describe("listens on server", () => {
           Object {
             "mode": "update",
             "row": Object {
+              "_links": Object {},
+              "_type": "coreTest/test",
+              "_url": "/coreTest/test/1",
               "id": 1,
               "isBoolean": true,
               "numberCount": 10,
@@ -719,12 +723,16 @@ describe("sse", () => {
     await knex("coreTest.test").insert({ orgId: org.id });
 
     type Context = {};
+    const eventEmitter = new EventEmitter();
 
     const core = new Core<Context>(
       () => {
         return {};
       },
-      async () => knex
+      async () => knex,
+      {
+        eventEmitter,
+      }
     );
 
     core.table({
@@ -773,6 +781,11 @@ describe("sse", () => {
         ],
       ]
     `);
+
+    // This should not cause an error
+    eventEmitter.emit("change", [
+      { mode: "insert", tableName: "a", schemaName: "b", row: {} },
+    ] as ChangeSummary<any>[]);
 
     eventSource.close();
   });
@@ -1449,6 +1462,24 @@ describe("validates without write", () => {
         "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.id = ?) limit ?",
       ]
     `);
+
+    queries = [];
+    expect(
+      (
+        await axios.put(`/coreTest/test/${row.id}/validate`, {
+          numberCount: "123",
+        })
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {},
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.id = ?) limit ?",
+      ]
+    `);
   });
 
   it("validates on create", async () => {
@@ -1485,6 +1516,20 @@ describe("validates without write", () => {
         "errors": Object {
           "numberCount": "must be a \`number\` type, but the final value was: \`NaN\` (cast from the value \`\\"abc\\"\`).",
         },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`Array []`);
+
+    queries = [];
+    expect(
+      (
+        await axios.post(`/coreTest/test/validate`, {
+          numberCount: "123",
+        })
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {},
       }
     `);
     expect(queries).toMatchInlineSnapshot(`Array []`);

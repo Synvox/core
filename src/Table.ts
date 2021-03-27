@@ -986,7 +986,7 @@ export class Table<Context, T = any> {
           tableName: table.tableName,
           schemaName: table.schemaName,
           mode: "update",
-          row: updatedRow,
+          row: await this.processTableRow({}, context, updatedRow),
         });
 
         for (let key in initialGraph) {

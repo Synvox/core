@@ -80,6 +80,23 @@ describe("saves to files", () => {
         .notNullable();
       t.specificType("arr", "int[]");
     });
+    await knex.schema
+      .withSchema("saveTest")
+      .createTable("test_nullable", (t) => {
+        t.bigIncrements("id").primary();
+        t.boolean("is_boolean").notNullable().defaultTo(false);
+        t.integer("number_count").notNullable().defaultTo(0);
+        t.specificType("text", "character varying(10)")
+          .notNullable()
+          .defaultTo("text");
+      });
+    await knex.schema
+      .withSchema("saveTest")
+      .createTable("test_sub_nullable", (t) => {
+        t.bigIncrements("id").primary();
+        t.bigInteger("parent_id").references("id").inTable("save_test.test");
+        t.specificType("arr", "int[]");
+      });
   });
 
   it("saves and restores schema from file", async () => {
@@ -244,6 +261,16 @@ describe("saves to files", () => {
       tableName: "testSub",
     });
 
+    core.table({
+      schemaName: "saveTest",
+      tableName: "testNullable",
+    });
+
+    core.table({
+      schemaName: "saveTest",
+      tableName: "testSubNullable",
+    });
+
     await core.saveTsTypes(path);
 
     const types = await fs.readFile(path, { encoding: "utf8" });
@@ -257,6 +284,18 @@ describe("saves to files", () => {
         '_type': string;
         '_links': {
           testSub: string;
+          testSubNullable: string;
+        };
+      };
+
+      export type TestNullable = {
+        id: number;
+        isBoolean: boolean;
+        numberCount: number;
+        text: string;
+        '_url': string;
+        '_type': string;
+        '_links': {
         };
       };
 
@@ -268,6 +307,17 @@ describe("saves to files", () => {
         '_type': string;
         '_links': {
           parent: string;
+        };
+      };
+
+      export type TestSubNullable = {
+        id: number;
+        parentId: number | null;
+        arr: number[] | null;
+        '_url': string;
+        '_type': string;
+        '_links': {
+          parent?: string;
         };
       };
       "
@@ -292,6 +342,16 @@ describe("saves to files", () => {
       tableName: "testSub",
     });
 
+    core.table({
+      schemaName: "saveTest",
+      tableName: "testNullable",
+    });
+
+    core.table({
+      schemaName: "saveTest",
+      tableName: "testSubNullable",
+    });
+
     await core.saveTsTypes(path, false);
 
     const types = await fs.readFile(path, { encoding: "utf8" });
@@ -303,9 +363,22 @@ describe("saves to files", () => {
         text: string;
       };
 
+      export type TestNullable = {
+        id: number;
+        isBoolean: boolean;
+        numberCount: number;
+        text: string;
+      };
+
       export type TestSub = {
         id: number;
         parentId: number;
+        arr: number[] | null;
+      };
+
+      export type TestSubNullable = {
+        id: number;
+        parentId: number | null;
         arr: number[] | null;
       };
       "
@@ -330,6 +403,16 @@ describe("saves to files", () => {
       tableName: "testSub",
     });
 
+    core.table({
+      schemaName: "saveTest",
+      tableName: "testNullable",
+    });
+
+    core.table({
+      schemaName: "saveTest",
+      tableName: "testSubNullable",
+    });
+
     await core.saveTsTypes(path, false, true);
 
     const types = await fs.readFile(path, { encoding: "utf8" });
@@ -340,6 +423,14 @@ describe("saves to files", () => {
         numberCount: number;
         text: string;
         testSub: TestSub[];
+        testSubNullable: TestSubNullable[];
+      };
+
+      export type TestNullable = {
+        id: number;
+        isBoolean: boolean;
+        numberCount: number;
+        text: string;
       };
 
       export type TestSub = {
@@ -347,6 +438,13 @@ describe("saves to files", () => {
         parentId: number;
         arr: number[] | null;
         parent: Test;
+      };
+
+      export type TestSubNullable = {
+        id: number;
+        parentId: number | null;
+        arr: number[] | null;
+        parent?: Test;
       };
       "
     `);
