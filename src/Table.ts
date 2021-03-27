@@ -1776,7 +1776,6 @@ export class Table<Context, T = any> {
 
     if (this.eventEmitter) this.eventEmitter.emit("change", changes);
 
-    // return { data, changes };
     return new ChangeResult(data, changes);
   }
 }
