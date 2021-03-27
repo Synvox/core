@@ -86,8 +86,9 @@ describe("listens on server", () => {
     await knex("coreTest.test").insert({});
 
     const core = new Core(
+      knex,
       () => ({}),
-      async () => knex,
+
       {
         baseUrl: "http://localhost",
       }
@@ -137,8 +138,8 @@ describe("listens on server", () => {
     const [row] = await knex("coreTest.test").insert({}).returning("*");
 
     const core = new Core(
-      () => ({}),
-      async () => knex
+      async () => knex,
+      () => ({})
     );
 
     core.table({
@@ -171,10 +172,7 @@ describe("listens on server", () => {
   });
 
   it("inserts", async () => {
-    const core = new Core(
-      () => ({}),
-      async () => knex
-    );
+    const core = new Core(knex, () => ({}));
 
     core.table({
       schemaName: "coreTest",
@@ -237,10 +235,7 @@ describe("listens on server", () => {
   it("updates", async () => {
     const [row] = await knex("coreTest.test").insert({}).returning("*");
 
-    const core = new Core(
-      () => ({}),
-      async () => knex
-    );
+    const core = new Core(knex, () => ({}));
 
     core.table({
       schemaName: "coreTest",
@@ -298,10 +293,7 @@ describe("listens on server", () => {
   it("validates", async () => {
     const [row] = await knex("coreTest.test").insert({}).returning("*");
 
-    const core = new Core(
-      () => ({}),
-      async () => knex
-    );
+    const core = new Core(knex, () => ({}));
 
     core.table({
       schemaName: "coreTest",
@@ -334,10 +326,7 @@ describe("listens on server", () => {
   it("closes connection on unknown error", async () => {
     const [row] = await knex("coreTest.test").insert({}).returning("*");
 
-    const core = new Core(
-      () => ({}),
-      async () => knex
-    );
+    const core = new Core(knex, () => ({}));
 
     core.table({
       schemaName: "coreTest",
@@ -365,10 +354,7 @@ describe("listens on server", () => {
   it("closes connection on status error", async () => {
     const [row] = await knex("coreTest.test").insert({}).returning("*");
 
-    const core = new Core(
-      () => ({}),
-      async () => knex
-    );
+    const core = new Core(knex, () => ({}));
 
     core.table({
       schemaName: "coreTest",
@@ -400,10 +386,7 @@ describe("listens on server", () => {
     process.env.NODE_ENV = "production";
     const [row] = await knex("coreTest.test").insert({}).returning("*");
 
-    const core = new Core(
-      () => ({}),
-      async () => knex
-    );
+    const core = new Core(knex, () => ({}));
 
     core.table({
       schemaName: "coreTest",
@@ -438,10 +421,7 @@ describe("listens on server", () => {
   it("deletes", async () => {
     const [row] = await knex("coreTest.test").insert({}).returning("*");
 
-    const core = new Core(
-      () => ({}),
-      async () => knex
-    );
+    const core = new Core(knex, () => ({}));
 
     core.table({
       schemaName: "coreTest",
@@ -481,10 +461,7 @@ describe("listens on server", () => {
     const [row] = await knex("coreTest.test").insert({}).returning("*");
     await knex("coreTest.testSub").insert({ parentId: row.id }).returning("*");
 
-    const core = new Core(
-      () => ({}),
-      async () => knex
-    );
+    const core = new Core(knex, () => ({}));
 
     core.table({
       schemaName: "coreTest",
@@ -532,10 +509,7 @@ describe("listens on server", () => {
   it("gets ids", async () => {
     await knex("coreTest.test").insert({}).returning("*");
 
-    const core = new Core(
-      () => ({}),
-      async () => knex
-    );
+    const core = new Core(knex, () => ({}));
 
     core.table({
       schemaName: "coreTest",
@@ -569,10 +543,7 @@ describe("listens on server", () => {
   it("gets count", async () => {
     await knex("coreTest.test").insert({}).returning("*");
 
-    const core = new Core(
-      () => ({}),
-      async () => knex
-    );
+    const core = new Core(knex, () => ({}));
 
     core.table({
       schemaName: "coreTest",
@@ -600,10 +571,7 @@ describe("listens on server", () => {
   it("initializes once", async () => {
     await knex("coreTest.test").insert({}).returning("*");
 
-    const core = new Core(
-      () => ({}),
-      async () => knex
-    );
+    const core = new Core(knex, () => ({}));
 
     core.table({
       schemaName: "coreTest",
@@ -651,12 +619,9 @@ describe("forwards params", () => {
 
     type Context = {};
 
-    const core = new Core<Context>(
-      () => {
-        return {};
-      },
-      async () => knex
-    );
+    const core = new Core<Context>(knex, () => {
+      return {};
+    });
 
     core.table({
       schemaName: "coreTest",
@@ -726,10 +691,10 @@ describe("sse", () => {
     const eventEmitter = new EventEmitter();
 
     const core = new Core<Context>(
+      knex,
       () => {
         return {};
       },
-      async () => knex,
       {
         eventEmitter,
       }
@@ -796,12 +761,9 @@ describe("sse", () => {
 
     type Context = {};
 
-    const core = new Core<Context>(
-      () => {
-        return {};
-      },
-      async () => knex
-    );
+    const core = new Core<Context>(knex, () => {
+      return {};
+    });
 
     core.table({
       schemaName: "coreTest",
@@ -860,14 +822,11 @@ describe("sse", () => {
 
     type Context = { orgId: number };
 
-    const core = new Core<Context>(
-      (req) => {
-        return {
-          orgId: Number(req.params.orgId),
-        };
-      },
-      async () => knex
-    );
+    const core = new Core<Context>(knex, (req) => {
+      return {
+        orgId: Number(req.params.orgId),
+      };
+    });
 
     core.table({
       schemaName: "coreTest",
@@ -933,12 +892,9 @@ describe("sse", () => {
 
     type Context = {};
 
-    const core = new Core<Context>(
-      () => {
-        return {};
-      },
-      async () => knex
-    );
+    const core = new Core<Context>(knex, () => {
+      return {};
+    });
 
     core.table({
       schemaName: "coreTest",
@@ -1019,12 +975,9 @@ describe("handles advanced queries", () => {
 
     type Context = {};
 
-    const core = new Core<Context>(
-      () => {
-        return {};
-      },
-      async () => knex
-    );
+    const core = new Core<Context>(knex, () => {
+      return {};
+    });
 
     core.table({
       schemaName: "coreTest",
@@ -1365,12 +1318,9 @@ describe("handles advanced queries", () => {
 
     type Context = {};
 
-    const core = new Core<Context>(
-      () => {
-        return {};
-      },
-      async () => knex
-    );
+    const core = new Core<Context>(knex, () => {
+      return {};
+    });
 
     core.table({
       schemaName: "coreTest",
@@ -1424,12 +1374,9 @@ describe("validates without write", () => {
 
     type Context = {};
 
-    const core = new Core<Context>(
-      () => {
-        return {};
-      },
-      async () => knex
-    );
+    const core = new Core<Context>(knex, () => {
+      return {};
+    });
 
     core.table({
       schemaName: "coreTest",
@@ -1485,12 +1432,9 @@ describe("validates without write", () => {
   it("validates on create", async () => {
     type Context = {};
 
-    const core = new Core<Context>(
-      () => {
-        return {};
-      },
-      async () => knex
-    );
+    const core = new Core<Context>(knex, () => {
+      return {};
+    });
 
     core.table({
       schemaName: "coreTest",

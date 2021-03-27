@@ -44,7 +44,7 @@ It has many comfort features along the way:
 ## Authentication
 
 ```js
-const core = new Core((req, res) => {
+const core = new Core(knex, (req, res) => {
   return {
     async getUser() {
       return await findUser(req.headers.authorization);
@@ -62,7 +62,7 @@ You can use any type of authentication library here to populate the `context` ob
 ## Authorization
 
 ```js
-const core = new Core((req, res) => {
+const core = new Core(knex, (req, res) => {
   return {
     async getUser() {
       return await findUser(req.headers.authorization);
@@ -88,7 +88,7 @@ Core tables have a policy method, where you can modify the query with the contex
 A request's `mode` is also given which is `"insert" | "read" | "update" | "delete"`. You can use this to create common authorization schemes like a twitter clone:
 
 ```js
-const core = new Core((req, res) => {
+const core = new Core(knex, (req, res) => {
   return {
     async getUser() {
       return await findUser(req.headers.authorization);
@@ -129,7 +129,7 @@ app.use("/api", core.router());
 ### Role Based Authorization
 
 ```js
-const core = new Core((req, res) => {
+const core = new Core(knex, (req, res) => {
   return {
     async getUser() {
       return await findUser(req.headers.authorization);
@@ -161,7 +161,7 @@ Each query to a table can be modified, so you can filter by a role existing in a
 Lets say you have an application that has a `products` table like this:
 
 ```js
-const core = new Core((req, res) => {
+const core = new Core(knex, (req, res) => {
   return {
     async getUser() {
       return await findUser(req.headers.authorization);
@@ -221,7 +221,7 @@ If you need to build a more complex query with ANDs and ORs, use bracket notatio
 The predefined query filters are not always enough. For other special cases you can define a `queryModifier`:
 
 ```js
-const core = new Core((req, res) => {
+const core = new Core(knex, (req, res) => {
   return {
     async getUser() {
       return await findUser(req.headers.authorization);
@@ -250,7 +250,7 @@ This way you can call `/contacts?fullName=Billy%20Bob`
 Calling `/users/whoami` or `/users/me` or `/users/self` is pretty common in most apps. With Core, you can define a special `id` value
 
 ```js
-const core = new Core((req, res) => {
+const core = new Core(knex, (req, res) => {
   return {
     async getUser() {
       return await findUser(req.headers.authorization);
@@ -520,6 +520,7 @@ By nature, graph upserts allow requests that may update many rows. To guard agai
 
 ```js
 const core = new Core(
+  knex,
   (req, res) => {
     return {
       async getUser() {
@@ -527,7 +528,6 @@ const core = new Core(
       },
     };
   },
-  () => knex,
   { complexityLimit: 20 }
 );
 
@@ -620,4 +620,23 @@ core.table({
 });
 
 app.use("/api", core.router());
+```
+
+## Different Knex instance for reads and writes (read replicas)
+
+The first parameter to Core is the Knex instance. You may also provide an async function that returns a Knex instance.
+
+```ts
+const core = new Core(
+  async (mode: "read" | "write" | "schema") => {
+    if (mode === "write") {
+      return Knex(); // knex for write
+    } else {
+      return Knex(); // knex for read
+    }
+  },
+  (req, res) => {
+    return {};
+  }
+);
 ```

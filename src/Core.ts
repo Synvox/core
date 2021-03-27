@@ -1,3 +1,4 @@
+import { Knex } from "knex";
 import { EventEmitter } from "events";
 import { promises as fs } from "fs";
 import express, { Router, Request, Response } from "express";
@@ -26,8 +27,8 @@ export class Core<Context> {
   complexityLimit: number;
 
   constructor(
+    getKnex: KnexGetter | Knex,
     getContext: ContextFactory<Context>,
-    getKnex: KnexGetter,
     options: {
       eventEmitter?: EventEmitter;
       schemaFilePath?: string | null;
@@ -37,8 +38,13 @@ export class Core<Context> {
       complexityLimit?: number;
     } = {}
   ) {
+    // a real knex object has a connection property.
+    // ideally we could use instanceof Knex but knex
+    this.getKnex = ((getKnex as unknown) as any).connection
+      ? async () => getKnex as Knex
+      : getKnex;
+
     this.getContext = getContext;
-    this.getKnex = getKnex;
     this.eventEmitter = options.eventEmitter ?? new EventEmitter();
     this.schemaFilePath = options.schemaFilePath ?? null;
     this.loadSchemaFromFile =

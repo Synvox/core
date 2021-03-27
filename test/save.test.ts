@@ -103,13 +103,9 @@ describe("saves to files", () => {
     const path = Path.resolve(__dirname, "./test.ignore.json");
 
     {
-      const core = new Core(
-        () => ({}),
-        async () => knex,
-        {
-          schemaFilePath: path,
-        }
-      );
+      const core = new Core(knex, () => ({}), {
+        schemaFilePath: path,
+      });
 
       core.table({
         schemaName: "saveTest",
@@ -208,14 +204,10 @@ describe("saves to files", () => {
     }
 
     {
-      const core = new Core(
-        () => ({}),
-        async () => knex,
-        {
-          schemaFilePath: path,
-          loadSchemaFromFile: true,
-        }
-      );
+      const core = new Core(knex, () => ({}), {
+        schemaFilePath: path,
+        loadSchemaFromFile: true,
+      });
 
       core.table({
         schemaName: "saveTest",
@@ -246,10 +238,7 @@ describe("saves to files", () => {
   it("saves types", async () => {
     const path = Path.resolve(__dirname, "./test.ignore1.ts");
 
-    const core = new Core(
-      () => ({}),
-      async () => knex
-    );
+    const core = new Core(knex, () => ({}));
 
     core.table({
       schemaName: "saveTest",
@@ -327,10 +316,7 @@ describe("saves to files", () => {
   it("saves types without links", async () => {
     const path = Path.resolve(__dirname, "./test.ignore2.ts");
 
-    const core = new Core(
-      () => ({}),
-      async () => knex
-    );
+    const core = new Core(knex, () => ({}));
 
     core.table({
       schemaName: "saveTest",
@@ -388,10 +374,7 @@ describe("saves to files", () => {
   it("saves types with relations", async () => {
     const path = Path.resolve(__dirname, "./test.ignore3.ts");
 
-    const core = new Core(
-      () => ({}),
-      async () => knex
-    );
+    const core = new Core(knex, () => ({}));
 
     core.table({
       schemaName: "saveTest",
