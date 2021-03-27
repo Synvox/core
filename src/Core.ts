@@ -25,6 +25,7 @@ export class Core<Context> {
   initialized: boolean;
   initializationPromise?: Promise<void>;
   complexityLimit: number;
+  private _router?: Router;
 
   constructor(
     getKnex: KnexGetter | Knex,
@@ -201,187 +202,193 @@ export class Core<Context> {
     await this.initializationPromise;
   }
 
-  router() {
+  get router() {
+    if (this._router) return this._router;
+
     const router = Router({ mergeParams: true });
+    this._router = router;
+
+    router.use(express.json());
 
     router.use(
       wrap(async (_req, _res, next) => {
         await this.init();
+        addRoutes();
         next();
       })
     );
 
-    router.use(express.json());
+    const addRoutes = () => {
+      for (let table of this.tables) {
+        router.use(table.path, table.router);
 
-    for (let table of this.tables) {
-      router.use(table.path, table.router);
-
-      router.get(
-        `/${table.path}/ids`,
-        wrap(async (req, res) => {
-          const knex = await this.getKnex("read");
-          const context = this.getContext(req, res);
-          return await table.ids(
-            knex,
-            { ...req.params, ...req.query },
-            context
-          );
-        })
-      );
-
-      router.get(
-        `/${table.path}/count`,
-        wrap(async (req, res) => {
-          const knex = await this.getKnex("read");
-          const context = this.getContext(req, res);
-          const count = await table.count(
-            knex,
-            { ...req.params, ...req.query },
-            context
-          );
-
-          return {
-            meta: {
-              _url: `${table.baseUrl}/${table.path}/count`,
-            },
-            data: count,
-          };
-        })
-      );
-
-      for (let getterName of [
-        ...Object.keys(table.getters),
-        ...Object.keys(table.eagerGetters),
-      ]) {
         router.get(
-          `/${table.path}/:${table.idColumnName}/${getterName}`,
+          `/${table.path}/ids`,
           wrap(async (req, res) => {
             const knex = await this.getKnex("read");
             const context = this.getContext(req, res);
-            const row = await table.readOne(
+            return await table.ids(
               knex,
-              {
-                ...req.params,
-                ...req.query,
-                include: [getterName],
-              },
+              { ...req.params, ...req.query },
+              context
+            );
+          })
+        );
+
+        router.get(
+          `/${table.path}/count`,
+          wrap(async (req, res) => {
+            const knex = await this.getKnex("read");
+            const context = this.getContext(req, res);
+            const count = await table.count(
+              knex,
+              { ...req.params, ...req.query },
               context
             );
 
             return {
               meta: {
-                _url: `${table.baseUrl}/${table.path}/${
-                  row[table.idColumnName]
-                }/${getterName}`,
+                _url: `${table.baseUrl}/${table.path}/count`,
               },
-              data: row[getterName],
+              data: count,
             };
           })
         );
-      }
 
-      router.get(
-        `/${table.path}/:${table.idColumnName}`,
-        wrap(async (req, res) => {
-          const knex = await this.getKnex("read");
-          const context = this.getContext(req, res);
-          return {
-            data: await table.readOne(
+        for (let getterName of [
+          ...Object.keys(table.getters),
+          ...Object.keys(table.eagerGetters),
+        ]) {
+          router.get(
+            `/${table.path}/:${table.idColumnName}/${getterName}`,
+            wrap(async (req, res) => {
+              const knex = await this.getKnex("read");
+              const context = this.getContext(req, res);
+              const row = await table.readOne(
+                knex,
+                {
+                  ...req.params,
+                  ...req.query,
+                  include: [getterName],
+                },
+                context
+              );
+
+              return {
+                meta: {
+                  _url: `${table.baseUrl}/${table.path}/${
+                    row[table.idColumnName]
+                  }/${getterName}`,
+                },
+                data: row[getterName],
+              };
+            })
+          );
+        }
+
+        router.get(
+          `/${table.path}/:${table.idColumnName}`,
+          wrap(async (req, res) => {
+            const knex = await this.getKnex("read");
+            const context = this.getContext(req, res);
+            return {
+              data: await table.readOne(
+                knex,
+                { ...req.params, ...req.query },
+                context
+              ),
+            };
+          })
+        );
+
+        router.get(
+          `/${table.path}`,
+          wrap(async (req, res) => {
+            const knex = await this.getKnex("read");
+            const context = this.getContext(req, res);
+            return await table.readMany(
               knex,
               { ...req.params, ...req.query },
               context
-            ),
-          };
-        })
-      );
+            );
+          })
+        );
 
-      router.get(
-        `/${table.path}`,
-        wrap(async (req, res) => {
-          const knex = await this.getKnex("read");
-          const context = this.getContext(req, res);
-          return await table.readMany(
-            knex,
-            { ...req.params, ...req.query },
-            context
-          );
-        })
-      );
+        router.post(
+          `/${table.path}`,
+          wrap(async (req, res) => {
+            const knex = await this.getKnex("write");
+            const context = this.getContext(req, res);
+            return await table.write(
+              knex,
+              { ...req.body, ...req.params, ...req.query },
+              context
+            );
+          })
+        );
 
-      router.post(
-        `/${table.path}`,
-        wrap(async (req, res) => {
-          const knex = await this.getKnex("write");
-          const context = this.getContext(req, res);
-          return await table.write(
-            knex,
-            { ...req.body, ...req.params, ...req.query },
-            context
-          );
-        })
-      );
+        router.put(
+          `/${table.path}/:${table.idColumnName}`,
+          wrap(async (req, res) => {
+            const knex = await this.getKnex("write");
+            const context = this.getContext(req, res);
+            return await table.write(
+              knex,
+              { ...req.body, ...req.params, ...req.query },
+              context
+            );
+          })
+        );
 
-      router.put(
-        `/${table.path}/:${table.idColumnName}`,
-        wrap(async (req, res) => {
-          const knex = await this.getKnex("write");
-          const context = this.getContext(req, res);
-          return await table.write(
-            knex,
-            { ...req.body, ...req.params, ...req.query },
-            context
-          );
-        })
-      );
+        router.post(
+          `/${table.path}/validate`,
+          wrap(async (req, res) => {
+            const knex = await this.getKnex("read");
+            const context = this.getContext(req, res);
+            const [_, errors = {}] = await table.validateDeep(
+              knex,
+              { ...req.body, ...req.params, ...req.query },
+              context
+            );
 
-      router.post(
-        `/${table.path}/validate`,
-        wrap(async (req, res) => {
-          const knex = await this.getKnex("read");
-          const context = this.getContext(req, res);
-          const [_, errors = {}] = await table.validateDeep(
-            knex,
-            { ...req.body, ...req.params, ...req.query },
-            context
-          );
+            return { errors };
+          })
+        );
 
-          return { errors };
-        })
-      );
+        router.put(
+          `/${table.path}/:${table.idColumnName}/validate`,
+          wrap(async (req, res) => {
+            const knex = await this.getKnex("read");
+            const context = this.getContext(req, res);
+            const [_, errors = {}] = await table.validateDeep(
+              knex,
+              { ...req.body, ...req.params, ...req.query },
+              context
+            );
 
-      router.put(
-        `/${table.path}/:${table.idColumnName}/validate`,
-        wrap(async (req, res) => {
-          const knex = await this.getKnex("read");
-          const context = this.getContext(req, res);
-          const [_, errors = {}] = await table.validateDeep(
-            knex,
-            { ...req.body, ...req.params, ...req.query },
-            context
-          );
+            return { errors };
+          })
+        );
 
-          return { errors };
-        })
-      );
-
-      router.delete(
-        `/${table.path}/:${table.idColumnName}`,
-        wrap(async (req, res) => {
-          const knex = await this.getKnex("write");
-          const context = this.getContext(req, res);
-          return await table.write(
-            knex,
-            {
-              ...req.body,
-              ...req.params,
-              ...req.query,
-              _delete: true,
-            },
-            context
-          );
-        })
-      );
-    }
+        router.delete(
+          `/${table.path}/:${table.idColumnName}`,
+          wrap(async (req, res) => {
+            const knex = await this.getKnex("write");
+            const context = this.getContext(req, res);
+            return await table.write(
+              knex,
+              {
+                ...req.body,
+                ...req.params,
+                ...req.query,
+                _delete: true,
+              },
+              context
+            );
+          })
+        );
+      }
+    };
 
     return router;
   }

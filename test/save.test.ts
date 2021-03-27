@@ -118,7 +118,7 @@ describe("saves to files", () => {
       });
 
       const app = express();
-      app.use(core.router());
+      app.use(core.router);
       const url = await listen(app);
 
       const axios = Axios.create({ baseURL: url });
@@ -220,7 +220,7 @@ describe("saves to files", () => {
       });
 
       const app = express();
-      app.use(core.router());
+      app.use(core.router);
       const url = await listen(app);
 
       const axios = Axios.create({ baseURL: url });

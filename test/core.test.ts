@@ -100,7 +100,7 @@ describe("listens on server", () => {
     });
 
     const app = express();
-    app.use(core.router());
+    app.use(core.router);
     const url = await listen(app);
 
     const axios = Axios.create({ baseURL: url });
@@ -148,7 +148,7 @@ describe("listens on server", () => {
     });
 
     const app = express();
-    app.use(core.router());
+    app.use(core.router);
     const url = await listen(app);
 
     const axios = Axios.create({ baseURL: url });
@@ -180,7 +180,7 @@ describe("listens on server", () => {
     });
 
     const app = express();
-    app.use(core.router());
+    app.use(core.router);
     const url = await listen(app);
 
     const axios = Axios.create({ baseURL: url });
@@ -243,7 +243,7 @@ describe("listens on server", () => {
     });
 
     const app = express();
-    app.use(core.router());
+    app.use(core.router);
     const url = await listen(app);
 
     const axios = Axios.create({ baseURL: url });
@@ -301,7 +301,7 @@ describe("listens on server", () => {
     });
 
     const app = express();
-    app.use(core.router());
+    app.use(core.router);
     const url = await listen(app);
 
     const axios = Axios.create({ baseURL: url });
@@ -337,7 +337,7 @@ describe("listens on server", () => {
     });
 
     const app = express();
-    app.use(core.router());
+    app.use(core.router);
     const url = await listen(app);
 
     const axios = Axios.create({ baseURL: url });
@@ -367,7 +367,7 @@ describe("listens on server", () => {
     });
 
     const app = express();
-    app.use(core.router());
+    app.use(core.router);
     const url = await listen(app);
 
     const axios = Axios.create({ baseURL: url });
@@ -399,7 +399,7 @@ describe("listens on server", () => {
     });
 
     const app = express();
-    app.use(core.router());
+    app.use(core.router);
     const url = await listen(app);
 
     const axios = Axios.create({ baseURL: url });
@@ -429,7 +429,7 @@ describe("listens on server", () => {
     });
 
     const app = express();
-    app.use(core.router());
+    app.use(core.router);
     const url = await listen(app);
 
     const axios = Axios.create({ baseURL: url });
@@ -483,7 +483,7 @@ describe("listens on server", () => {
     });
 
     const app = express();
-    app.use(core.router());
+    app.use(core.router);
     const url = await listen(app);
 
     const axios = Axios.create({ baseURL: url });
@@ -517,7 +517,7 @@ describe("listens on server", () => {
     });
 
     const app = express();
-    app.use(core.router());
+    app.use(core.router);
     const url = await listen(app);
 
     const axios = Axios.create({ baseURL: url });
@@ -551,7 +551,7 @@ describe("listens on server", () => {
     });
 
     const app = express();
-    app.use(core.router());
+    app.use(core.router);
     const url = await listen(app);
 
     const axios = Axios.create({ baseURL: url });
@@ -579,7 +579,7 @@ describe("listens on server", () => {
     });
 
     const app = express();
-    app.use(core.router());
+    app.use(core.router);
 
     const url = await listen(app);
 
@@ -630,7 +630,7 @@ describe("forwards params", () => {
     });
 
     const app = express();
-    app.use("/:orgId", core.router());
+    app.use("/:orgId", core.router);
     const url = await listen(app);
 
     const axios = Axios.create({ baseURL: url });
@@ -708,7 +708,7 @@ describe("sse", () => {
 
     const app = express();
     app.use("/sse", core.sse());
-    app.use("/:orgId", core.router());
+    app.use("/:orgId", core.router);
     const url = await listen(app);
 
     const axios = Axios.create({ baseURL: url });
@@ -774,7 +774,7 @@ describe("sse", () => {
     const app = express();
     app.use(compression());
     app.use("/sse", core.sse());
-    app.use("/:orgId", core.router());
+    app.use("/:orgId", core.router);
     const url = await listen(app);
 
     const axios = Axios.create({ baseURL: url });
@@ -844,7 +844,7 @@ describe("sse", () => {
       })
     );
 
-    app.use("/:orgId", core.router());
+    app.use("/:orgId", core.router);
     const url = await listen(app);
 
     const axios = Axios.create({ baseURL: url });
@@ -905,7 +905,7 @@ describe("sse", () => {
     app.use(compression());
     app.use("/sse", core.sse());
 
-    app.use(core.router());
+    app.use(core.router);
     const url = await listen(app);
 
     const axios = Axios.create({ baseURL: url });
@@ -985,7 +985,7 @@ describe("handles advanced queries", () => {
     });
 
     const app = express();
-    app.use(core.router());
+    app.use(core.router);
     await core.init();
     const url = await listen(app);
 
@@ -1328,7 +1328,7 @@ describe("handles advanced queries", () => {
     });
 
     const app = express();
-    app.use(core.router());
+    app.use(core.router);
     await core.init();
     const url = await listen(app);
 
@@ -1384,7 +1384,7 @@ describe("validates without write", () => {
     });
 
     const app = express();
-    app.use(core.router());
+    app.use(core.router);
     await core.init();
     const url = await listen(app);
 
@@ -1442,7 +1442,7 @@ describe("validates without write", () => {
     });
 
     const app = express();
-    app.use(core.router());
+    app.use(core.router);
     await core.init();
     const url = await listen(app);
 
@@ -1477,5 +1477,15 @@ describe("validates without write", () => {
       }
     `);
     expect(queries).toMatchInlineSnapshot(`Array []`);
+  });
+});
+
+describe("creates a router", () => {
+  it("router is same reference", async () => {
+    const core = new Core(knex, () => {
+      return {};
+    });
+
+    expect(core.router).toEqual(core.router);
   });
 });
