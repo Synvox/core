@@ -1416,7 +1416,7 @@ export class Table<Context, T = any> {
         if (table.tenantIdColumnName && ref!.table.tenantIdColumnName) {
           subQuery.where(
             `${alias}.${ref!.table.tenantIdColumnName}`,
-            knex.raw(`??`, [`${table.alias}.${table.tenantIdColumnName}`])
+            knex.ref(`${table.alias}.${table.tenantIdColumnName}`)
           );
         }
 

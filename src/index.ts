@@ -1,24 +1,11 @@
 import knexHelpers from "./knexHelpers";
 import { Table } from "./Table";
 import { Core } from "./Core";
-import {
-  StatusError,
-  NotFoundError,
-  BadRequestError,
-  UnauthorizedError,
-} from "./errors";
 import withTimestamps from "./plugins/withTimestamps";
 import upload from "./upload";
-export * from "./types";
+import { wrap } from "./wrap";
 
-export {
-  Core,
-  Table,
-  knexHelpers,
-  StatusError,
-  NotFoundError,
-  BadRequestError,
-  UnauthorizedError,
-  withTimestamps,
-  upload,
-};
+export * from "./types";
+export * from "./errors";
+
+export { Core, Table, knexHelpers, withTimestamps, upload, wrap };

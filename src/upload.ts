@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import aws from "aws-sdk";
+import { Endpoint, S3 } from "aws-sdk";
 import { wrap } from "./wrap";
 
 export default function upload(
@@ -31,9 +31,9 @@ export default function upload(
       fileName: string;
       fileType: string;
     }) => {
-      const endpoint = new aws.Endpoint(endpointUrl);
+      const endpoint = new Endpoint(endpointUrl);
 
-      const s3 = new aws.S3({
+      const s3 = new S3({
         endpoint: endpoint,
         accessKeyId: AWS_ACCESS_KEY_ID,
         secretAccessKey: AWS_SECRET_ACCESS_KEY,
