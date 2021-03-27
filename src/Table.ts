@@ -1167,7 +1167,7 @@ export class Table<Context, T = any> {
                 );
               }
             })
-            .clearSelect()
+            .clear("select")
             .pluck(`${otherTable.alias}.${otherTable.idColumnName}`);
 
           const otherIds = await stmt;
@@ -1298,7 +1298,7 @@ export class Table<Context, T = any> {
     await this.where(stmt, context, queryParams);
     await this.applyPolicy(stmt, context, "read");
 
-    stmt.clearSelect();
+    stmt.clear("select");
 
     return await stmt
       .countDistinct(`${this.alias}.${this.idColumnName}`)
@@ -1321,7 +1321,7 @@ export class Table<Context, T = any> {
       Math.min(100000, Number(queryParams.limit) || 1000)
     );
 
-    stmt.clearSelect();
+    stmt.clear("select");
     stmt.offset(page * limit);
     stmt.limit(limit);
     const results = await stmt.pluck(`${this.alias}.${this.idColumnName}`);
