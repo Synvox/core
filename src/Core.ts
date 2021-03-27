@@ -47,7 +47,7 @@ export class Core<Context> {
     this.forwardQueryParams = options.forwardQueryParams ?? [];
     this.tables = [];
     this.initialized = false;
-    this.complexityLimit = options.complexityLimit ?? 500;
+    this.complexityLimit = options.complexityLimit ?? 100;
   }
 
   table(tableDef: TableDef<Context>) {
@@ -309,7 +309,7 @@ export class Core<Context> {
           const context = this.getContext(req, res);
           return await table.write(
             knex,
-            { ...req.params, ...req.query },
+            { ...req.body, ...req.params, ...req.query },
             context
           );
         })
@@ -325,6 +325,36 @@ export class Core<Context> {
             { ...req.body, ...req.params, ...req.query },
             context
           );
+        })
+      );
+
+      router.post(
+        `/${table.path}/validate`,
+        wrap(async (req, res) => {
+          const knex = await this.getKnex("read");
+          const context = this.getContext(req, res);
+          const [_, errors = {}] = await table.validateDeep(
+            knex,
+            { ...req.body, ...req.params, ...req.query },
+            context
+          );
+
+          return { errors };
+        })
+      );
+
+      router.put(
+        `/${table.path}/:${table.idColumnName}/validate`,
+        wrap(async (req, res) => {
+          const knex = await this.getKnex("read");
+          const context = this.getContext(req, res);
+          const [_, errors = {}] = await table.validateDeep(
+            knex,
+            { ...req.body, ...req.params, ...req.query },
+            context
+          );
+
+          return { errors };
         })
       );
 

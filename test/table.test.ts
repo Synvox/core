@@ -973,6 +973,41 @@ describe("without policies", () => {
         "select test.id, test.is_boolean, test.number_count, test.text from test.test where test.id = ? limit ?",
       ]
     `);
+
+    queries = [];
+    expect(await table.write(knex, { isBoolean: true, numberCount: 10 }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "changes": Array [
+          Object {
+            "mode": "insert",
+            "row": Object {
+              "id": 2,
+              "isBoolean": true,
+              "numberCount": 10,
+              "text": "text",
+            },
+            "schemaName": "test",
+            "tableName": "test",
+          },
+        ],
+        "data": Object {
+          "_links": Object {},
+          "_type": "test/test",
+          "_url": "/test/test/2",
+          "id": 2,
+          "isBoolean": true,
+          "numberCount": 10,
+          "text": "text",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "insert into test.test (is_boolean, number_count) values (?, ?) returning *",
+        "select test.id, test.is_boolean, test.number_count, test.text from test.test where test.id = ? limit ?",
+      ]
+    `);
   });
 
   it("validates", async () => {
@@ -3807,6 +3842,18 @@ describe("uuid columns", () => {
           "hasMore": false,
           "limit": 50,
           "page": 0,
+        },
+      }
+    `);
+
+    expect(
+      await items
+        .readOne(knex, { id: "abc" }, {})
+        .catch((e: BadRequestError) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "id": "must be a valid UUID",
         },
       }
     `);

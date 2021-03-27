@@ -867,7 +867,7 @@ export class Table<Context, T = any> {
         );
 
         //@TODO come back to this
-        // @ts-expect-error
+        //@ts-expect-error
         otherGraphs[index] = otherGraphValidated;
 
         if (otherErrors) {

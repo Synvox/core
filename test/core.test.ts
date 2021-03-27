@@ -186,8 +186,19 @@ describe("listens on server", () => {
 
     const axios = Axios.create({ baseURL: url });
 
+    await core.init();
+
+    queries = [];
     expect(
-      (await axios.post("/coreTest/test", {}).catch((e) => e.response)).data
+      (
+        await axios
+          .post("/coreTest/test", {
+            isBoolean: true,
+            numberCount: 10,
+            text: "abc",
+          })
+          .catch((e) => e.response)
+      ).data
     ).toMatchInlineSnapshot(`
       Object {
         "changes": Array [
@@ -195,9 +206,9 @@ describe("listens on server", () => {
             "mode": "insert",
             "row": Object {
               "id": 1,
-              "isBoolean": false,
-              "numberCount": 0,
-              "text": "text",
+              "isBoolean": true,
+              "numberCount": 10,
+              "text": "abc",
             },
             "schemaName": "coreTest",
             "tableName": "test",
@@ -208,11 +219,17 @@ describe("listens on server", () => {
           "_type": "coreTest/test",
           "_url": "/coreTest/test/1",
           "id": 1,
-          "isBoolean": false,
-          "numberCount": 0,
-          "text": "text",
+          "isBoolean": true,
+          "numberCount": 10,
+          "text": "abc",
         },
       }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "insert into core_test.test (is_boolean, number_count, text) values (?, ?, ?) returning *",
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
+      ]
     `);
   });
 
@@ -1371,5 +1388,105 @@ describe("handles advanced queries", () => {
         "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.id in (?) or (test.id in (?)) and (test.id not in (?))) order by test.id asc limit ?",
       ]
     `);
+  });
+});
+
+describe("validates without write", () => {
+  beforeEach(async () => {
+    await knex.schema.withSchema("core_test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+      t.boolean("is_boolean").notNullable().defaultTo(false);
+      t.integer("number_count").notNullable().defaultTo(0);
+      t.text("text").notNullable().defaultTo("text");
+    });
+  });
+
+  it("validates existing", async () => {
+    const [row] = await knex("coreTest.test")
+      .insert({
+        isBoolean: true,
+        numberCount: 10,
+      })
+      .returning("*");
+
+    type Context = {};
+
+    const core = new Core<Context>(
+      () => {
+        return {};
+      },
+      async () => knex
+    );
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+    });
+
+    const app = express();
+    app.use(core.router());
+    await core.init();
+    const url = await listen(app);
+
+    const axios = Axios.create({ baseURL: url });
+
+    queries = [];
+    expect(
+      (
+        await axios.put(`/coreTest/test/${row.id}/validate`, {
+          numberCount: "abc",
+        })
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "numberCount": "must be a \`number\` type, but the final value was: \`NaN\` (cast from the value \`\\"abc\\"\`).",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.id = ?) limit ?",
+      ]
+    `);
+  });
+
+  it("validates on create", async () => {
+    type Context = {};
+
+    const core = new Core<Context>(
+      () => {
+        return {};
+      },
+      async () => knex
+    );
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+    });
+
+    const app = express();
+    app.use(core.router());
+    await core.init();
+    const url = await listen(app);
+
+    const axios = Axios.create({ baseURL: url });
+
+    queries = [];
+    expect(
+      (
+        await axios.post(`/coreTest/test/validate`, {
+          numberCount: "abc",
+        })
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "numberCount": "must be a \`number\` type, but the final value was: \`NaN\` (cast from the value \`\\"abc\\"\`).",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`Array []`);
   });
 });
