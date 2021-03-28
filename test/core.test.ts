@@ -109,14 +109,14 @@ describe("listens on server", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "http://localhost/coreTest/test",
-          },
           "count": Object {
             "href": "http://localhost/coreTest/test/count",
           },
           "ids": Object {
             "href": "http://localhost/coreTest/test/ids",
+          },
+          "profile": Object {
+            "href": "http://localhost/coreTest/test",
           },
           "self": Object {
             "href": "http://localhost/coreTest/test",
@@ -558,14 +558,14 @@ describe("listens on server", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/coreTest/test",
-          },
-          "nextPage": Object {
+          "next": Object {
             "href": "/coreTest/test/ids?page=1",
           },
           "previousPage": Object {
             "href": "/coreTest/test/ids?page=-1",
+          },
+          "profile": Object {
+            "href": "/coreTest/test",
           },
           "self": Object {
             "href": "/coreTest/test/ids",
@@ -682,14 +682,14 @@ describe("forwards params", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/coreTest/test",
-          },
           "count": Object {
             "href": "/coreTest/test/count?orgId=1",
           },
           "ids": Object {
             "href": "/coreTest/test/ids?orgId=1",
+          },
+          "profile": Object {
+            "href": "/coreTest/test",
           },
           "self": Object {
             "href": "/coreTest/test?orgId=1",
@@ -1053,14 +1053,14 @@ describe("handles advanced queries", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/coreTest/test",
-          },
           "count": Object {
             "href": "/coreTest/test/count?numberCount.lte=5",
           },
           "ids": Object {
             "href": "/coreTest/test/ids?numberCount.lte=5",
+          },
+          "profile": Object {
+            "href": "/coreTest/test",
           },
           "self": Object {
             "href": "/coreTest/test?numberCount.lte=5",
@@ -1117,14 +1117,14 @@ describe("handles advanced queries", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/coreTest/test",
-          },
           "count": Object {
             "href": "/coreTest/test/count?numberCount.lt=5",
           },
           "ids": Object {
             "href": "/coreTest/test/ids?numberCount.lt=5",
+          },
+          "profile": Object {
+            "href": "/coreTest/test",
           },
           "self": Object {
             "href": "/coreTest/test?numberCount.lt=5",
@@ -1167,14 +1167,14 @@ describe("handles advanced queries", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/coreTest/test",
-          },
           "count": Object {
             "href": "/coreTest/test/count?numberCount.gte=5",
           },
           "ids": Object {
             "href": "/coreTest/test/ids?numberCount.gte=5",
+          },
+          "profile": Object {
+            "href": "/coreTest/test",
           },
           "self": Object {
             "href": "/coreTest/test?numberCount.gte=5",
@@ -1231,14 +1231,14 @@ describe("handles advanced queries", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/coreTest/test",
-          },
           "count": Object {
             "href": "/coreTest/test/count?numberCount.gt=5",
           },
           "ids": Object {
             "href": "/coreTest/test/ids?numberCount.gt=5",
+          },
+          "profile": Object {
+            "href": "/coreTest/test",
           },
           "self": Object {
             "href": "/coreTest/test?numberCount.gt=5",
@@ -1281,14 +1281,14 @@ describe("handles advanced queries", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/coreTest/test",
-          },
           "count": Object {
             "href": "/coreTest/test/count?numberCount.neq=5",
           },
           "ids": Object {
             "href": "/coreTest/test/ids?numberCount.neq=5",
+          },
+          "profile": Object {
+            "href": "/coreTest/test",
           },
           "self": Object {
             "href": "/coreTest/test?numberCount.neq=5",
@@ -1345,14 +1345,14 @@ describe("handles advanced queries", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/coreTest/test",
-          },
           "count": Object {
             "href": "/coreTest/test/count?numberCount.not.eq=5",
           },
           "ids": Object {
             "href": "/coreTest/test/ids?numberCount.not.eq=5",
+          },
+          "profile": Object {
+            "href": "/coreTest/test",
           },
           "self": Object {
             "href": "/coreTest/test?numberCount.not.eq=5",
@@ -1409,14 +1409,14 @@ describe("handles advanced queries", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/coreTest/test",
-          },
           "count": Object {
             "href": "/coreTest/test/count?text.ilike=%25Brown%25",
           },
           "ids": Object {
             "href": "/coreTest/test/ids?text.ilike=%25Brown%25",
+          },
+          "profile": Object {
+            "href": "/coreTest/test",
           },
           "self": Object {
             "href": "/coreTest/test?text.ilike=%25Brown%25",

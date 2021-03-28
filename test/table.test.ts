@@ -74,14 +74,14 @@ describe("without policies", () => {
     expect(await table.readMany(knex, {}, {})).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/test",
-          },
           "count": Object {
             "href": "/test/test/count",
           },
           "ids": Object {
             "href": "/test/test/ids",
+          },
+          "profile": Object {
+            "href": "/test/test",
           },
           "self": Object {
             "href": "/test/test",
@@ -155,14 +155,14 @@ describe("without policies", () => {
     expect(await table.readMany(knex, { id: [1] }, {})).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/test",
-          },
           "count": Object {
             "href": "/test/test/count?id[]=1",
           },
           "ids": Object {
             "href": "/test/test/ids?id[]=1",
+          },
+          "profile": Object {
+            "href": "/test/test",
           },
           "self": Object {
             "href": "/test/test?id[]=1",
@@ -201,14 +201,14 @@ describe("without policies", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/test",
-          },
           "count": Object {
             "href": "/test/test/count?isBoolean=true",
           },
           "ids": Object {
             "href": "/test/test/ids?isBoolean=true",
+          },
+          "profile": Object {
+            "href": "/test/test",
           },
           "self": Object {
             "href": "/test/test?isBoolean=true",
@@ -249,14 +249,14 @@ describe("without policies", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/test",
-          },
           "count": Object {
             "href": "/test/test/count?numberCount=1",
           },
           "ids": Object {
             "href": "/test/test/ids?numberCount=1",
+          },
+          "profile": Object {
+            "href": "/test/test",
           },
           "self": Object {
             "href": "/test/test?numberCount=1",
@@ -297,14 +297,14 @@ describe("without policies", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/test",
-          },
           "count": Object {
             "href": "/test/test/count?id=123",
           },
           "ids": Object {
             "href": "/test/test/ids?id=123",
+          },
+          "profile": Object {
+            "href": "/test/test",
           },
           "self": Object {
             "href": "/test/test?id=123",
@@ -387,14 +387,14 @@ describe("without policies", () => {
     expect(await users.readMany(knex, {}, {})).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/users",
-          },
           "count": Object {
             "href": "/test/users/count",
           },
           "ids": Object {
             "href": "/test/users/ids",
+          },
+          "profile": Object {
+            "href": "/test/users",
           },
           "self": Object {
             "href": "/test/users",
@@ -431,14 +431,14 @@ describe("without policies", () => {
     expect(await posts.readMany(knex, {}, {})).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/posts",
-          },
           "count": Object {
             "href": "/test/posts/count",
           },
           "ids": Object {
             "href": "/test/posts/ids",
+          },
+          "profile": Object {
+            "href": "/test/posts",
           },
           "self": Object {
             "href": "/test/posts",
@@ -557,14 +557,14 @@ describe("without policies", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/users",
-          },
           "count": Object {
             "href": "/test/users/count?include=bogus",
           },
           "ids": Object {
             "href": "/test/users/ids?include=bogus",
+          },
+          "profile": Object {
+            "href": "/test/users",
           },
           "self": Object {
             "href": "/test/users?include=bogus",
@@ -643,14 +643,14 @@ describe("without policies", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/users",
-          },
           "count": Object {
             "href": "/test/users/count?token=123",
           },
           "ids": Object {
             "href": "/test/users/ids?token=123",
+          },
+          "profile": Object {
+            "href": "/test/users",
           },
           "self": Object {
             "href": "/test/users?token=123",
@@ -691,14 +691,14 @@ describe("without policies", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/posts",
-          },
           "count": Object {
             "href": "/test/posts/count?token=123",
           },
           "ids": Object {
             "href": "/test/posts/ids?token=123",
+          },
+          "profile": Object {
+            "href": "/test/posts",
           },
           "self": Object {
             "href": "/test/posts?token=123",
@@ -877,14 +877,14 @@ describe("without policies", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/users",
-          },
           "count": Object {
             "href": "/test/users/count?include=bogus&token=123",
           },
           "ids": Object {
             "href": "/test/users/ids?include=bogus&token=123",
+          },
+          "profile": Object {
+            "href": "/test/users",
           },
           "self": Object {
             "href": "/test/users?include=bogus&token=123",
@@ -1014,14 +1014,14 @@ describe("without policies", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/docs",
-          },
           "count": Object {
             "href": "/test/docs/count?include[]=version&include[]=firstVersion",
           },
           "ids": Object {
             "href": "/test/docs/ids?include[]=version&include[]=firstVersion",
+          },
+          "profile": Object {
+            "href": "/test/docs",
           },
           "self": Object {
             "href": "/test/docs?include[]=version&include[]=firstVersion",
@@ -1099,14 +1099,14 @@ describe("without policies", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/versions",
-          },
           "count": Object {
             "href": "/test/versions/count?include[]=headDocs&include[]=firstDocs",
           },
           "ids": Object {
             "href": "/test/versions/ids?include[]=headDocs&include[]=firstDocs",
+          },
+          "profile": Object {
+            "href": "/test/versions",
           },
           "self": Object {
             "href": "/test/versions?include[]=headDocs&include[]=firstDocs",
@@ -2301,14 +2301,14 @@ describe("without policies", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/test",
-          },
-          "nextPage": Object {
+          "next": Object {
             "href": "/test/test/ids?limit=50&page=1",
           },
           "previousPage": Object {
             "href": "/test/test/ids?limit=50&page=-1",
+          },
+          "profile": Object {
+            "href": "/test/test",
           },
           "self": Object {
             "href": "/test/test/ids?limit=50",
@@ -2330,14 +2330,14 @@ describe("without policies", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/test",
-          },
-          "nextPage": Object {
+          "next": Object {
             "href": "/test/test/ids?limit=51&page=2",
           },
           "previousPage": Object {
             "href": "/test/test/ids?limit=51&page=0",
+          },
+          "profile": Object {
+            "href": "/test/test",
           },
           "self": Object {
             "href": "/test/test/ids?limit=51&page=1",
@@ -2410,14 +2410,14 @@ describe("without policies", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/users",
-          },
           "count": Object {
             "href": "/test/users/count?include=activeJob",
           },
           "ids": Object {
             "href": "/test/users/ids?include=activeJob",
+          },
+          "profile": Object {
+            "href": "/test/users",
           },
           "self": Object {
             "href": "/test/users?include=activeJob",
@@ -2469,14 +2469,14 @@ describe("without policies", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/users",
-          },
           "count": Object {
             "href": "/test/users/count?include=activeJobs",
           },
           "ids": Object {
             "href": "/test/users/ids?include=activeJobs",
+          },
+          "profile": Object {
+            "href": "/test/users",
           },
           "self": Object {
             "href": "/test/users?include=activeJobs",
@@ -2535,14 +2535,14 @@ describe("without policies", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/users",
-          },
           "count": Object {
             "href": "/test/users/count?include[]=activeJob&include[]=activeJobs&include[]=activeJobId",
           },
           "ids": Object {
             "href": "/test/users/ids?include[]=activeJob&include[]=activeJobs&include[]=activeJobId",
+          },
+          "profile": Object {
+            "href": "/test/users",
           },
           "self": Object {
             "href": "/test/users?include[]=activeJob&include[]=activeJobs&include[]=activeJobId",
@@ -2878,17 +2878,17 @@ describe("without policies", () => {
     expect(await table.readMany(knex, { limit: 2 }, {})).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/jobs",
-          },
           "count": Object {
             "href": "/test/jobs/count?limit=2",
           },
           "ids": Object {
             "href": "/test/jobs/ids?limit=2",
           },
-          "nextPage": Object {
+          "next": Object {
             "href": "/test/jobs?limit=2&cursor=eyJpZCI6MiwiaXNBY3RpdmUiOmZhbHNlfQ%3D%3D",
+          },
+          "profile": Object {
+            "href": "/test/jobs",
           },
           "self": Object {
             "href": "/test/jobs?limit=2",
@@ -2936,20 +2936,20 @@ describe("without policies", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/jobs",
-          },
           "count": Object {
             "href": "/test/jobs/count?limit=2&page=1",
           },
           "ids": Object {
             "href": "/test/jobs/ids?limit=2&page=1",
           },
-          "nextPage": Object {
+          "next": Object {
             "href": "/test/jobs?limit=2&page=2",
           },
           "previousPage": Object {
             "href": "/test/jobs?limit=2&page=0",
+          },
+          "profile": Object {
+            "href": "/test/jobs",
           },
           "self": Object {
             "href": "/test/jobs?limit=2&page=1",
@@ -2997,9 +2997,6 @@ describe("without policies", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/jobs",
-          },
           "count": Object {
             "href": "/test/jobs/count?limit=2&page=100",
           },
@@ -3008,6 +3005,9 @@ describe("without policies", () => {
           },
           "previousPage": Object {
             "href": "/test/jobs?limit=2&page=99",
+          },
+          "profile": Object {
+            "href": "/test/jobs",
           },
           "self": Object {
             "href": "/test/jobs?limit=2&page=100",
@@ -3098,14 +3098,14 @@ describe("with policies", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/users",
-          },
           "count": Object {
             "href": "/test/users/count?include=posts",
           },
           "ids": Object {
             "href": "/test/users/ids?include=posts",
+          },
+          "profile": Object {
+            "href": "/test/users",
           },
           "self": Object {
             "href": "/test/users?include=posts",
@@ -3162,14 +3162,14 @@ describe("with policies", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/posts",
-          },
           "count": Object {
             "href": "/test/posts/count?include[]=user",
           },
           "ids": Object {
             "href": "/test/posts/ids?include[]=user",
+          },
+          "profile": Object {
+            "href": "/test/posts",
           },
           "self": Object {
             "href": "/test/posts?include[]=user",
@@ -3679,14 +3679,14 @@ describe("multitenancy", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/items",
-          },
           "count": Object {
             "href": "/test/items/count?orgId=1",
           },
           "ids": Object {
             "href": "/test/items/ids?orgId=1",
+          },
+          "profile": Object {
+            "href": "/test/items",
           },
           "self": Object {
             "href": "/test/items?orgId=1",
@@ -3725,14 +3725,14 @@ describe("multitenancy", () => {
     expect(await items.ids(knex, { orgId: org.id }, {})).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/items",
-          },
-          "nextPage": Object {
+          "next": Object {
             "href": "/test/items/ids?orgId=1&page=1",
           },
           "previousPage": Object {
             "href": "/test/items/ids?orgId=1&page=-1",
+          },
+          "profile": Object {
+            "href": "/test/items",
           },
           "self": Object {
             "href": "/test/items/ids?orgId=1",
@@ -3763,14 +3763,14 @@ describe("multitenancy", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/items",
-          },
           "count": Object {
             "href": "/test/items/count?orgId=1&include[]=org",
           },
           "ids": Object {
             "href": "/test/items/ids?orgId=1&include[]=org",
+          },
+          "profile": Object {
+            "href": "/test/items",
           },
           "self": Object {
             "href": "/test/items?orgId=1&include[]=org",
@@ -4005,14 +4005,14 @@ describe("multitenancy", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/items",
-          },
           "count": Object {
             "href": "/test/items/count?orgId=1",
           },
           "ids": Object {
             "href": "/test/items/ids?orgId=1",
+          },
+          "profile": Object {
+            "href": "/test/items",
           },
           "self": Object {
             "href": "/test/items?orgId=1",
@@ -4293,14 +4293,14 @@ describe("paranoid", () => {
     expect(await items.readMany(knex, { id: 1 }, {})).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/items",
-          },
           "count": Object {
             "href": "/test/items/count?id=1",
           },
           "ids": Object {
             "href": "/test/items/ids?id=1",
+          },
+          "profile": Object {
+            "href": "/test/items",
           },
           "self": Object {
             "href": "/test/items?id=1",
@@ -4439,14 +4439,14 @@ describe("hidden columns", () => {
     expect(await items.readMany(knex, {}, {})).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/items",
-          },
           "count": Object {
             "href": "/test/items/count",
           },
           "ids": Object {
             "href": "/test/items/ids",
+          },
+          "profile": Object {
+            "href": "/test/items",
           },
           "self": Object {
             "href": "/test/items",
@@ -4544,14 +4544,14 @@ describe("uuid columns", () => {
     expect(await items.readMany(knex, {}, {})).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/items",
-          },
           "count": Object {
             "href": "/test/items/count",
           },
           "ids": Object {
             "href": "/test/items/ids",
+          },
+          "profile": Object {
+            "href": "/test/items",
           },
           "self": Object {
             "href": "/test/items",
@@ -5188,14 +5188,14 @@ describe("self references", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/items",
-          },
           "count": Object {
             "href": "/test/items/count?include=parentItem",
           },
           "ids": Object {
             "href": "/test/items/ids?include=parentItem",
+          },
+          "profile": Object {
+            "href": "/test/items",
           },
           "self": Object {
             "href": "/test/items?include=parentItem",
@@ -5301,14 +5301,14 @@ describe("self references", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/items",
-          },
           "count": Object {
             "href": "/test/items/count?include=items",
           },
           "ids": Object {
             "href": "/test/items/ids?include=items",
+          },
+          "profile": Object {
+            "href": "/test/items",
           },
           "self": Object {
             "href": "/test/items?include=items",
@@ -5444,14 +5444,14 @@ describe("sorts", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/items",
-          },
           "count": Object {
             "href": "/test/items/count?sort=-key1",
           },
           "ids": Object {
             "href": "/test/items/ids?sort=-key1",
+          },
+          "profile": Object {
+            "href": "/test/items",
           },
           "self": Object {
             "href": "/test/items?sort=-key1",
@@ -5514,14 +5514,14 @@ describe("sorts", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/items",
-          },
           "count": Object {
             "href": "/test/items/count?sort[]=key2&sort[]=-key1",
           },
           "ids": Object {
             "href": "/test/items/ids?sort[]=key2&sort[]=-key1",
+          },
+          "profile": Object {
+            "href": "/test/items",
           },
           "self": Object {
             "href": "/test/items?sort[]=key2&sort[]=-key1",
@@ -5584,14 +5584,14 @@ describe("sorts", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/items",
-          },
           "count": Object {
             "href": "/test/items/count?sort=bogus",
           },
           "ids": Object {
             "href": "/test/items/ids?sort=bogus",
+          },
+          "profile": Object {
+            "href": "/test/items",
           },
           "self": Object {
             "href": "/test/items?sort=bogus",
@@ -5685,17 +5685,17 @@ describe("pagination", () => {
     expect(meta1).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/items",
-          },
           "count": Object {
             "href": "/test/items/count?sort[]=-key1&sort[]=key2",
           },
           "ids": Object {
             "href": "/test/items/ids?sort[]=-key1&sort[]=key2",
           },
-          "nextPage": Object {
+          "next": Object {
             "href": "/test/items?sort[]=-key1&sort[]=key2&cursor=eyJpZCI6NzYyLCJrZXkxIjo5NCwia2V5MiI6NjN9",
+          },
+          "profile": Object {
+            "href": "/test/items",
           },
           "self": Object {
             "href": "/test/items?sort[]=-key1&sort[]=key2",
@@ -5727,7 +5727,7 @@ describe("pagination", () => {
       }
     `);
 
-    const url = new URL(meta1._links.nextPage.href, "http://localhost");
+    const url = new URL(meta1._links.next.href, "http://localhost");
     const params = QueryString.parse(url.search.slice(1));
 
     queries = [];
@@ -5738,17 +5738,17 @@ describe("pagination", () => {
     expect(meta2).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/test/items",
-          },
           "count": Object {
             "href": "/test/items/count?sort[]=-key1&sort[]=key2&cursor=eyJpZCI6NzYyLCJrZXkxIjo5NCwia2V5MiI6NjN9",
           },
           "ids": Object {
             "href": "/test/items/ids?sort[]=-key1&sort[]=key2&cursor=eyJpZCI6NzYyLCJrZXkxIjo5NCwia2V5MiI6NjN9",
           },
-          "nextPage": Object {
+          "next": Object {
             "href": "/test/items?sort[]=-key1&sort[]=key2&cursor=eyJpZCI6MjQwLCJrZXkxIjo4OSwia2V5MiI6MTZ9",
+          },
+          "profile": Object {
+            "href": "/test/items",
           },
           "self": Object {
             "href": "/test/items?sort[]=-key1&sort[]=key2&cursor=eyJpZCI6NzYyLCJrZXkxIjo5NCwia2V5MiI6NjN9",
@@ -5831,14 +5831,14 @@ describe("in public schema", () => {
     expect(await items.readMany(knex, {}, {})).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/testTable",
-          },
           "count": Object {
             "href": "/testTable/count",
           },
           "ids": Object {
             "href": "/testTable/ids",
+          },
+          "profile": Object {
+            "href": "/testTable",
           },
           "self": Object {
             "href": "/testTable",

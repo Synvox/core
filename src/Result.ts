@@ -8,7 +8,7 @@ const metaSym = Symbol();
 
 type ResultMeta = {
   url: string;
-  collectionUrl: string;
+  profileUrl: string;
   links: Record<string, string>;
 };
 
@@ -24,7 +24,7 @@ export class Result<T extends Record<string, any>> implements ToJSON {
     return {
       _links: {
         self: { href: meta.url },
-        collection: { href: meta.collectionUrl },
+        collection: { href: meta.profileUrl },
         ...Object.fromEntries(
           Object.entries(meta.links).map(([key, href]) => [key, { href }])
         ),
@@ -40,7 +40,7 @@ type CollectionMeta = {
   hasMore: boolean;
   links: Record<string, string>;
   url: string;
-  collectionUrl: string;
+  profileUrl: string;
 };
 
 export class CollectionResult<T extends Record<string, any>>
@@ -51,7 +51,7 @@ export class CollectionResult<T extends Record<string, any>>
   hasMore: boolean;
   links: Record<string, string>;
   url: string;
-  collectionUrl: string;
+  profileUrl: string;
 
   constructor(items: T[], meta: CollectionMeta) {
     super(...items);
@@ -60,7 +60,7 @@ export class CollectionResult<T extends Record<string, any>>
     this.hasMore = meta.hasMore;
     this.links = meta.links;
     this.url = meta.url;
-    this.collectionUrl = meta.collectionUrl;
+    this.profileUrl = meta.profileUrl;
     Object.assign(this, meta);
   }
 
@@ -71,7 +71,7 @@ export class CollectionResult<T extends Record<string, any>>
       hasMore: this.hasMore,
       _links: {
         self: { href: this.url },
-        collection: { href: this.collectionUrl },
+        profile: { href: this.profileUrl },
         ...Object.fromEntries(
           Object.entries(this.links).map(([key, href]) => [key, { href }])
         ),

@@ -402,14 +402,14 @@ describe("withTimestamps plugin", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/testPlugins/items",
-          },
           "count": Object {
             "href": "/testPlugins/items/count?since=1999-01-01%2004%3A05%3A06",
           },
           "ids": Object {
             "href": "/testPlugins/items/ids?since=1999-01-01%2004%3A05%3A06",
+          },
+          "profile": Object {
+            "href": "/testPlugins/items",
           },
           "self": Object {
             "href": "/testPlugins/items?since=1999-01-01%2004%3A05%3A06",
@@ -459,14 +459,14 @@ describe("withTimestamps plugin", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/testPlugins/items",
-          },
           "count": Object {
             "href": "/testPlugins/items/count?since=1999-01-10%2004%3A05%3A06",
           },
           "ids": Object {
             "href": "/testPlugins/items/ids?since=1999-01-10%2004%3A05%3A06",
+          },
+          "profile": Object {
+            "href": "/testPlugins/items",
           },
           "self": Object {
             "href": "/testPlugins/items?since=1999-01-10%2004%3A05%3A06",
@@ -503,14 +503,14 @@ describe("withTimestamps plugin", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "collection": Object {
-            "href": "/testPlugins/items",
-          },
           "count": Object {
             "href": "/testPlugins/items/count?since=something%20bogus",
           },
           "ids": Object {
             "href": "/testPlugins/items/ids?since=something%20bogus",
+          },
+          "profile": Object {
+            "href": "/testPlugins/items",
           },
           "self": Object {
             "href": "/testPlugins/items?since=something%20bogus",

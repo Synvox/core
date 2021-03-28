@@ -21,7 +21,7 @@ It has many comfort features along the way:
 - Tenant id enforcement
   `GET /:tenantId/users -> 400 { errors: { tenantId: 'is required' } }`
 - Cursor and offset based pagination
-  `GET /users -> { meta: {nextPage: '/users?cursor=base64cursor' }, data: [...] }`
+  `GET /users -> { meta: {next: '/users?cursor=base64cursor' }, data: [...] }`
 - ID modifiers
   `GET /users/self` vs `GET /users/1`
 - Query string modifiers
@@ -567,7 +567,7 @@ If you called `GET /items`, you may receive a response like this:
     "_links": {
       "count": "/items/count",
       "ids": "/items/ids",
-      "nextPage": "/items?cursor={base64cursor}",
+      "next": "/items?cursor={base64cursor}",
     },
     "_type": "items",
     "_url": "/test/items",
@@ -579,7 +579,7 @@ If you called `GET /items`, you may receive a response like this:
 }
 ```
 
-The `meta._links` property contains a link for the next page. To use keyset pagination, call the url at `nextPage`. To use offset pagination, specify a `page` as a query parameter: `/items?page=1`.
+The `meta._links` property contains a link for the next page. To use keyset pagination, call the url at `next`. To use offset pagination, specify a `page` as a query parameter: `/items?page=1`.
 
 For both pagination schemes, you can specify a `limit` to limit the number of items in each response. The default limit is 50, and can be increased to 250.
 

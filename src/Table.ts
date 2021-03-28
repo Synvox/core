@@ -583,7 +583,7 @@ export class Table<Context, T = any> {
 
     return new Result<T>(outputRow, {
       url: selfUrl,
-      collectionUrl: `${this.baseUrl}/${this.path}`,
+      profileUrl: `${this.baseUrl}/${this.path}`,
       links: result,
     }) as Result<T> & T;
   }
@@ -1335,9 +1335,9 @@ export class Table<Context, T = any> {
       page,
       limit,
       hasMore: results.length >= limit,
-      collectionUrl: `${this.baseUrl}/${this.path}`,
+      profileUrl: `${this.baseUrl}/${this.path}`,
       links: {
-        nextPage: `${this.baseUrl}/${this.path}/ids?${qs.stringify({
+        next: `${this.baseUrl}/${this.path}/ids?${qs.stringify({
           ...queryParams,
           page: page + 1,
         })}`,
@@ -1601,7 +1601,7 @@ export class Table<Context, T = any> {
         ...(!queryParams.page
           ? {
               ...(results.length >= limit && {
-                nextPage: `${table.baseUrl}/${path}?${qsStringify({
+                next: `${table.baseUrl}/${path}?${qsStringify({
                   ...queryParams,
                   cursor: btoa(JSON.stringify(results[results.length - 1])),
                 })}`,
@@ -1609,7 +1609,7 @@ export class Table<Context, T = any> {
             }
           : {
               ...(results.length >= limit && {
-                nextPage: `${table.baseUrl}/${path}?${qsStringify({
+                next: `${table.baseUrl}/${path}?${qsStringify({
                   ...queryParams,
                   page: page + 1,
                 })}`,
@@ -1645,7 +1645,7 @@ export class Table<Context, T = any> {
             : ""
         }`,
         links: links,
-        collectionUrl: `${table.baseUrl}/${path}`,
+        profileUrl: `${table.baseUrl}/${path}`,
       });
     };
 
