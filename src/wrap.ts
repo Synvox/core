@@ -7,7 +7,7 @@ export const wrap = (
   try {
     const result = await fn(req, res, next);
     if (result !== undefined) {
-      res.send(result);
+      res.json(result);
       res.end();
     }
   } catch (e) {
@@ -22,11 +22,11 @@ export const wrap = (
         else {
           body = {
             error: error.message,
-            stack: error.stack
+            stack: error.stack,
           };
         }
       }
-      res.status(error.statusCode!).send(body);
+      res.status(error.statusCode!).json(body);
     } else next(e);
   }
 };

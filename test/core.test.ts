@@ -527,12 +527,7 @@ describe("listens on server", () => {
       ).data
     ).toMatchInlineSnapshot(`
       Object {
-        "data": Object {
-          "count": 1,
-        },
-        "meta": Object {
-          "_url": "/coreTest/test/1/subCount",
-        },
+        "count": 1,
       }
     `);
   });
@@ -599,14 +594,7 @@ describe("listens on server", () => {
 
     expect(
       (await axios.get(`/coreTest/test/count`).catch((e) => e.response)).data
-    ).toMatchInlineSnapshot(`
-      Object {
-        "data": 1,
-        "meta": Object {
-          "_url": "/coreTest/test/count",
-        },
-      }
-    `);
+    ).toMatchInlineSnapshot(`1`);
   });
 
   it("initializes once", async () => {

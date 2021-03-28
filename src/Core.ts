@@ -246,12 +246,7 @@ export class Core<Context> {
               context
             );
 
-            return {
-              meta: {
-                _url: `${table.baseUrl}/${table.path}/count`,
-              },
-              data: count,
-            };
+            return count;
           })
         );
 
@@ -274,14 +269,7 @@ export class Core<Context> {
                 context
               );
 
-              return {
-                meta: {
-                  _url: `${table.baseUrl}/${table.path}/${
-                    row[table.idColumnName]
-                  }/${getterName}`,
-                },
-                data: row[getterName],
-              };
+              return row[getterName];
             })
           );
         }
