@@ -8,8 +8,8 @@ const metaSym = Symbol();
 
 type ResultMeta = {
   url: string;
+  collectionUrl: string;
   links: Record<string, string>;
-  type: string;
 };
 
 export class Result<T extends Record<string, any>> implements ToJSON {
@@ -22,9 +22,13 @@ export class Result<T extends Record<string, any>> implements ToJSON {
   toJSON() {
     const { [metaSym]: meta, ...others } = this;
     return {
-      _url: this[metaSym].url,
-      _links: this[metaSym].links,
-      _type: this[metaSym].type,
+      _links: {
+        self: { href: meta.url },
+        collection: { href: meta.collectionUrl },
+        ...Object.fromEntries(
+          Object.entries(meta.links).map(([key, href]) => [key, { href }])
+        ),
+      },
       ...others,
     };
   }
@@ -35,8 +39,8 @@ type CollectionMeta = {
   limit: number;
   hasMore: boolean;
   links: Record<string, string>;
-  type: string;
   url: string;
+  collectionUrl: string;
 };
 
 export class CollectionResult<T extends Record<string, any>>
@@ -46,17 +50,17 @@ export class CollectionResult<T extends Record<string, any>>
   limit: number;
   hasMore: boolean;
   links: Record<string, string>;
-  type: string;
   url: string;
+  collectionUrl: string;
 
-  constructor(data: T[], meta: CollectionMeta) {
-    super(...data);
+  constructor(items: T[], meta: CollectionMeta) {
+    super(...items);
     this.page = meta.page;
     this.limit = meta.limit;
     this.hasMore = meta.hasMore;
     this.links = meta.links;
-    this.type = meta.type;
     this.url = meta.url;
+    this.collectionUrl = meta.collectionUrl;
     Object.assign(this, meta);
   }
 
@@ -65,20 +69,24 @@ export class CollectionResult<T extends Record<string, any>>
       page: this.page,
       limit: this.limit,
       hasMore: this.hasMore,
-      _links: this.links,
-      _type: this.type,
-      _url: this.url,
+      _links: {
+        self: { href: this.url },
+        collection: { href: this.collectionUrl },
+        ...Object.fromEntries(
+          Object.entries(this.links).map(([key, href]) => [key, { href }])
+        ),
+      } as Record<string, { href: string }>,
     };
   }
 
-  get data() {
+  get items() {
     return [...this];
   }
 
   toJSON(this: CollectionResult<T>) {
     return {
-      meta: this.meta,
-      data: this.data,
+      ...this.meta,
+      items: this.items,
     };
   }
 }

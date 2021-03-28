@@ -272,8 +272,8 @@ describe("saves to files", () => {
         '_url': string;
         '_type': string;
         '_links': {
-          testSub: string;
-          testSubNullable: string;
+          testSub: { href: string };
+          testSubNullable: { href: string };
         };
       };
 

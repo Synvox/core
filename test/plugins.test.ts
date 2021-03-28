@@ -134,19 +134,31 @@ describe("withTimestamps plugin", () => {
         ],
         "data": Object {
           "_links": Object {
-            "posts": "/testPlugins/posts?userId=1",
+            "collection": Object {
+              "href": "/testPlugins/users",
+            },
+            "posts": Object {
+              "href": "/testPlugins/posts?userId=1",
+            },
+            "self": Object {
+              "href": "/testPlugins/users/1",
+            },
           },
-          "_type": "testPlugins/users",
-          "_url": "/testPlugins/users/1",
           "createdAt": 2021-01-01T01:01:00.000Z,
           "id": 1,
           "posts": Array [
             Object {
               "_links": Object {
-                "user": "/testPlugins/users/1",
+                "collection": Object {
+                  "href": "/testPlugins/posts",
+                },
+                "self": Object {
+                  "href": "/testPlugins/posts/1",
+                },
+                "user": Object {
+                  "href": "/testPlugins/users/1",
+                },
               },
-              "_type": "testPlugins/posts",
-              "_url": "/testPlugins/posts/1",
               "body": "",
               "createdAt": 2021-01-01T01:01:00.000Z,
               "id": 1,
@@ -155,10 +167,16 @@ describe("withTimestamps plugin", () => {
             },
             Object {
               "_links": Object {
-                "user": "/testPlugins/users/1",
+                "collection": Object {
+                  "href": "/testPlugins/posts",
+                },
+                "self": Object {
+                  "href": "/testPlugins/posts/2",
+                },
+                "user": Object {
+                  "href": "/testPlugins/users/1",
+                },
               },
-              "_type": "testPlugins/posts",
-              "_url": "/testPlugins/posts/2",
               "body": "",
               "createdAt": 2021-01-01T01:01:00.000Z,
               "id": 2,
@@ -201,10 +219,16 @@ describe("withTimestamps plugin", () => {
             "mode": "update",
             "row": Object {
               "_links": Object {
-                "posts": "/testPlugins/posts?userId=1",
+                "collection": Object {
+                  "href": "/testPlugins/users",
+                },
+                "posts": Object {
+                  "href": "/testPlugins/posts?userId=1",
+                },
+                "self": Object {
+                  "href": "/testPlugins/users/1",
+                },
               },
-              "_type": "testPlugins/users",
-              "_url": "/testPlugins/users/1",
               "createdAt": 2021-01-01T01:01:00.000Z,
               "id": 1,
               "updatedAt": 2021-01-02T01:01:00.000Z,
@@ -215,10 +239,16 @@ describe("withTimestamps plugin", () => {
         ],
         "data": Object {
           "_links": Object {
-            "posts": "/testPlugins/posts?userId=1",
+            "collection": Object {
+              "href": "/testPlugins/users",
+            },
+            "posts": Object {
+              "href": "/testPlugins/posts?userId=1",
+            },
+            "self": Object {
+              "href": "/testPlugins/users/1",
+            },
           },
-          "_type": "testPlugins/users",
-          "_url": "/testPlugins/users/1",
           "createdAt": 2021-01-01T01:01:00.000Z,
           "id": 1,
           "updatedAt": 2021-01-02T01:01:00.000Z,
@@ -308,9 +338,14 @@ describe("withTimestamps plugin", () => {
           },
         ],
         "data": Object {
-          "_links": Object {},
-          "_type": "testPlugins/items",
-          "_url": "/testPlugins/items/1",
+          "_links": Object {
+            "collection": Object {
+              "href": "/testPlugins/items",
+            },
+            "self": Object {
+              "href": "/testPlugins/items/1",
+            },
+          },
           "createdAt": 2021-01-02T01:01:00.000Z,
           "id": 1,
           "updatedAt": 2021-01-02T01:01:00.000Z,
@@ -366,35 +401,51 @@ describe("withTimestamps plugin", () => {
     expect(await items.readMany(knex, { since: "1999-01-01 04:05:06" }, {}))
       .toMatchInlineSnapshot(`
       Object {
-        "data": Array [
+        "_links": Object {
+          "collection": Object {
+            "href": "/testPlugins/items",
+          },
+          "count": Object {
+            "href": "/testPlugins/items/count?since=1999-01-01%2004%3A05%3A06",
+          },
+          "ids": Object {
+            "href": "/testPlugins/items/ids?since=1999-01-01%2004%3A05%3A06",
+          },
+          "self": Object {
+            "href": "/testPlugins/items?since=1999-01-01%2004%3A05%3A06",
+          },
+        },
+        "hasMore": false,
+        "items": Array [
           Object {
-            "_links": Object {},
-            "_type": "testPlugins/items",
-            "_url": "/testPlugins/items/1",
+            "_links": Object {
+              "collection": Object {
+                "href": "/testPlugins/items",
+              },
+              "self": Object {
+                "href": "/testPlugins/items/1",
+              },
+            },
             "createdAt": 1999-01-08T10:05:06.000Z,
             "id": 1,
             "updatedAt": 1999-01-08T10:05:06.000Z,
           },
           Object {
-            "_links": Object {},
-            "_type": "testPlugins/items",
-            "_url": "/testPlugins/items/2",
+            "_links": Object {
+              "collection": Object {
+                "href": "/testPlugins/items",
+              },
+              "self": Object {
+                "href": "/testPlugins/items/2",
+              },
+            },
             "createdAt": 1999-01-08T10:05:06.000Z,
             "id": 2,
             "updatedAt": 1999-01-12T10:05:06.000Z,
           },
         ],
-        "meta": Object {
-          "_links": Object {
-            "count": "/testPlugins/items/count?since=1999-01-01%2004%3A05%3A06",
-            "ids": "/testPlugins/items/ids?since=1999-01-01%2004%3A05%3A06",
-          },
-          "_type": "testPlugins/items",
-          "_url": "/testPlugins/items?since=1999-01-01%2004%3A05%3A06",
-          "hasMore": false,
-          "limit": 50,
-          "page": 0,
-        },
+        "limit": 50,
+        "page": 0,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -407,27 +458,38 @@ describe("withTimestamps plugin", () => {
     expect(await items.readMany(knex, { since: "1999-01-10 04:05:06" }, {}))
       .toMatchInlineSnapshot(`
       Object {
-        "data": Array [
+        "_links": Object {
+          "collection": Object {
+            "href": "/testPlugins/items",
+          },
+          "count": Object {
+            "href": "/testPlugins/items/count?since=1999-01-10%2004%3A05%3A06",
+          },
+          "ids": Object {
+            "href": "/testPlugins/items/ids?since=1999-01-10%2004%3A05%3A06",
+          },
+          "self": Object {
+            "href": "/testPlugins/items?since=1999-01-10%2004%3A05%3A06",
+          },
+        },
+        "hasMore": false,
+        "items": Array [
           Object {
-            "_links": Object {},
-            "_type": "testPlugins/items",
-            "_url": "/testPlugins/items/2",
+            "_links": Object {
+              "collection": Object {
+                "href": "/testPlugins/items",
+              },
+              "self": Object {
+                "href": "/testPlugins/items/2",
+              },
+            },
             "createdAt": 1999-01-08T10:05:06.000Z,
             "id": 2,
             "updatedAt": 1999-01-12T10:05:06.000Z,
           },
         ],
-        "meta": Object {
-          "_links": Object {
-            "count": "/testPlugins/items/count?since=1999-01-10%2004%3A05%3A06",
-            "ids": "/testPlugins/items/ids?since=1999-01-10%2004%3A05%3A06",
-          },
-          "_type": "testPlugins/items",
-          "_url": "/testPlugins/items?since=1999-01-10%2004%3A05%3A06",
-          "hasMore": false,
-          "limit": 50,
-          "page": 0,
-        },
+        "limit": 50,
+        "page": 0,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -440,35 +502,51 @@ describe("withTimestamps plugin", () => {
     expect(await items.readMany(knex, { since: "something bogus" }, {}))
       .toMatchInlineSnapshot(`
       Object {
-        "data": Array [
+        "_links": Object {
+          "collection": Object {
+            "href": "/testPlugins/items",
+          },
+          "count": Object {
+            "href": "/testPlugins/items/count?since=something%20bogus",
+          },
+          "ids": Object {
+            "href": "/testPlugins/items/ids?since=something%20bogus",
+          },
+          "self": Object {
+            "href": "/testPlugins/items?since=something%20bogus",
+          },
+        },
+        "hasMore": false,
+        "items": Array [
           Object {
-            "_links": Object {},
-            "_type": "testPlugins/items",
-            "_url": "/testPlugins/items/1",
+            "_links": Object {
+              "collection": Object {
+                "href": "/testPlugins/items",
+              },
+              "self": Object {
+                "href": "/testPlugins/items/1",
+              },
+            },
             "createdAt": 1999-01-08T10:05:06.000Z,
             "id": 1,
             "updatedAt": 1999-01-08T10:05:06.000Z,
           },
           Object {
-            "_links": Object {},
-            "_type": "testPlugins/items",
-            "_url": "/testPlugins/items/2",
+            "_links": Object {
+              "collection": Object {
+                "href": "/testPlugins/items",
+              },
+              "self": Object {
+                "href": "/testPlugins/items/2",
+              },
+            },
             "createdAt": 1999-01-08T10:05:06.000Z,
             "id": 2,
             "updatedAt": 1999-01-12T10:05:06.000Z,
           },
         ],
-        "meta": Object {
-          "_links": Object {
-            "count": "/testPlugins/items/count?since=something%20bogus",
-            "ids": "/testPlugins/items/ids?since=something%20bogus",
-          },
-          "_type": "testPlugins/items",
-          "_url": "/testPlugins/items?since=something%20bogus",
-          "hasMore": false,
-          "limit": 50,
-          "page": 0,
-        },
+        "limit": 50,
+        "page": 0,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`

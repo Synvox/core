@@ -474,7 +474,7 @@ export async function saveTsTypes(
       }
 
       for (let key of Object.keys(hasMany)) {
-        types += `    ${key}: string;\n`;
+        types += `    ${key}: { href: string };\n`;
       }
 
       types += `  };\n`;

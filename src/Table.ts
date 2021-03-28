@@ -583,8 +583,8 @@ export class Table<Context, T = any> {
 
     return new Result<T>(outputRow, {
       url: selfUrl,
+      collectionUrl: `${this.baseUrl}/${this.path}`,
       links: result,
-      type: this.path,
     }) as Result<T> & T;
   }
 
@@ -1326,33 +1326,27 @@ export class Table<Context, T = any> {
     stmt.limit(limit);
     const results = await stmt.pluck(`${this.alias}.${this.idColumnName}`);
 
-    return {
-      meta: {
-        page,
-        limit,
-        hasMore: results.length >= limit,
-        _url: `${this.baseUrl}/${this.path}/ids${
-          Object.keys(queryParams).length > 0
-            ? `?${qsStringify(queryParams)}`
-            : ""
-        }`,
-        _links: {
-          ...(results.length >= limit && {
-            nextPage: `${this.baseUrl}/${this.path}/ids?${qs.stringify({
-              ...queryParams,
-              page: page + 1,
-            })}`,
-          }),
-          ...(page !== 0 && {
-            previousPage: `${this.baseUrl}/${this.path}/ids?${qs.stringify({
-              ...queryParams,
-              page: page - 1,
-            })}`,
-          }),
-        },
+    return new CollectionResult(results, {
+      url: `${this.baseUrl}/${this.path}/ids${
+        Object.keys(queryParams).length > 0
+          ? `?${qsStringify(queryParams)}`
+          : ""
+      }`,
+      page,
+      limit,
+      hasMore: results.length >= limit,
+      collectionUrl: `${this.baseUrl}/${this.path}`,
+      links: {
+        nextPage: `${this.baseUrl}/${this.path}/ids?${qs.stringify({
+          ...queryParams,
+          page: page + 1,
+        })}`,
+        previousPage: `${this.baseUrl}/${this.path}/ids?${qs.stringify({
+          ...queryParams,
+          page: page - 1,
+        })}`,
       },
-      data: results,
-    };
+    });
   }
 
   async read(
@@ -1651,7 +1645,7 @@ export class Table<Context, T = any> {
             : ""
         }`,
         links: links,
-        type: path,
+        collectionUrl: `${table.baseUrl}/${path}`,
       });
     };
 

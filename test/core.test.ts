@@ -108,28 +108,39 @@ describe("listens on server", () => {
     expect((await axios.get("/coreTest/test").catch((e) => e.response)).data)
       .toMatchInlineSnapshot(`
       Object {
-        "data": Array [
+        "_links": Object {
+          "collection": Object {
+            "href": "http://localhost/coreTest/test",
+          },
+          "count": Object {
+            "href": "http://localhost/coreTest/test/count",
+          },
+          "ids": Object {
+            "href": "http://localhost/coreTest/test/ids",
+          },
+          "self": Object {
+            "href": "http://localhost/coreTest/test",
+          },
+        },
+        "hasMore": false,
+        "items": Array [
           Object {
-            "_links": Object {},
-            "_type": "coreTest/test",
-            "_url": "http://localhost/coreTest/test/1",
+            "_links": Object {
+              "collection": Object {
+                "href": "http://localhost/coreTest/test",
+              },
+              "self": Object {
+                "href": "http://localhost/coreTest/test/1",
+              },
+            },
             "id": 1,
             "isBoolean": false,
             "numberCount": 0,
             "text": "text",
           },
         ],
-        "meta": Object {
-          "_links": Object {
-            "count": "http://localhost/coreTest/test/count",
-            "ids": "http://localhost/coreTest/test/ids",
-          },
-          "_type": "coreTest/test",
-          "_url": "http://localhost/coreTest/test",
-          "hasMore": false,
-          "limit": 50,
-          "page": 0,
-        },
+        "limit": 50,
+        "page": 0,
       }
     `);
   });
@@ -159,9 +170,14 @@ describe("listens on server", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "data": Object {
-          "_links": Object {},
-          "_type": "coreTest/test",
-          "_url": "/coreTest/test/1",
+          "_links": Object {
+            "collection": Object {
+              "href": "/coreTest/test",
+            },
+            "self": Object {
+              "href": "/coreTest/test/1",
+            },
+          },
           "id": 1,
           "isBoolean": false,
           "numberCount": 0,
@@ -214,9 +230,14 @@ describe("listens on server", () => {
           },
         ],
         "data": Object {
-          "_links": Object {},
-          "_type": "coreTest/test",
-          "_url": "/coreTest/test/1",
+          "_links": Object {
+            "collection": Object {
+              "href": "/coreTest/test",
+            },
+            "self": Object {
+              "href": "/coreTest/test/1",
+            },
+          },
           "id": 1,
           "isBoolean": true,
           "numberCount": 10,
@@ -265,9 +286,14 @@ describe("listens on server", () => {
           Object {
             "mode": "update",
             "row": Object {
-              "_links": Object {},
-              "_type": "coreTest/test",
-              "_url": "/coreTest/test/1",
+              "_links": Object {
+                "collection": Object {
+                  "href": "/coreTest/test",
+                },
+                "self": Object {
+                  "href": "/coreTest/test/1",
+                },
+              },
               "id": 1,
               "isBoolean": true,
               "numberCount": 10,
@@ -278,9 +304,14 @@ describe("listens on server", () => {
           },
         ],
         "data": Object {
-          "_links": Object {},
-          "_type": "coreTest/test",
-          "_url": "/coreTest/test/1",
+          "_links": Object {
+            "collection": Object {
+              "href": "/coreTest/test",
+            },
+            "self": Object {
+              "href": "/coreTest/test/1",
+            },
+          },
           "id": 1,
           "isBoolean": true,
           "numberCount": 10,
@@ -526,16 +557,26 @@ describe("listens on server", () => {
       (await axios.get(`/coreTest/test/ids`).catch((e) => e.response)).data
     ).toMatchInlineSnapshot(`
       Object {
-        "data": Array [
-          1,
-        ],
-        "meta": Object {
-          "_links": Object {},
-          "_url": "/coreTest/test/ids",
-          "hasMore": false,
-          "limit": 1000,
-          "page": 0,
+        "_links": Object {
+          "collection": Object {
+            "href": "/coreTest/test",
+          },
+          "nextPage": Object {
+            "href": "/coreTest/test/ids?page=1",
+          },
+          "previousPage": Object {
+            "href": "/coreTest/test/ids?page=-1",
+          },
+          "self": Object {
+            "href": "/coreTest/test/ids",
+          },
         },
+        "hasMore": false,
+        "items": Array [
+          null,
+        ],
+        "limit": 1000,
+        "page": 0,
       }
     `);
   });
@@ -640,26 +681,37 @@ describe("forwards params", () => {
         .data
     ).toMatchInlineSnapshot(`
       Object {
-        "data": Array [
+        "_links": Object {
+          "collection": Object {
+            "href": "/coreTest/test",
+          },
+          "count": Object {
+            "href": "/coreTest/test/count?orgId=1",
+          },
+          "ids": Object {
+            "href": "/coreTest/test/ids?orgId=1",
+          },
+          "self": Object {
+            "href": "/coreTest/test?orgId=1",
+          },
+        },
+        "hasMore": false,
+        "items": Array [
           Object {
-            "_links": Object {},
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/1?orgId=1",
+            "_links": Object {
+              "collection": Object {
+                "href": "/coreTest/test",
+              },
+              "self": Object {
+                "href": "/coreTest/test/1?orgId=1",
+              },
+            },
             "id": 1,
             "orgId": 1,
           },
         ],
-        "meta": Object {
-          "_links": Object {
-            "count": "/coreTest/test/count?orgId=1",
-            "ids": "/coreTest/test/ids?orgId=1",
-          },
-          "_type": "coreTest/test",
-          "_url": "/coreTest/test?orgId=1",
-          "hasMore": false,
-          "limit": 50,
-          "page": 0,
-        },
+        "limit": 50,
+        "page": 0,
       }
     `);
   });
@@ -1000,37 +1052,53 @@ describe("handles advanced queries", () => {
       ).data
     ).toMatchInlineSnapshot(`
       Object {
-        "data": Array [
+        "_links": Object {
+          "collection": Object {
+            "href": "/coreTest/test",
+          },
+          "count": Object {
+            "href": "/coreTest/test/count?numberCount.lte=5",
+          },
+          "ids": Object {
+            "href": "/coreTest/test/ids?numberCount.lte=5",
+          },
+          "self": Object {
+            "href": "/coreTest/test?numberCount.lte=5",
+          },
+        },
+        "hasMore": false,
+        "items": Array [
           Object {
-            "_links": Object {},
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/2",
+            "_links": Object {
+              "collection": Object {
+                "href": "/coreTest/test",
+              },
+              "self": Object {
+                "href": "/coreTest/test/2",
+              },
+            },
             "id": 2,
             "isBoolean": false,
             "numberCount": 5,
             "text": "quick brown fox",
           },
           Object {
-            "_links": Object {},
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/3",
+            "_links": Object {
+              "collection": Object {
+                "href": "/coreTest/test",
+              },
+              "self": Object {
+                "href": "/coreTest/test/3",
+              },
+            },
             "id": 3,
             "isBoolean": false,
             "numberCount": 2,
             "text": "text",
           },
         ],
-        "meta": Object {
-          "_links": Object {
-            "count": "/coreTest/test/count?numberCount.lte=5",
-            "ids": "/coreTest/test/ids?numberCount.lte=5",
-          },
-          "_type": "coreTest/test",
-          "_url": "/coreTest/test?numberCount.lte=5",
-          "hasMore": false,
-          "limit": 50,
-          "page": 0,
-        },
+        "limit": 50,
+        "page": 0,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -1048,28 +1116,39 @@ describe("handles advanced queries", () => {
       ).data
     ).toMatchInlineSnapshot(`
       Object {
-        "data": Array [
+        "_links": Object {
+          "collection": Object {
+            "href": "/coreTest/test",
+          },
+          "count": Object {
+            "href": "/coreTest/test/count?numberCount.lt=5",
+          },
+          "ids": Object {
+            "href": "/coreTest/test/ids?numberCount.lt=5",
+          },
+          "self": Object {
+            "href": "/coreTest/test?numberCount.lt=5",
+          },
+        },
+        "hasMore": false,
+        "items": Array [
           Object {
-            "_links": Object {},
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/3",
+            "_links": Object {
+              "collection": Object {
+                "href": "/coreTest/test",
+              },
+              "self": Object {
+                "href": "/coreTest/test/3",
+              },
+            },
             "id": 3,
             "isBoolean": false,
             "numberCount": 2,
             "text": "text",
           },
         ],
-        "meta": Object {
-          "_links": Object {
-            "count": "/coreTest/test/count?numberCount.lt=5",
-            "ids": "/coreTest/test/ids?numberCount.lt=5",
-          },
-          "_type": "coreTest/test",
-          "_url": "/coreTest/test?numberCount.lt=5",
-          "hasMore": false,
-          "limit": 50,
-          "page": 0,
-        },
+        "limit": 50,
+        "page": 0,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -1087,37 +1166,53 @@ describe("handles advanced queries", () => {
       ).data
     ).toMatchInlineSnapshot(`
       Object {
-        "data": Array [
+        "_links": Object {
+          "collection": Object {
+            "href": "/coreTest/test",
+          },
+          "count": Object {
+            "href": "/coreTest/test/count?numberCount.gte=5",
+          },
+          "ids": Object {
+            "href": "/coreTest/test/ids?numberCount.gte=5",
+          },
+          "self": Object {
+            "href": "/coreTest/test?numberCount.gte=5",
+          },
+        },
+        "hasMore": false,
+        "items": Array [
           Object {
-            "_links": Object {},
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/1",
+            "_links": Object {
+              "collection": Object {
+                "href": "/coreTest/test",
+              },
+              "self": Object {
+                "href": "/coreTest/test/1",
+              },
+            },
             "id": 1,
             "isBoolean": true,
             "numberCount": 10,
             "text": "text",
           },
           Object {
-            "_links": Object {},
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/2",
+            "_links": Object {
+              "collection": Object {
+                "href": "/coreTest/test",
+              },
+              "self": Object {
+                "href": "/coreTest/test/2",
+              },
+            },
             "id": 2,
             "isBoolean": false,
             "numberCount": 5,
             "text": "quick brown fox",
           },
         ],
-        "meta": Object {
-          "_links": Object {
-            "count": "/coreTest/test/count?numberCount.gte=5",
-            "ids": "/coreTest/test/ids?numberCount.gte=5",
-          },
-          "_type": "coreTest/test",
-          "_url": "/coreTest/test?numberCount.gte=5",
-          "hasMore": false,
-          "limit": 50,
-          "page": 0,
-        },
+        "limit": 50,
+        "page": 0,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -1135,28 +1230,39 @@ describe("handles advanced queries", () => {
       ).data
     ).toMatchInlineSnapshot(`
       Object {
-        "data": Array [
+        "_links": Object {
+          "collection": Object {
+            "href": "/coreTest/test",
+          },
+          "count": Object {
+            "href": "/coreTest/test/count?numberCount.gt=5",
+          },
+          "ids": Object {
+            "href": "/coreTest/test/ids?numberCount.gt=5",
+          },
+          "self": Object {
+            "href": "/coreTest/test?numberCount.gt=5",
+          },
+        },
+        "hasMore": false,
+        "items": Array [
           Object {
-            "_links": Object {},
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/1",
+            "_links": Object {
+              "collection": Object {
+                "href": "/coreTest/test",
+              },
+              "self": Object {
+                "href": "/coreTest/test/1",
+              },
+            },
             "id": 1,
             "isBoolean": true,
             "numberCount": 10,
             "text": "text",
           },
         ],
-        "meta": Object {
-          "_links": Object {
-            "count": "/coreTest/test/count?numberCount.gt=5",
-            "ids": "/coreTest/test/ids?numberCount.gt=5",
-          },
-          "_type": "coreTest/test",
-          "_url": "/coreTest/test?numberCount.gt=5",
-          "hasMore": false,
-          "limit": 50,
-          "page": 0,
-        },
+        "limit": 50,
+        "page": 0,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -1174,37 +1280,53 @@ describe("handles advanced queries", () => {
       ).data
     ).toMatchInlineSnapshot(`
       Object {
-        "data": Array [
+        "_links": Object {
+          "collection": Object {
+            "href": "/coreTest/test",
+          },
+          "count": Object {
+            "href": "/coreTest/test/count?numberCount.neq=5",
+          },
+          "ids": Object {
+            "href": "/coreTest/test/ids?numberCount.neq=5",
+          },
+          "self": Object {
+            "href": "/coreTest/test?numberCount.neq=5",
+          },
+        },
+        "hasMore": false,
+        "items": Array [
           Object {
-            "_links": Object {},
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/1",
+            "_links": Object {
+              "collection": Object {
+                "href": "/coreTest/test",
+              },
+              "self": Object {
+                "href": "/coreTest/test/1",
+              },
+            },
             "id": 1,
             "isBoolean": true,
             "numberCount": 10,
             "text": "text",
           },
           Object {
-            "_links": Object {},
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/3",
+            "_links": Object {
+              "collection": Object {
+                "href": "/coreTest/test",
+              },
+              "self": Object {
+                "href": "/coreTest/test/3",
+              },
+            },
             "id": 3,
             "isBoolean": false,
             "numberCount": 2,
             "text": "text",
           },
         ],
-        "meta": Object {
-          "_links": Object {
-            "count": "/coreTest/test/count?numberCount.neq=5",
-            "ids": "/coreTest/test/ids?numberCount.neq=5",
-          },
-          "_type": "coreTest/test",
-          "_url": "/coreTest/test?numberCount.neq=5",
-          "hasMore": false,
-          "limit": 50,
-          "page": 0,
-        },
+        "limit": 50,
+        "page": 0,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -1222,37 +1344,53 @@ describe("handles advanced queries", () => {
       ).data
     ).toMatchInlineSnapshot(`
       Object {
-        "data": Array [
+        "_links": Object {
+          "collection": Object {
+            "href": "/coreTest/test",
+          },
+          "count": Object {
+            "href": "/coreTest/test/count?numberCount.not.eq=5",
+          },
+          "ids": Object {
+            "href": "/coreTest/test/ids?numberCount.not.eq=5",
+          },
+          "self": Object {
+            "href": "/coreTest/test?numberCount.not.eq=5",
+          },
+        },
+        "hasMore": false,
+        "items": Array [
           Object {
-            "_links": Object {},
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/1",
+            "_links": Object {
+              "collection": Object {
+                "href": "/coreTest/test",
+              },
+              "self": Object {
+                "href": "/coreTest/test/1",
+              },
+            },
             "id": 1,
             "isBoolean": true,
             "numberCount": 10,
             "text": "text",
           },
           Object {
-            "_links": Object {},
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/3",
+            "_links": Object {
+              "collection": Object {
+                "href": "/coreTest/test",
+              },
+              "self": Object {
+                "href": "/coreTest/test/3",
+              },
+            },
             "id": 3,
             "isBoolean": false,
             "numberCount": 2,
             "text": "text",
           },
         ],
-        "meta": Object {
-          "_links": Object {
-            "count": "/coreTest/test/count?numberCount.not.eq=5",
-            "ids": "/coreTest/test/ids?numberCount.not.eq=5",
-          },
-          "_type": "coreTest/test",
-          "_url": "/coreTest/test?numberCount.not.eq=5",
-          "hasMore": false,
-          "limit": 50,
-          "page": 0,
-        },
+        "limit": 50,
+        "page": 0,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -1270,28 +1408,39 @@ describe("handles advanced queries", () => {
       ).data
     ).toMatchInlineSnapshot(`
       Object {
-        "data": Array [
+        "_links": Object {
+          "collection": Object {
+            "href": "/coreTest/test",
+          },
+          "count": Object {
+            "href": "/coreTest/test/count?text.ilike=%25Brown%25",
+          },
+          "ids": Object {
+            "href": "/coreTest/test/ids?text.ilike=%25Brown%25",
+          },
+          "self": Object {
+            "href": "/coreTest/test?text.ilike=%25Brown%25",
+          },
+        },
+        "hasMore": false,
+        "items": Array [
           Object {
-            "_links": Object {},
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/2",
+            "_links": Object {
+              "collection": Object {
+                "href": "/coreTest/test",
+              },
+              "self": Object {
+                "href": "/coreTest/test/2",
+              },
+            },
             "id": 2,
             "isBoolean": false,
             "numberCount": 5,
             "text": "quick brown fox",
           },
         ],
-        "meta": Object {
-          "_links": Object {
-            "count": "/coreTest/test/count?text.ilike=%25Brown%25",
-            "ids": "/coreTest/test/ids?text.ilike=%25Brown%25",
-          },
-          "_type": "coreTest/test",
-          "_url": "/coreTest/test?text.ilike=%25Brown%25",
-          "hasMore": false,
-          "limit": 50,
-          "page": 0,
-        },
+        "limit": 50,
+        "page": 0,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
