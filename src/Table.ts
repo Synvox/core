@@ -48,13 +48,7 @@ import { postgresTypesToYupType } from "./lookups";
 import { ObjectShape } from "yup/lib/object";
 import { toSnakeCase } from "./case";
 import { Result, CollectionResult, ChangeResult } from "./Result";
-
-function qsStringify(val: any) {
-  return qs.stringify(val, {
-    encodeValuesOnly: true,
-    arrayFormat: "brackets",
-  });
-}
+import { qsStringify } from "./qsStringify";
 
 async function validateAgainst<T>(
   schema: ObjectSchema<ObjectShape>,
@@ -889,8 +883,17 @@ export class Table<Context, T = any> {
     obj: any,
     context: Context,
     beforeCommitCallbacks: (() => Promise<void>)[],
-    recordChange: (change: ChangeSummary<T>) => void
+    changes: ChangeSummary<any>[]
   ) {
+    const recordChange = async (mode: Mode, row: any) => {
+      changes.push({
+        tableName: this.tableName,
+        schemaName: this.schemaName,
+        mode: mode,
+        row: await this.processTableRow({}, context, row),
+      });
+    };
+
     const update = async (graph: any) => {
       const table = this;
       const initialGraph = graph;
@@ -982,12 +985,7 @@ export class Table<Context, T = any> {
 
         if (!updatedRow) throw new UnauthorizedError();
 
-        recordChange({
-          tableName: table.tableName,
-          schemaName: table.schemaName,
-          mode: "update",
-          row: await this.processTableRow({}, context, updatedRow),
-        });
+        await recordChange("update", updatedRow);
 
         for (let key in initialGraph) {
           if (table.setters[key]) {
@@ -1044,12 +1042,7 @@ export class Table<Context, T = any> {
         .returning("*")
         .then(([row]) => row);
 
-      recordChange({
-        tableName: table.tableName,
-        schemaName: table.schemaName,
-        mode: "insert",
-        row,
-      });
+      await recordChange("insert", row);
 
       const stmt = table.query(trx);
       await table.applyPolicy(stmt, context, "insert");
@@ -1186,12 +1179,7 @@ export class Table<Context, T = any> {
         .query(trx)
         .where(`${table.alias}.${table.idColumnName}`, id);
 
-      recordChange({
-        tableName: table.tableName,
-        schemaName: table.schemaName,
-        mode: "delete",
-        row,
-      });
+      await recordChange("delete", row);
 
       if (table.tenantIdColumnName && tenantId !== undefined) {
         delStmt.where(`${table.alias}.${table.tenantIdColumnName}`, tenantId);
@@ -1229,7 +1217,7 @@ export class Table<Context, T = any> {
         otherGraph,
         context,
         beforeCommitCallbacks,
-        recordChange
+        changes
       );
 
       if (otherRow && otherRow[otherTable.idColumnName]) {
@@ -1278,7 +1266,7 @@ export class Table<Context, T = any> {
           },
           context,
           beforeCommitCallbacks,
-          recordChange
+          changes
         );
 
         if (otherRow) row[key].push(otherRow);
@@ -1752,7 +1740,6 @@ export class Table<Context, T = any> {
 
     const beforeCommitCallbacks: (() => Promise<void>)[] = [];
     const changes: ChangeSummary<T>[] = [];
-    const recordChange = (change: ChangeSummary<T>) => changes.push(change);
 
     let trxRef: null | Knex.Transaction = null;
 
@@ -1765,7 +1752,7 @@ export class Table<Context, T = any> {
         obj,
         context,
         beforeCommitCallbacks,
-        recordChange
+        changes
       );
       for (let cb of beforeCommitCallbacks) await cb();
 

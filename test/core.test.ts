@@ -171,6 +171,170 @@ describe("listens on server", () => {
     `);
   });
 
+  it("read has many through redirect", async () => {
+    const [row] = await knex("coreTest.test").insert({}).returning("*");
+    await knex("coreTest.testSub").insert({ parentId: row.id }).returning("*");
+
+    const core = new Core(
+      async () => knex,
+      () => ({})
+    );
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+    });
+    core.table({
+      schemaName: "coreTest",
+      tableName: "testSub",
+    });
+    await core.init();
+
+    const app = express();
+    app.use(core.router);
+    const url = await listen(app);
+
+    const axios = Axios.create({ baseURL: url });
+
+    queries = [];
+    expect((await axios.get(`/coreTest/test/${row.id}/testSub`)).data)
+      .toMatchInlineSnapshot(`
+      Object {
+        "data": Array [
+          Object {
+            "_links": Object {
+              "parent": "/coreTest/test/1",
+            },
+            "_type": "coreTest/testSub",
+            "_url": "/coreTest/testSub/1",
+            "id": 1,
+            "parentId": 1,
+          },
+        ],
+        "meta": Object {
+          "_links": Object {
+            "count": "/coreTest/testSub/count?parentId=1",
+            "ids": "/coreTest/testSub/ids?parentId=1",
+          },
+          "_type": "coreTest/testSub",
+          "_url": "/coreTest/testSub?parentId=1",
+          "hasMore": false,
+          "limit": 50,
+          "page": 0,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test_sub.id, test_sub.parent_id from core_test.test_sub where (test_sub.parent_id = ?) order by test_sub.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect((await axios.post(`/coreTest/test/${row.id}/testSub`, {})).data)
+      .toMatchInlineSnapshot(`
+      Object {
+        "changes": Array [
+          Object {
+            "mode": "insert",
+            "row": Object {
+              "_links": Object {
+                "parent": "/coreTest/test/1",
+              },
+              "_type": "coreTest/testSub",
+              "_url": "/coreTest/testSub/2",
+              "id": 2,
+              "parentId": 1,
+            },
+            "schemaName": "coreTest",
+            "tableName": "testSub",
+          },
+        ],
+        "data": Object {
+          "_links": Object {
+            "parent": "/coreTest/test/1",
+          },
+          "_type": "coreTest/testSub",
+          "_url": "/coreTest/testSub/2",
+          "id": 2,
+          "parentId": 1,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "insert into core_test.test_sub (parent_id) values (?) returning *",
+        "select test_sub.id, test_sub.parent_id from core_test.test_sub where test_sub.id = ? limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      (await axios.get(`/coreTest/test/${row.id}/testSub?include=parent`)).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "data": Array [
+          Object {
+            "_links": Object {
+              "parent": "/coreTest/test/1",
+            },
+            "_type": "coreTest/testSub",
+            "_url": "/coreTest/testSub/1",
+            "id": 1,
+            "parent": Object {
+              "_links": Object {
+                "testSub": "/coreTest/testSub?parentId=1",
+              },
+              "_type": "coreTest/test",
+              "_url": "/coreTest/test/1",
+              "id": 1,
+              "isBoolean": false,
+              "numberCount": 0,
+              "text": "text",
+            },
+            "parentId": 1,
+          },
+          Object {
+            "_links": Object {
+              "parent": "/coreTest/test/1",
+            },
+            "_type": "coreTest/testSub",
+            "_url": "/coreTest/testSub/2",
+            "id": 2,
+            "parent": Object {
+              "_links": Object {
+                "testSub": "/coreTest/testSub?parentId=1",
+              },
+              "_type": "coreTest/test",
+              "_url": "/coreTest/test/1",
+              "id": 1,
+              "isBoolean": false,
+              "numberCount": 0,
+              "text": "text",
+            },
+            "parentId": 1,
+          },
+        ],
+        "meta": Object {
+          "_links": Object {
+            "count": "/coreTest/testSub/count?include=parent&parentId=1",
+            "ids": "/coreTest/testSub/ids?include=parent&parentId=1",
+          },
+          "_type": "coreTest/testSub",
+          "_url": "/coreTest/testSub?include=parent&parentId=1",
+          "hasMore": false,
+          "limit": 50,
+          "page": 0,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test_sub.id, test_sub.parent_id, (select row_to_json(test_sub_query) from (select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = test_sub.parent_id limit ?) test_sub_query) as parent from core_test.test_sub where (test_sub.parent_id = ?) order by test_sub.id asc limit ?",
+      ]
+    `);
+  });
+
   it("inserts", async () => {
     const core = new Core(knex, () => ({}));
 
@@ -204,6 +368,9 @@ describe("listens on server", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "coreTest/test",
+              "_url": "/coreTest/test/1",
               "id": 1,
               "isBoolean": true,
               "numberCount": 10,
@@ -443,6 +610,9 @@ describe("listens on server", () => {
           Object {
             "mode": "delete",
             "row": Object {
+              "_links": Object {},
+              "_type": "coreTest/test",
+              "_url": "/coreTest/test/1",
               "id": 1,
               "isBoolean": false,
               "numberCount": 0,
@@ -737,6 +907,9 @@ describe("sse", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "coreTest/test",
+              "_url": "/coreTest/test/2?orgId=1",
               "id": 2,
               "orgId": 1,
             },
@@ -803,6 +976,9 @@ describe("sse", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "coreTest/test",
+              "_url": "/coreTest/test/2?orgId=1",
               "id": 2,
               "orgId": 1,
             },
@@ -874,6 +1050,9 @@ describe("sse", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "coreTest/test",
+              "_url": "/coreTest/test/1?orgId=1",
               "id": 1,
               "orgId": 1,
             },
@@ -934,6 +1113,9 @@ describe("sse", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "coreTest/test",
+              "_url": "/coreTest/test/1",
               "id": 1,
               "orgId": 1,
             },

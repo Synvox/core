@@ -12,6 +12,7 @@ import {
 import { Table, SavedTable } from "./Table";
 import { wrap } from "./wrap";
 import { postgresTypesToJSONTsTypes } from "./lookups";
+import { qsStringify } from "./qsStringify";
 
 export class Core<Context> {
   getContext: ContextFactory<Context>;
@@ -387,6 +388,25 @@ export class Core<Context> {
             );
           })
         );
+
+        for (let [name, { relation, table: relatedTable }] of Object.entries(
+          table.relatedTables.hasMany
+        )) {
+          router.all(
+            `/${table.path}/:${table.idColumnName}/${name}`,
+            (req, res) => {
+              const query = qsStringify({
+                ...req.query,
+                [relation.columnName]: req.params[table.idColumnName],
+              });
+
+              res.redirect(
+                307,
+                `${this.baseUrl}/${relatedTable.path}?${query}`
+              );
+            }
+          );
+        }
       }
     };
 

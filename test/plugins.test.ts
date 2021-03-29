@@ -100,6 +100,11 @@ describe("withTimestamps plugin", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {
+                "posts": "/testPlugins/posts?userId=1",
+              },
+              "_type": "testPlugins/users",
+              "_url": "/testPlugins/users/1",
               "createdAt": 2021-01-01T01:01:00.000Z,
               "id": 1,
               "updatedAt": 2021-01-01T01:01:00.000Z,
@@ -110,6 +115,11 @@ describe("withTimestamps plugin", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {
+                "user": "/testPlugins/users/1",
+              },
+              "_type": "testPlugins/posts",
+              "_url": "/testPlugins/posts/1",
               "body": "",
               "createdAt": 2021-01-01T01:01:00.000Z,
               "id": 1,
@@ -122,6 +132,11 @@ describe("withTimestamps plugin", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {
+                "user": "/testPlugins/users/1",
+              },
+              "_type": "testPlugins/posts",
+              "_url": "/testPlugins/posts/2",
               "body": "",
               "createdAt": 2021-01-01T01:01:00.000Z,
               "id": 2,
@@ -250,6 +265,11 @@ describe("withTimestamps plugin", () => {
           Object {
             "mode": "delete",
             "row": Object {
+              "_links": Object {
+                "user": "/testPlugins/users/1",
+              },
+              "_type": "testPlugins/posts",
+              "_url": "/testPlugins/posts/1",
               "body": "",
               "createdAt": 2021-01-01T01:01:00.000Z,
               "id": 1,
@@ -299,6 +319,9 @@ describe("withTimestamps plugin", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "testPlugins/items",
+              "_url": "/testPlugins/items/1",
               "createdAt": 2021-01-02T01:01:00.000Z,
               "id": 1,
               "updatedAt": 2021-01-02T01:01:00.000Z,

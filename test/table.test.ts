@@ -947,6 +947,9 @@ describe("without policies", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/test",
+              "_url": "/test/test/1",
               "id": 1,
               "isBoolean": false,
               "numberCount": 0,
@@ -982,6 +985,9 @@ describe("without policies", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/test",
+              "_url": "/test/test/2",
               "id": 2,
               "isBoolean": true,
               "numberCount": 10,
@@ -1079,6 +1085,9 @@ describe("without policies", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/test",
+              "_url": "/test/test/1",
               "arr": Array [],
               "date": 1999-01-08T10:05:06.000Z,
               "id": 1,
@@ -1124,6 +1133,9 @@ describe("without policies", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/test",
+              "_url": "/test/test/1",
               "arr": Array [],
               "date": 2000-01-01T11:05:06.000Z,
               "id": 1,
@@ -1255,6 +1267,9 @@ describe("without policies", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/test",
+              "_url": "/test/test/1",
               "email": "test@test.com",
               "id": 1,
             },
@@ -1300,6 +1315,9 @@ describe("without policies", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/test",
+              "_url": "/test/test/1",
               "id": 1,
               "username": "abc",
             },
@@ -1367,6 +1385,9 @@ describe("without policies", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/test",
+              "_url": "/test/test/1",
               "id": 1,
               "org": "a",
               "username": "abc",
@@ -1406,6 +1427,9 @@ describe("without policies", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/test",
+              "_url": "/test/test/1",
               "id": 1,
               "org": "a",
               "username": "abc",
@@ -1442,6 +1466,9 @@ describe("without policies", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/test",
+              "_url": "/test/test/1",
               "id": 1,
               "org": "b",
               "username": "abc",
@@ -1554,6 +1581,9 @@ describe("without policies", () => {
           Object {
             "mode": "delete",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/test",
+              "_url": "/test/test/1",
               "id": 1,
               "org": "org",
               "username": "xyb",
@@ -1640,6 +1670,11 @@ describe("without policies", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {
+                "posts": "/test/posts?userId=1",
+              },
+              "_type": "test/users",
+              "_url": "/test/users/1",
               "id": 1,
               "name": "a",
             },
@@ -1678,6 +1713,11 @@ describe("without policies", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {
+                "posts": "/test/posts?userId=2",
+              },
+              "_type": "test/users",
+              "_url": "/test/users/2",
               "id": 2,
               "name": "a",
             },
@@ -1687,6 +1727,11 @@ describe("without policies", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {
+                "user": "/test/users/2",
+              },
+              "_type": "test/posts",
+              "_url": "/test/posts/1",
               "body": "a",
               "id": 1,
               "userId": 2,
@@ -1697,6 +1742,11 @@ describe("without policies", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {
+                "user": "/test/users/2",
+              },
+              "_type": "test/posts",
+              "_url": "/test/posts/2",
               "body": "b",
               "id": 2,
               "userId": 2,
@@ -1776,6 +1826,11 @@ describe("without policies", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {
+                "posts": "/test/posts?userId=3",
+              },
+              "_type": "test/users",
+              "_url": "/test/users/3",
               "id": 3,
               "name": "a",
             },
@@ -1785,6 +1840,11 @@ describe("without policies", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {
+                "user": "/test/users/3",
+              },
+              "_type": "test/posts",
+              "_url": "/test/posts/3",
               "body": "abc",
               "id": 3,
               "userId": 3,
@@ -1832,6 +1892,11 @@ describe("without policies", () => {
           Object {
             "mode": "delete",
             "row": Object {
+              "_links": Object {
+                "posts": "/test/posts?userId=3",
+              },
+              "_type": "test/users",
+              "_url": "/test/users/3",
               "id": 3,
               "name": "a",
             },
@@ -1870,6 +1935,11 @@ describe("without policies", () => {
           Object {
             "mode": "delete",
             "row": Object {
+              "_links": Object {
+                "user": "/test/users/4",
+              },
+              "_type": "test/posts",
+              "_url": "/test/posts/4",
               "body": "body",
               "id": 4,
               "userId": 4,
@@ -2223,6 +2293,9 @@ describe("without policies", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/test",
+              "_url": "/test/test/1",
               "id": 1,
             },
             "schemaName": "test",
@@ -2814,6 +2887,9 @@ describe("with policies", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/posts",
+              "_url": "/test/posts/4",
               "body": "",
               "id": 4,
               "orgId": 1,
@@ -2926,6 +3002,11 @@ describe("with policies", () => {
           Object {
             "mode": "delete",
             "row": Object {
+              "_links": Object {
+                "user": "/test/users/1",
+              },
+              "_type": "test/posts",
+              "_url": "/test/posts/1",
               "body": "Body",
               "id": 1,
               "orgId": 1,
@@ -3266,6 +3347,9 @@ describe("multitenancy", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/items",
+              "_url": "/test/items/2?orgId=1",
               "body": "",
               "id": 2,
               "orgId": 1,
@@ -3323,6 +3407,9 @@ describe("multitenancy", () => {
           Object {
             "mode": "delete",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/items",
+              "_url": "/test/items/1?orgId=1",
               "body": "body",
               "id": 1,
               "orgId": 1,
@@ -3441,6 +3528,11 @@ describe("multitenancy", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {
+                "org": "/test/orgs/1",
+              },
+              "_type": "test/test",
+              "_url": "/test/test/1?orgId=1",
               "id": 1,
               "orgId": 1,
               "username": "abc",
@@ -3566,6 +3658,11 @@ describe("paranoid", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {
+                "subitems": "/test/subitems?itemId=1",
+              },
+              "_type": "test/items",
+              "_url": "/test/items/1",
               "deletedAt": null,
               "id": 1,
             },
@@ -3598,6 +3695,11 @@ describe("paranoid", () => {
           Object {
             "mode": "delete",
             "row": Object {
+              "_links": Object {
+                "subitems": "/test/subitems?itemId=1",
+              },
+              "_type": "test/items",
+              "_url": "/test/items/1",
               "deletedAt": null,
               "id": 1,
             },
@@ -3607,22 +3709,32 @@ describe("paranoid", () => {
           Object {
             "mode": "delete",
             "row": Object {
+              "_links": Object {
+                "subitems": "/test/subitems?itemId=1",
+              },
+              "_type": "test/items",
+              "_url": "/test/items/1",
               "deletedAt": null,
               "id": 1,
               "itemId": 1,
             },
             "schemaName": "test",
-            "tableName": "subitems",
+            "tableName": "items",
           },
           Object {
             "mode": "delete",
             "row": Object {
+              "_links": Object {
+                "subitems": "/test/subitems?itemId=2",
+              },
+              "_type": "test/items",
+              "_url": "/test/items/2",
               "deletedAt": null,
               "id": 2,
               "itemId": 1,
             },
             "schemaName": "test",
-            "tableName": "subitems",
+            "tableName": "items",
           },
         ],
         "data": null,
@@ -3716,6 +3828,11 @@ describe("paranoid", () => {
           Object {
             "mode": "delete",
             "row": Object {
+              "_links": Object {
+                "subitems": "/test/subitems?itemId=1&orgId=1",
+              },
+              "_type": "test/items",
+              "_url": "/test/items/1?orgId=1",
               "deletedAt": null,
               "id": 1,
               "orgId": 1,
@@ -3726,13 +3843,18 @@ describe("paranoid", () => {
           Object {
             "mode": "delete",
             "row": Object {
+              "_links": Object {
+                "subitems": "/test/subitems?itemId=1&orgId=1",
+              },
+              "_type": "test/items",
+              "_url": "/test/items/1?orgId=1",
               "deletedAt": null,
               "id": 1,
               "itemId": 1,
               "orgId": 1,
             },
             "schemaName": "test",
-            "tableName": "subitems",
+            "tableName": "items",
           },
         ],
         "data": null,
@@ -3814,7 +3936,9 @@ describe("hidden columns", () => {
           Object {
             "mode": "insert",
             "row": Object {
-              "hidden": "initial",
+              "_links": Object {},
+              "_type": "test/items",
+              "_url": "/test/items/1",
               "id": 1,
             },
             "schemaName": "test",
@@ -3970,6 +4094,9 @@ describe("uuid columns", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/items",
+              "_url": "/test/items/a8374dd3-0aa0-4ada-8c98-b7ade46900b8",
               "id": "a8374dd3-0aa0-4ada-8c98-b7ade46900b8",
             },
             "schemaName": "test",
@@ -4052,6 +4179,11 @@ describe("uuid columns", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {
+                "subitems": "/test/subitems?parentId=96435a51-7af8-4d08-94f3-892a99abd8cd",
+              },
+              "_type": "test/items",
+              "_url": "/test/items/96435a51-7af8-4d08-94f3-892a99abd8cd",
               "id": "96435a51-7af8-4d08-94f3-892a99abd8cd",
             },
             "schemaName": "test",
@@ -4060,6 +4192,11 @@ describe("uuid columns", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {
+                "parent": "/test/items/96435a51-7af8-4d08-94f3-892a99abd8cd",
+              },
+              "_type": "test/subitems",
+              "_url": "/test/subitems/0ae89559-c579-4d1a-8382-0a44693c78d2",
               "id": "0ae89559-c579-4d1a-8382-0a44693c78d2",
               "parentId": "96435a51-7af8-4d08-94f3-892a99abd8cd",
             },
@@ -4069,6 +4206,11 @@ describe("uuid columns", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {
+                "parent": "/test/items/96435a51-7af8-4d08-94f3-892a99abd8cd",
+              },
+              "_type": "test/subitems",
+              "_url": "/test/subitems/3872e801-bf4c-4eb5-b4ab-c70cd9cd03d3",
               "id": "3872e801-bf4c-4eb5-b4ab-c70cd9cd03d3",
               "parentId": "96435a51-7af8-4d08-94f3-892a99abd8cd",
             },
@@ -4132,6 +4274,11 @@ describe("uuid columns", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {
+                "subitems": "/test/subitems?parentId=cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
+              },
+              "_type": "test/items",
+              "_url": "/test/items/cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
               "id": "cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
             },
             "schemaName": "test",
@@ -4140,6 +4287,11 @@ describe("uuid columns", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {
+                "parent": "/test/items/cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
+              },
+              "_type": "test/subitems",
+              "_url": "/test/subitems/bedaa8d1-20d2-4f09-adeb-d67ab0523af5",
               "id": "bedaa8d1-20d2-4f09-adeb-d67ab0523af5",
               "parentId": "cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
             },
@@ -4206,6 +4358,9 @@ describe("beforeCommit", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/items",
+              "_url": "/test/items/1",
               "body": "",
               "id": 1,
             },
@@ -4292,6 +4447,9 @@ describe("beforeCommit", () => {
           Object {
             "mode": "delete",
             "row": Object {
+              "_links": Object {},
+              "_type": "test/items",
+              "_url": "/test/items/1",
               "body": "abc",
               "id": 1,
             },
@@ -4344,6 +4502,11 @@ describe("self references", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {
+                "items": "/test/items?parentItemId=1",
+              },
+              "_type": "test/items",
+              "_url": "/test/items/1",
               "id": 1,
               "parentItemId": null,
             },
@@ -4370,6 +4533,12 @@ describe("self references", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {
+                "items": "/test/items?parentItemId=2",
+                "parentItem": "/test/items/1",
+              },
+              "_type": "test/items",
+              "_url": "/test/items/2",
               "id": 2,
               "parentItemId": 1,
             },
@@ -4397,6 +4566,12 @@ describe("self references", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {
+                "items": "/test/items?parentItemId=3",
+                "parentItem": "/test/items/1",
+              },
+              "_type": "test/items",
+              "_url": "/test/items/3",
               "id": 3,
               "parentItemId": 1,
             },
@@ -4858,6 +5033,9 @@ describe("in public schema", () => {
           Object {
             "mode": "insert",
             "row": Object {
+              "_links": Object {},
+              "_type": "testTable",
+              "_url": "/testTable/1",
               "id": 1,
             },
             "schemaName": "public",
