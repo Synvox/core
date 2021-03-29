@@ -171,7 +171,7 @@ describe("listens on server", () => {
     `);
   });
 
-  it("read has many through redirect", async () => {
+  it("handles sub resources through redirect (has many)", async () => {
     const [row] = await knex("coreTest.test").insert({}).returning("*");
     await knex("coreTest.testSub").insert({ parentId: row.id }).returning("*");
 
@@ -331,6 +331,145 @@ describe("listens on server", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select test_sub.id, test_sub.parent_id, (select row_to_json(test_sub_query) from (select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = test_sub.parent_id limit ?) test_sub_query) as parent from core_test.test_sub where (test_sub.parent_id = ?) order by test_sub.id asc limit ?",
+      ]
+    `);
+  });
+
+  it("handles sub resources through redirect (has one)", async () => {
+    const [row] = await knex("coreTest.test").insert({}).returning("*");
+    const [sub] = await knex("coreTest.testSub")
+      .insert({ parentId: row.id })
+      .returning("*");
+
+    const core = new Core(
+      async () => knex,
+      () => ({})
+    );
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+    });
+    core.table({
+      schemaName: "coreTest",
+      tableName: "testSub",
+    });
+    await core.init();
+
+    const app = express();
+    app.use(core.router);
+    const url = await listen(app);
+
+    const axios = Axios.create({ baseURL: url });
+
+    queries = [];
+    expect((await axios.get(`/coreTest/testSub/${sub.id}/parent`)).data)
+      .toMatchInlineSnapshot(`
+      Object {
+        "data": Object {
+          "_links": Object {
+            "testSub": "/coreTest/testSub?parentId=1",
+          },
+          "_type": "coreTest/test",
+          "_url": "/coreTest/test/1",
+          "id": 1,
+          "isBoolean": false,
+          "numberCount": 0,
+          "text": "text",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test_sub.id, test_sub.parent_id from core_test.test_sub where (test_sub.id = ?) limit ?",
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.id = ?) limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      (
+        await axios.put(`/coreTest/testSub/${sub.id}/parent`, {
+          isBoolean: true,
+        })
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "row": Object {
+              "_links": Object {
+                "testSub": "/coreTest/testSub?parentId=1",
+              },
+              "_type": "coreTest/test",
+              "_url": "/coreTest/test/1",
+              "id": 1,
+              "isBoolean": true,
+              "numberCount": 0,
+              "text": "text",
+            },
+            "schemaName": "coreTest",
+            "tableName": "test",
+          },
+        ],
+        "data": Object {
+          "_links": Object {
+            "testSub": "/coreTest/testSub?parentId=1",
+          },
+          "_type": "coreTest/test",
+          "_url": "/coreTest/test/1",
+          "id": 1,
+          "isBoolean": true,
+          "numberCount": 0,
+          "text": "text",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test_sub.id, test_sub.parent_id from core_test.test_sub where (test_sub.id = ?) limit ?",
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.id = ?) limit ?",
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
+        "update core_test.test set is_boolean = ? where test.id = ?",
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      (await axios.get(`/coreTest/testSub/${sub.id}/parent?include=testSub`))
+        .data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "data": Object {
+          "_links": Object {
+            "testSub": "/coreTest/testSub?parentId=1",
+          },
+          "_type": "coreTest/test",
+          "_url": "/coreTest/test/1",
+          "id": 1,
+          "isBoolean": true,
+          "numberCount": 0,
+          "testSub": Array [
+            Object {
+              "_links": Object {
+                "parent": "/coreTest/test/1",
+              },
+              "_type": "coreTest/testSub",
+              "_url": "/coreTest/testSub/1",
+              "id": 1,
+              "parentId": 1,
+            },
+          ],
+          "text": "text",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test_sub.id, test_sub.parent_id from core_test.test_sub where (test_sub.id = ?) limit ?",
+        "select test.id, test.is_boolean, test.number_count, test.text, array(select row_to_json(test_sub_sub_query) from (select test_sub.id, test_sub.parent_id from core_test.test_sub where test_sub.parent_id = test.id limit ?) test_sub_sub_query) as test_sub from core_test.test where (test.id = ?) limit ?",
       ]
     `);
   });

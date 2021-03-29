@@ -407,6 +407,33 @@ export class Core<Context> {
             }
           );
         }
+
+        for (let [name, { relation, table: relatedTable }] of Object.entries(
+          table.relatedTables.hasOne
+        )) {
+          router.all(
+            `/${table.path}/:${table.idColumnName}/${name}`,
+            wrap(async (req, res) => {
+              const knex = await this.getKnex("read");
+              const context = this.getContext(req, res);
+
+              const { [relation.columnName]: id } = await table.readOne(
+                knex,
+                { ...req.params, ...req.query },
+                context
+              );
+
+              const query = qsStringify({
+                ...req.query,
+              });
+
+              res.redirect(
+                307,
+                `${this.baseUrl}/${relatedTable.path}/${id}?${query}`
+              );
+            })
+          );
+        }
       }
     };
 
