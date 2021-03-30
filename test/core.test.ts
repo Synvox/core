@@ -719,7 +719,9 @@ describe("listens on server", () => {
       ).data
     ).toMatchInlineSnapshot(`
       Object {
-        "error": "An error occurred",
+        "errors": Object {
+          "base": "An error occurred",
+        },
       }
     `);
     process.env.NODE_ENV = env;

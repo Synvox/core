@@ -6,10 +6,7 @@ export const wrap = (
 ) => async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await fn(req, res, next);
-    if (result !== undefined) {
-      res.send(result);
-      res.end();
-    }
+    if (result !== undefined) res.json(result);
   } catch (e) {
     if (typeof e.statusCode === "number") {
       const error = e as StatusError;
@@ -18,15 +15,15 @@ export const wrap = (
 
       if (error.body === undefined) {
         if (process.env.NODE_ENV === "production")
-          body = { error: "An error occurred" };
+          body = { errors: { base: "An error occurred" } };
         else {
           body = {
-            error: error.message,
-            stack: error.stack
+            errors: { base: error.message },
+            stack: error.stack,
           };
         }
       }
-      res.status(error.statusCode!).send(body);
+      res.status(error.statusCode!).json(body);
     } else next(e);
   }
 };
