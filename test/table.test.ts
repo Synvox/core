@@ -5866,3 +5866,39 @@ describe("ref validations", () => {
     `);
   });
 });
+
+describe("catches common errors", () => {
+  it("errors on no table found", async () => {
+    const items = new Table({
+      schemaName: "test",
+      tableName: "abcd",
+    });
+
+    await expect(items.init(knex)).rejects.toMatchInlineSnapshot(
+      `[Error: The table test.abcd did not have any columns.]`
+    );
+  });
+
+  it("errors on duplicate table found", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+    });
+
+    const t1 = new Table({
+      schemaName: "test",
+      tableName: "items",
+    });
+
+    const t2 = new Table({
+      schemaName: "test",
+      tableName: "items",
+    });
+
+    await t1.init(knex);
+    await t2.init(knex);
+
+    expect(() => t1.linkTables([t1, t2])).toThrowErrorMatchingInlineSnapshot(
+      `"The table at test.items was registered twice."`
+    );
+  });
+});

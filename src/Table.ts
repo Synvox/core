@@ -125,6 +125,7 @@ export class Table<Context, T = any> {
     this.complexityWeight = def.complexityWeight ?? 1;
     this.defaultSortColumn = def.defaultSortColumn ?? this.idColumnName;
   }
+
   private withAlias(alias: string) {
     return Object.assign(new Table<Context, T>(this), this, { alias });
   }
@@ -147,6 +148,9 @@ export class Table<Context, T = any> {
         toSnakeCase(this.tableName)
       ),
     ]);
+
+    if (Object.keys(columns).length === 0)
+      throw new Error(`The table ${this.tablePath} did not have any columns.`);
 
     this.columns = {
       ...columns,
@@ -178,6 +182,12 @@ export class Table<Context, T = any> {
     const getTablePath = (t: { tableName: string; schemaName: string }) =>
       `${t.schemaName}.${t.tableName}`;
 
+    for (let table of tables) {
+      if (table === this) continue;
+      if (getTablePath(table) === this.tablePath)
+        throw new Error(`The table at ${this.tablePath} was registered twice.`);
+    }
+
     const hasOne: RelatedTables<Context> = {};
 
     for (let [column, relation] of Object.entries(this.relations)) {
@@ -198,9 +208,8 @@ export class Table<Context, T = any> {
 
     const hasMany: RelatedTables<Context> = {};
 
+    const myTablePath = getTablePath(this);
     for (let otherTable of tables) {
-      const myTablePath = getTablePath(this);
-
       for (let [columnName, relation] of Object.entries(otherTable.relations)) {
         const otherPath = getTablePath({
           tableName: relation.referencesTable,
@@ -214,7 +223,7 @@ export class Table<Context, T = any> {
 
         if (hasMany[name])
           throw new Error(
-            `Cannot bind ${name} on ${this.tableName}. Define an inverse on ${otherTable.tableName}: inverseOfColumnName: {${columnName}: 'pluralName'}`
+            `Cannot bind ${name} on ${this.tablePath}. Define an inverse on ${otherTable.tablePath}: inverseOfColumnName: {${columnName}: 'pluralName'}`
           );
 
         hasMany[name] = { relation, table: otherTable, name };
