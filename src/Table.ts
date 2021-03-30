@@ -304,7 +304,7 @@ export class Table<Context, T = any> {
   ) {
     if (this.tenantIdColumnName && !params[this.tenantIdColumnName])
       throw new BadRequestError({
-        error: `${this.tenantIdColumnName} is required`,
+        [this.tenantIdColumnName]: `is required`,
       });
 
     function translateOp<Opts extends Record<string, string>>(
@@ -1303,7 +1303,7 @@ export class Table<Context, T = any> {
   ) {
     let [queryParams, errors] = await this.validateWhere(input, context);
 
-    if (Object.keys(errors).length) throw new BadRequestError({ errors });
+    if (Object.keys(errors).length) throw new BadRequestError(errors);
 
     queryParams = {
       ...(await this.defaultParams(context, "read")),
@@ -1319,7 +1319,7 @@ export class Table<Context, T = any> {
       const tenantId = queryParams[table.tenantIdColumnName];
       if (!tenantId)
         throw new BadRequestError({
-          error: `${table.tenantIdColumnName} is required`,
+          [table.tenantIdColumnName]: `is required`,
         });
     }
 
@@ -1705,7 +1705,7 @@ export class Table<Context, T = any> {
     obj = objValidated;
 
     if (errors) {
-      throw new BadRequestError({ errors });
+      throw new BadRequestError(errors);
     }
 
     const beforeCommitCallbacks: (() => Promise<void>)[] = [];

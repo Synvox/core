@@ -7,6 +7,9 @@ export class NotFoundError extends StatusError {
   statusCode = 404;
   constructor() {
     super("Not Found");
+    this.body = {
+      errors: { base: "Not found" },
+    };
   }
 }
 
@@ -14,7 +17,7 @@ export class BadRequestError extends StatusError {
   statusCode = 400;
   constructor(body?: any) {
     super("Bad Request");
-    this.body = body;
+    this.body = { errors: body };
   }
 }
 
@@ -23,7 +26,7 @@ export class ComplexityError extends BadRequestError {
   constructor() {
     super("Bad Request");
     this.body = {
-      error: "Complexity limit reached",
+      errors: { base: "Complexity limit reached" },
     };
   }
 }
@@ -32,5 +35,8 @@ export class UnauthorizedError extends StatusError {
   statusCode = 401;
   constructor() {
     super("Unauthorized");
+    this.body = {
+      errors: { base: "Unauthorized" },
+    };
   }
 }

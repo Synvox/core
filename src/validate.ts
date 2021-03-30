@@ -51,7 +51,7 @@ export async function validate<T>(
 ) {
   const [castValue, errors] = await validateAgainst(schema, value, context);
 
-  if (Object.keys(errors).length > 0) throw new BadRequestError({ errors });
+  if (Object.keys(errors).length > 0) throw new BadRequestError(errors);
 
   return castValue as T;
 }

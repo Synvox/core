@@ -3178,7 +3178,9 @@ describe("multitenancy", () => {
       await items.readMany(knex, {}, {}).catch((e: BadRequestError) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
-        "error": "orgId is required",
+        "errors": Object {
+          "orgId": "is required",
+        },
       }
     `);
 
@@ -3213,7 +3215,9 @@ describe("multitenancy", () => {
     expect(await items.ids(knex, {}, {}).catch((e: BadRequestError) => e.body))
       .toMatchInlineSnapshot(`
       Object {
-        "error": "orgId is required",
+        "errors": Object {
+          "orgId": "is required",
+        },
       }
     `);
 
@@ -3236,7 +3240,9 @@ describe("multitenancy", () => {
       await items.count(knex, {}, {}).catch((e: BadRequestError) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
-        "error": "orgId is required",
+        "errors": Object {
+          "orgId": "is required",
+        },
       }
     `);
 
@@ -5666,7 +5672,9 @@ describe("complexity limits", () => {
         .catch((e: ComplexityError) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
-        "error": "Complexity limit reached",
+        "errors": Object {
+          "base": "Complexity limit reached",
+        },
       }
     `);
     expect(queries).toMatchInlineSnapshot(`Array []`);
@@ -5682,7 +5690,9 @@ describe("complexity limits", () => {
         .catch((e: ComplexityError) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
-        "error": "Complexity limit reached",
+        "errors": Object {
+          "base": "Complexity limit reached",
+        },
       }
     `);
     expect(queries).toMatchInlineSnapshot(`Array []`);

@@ -15,8 +15,10 @@ jest.mock("aws-sdk", () => {
         params: any,
         callback: (err: null | Error, url?: string) => void
       ) {
-        if (!params.Key)
-          return callback(new BadRequestError({ error: "bad request" }));
+        if (!params.Key) {
+          return callback(new BadRequestError({ errors: { base: "failure" } }));
+        }
+
         getSignedUrlMock(name, params);
         callback(null, "https://signed-url.com/asdf");
       }
@@ -113,7 +115,11 @@ it("handles file upload failure", async () => {
   expect(status).toMatchInlineSnapshot(`400`);
   expect(data).toMatchInlineSnapshot(`
     Object {
-      "error": "bad request",
+      "errors": Object {
+        "errors": Object {
+          "base": "failure",
+        },
+      },
     }
   `);
 
