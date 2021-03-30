@@ -577,7 +577,7 @@ export class Table<Context, T = any> {
       schema[column] = type;
     }
 
-    return object(schema);
+    return schema;
   }
 
   getYupTypeForColumn(column: string) {
@@ -646,7 +646,56 @@ export class Table<Context, T = any> {
       }
     }
 
-    return object(schema).concat(this.getYupSchema());
+    return schema;
+  }
+
+  private getYupSchemaWithChildren(knex: Knex, context: Context) {
+    const schema: { [key: string]: Mixed } = {};
+
+    for (let { table: otherTable, relation } of Object.values(
+      this.relatedTables.hasOne
+    )) {
+      const table = this;
+
+      schema[relation.columnName] = mixed().test(
+        "exists",
+        // eslint-disable-next-line no-template-curly-in-string
+        "${path} not found",
+        async function test(value) {
+          const refPlaceholderNumber = 0;
+          const refPlaceholderUUID = "00000000-0000-0000-0000-000000000000";
+          if (
+            value === undefined ||
+            value === refPlaceholderNumber ||
+            value === refPlaceholderUUID
+          )
+            return true;
+
+          const { parent } = this;
+
+          const stmt = otherTable
+            .query(knex)
+            .clear("select")
+            .select(`${otherTable.alias}.${otherTable.idColumnName}`)
+            .where(`${otherTable.alias}.${otherTable.idColumnName}`, value);
+
+          await otherTable.applyPolicy(stmt, context, "read");
+
+          if (table.tenantIdColumnName) {
+            stmt.where(
+              `${otherTable.alias}.${otherTable.idColumnName}`,
+              parent[table.tenantIdColumnName]
+            );
+          }
+
+          const existingRow = await stmt.first();
+
+          return existingRow;
+        }
+      );
+    }
+
+    return schema;
   }
 
   private async validate(
@@ -719,11 +768,11 @@ export class Table<Context, T = any> {
       };
     }
 
-    return await validateAgainst(
-      this.getYupSchemaWithUniqueKeys(knex),
-      obj,
-      context
-    );
+    const schema = object(this.getYupSchemaWithUniqueKeys(knex))
+      .concat(object(this.getYupSchemaWithChildren(knex, context)))
+      .concat(object(this.getYupSchema()));
+
+    return await validateAgainst(schema, obj, context);
   }
 
   async validateDeep(

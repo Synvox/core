@@ -263,6 +263,7 @@ describe("listens on server", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
+        "select test.id from core_test.test where test.id = ? limit ?",
         "insert into core_test.test_sub (parent_id) values (?) returning *",
         "select test_sub.id, test_sub.parent_id from core_test.test_sub where test_sub.id = ? limit ?",
       ]

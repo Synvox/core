@@ -1910,6 +1910,7 @@ describe("without policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select posts.id, posts.user_id, posts.body from test.posts where (posts.id = ?) limit ?",
+        "select users.id from test.users where users.id = ? limit ?",
         "select users.id, users.name from test.users where users.id = ? limit ?",
         "delete from test.users where users.id = ?",
         "select posts.id, posts.user_id, posts.body from test.posts where posts.id = ? limit ?",
@@ -2873,6 +2874,7 @@ describe("with policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where (posts.id = ?) and posts.org_id = ? limit ?",
+        "select users.id from test.users where users.id = ? and users.org_id = ? limit ?",
         "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.org_id = ? and posts.id = ? limit ?",
         "update test.posts set org_id = ? where posts.org_id = ? and posts.id = ?",
         "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.org_id = ? and posts.id = ? limit ?",
@@ -2938,6 +2940,7 @@ describe("with policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where (posts.id = ?) and posts.org_id = ? limit ?",
+        "select users.id from test.users where users.id = ? and users.org_id = ? limit ?",
         "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.org_id = ? and posts.id = ? limit ?",
       ]
     `);
@@ -2985,6 +2988,7 @@ describe("with policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where (posts.id = ?) and posts.org_id = ? limit ?",
+        "select users.id from test.users where users.id = ? and users.org_id = ? limit ?",
         "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.org_id = ? and posts.id = ? limit ?",
         "update test.posts set body = ? where posts.org_id = ? and posts.id = ?",
         "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.org_id = ? and posts.id = ? limit ?",
@@ -3563,6 +3567,7 @@ describe("multitenancy", () => {
       Array [
         "select test.id, test.org_id, test.username from test.test where test.org_id = ? and test.username = ? limit ?",
         "select test.id, test.org_id, test.username from test.test where test.org_id = ? and test.username = ? limit ?",
+        "select orgs.id from test.orgs where orgs.id = ? and orgs.id = ? limit ?",
         "insert into test.test (org_id, username) values (?, ?) returning *",
         "select test.id, test.org_id, test.username from test.test where test.id = ? and test.org_id = ? limit ?",
       ]
@@ -3593,6 +3598,7 @@ describe("multitenancy", () => {
         "select test.id, test.org_id, test.username from test.test where (test.id = ? and test.org_id = ?) limit ?",
         "select test.id, test.org_id, test.username from test.test where not (test.id = ? and test.org_id = ?) and test.org_id = ? and test.username = ? limit ?",
         "select test.id, test.org_id, test.username from test.test where not (test.id = ? and test.org_id = ?) and test.org_id = ? and test.username = ? limit ?",
+        "select orgs.id from test.orgs where orgs.id = ? and orgs.id = ? limit ?",
         "select test.id, test.org_id, test.username from test.test where test.id = ? and test.org_id = ? limit ?",
       ]
     `);
@@ -4563,6 +4569,22 @@ describe("self references", () => {
           "parentItemId": 1,
         },
       }
+    `);
+
+    queries = [];
+    expect(
+      await items.write(knex, { parentItemId: 123 }, {}).catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "parentItemId": "not found",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id from test.items where items.id = ? limit ?",
+      ]
     `);
 
     expect(await items.write(knex, { parentItemId: 1 }, {}))
