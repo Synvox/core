@@ -2,7 +2,6 @@ import { EventEmitter } from "events";
 import { Router } from "express";
 import { classify } from "inflection";
 import { Knex } from "knex";
-import setValue from "set-value";
 import qs from "qs";
 import atob from "atob";
 import btoa from "btoa";
@@ -36,61 +35,12 @@ import {
   NotFoundError,
   ComplexityError,
 } from "./errors";
-import {
-  object,
-  array,
-  ValidationError,
-  ObjectSchema,
-  StringSchema,
-  mixed,
-} from "yup";
+import { object, array, StringSchema, mixed } from "yup";
 import { postgresTypesToYupType } from "./lookups";
-import { ObjectShape } from "yup/lib/object";
 import { toSnakeCase } from "./case";
 import { Result, CollectionResult, ChangeResult } from "./Result";
 import { qsStringify } from "./qsStringify";
-
-async function validateAgainst<T>(
-  schema: ObjectSchema<ObjectShape>,
-  graph: any,
-  context: T
-): Promise<[any, Record<string, string>]> {
-  let errors: Record<string, any> = {};
-  try {
-    const castValue = await schema.validate(graph, {
-      abortEarly: false,
-      strict: false,
-      context,
-    });
-
-    return [castValue, {}];
-  } catch (err) {
-    // in case a validator crashes we want to surface that through express
-    /* istanbul ignore next */
-    if (!(err instanceof ValidationError)) {
-      throw err;
-    }
-
-    err.inner
-      .map((e) => {
-        const REPLACE_BRACKETS = /\[([^[\]]+)\]/g;
-        const LFT_RT_TRIM_DOTS = /^[.]*|[.]*$/g;
-        const dotPath = e
-          .path!.replace(REPLACE_BRACKETS, ".$1")
-          .replace(LFT_RT_TRIM_DOTS, "");
-
-        return {
-          path: dotPath,
-          message: e.message.slice(e.message.indexOf(" ")).trim(),
-        };
-      })
-      .forEach(({ message, path }) => {
-        setValue(errors, path, message);
-      });
-
-    return [graph, errors];
-  }
-}
+import { validateAgainst } from "./validate";
 
 export type SavedTable = {
   columns: Columns;
