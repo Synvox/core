@@ -173,6 +173,7 @@ export type TableDef<T> = { tableName: string } & Partial<{
   allowUpserts?: boolean;
   complexityLimit?: number;
   complexityWeight?: number;
+  defaultSortColumn: string;
 }>;
 
 export type KnexGetter = (mode: "read" | "write" | "schema") => Promise<Knex>;

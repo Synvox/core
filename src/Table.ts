@@ -137,6 +137,7 @@ export class Table<Context, T = any> {
   allowUpserts: boolean;
   complexityLimit: number;
   complexityWeight: number;
+  defaultSortColumn: string;
 
   constructor(def: TableDef<Context>) {
     this.path =
@@ -172,6 +173,7 @@ export class Table<Context, T = any> {
     this.allowUpserts = def.allowUpserts ?? false;
     this.complexityLimit = def.complexityLimit ?? 500;
     this.complexityWeight = def.complexityWeight ?? 1;
+    this.defaultSortColumn = def.defaultSortColumn ?? this.idColumnName;
   }
   private withAlias(alias: string) {
     return Object.assign(new Table<Context, T>(this), this, { alias });
@@ -1582,7 +1584,25 @@ export class Table<Context, T = any> {
       statement.limit(limit);
 
       if (sorts.length === 0) {
-        sorts.push({ column: this.idColumnName, order: "asc" });
+        let column = this.defaultSortColumn;
+        let order: "asc" | "desc" = "asc";
+
+        if (column.startsWith("-")) {
+          order = "desc";
+          column = column.slice(1);
+        }
+
+        sorts.push({
+          column,
+          order,
+        });
+
+        if (this.defaultSortColumn !== this.idColumnName) {
+          sorts.push({
+            column: this.idColumnName,
+            order: "asc",
+          });
+        }
       }
 
       sorts.forEach((s) =>

@@ -4911,6 +4911,210 @@ describe("sorts", () => {
       ]
     `);
   });
+
+  it("can define a default sort", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.integer("key1").notNullable().defaultTo(0);
+      t.integer("key2").notNullable().defaultTo(0);
+    });
+
+    await knex("test.items").insert({ key1: 1, key2: 3 });
+    await knex("test.items").insert({ key1: 5, key2: 2 });
+    await knex("test.items").insert({ key1: 4, key2: 7 });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      defaultSortColumn: "key1",
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    expect(await items.readMany(knex, {}, {})).toMatchInlineSnapshot(`
+      Object {
+        "data": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/1",
+            "id": 1,
+            "key1": 1,
+            "key2": 3,
+          },
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/3",
+            "id": 3,
+            "key1": 4,
+            "key2": 7,
+          },
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/2",
+            "id": 2,
+            "key1": 5,
+            "key2": 2,
+          },
+        ],
+        "meta": Object {
+          "_links": Object {
+            "count": "/test/items/count",
+            "ids": "/test/items/ids",
+          },
+          "_type": "test/items",
+          "_url": "/test/items",
+          "hasMore": false,
+          "limit": 50,
+          "page": 0,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.key1, items.key2 from test.items order by items.key1 asc, items.id asc limit ?",
+      ]
+    `);
+  });
+
+  it("can define a default sort desc", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.integer("key1").notNullable().defaultTo(0);
+      t.integer("key2").notNullable().defaultTo(0);
+    });
+
+    await knex("test.items").insert({ key1: 1, key2: 3 });
+    await knex("test.items").insert({ key1: 5, key2: 2 });
+    await knex("test.items").insert({ key1: 4, key2: 7 });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      defaultSortColumn: "-key1",
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    expect(await items.readMany(knex, {}, {})).toMatchInlineSnapshot(`
+      Object {
+        "data": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/2",
+            "id": 2,
+            "key1": 5,
+            "key2": 2,
+          },
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/3",
+            "id": 3,
+            "key1": 4,
+            "key2": 7,
+          },
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/1",
+            "id": 1,
+            "key1": 1,
+            "key2": 3,
+          },
+        ],
+        "meta": Object {
+          "_links": Object {
+            "count": "/test/items/count",
+            "ids": "/test/items/ids",
+          },
+          "_type": "test/items",
+          "_url": "/test/items",
+          "hasMore": false,
+          "limit": 50,
+          "page": 0,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.key1, items.key2 from test.items order by items.key1 desc, items.id asc limit ?",
+      ]
+    `);
+  });
+
+  it("can define a default sort on id column desc", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.integer("key1").notNullable().defaultTo(0);
+      t.integer("key2").notNullable().defaultTo(0);
+    });
+
+    await knex("test.items").insert({ key1: 1, key2: 3 });
+    await knex("test.items").insert({ key1: 5, key2: 2 });
+    await knex("test.items").insert({ key1: 4, key2: 7 });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      defaultSortColumn: "-id",
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    expect(await items.readMany(knex, {}, {})).toMatchInlineSnapshot(`
+      Object {
+        "data": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/3",
+            "id": 3,
+            "key1": 4,
+            "key2": 7,
+          },
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/2",
+            "id": 2,
+            "key1": 5,
+            "key2": 2,
+          },
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/1",
+            "id": 1,
+            "key1": 1,
+            "key2": 3,
+          },
+        ],
+        "meta": Object {
+          "_links": Object {
+            "count": "/test/items/count",
+            "ids": "/test/items/ids",
+          },
+          "_type": "test/items",
+          "_url": "/test/items",
+          "hasMore": false,
+          "limit": 50,
+          "page": 0,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.key1, items.key2 from test.items order by items.id desc, items.id asc limit ?",
+      ]
+    `);
+  });
 });
 
 describe("pagination", () => {
