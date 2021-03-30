@@ -338,7 +338,7 @@ describe("saves to files", () => {
       tableName: "testSubNullable",
     });
 
-    await core.saveTsTypes(path, false);
+    await core.saveTsTypes(path, { includeLinks: false });
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
@@ -396,7 +396,10 @@ describe("saves to files", () => {
       tableName: "testSubNullable",
     });
 
-    await core.saveTsTypes(path, false, true);
+    await core.saveTsTypes(path, {
+      includeRelations: true,
+      includeLinks: false,
+    });
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`

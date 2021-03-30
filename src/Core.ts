@@ -451,8 +451,10 @@ export class Core<Context> {
 
   async saveTsTypes(
     path: string,
-    includeLinks = true,
-    includeRelations = false
+    {
+      includeLinks = true,
+      includeRelations = false,
+    }: { includeLinks?: boolean; includeRelations?: boolean } = {}
   ) {
     await this.init();
     await saveTsTypes(this.tables, path, includeLinks, includeRelations);
