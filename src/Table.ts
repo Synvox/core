@@ -545,6 +545,11 @@ export class Table<Context, T = any> {
 
     for (let [column, info] of Object.entries(table.columns!)) {
       let type = this.getYupTypeForColumn(column);
+
+      if (this.schema[column]) {
+        type = type.concat(this.schema[column].nullable());
+      }
+
       const notNullable = !info.nullable;
       const hasDefault =
         info.defaultValue !== null ||
@@ -572,10 +577,6 @@ export class Table<Context, T = any> {
 
     if (type.type === "string" && info.length >= 0) {
       type = ((type as StringSchema).max(info.length) as unknown) as Mixed;
-    }
-
-    if (this.schema[column]) {
-      type = type.concat(this.schema[column].nullable());
     }
 
     if (info.type.endsWith("[]")) {

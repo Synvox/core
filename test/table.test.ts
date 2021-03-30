@@ -6,7 +6,7 @@ import {
   NotFoundError,
   UnauthorizedError,
 } from "../src";
-import { string } from "yup";
+import { string, date, ref } from "yup";
 import { Mode } from "../src/types";
 import QueryString from "qs";
 import { ComplexityError } from "../src/errors";
@@ -5696,5 +5696,173 @@ describe("complexity limits", () => {
       }
     `);
     expect(queries).toMatchInlineSnapshot(`Array []`);
+  });
+});
+
+describe("ref validations", () => {
+  it("works with validations including yup refs", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.timestamp("start_date").notNullable();
+      t.timestamp("end_date").notNullable();
+    });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      schema: {
+        startDate: date().max(ref("endDate")),
+        endDate: date().min(ref("startDate")),
+      },
+    });
+
+    await items.init(knex);
+    items.linkTables([items]);
+
+    queries = [];
+    expect(
+      await items
+        .write(
+          knex,
+          {
+            startDate: new Date(946710000000).toISOString(),
+            endDate: new Date(978332400000).toISOString(),
+          },
+          {}
+        )
+        .catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changes": Array [
+          Object {
+            "mode": "insert",
+            "row": Object {
+              "_links": Object {},
+              "_type": "test/items",
+              "_url": "/test/items/1",
+              "endDate": 2001-01-01T07:00:00.000Z,
+              "id": 1,
+              "startDate": 2000-01-01T07:00:00.000Z,
+            },
+            "schemaName": "test",
+            "tableName": "items",
+          },
+        ],
+        "data": Object {
+          "_links": Object {},
+          "_type": "test/items",
+          "_url": "/test/items/1",
+          "endDate": 2001-01-01T07:00:00.000Z,
+          "id": 1,
+          "startDate": 2000-01-01T07:00:00.000Z,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "insert into test.items (end_date, start_date) values (?, ?) returning *",
+        "select items.id, items.start_date, items.end_date from test.items where items.id = ? limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      await items
+        .write(
+          knex,
+          {
+            startDate: new Date(978332400000).toISOString(),
+            endDate: new Date(946710000000).toISOString(),
+          },
+          {}
+        )
+        .catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "endDate": "field must be later than 2001-01-01T07:00:00.000Z",
+          "startDate": "field must be at earlier than 2000-01-01T07:00:00.000Z",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`Array []`);
+
+    // This shouldn't return anything, and should not fail.
+    queries = [];
+    expect(
+      await items
+        .readMany(
+          knex,
+          {
+            "startDate.gte": new Date(978332400000).toISOString(),
+            "endDate.lte": new Date(946710000000).toISOString(),
+          },
+          {}
+        )
+        .catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "data": Array [],
+        "meta": Object {
+          "_links": Object {
+            "count": "/test/items/count?startDate.gte=2001-01-01T07%3A00%3A00.000Z&endDate.lte=2000-01-01T07%3A00%3A00.000Z",
+            "ids": "/test/items/ids?startDate.gte=2001-01-01T07%3A00%3A00.000Z&endDate.lte=2000-01-01T07%3A00%3A00.000Z",
+          },
+          "_type": "test/items",
+          "_url": "/test/items?startDate.gte=2001-01-01T07%3A00%3A00.000Z&endDate.lte=2000-01-01T07%3A00%3A00.000Z",
+          "hasMore": false,
+          "limit": 50,
+          "page": 0,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.start_date, items.end_date from test.items where (items.start_date >= ? and items.end_date <= ?) order by items.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      await items
+        .readMany(
+          knex,
+          {
+            "startDate.gte": new Date(946710000000).toISOString(),
+            "endDate.lte": new Date(978332400000).toISOString(),
+          },
+          {}
+        )
+        .catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "data": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/1",
+            "endDate": 2001-01-01T07:00:00.000Z,
+            "id": 1,
+            "startDate": 2000-01-01T07:00:00.000Z,
+          },
+        ],
+        "meta": Object {
+          "_links": Object {
+            "count": "/test/items/count?startDate.gte=2000-01-01T07%3A00%3A00.000Z&endDate.lte=2001-01-01T07%3A00%3A00.000Z",
+            "ids": "/test/items/ids?startDate.gte=2000-01-01T07%3A00%3A00.000Z&endDate.lte=2001-01-01T07%3A00%3A00.000Z",
+          },
+          "_type": "test/items",
+          "_url": "/test/items?startDate.gte=2000-01-01T07%3A00%3A00.000Z&endDate.lte=2001-01-01T07%3A00%3A00.000Z",
+          "hasMore": false,
+          "limit": 50,
+          "page": 0,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.start_date, items.end_date from test.items where (items.start_date >= ? and items.end_date <= ?) order by items.id asc limit ?",
+      ]
+    `);
   });
 });
