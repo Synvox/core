@@ -315,6 +315,42 @@ export class Core<Context> {
           })
         );
 
+        for (let [methodName, method] of Object.entries(table.methods)) {
+          router.post(
+            `/${table.path}/:${table.idColumnName}/${methodName}`,
+            wrap(async (req, res) => {
+              const knex = await this.getKnex("read");
+              const context = this.getContext(req, res);
+              const { include: _, ...query } = req.query;
+
+              const row = await table.readOne(
+                knex,
+                {
+                  ...req.params,
+                  ...query,
+                },
+                context
+              );
+
+              const result = await method(row, req.body, context);
+              return result;
+            })
+          );
+        }
+
+        for (let [methodName, method] of Object.entries(table.staticMethods)) {
+          router.post(
+            `/${table.path}/${methodName}`,
+            wrap(async (req, res) => {
+              const context = this.getContext(req, res);
+
+              const result = await method(req.body, context);
+
+              return result;
+            })
+          );
+        }
+
         router.post(
           `/${table.path}`,
           wrap(async (req, res) => {

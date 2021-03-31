@@ -1813,3 +1813,98 @@ describe("creates a router", () => {
     expect(core.router).toEqual(core.router);
   });
 });
+
+describe("methods", () => {
+  it("static methods", async () => {
+    await knex.schema.withSchema("core_test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+    });
+
+    const core = new Core(knex, () => ({ context: "abc" }));
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+      staticMethods: {
+        async hit(body, context) {
+          return { body, context };
+        },
+      },
+    });
+
+    await core.init();
+
+    const app = express();
+    app.use(core.router);
+    const url = await listen(app);
+
+    const axios = Axios.create({ baseURL: url });
+
+    queries = [];
+    expect((await axios.post("/coreTest/test/hit", { body: "abc" })).data)
+      .toMatchInlineSnapshot(`
+      Object {
+        "body": Object {
+          "body": "abc",
+        },
+        "context": Object {
+          "context": "abc",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`Array []`);
+  });
+
+  it("instance methods", async () => {
+    await knex.schema.withSchema("core_test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+    });
+
+    const [row] = await knex("coreTest.test").insert({}).returning("*");
+
+    const core = new Core(knex, () => ({ context: "abc" }));
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+      methods: {
+        async hit(row, body, context) {
+          return { row, body, context };
+        },
+      },
+    });
+
+    await core.init();
+
+    const app = express();
+    app.use(core.router);
+    const url = await listen(app);
+
+    const axios = Axios.create({ baseURL: url });
+
+    queries = [];
+    expect(
+      (await axios.post(`/coreTest/test/${row.id}/hit`, { body: "abc" })).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "body": Object {
+          "body": "abc",
+        },
+        "context": Object {
+          "context": "abc",
+        },
+        "row": Object {
+          "_links": Object {},
+          "_type": "coreTest/test",
+          "_url": "/coreTest/test/1",
+          "id": 1,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id from core_test.test where (test.id = ?) limit ?",
+      ]
+    `);
+  });
+});

@@ -23,12 +23,14 @@ import {
   Mode,
   Mixed,
   ChangeSummary,
+  Methods,
+  StaticMethods,
 } from "./types";
 import {
   getColumnInfo,
   getUniqueColumnIndexes,
   getRelations,
-} from "./inference";
+} from "./introspect";
 import {
   BadRequestError,
   UnauthorizedError,
@@ -88,6 +90,8 @@ export class Table<Context, T = any> {
   complexityLimit: number;
   complexityWeight: number;
   defaultSortColumn: string;
+  methods: Methods<Context>;
+  staticMethods: StaticMethods<Context>;
 
   constructor(def: TableDef<Context>) {
     this.path =
@@ -124,6 +128,8 @@ export class Table<Context, T = any> {
     this.complexityLimit = def.complexityLimit ?? 500;
     this.complexityWeight = def.complexityWeight ?? 1;
     this.defaultSortColumn = def.defaultSortColumn ?? this.idColumnName;
+    this.methods = def.methods ?? {};
+    this.staticMethods = def.staticMethods ?? {};
   }
 
   private withAlias(alias: string) {

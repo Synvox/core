@@ -174,6 +174,23 @@ export type TableDef<T> = { tableName: string } & Partial<{
   complexityLimit?: number;
   complexityWeight?: number;
   defaultSortColumn: string;
+  methods: Methods<T>;
+  staticMethods: StaticMethods<T>;
 }>;
 
 export type KnexGetter = (mode: "read" | "write" | "schema") => Promise<Knex>;
+
+export type Method<Context> = (
+  row: any,
+  body: any,
+  context: Context
+) => Promise<any>;
+
+export type Methods<Context> = Record<string, Method<Context>>;
+
+export type StaticMethod<Context> = (
+  body: any,
+  context: Context
+) => Promise<any>;
+
+export type StaticMethods<Context> = Record<string, StaticMethod<Context>>;
