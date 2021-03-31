@@ -5,6 +5,7 @@ describe("validation", () => {
   it("validates basic", async () => {
     const cast = await validate<{ prop: string }>(object({ prop: string() }), {
       prop: 1,
+      key: 0,
     });
 
     expect(cast).toMatchInlineSnapshot(`
@@ -15,9 +16,10 @@ describe("validation", () => {
   });
 
   it("validates basic (failure)", async () => {
-    const cast = await validate(object({ prop: string() }), { prop: [] }).catch(
-      (e) => e.body
-    );
+    const cast = await validate(object({ prop: string() }), {
+      prop: [],
+      key: 0,
+    }).catch((e) => e.body);
     expect(cast).toMatchInlineSnapshot(`
       Object {
         "errors": Object {
@@ -31,7 +33,7 @@ describe("validation", () => {
     const cast = await validate<{ prop: string }>(
       object({ prop: object({ prop: string() }) }),
       {
-        prop: { prop: 1 },
+        prop: { prop: 1, key: 0 },
       }
     );
 
@@ -46,7 +48,7 @@ describe("validation", () => {
 
   it("validates basic (failure)", async () => {
     const cast = await validate(object({ prop: object({ prop: string() }) }), {
-      prop: { prop: [] },
+      prop: { prop: [], key: 0 },
     }).catch((e) => e.body);
     expect(cast).toMatchInlineSnapshot(`
       Object {

@@ -1,15 +1,18 @@
 import setValue from "set-value";
 import { ValidationError, BaseSchema } from "yup";
+import { ValidateOptions } from "yup/lib/types";
 import { BadRequestError } from "./errors";
 
 export async function validateAgainst<T>(
   schema: BaseSchema,
   graph: any,
-  context: T
+  context: T,
+  options: ValidateOptions<T> = {}
 ): Promise<[any, Record<string, string>]> {
   let errors: Record<string, any> = {};
   try {
     const castValue = await schema.validate(graph, {
+      ...options,
       abortEarly: false,
       strict: false,
       context,
@@ -23,22 +26,23 @@ export async function validateAgainst<T>(
       throw err;
     }
 
-    err.inner
-      .map((e) => {
-        const REPLACE_BRACKETS = /\[([^[\]]+)\]/g;
-        const LFT_RT_TRIM_DOTS = /^[.]*|[.]*$/g;
-        const dotPath = e
-          .path!.replace(REPLACE_BRACKETS, ".$1")
-          .replace(LFT_RT_TRIM_DOTS, "");
+    err.inner.forEach((e) => {
+      let message = e.message;
 
-        return {
-          path: dotPath,
-          message: e.message.slice(e.message.indexOf(" ")).trim(),
-        };
-      })
-      .forEach(({ message, path }) => {
-        setValue(errors, path, message);
-      });
+      // replace paths[0].like[1].this
+      // with paths.0.like.1.this
+      const path = e
+        .path!.replace(/\[([^[\]]+)\]/g, ".$1")
+        .replace(/^[.]*|[.]*$/g, "");
+
+      // remove the label from the start of the message
+      // {firstName: 'firstName is required'} -> {firstName: 'is required'}
+      const label: string = (e.params?.label as string) ?? e.path ?? "this";
+      if (message.startsWith(label))
+        message = message.slice(label.length).trim();
+
+      setValue(errors, path, message);
+    });
 
     return [graph, errors];
   }
@@ -49,7 +53,9 @@ export async function validate<T>(
   value: any,
   context?: any
 ) {
-  const [castValue, errors] = await validateAgainst(schema, value, context);
+  const [castValue, errors] = await validateAgainst(schema, value, context, {
+    stripUnknown: true,
+  });
 
   if (Object.keys(errors).length > 0) throw new BadRequestError(errors);
 
