@@ -1,5 +1,5 @@
 import { Cache, createLoader } from ".";
-import axios, { AxiosInstance } from "axios";
+import { AxiosInstance } from "axios";
 import qs from "qs";
 
 function qsStringify(val: any) {
@@ -10,6 +10,15 @@ function qsStringify(val: any) {
 }
 
 type Collection<T> = T[] & { hasMore: boolean };
+type ChangeTo<T> = {
+  data: T;
+  changes: {
+    mode: "string";
+    schemaName: string;
+    tableName: "string";
+    row: unknown;
+  }[];
+};
 
 type Getter<Result, Params extends Record<string, any>> = ((
   idOrParams: number | string,
@@ -17,13 +26,19 @@ type Getter<Result, Params extends Record<string, any>> = ((
 ) => Result) &
   ((idOrParams?: Params) => Collection<Result>);
 
-function table<T, P = {}>(path: string) {
-  return (getUrl: (key: string) => unknown) => {
-    //@ts-expect-error
-    const getter: Getter<T, P> = (
-      idOrParams?: number | string | P,
-      params?: P
-    ) => {
+type Route<Result, Params extends Record<string, any>> = Getter<
+  Result,
+  Params
+> & {
+  get: Getter<Result, Params>;
+  put: (id: number | string, payload: any) => Promise<ChangeTo<Result>>;
+  post: (payload: any) => Promise<ChangeTo<Result>>;
+  delete: (id: number | string) => Promise<ChangeTo<Result>>;
+};
+
+export function table<T, P = {}>(path: string) {
+  return (getUrl: (key: string) => unknown, axios: AxiosInstance) => {
+    const getter = (idOrParams?: number | string | P, params?: P) => {
       if (typeof idOrParams === "object") {
         return getUrl(`${path}?${qsStringify(idOrParams)}`) as T;
       } else {
@@ -39,18 +54,48 @@ function table<T, P = {}>(path: string) {
       }
     };
 
-    return getter;
+    return Object.assign(
+      (idOrParams?: number | string | P, params?: P) =>
+        getter(idOrParams, params),
+      {
+        get: getter,
+        put: async (id: number | string, data: any, params?: P) => {
+          let fullPath = `${path}/${id}`;
+          if (params && Object.keys(params).length > 0) {
+            fullPath += `?${qsStringify(params)}`;
+          }
+          const { data: result } = await axios.put(fullPath, data);
+          return result as ChangeTo<T>;
+        },
+        post: async (data: any, params?: P) => {
+          let fullPath = path;
+          if (params && Object.keys(params).length > 0) {
+            fullPath += `?${qsStringify(params)}`;
+          }
+          const { data: result } = await axios.put(fullPath, data);
+          return result as ChangeTo<T>;
+        },
+        delete: async (id: number | string, params?: P) => {
+          let fullPath = `${path}/${id}`;
+          if (params && Object.keys(params).length > 0) {
+            fullPath += `?${qsStringify(params)}`;
+          }
+          const { data: result } = await axios.put(fullPath);
+          return result as ChangeTo<T>;
+        },
+      }
+    ) as Route<T, P>;
   };
 }
 
-type Route<Result, Params> = (
-  getUrl: (url: string) => any
-) => Getter<Result, Params>;
+type RouteFactory<Result, Params> = (
+  getUrl: (url: string) => any,
+  axios: AxiosInstance
+) => Route<Result, Params>;
 
-export function coreClient<Routes extends Record<string, Route<any, any>>>(
-  axios: AxiosInstance,
-  routes: Routes
-) {
+export function coreClient<
+  Routes extends Record<string, RouteFactory<any, any>>
+>(axios: AxiosInstance, routes: Routes) {
   const cache = new Cache<string>(async (url) => {
     const { data } = await axios.get(url);
     const result: [string, any][] = [[url, data]];
@@ -122,32 +167,32 @@ export function coreClient<Routes extends Record<string, Route<any, any>>>(
     useGetUrl,
     preload,
     useCore(): {
-      [name in keyof Routes]: Routes[name] extends Route<
+      [name in keyof Routes]: Routes[name] extends RouteFactory<
         infer Result,
         infer Params
       >
-        ? Getter<Result, Partial<Params>>
-        : Getter<unknown, any>;
+        ? Route<Result, Partial<Params>>
+        : Route<unknown, any>;
     } {
       const getUrl = useGetUrl();
 
       //@ts-expect-error
       return Object.fromEntries(
         Object.entries(routes).map(([key, createRoute]) => {
-          return [key, createRoute(getUrl)];
+          return [key, createRoute(getUrl, axios)];
         })
       );
     },
   };
 }
 
-const { useCore } = coreClient(axios, {
-  users: table<
-    { id: string; firstName: string },
-    { id: string; include: string }
-  >("/auth/users"),
-});
+// const { useCore } = coreClient(axios, {
+//   users: table<
+//     { id: string; firstName: string },
+//     { id: string; include: string }
+//   >("/auth/users"),
+// });
 
-const core = useCore();
-const a = core.users("a", { include: "abc" });
-const b = core.users();
+// const core = useCore();
+// const a = core.users.get("a", { include: "abc" });
+// const b = core.users();
