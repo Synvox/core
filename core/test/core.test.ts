@@ -237,6 +237,7 @@ describe("listens on server", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "coreTest/testSub",
             "row": Object {
               "_links": Object {
                 "parent": "/coreTest/test/1",
@@ -246,8 +247,6 @@ describe("listens on server", () => {
               "id": 2,
               "parentId": 1,
             },
-            "schemaName": "coreTest",
-            "tableName": "testSub",
           },
         ],
         "data": Object {
@@ -399,6 +398,7 @@ describe("listens on server", () => {
         "changes": Array [
           Object {
             "mode": "update",
+            "path": "coreTest/test",
             "row": Object {
               "_links": Object {
                 "testSub": "/coreTest/testSub?parentId=1",
@@ -410,8 +410,6 @@ describe("listens on server", () => {
               "numberCount": 0,
               "text": "text",
             },
-            "schemaName": "coreTest",
-            "tableName": "test",
           },
         ],
         "data": Object {
@@ -507,6 +505,7 @@ describe("listens on server", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "coreTest/test",
             "row": Object {
               "_links": Object {},
               "_type": "coreTest/test",
@@ -516,8 +515,6 @@ describe("listens on server", () => {
               "numberCount": 10,
               "text": "abc",
             },
-            "schemaName": "coreTest",
-            "tableName": "test",
           },
         ],
         "data": Object {
@@ -571,6 +568,7 @@ describe("listens on server", () => {
         "changes": Array [
           Object {
             "mode": "update",
+            "path": "coreTest/test",
             "row": Object {
               "_links": Object {},
               "_type": "coreTest/test",
@@ -580,8 +578,6 @@ describe("listens on server", () => {
               "numberCount": 10,
               "text": "abc",
             },
-            "schemaName": "coreTest",
-            "tableName": "test",
           },
         ],
         "data": Object {
@@ -751,6 +747,7 @@ describe("listens on server", () => {
         "changes": Array [
           Object {
             "mode": "delete",
+            "path": "coreTest/test",
             "row": Object {
               "_links": Object {},
               "_type": "coreTest/test",
@@ -760,8 +757,6 @@ describe("listens on server", () => {
               "numberCount": 0,
               "text": "text",
             },
-            "schemaName": "coreTest",
-            "tableName": "test",
           },
         ],
         "data": null,
@@ -1048,6 +1043,7 @@ describe("sse", () => {
         Array [
           Object {
             "mode": "insert",
+            "path": "coreTest/test",
             "row": Object {
               "_links": Object {},
               "_type": "coreTest/test",
@@ -1055,8 +1051,6 @@ describe("sse", () => {
               "id": 2,
               "orgId": 1,
             },
-            "schemaName": "coreTest",
-            "tableName": "test",
           },
         ],
       ]
@@ -1064,7 +1058,7 @@ describe("sse", () => {
 
     // This should not cause an error
     eventEmitter.emit("change", [
-      { mode: "insert", tableName: "a", schemaName: "b", row: {} },
+      { mode: "insert", path: "a/b", row: {} },
     ] as ChangeSummary<any>[]);
 
     eventSource.close();
@@ -1117,6 +1111,7 @@ describe("sse", () => {
         Array [
           Object {
             "mode": "insert",
+            "path": "coreTest/test",
             "row": Object {
               "_links": Object {},
               "_type": "coreTest/test",
@@ -1124,8 +1119,6 @@ describe("sse", () => {
               "id": 2,
               "orgId": 1,
             },
-            "schemaName": "coreTest",
-            "tableName": "test",
           },
         ],
       ]
@@ -1191,6 +1184,7 @@ describe("sse", () => {
         Array [
           Object {
             "mode": "insert",
+            "path": "coreTest/test",
             "row": Object {
               "_links": Object {},
               "_type": "coreTest/test",
@@ -1198,8 +1192,6 @@ describe("sse", () => {
               "id": 1,
               "orgId": 1,
             },
-            "schemaName": "coreTest",
-            "tableName": "test",
           },
         ],
       ]
@@ -1254,6 +1246,7 @@ describe("sse", () => {
         Array [
           Object {
             "mode": "insert",
+            "path": "coreTest/test",
             "row": Object {
               "_links": Object {},
               "_type": "coreTest/test",
@@ -1261,8 +1254,6 @@ describe("sse", () => {
               "id": 1,
               "orgId": 1,
             },
-            "schemaName": "coreTest",
-            "tableName": "test",
           },
         ],
       ]

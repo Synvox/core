@@ -33,8 +33,7 @@ export type ShouldEventBeSent<Context, T> = (
 
 export type ChangeSummary<T> = {
   mode: Mode;
-  schemaName: string;
-  tableName: string;
+  path: string;
   row: T;
 };
 

@@ -946,6 +946,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -955,8 +956,6 @@ describe("without policies", () => {
               "numberCount": 0,
               "text": "text",
             },
-            "schemaName": "test",
-            "tableName": "test",
           },
         ],
         "data": Object {
@@ -984,6 +983,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -993,8 +993,6 @@ describe("without policies", () => {
               "numberCount": 10,
               "text": "text",
             },
-            "schemaName": "test",
-            "tableName": "test",
           },
         ],
         "data": Object {
@@ -1084,6 +1082,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1095,8 +1094,6 @@ describe("without policies", () => {
               "numberCount": 0,
               "text": "text",
             },
-            "schemaName": "test",
-            "tableName": "test",
           },
         ],
         "data": Object {
@@ -1132,6 +1129,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1143,8 +1141,6 @@ describe("without policies", () => {
               "numberCount": 0,
               "text": "text",
             },
-            "schemaName": "test",
-            "tableName": "test",
           },
         ],
         "data": Object {
@@ -1266,6 +1262,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1273,8 +1270,6 @@ describe("without policies", () => {
               "email": "test@test.com",
               "id": 1,
             },
-            "schemaName": "test",
-            "tableName": "test",
           },
         ],
         "data": Object {
@@ -1314,6 +1309,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1321,8 +1317,6 @@ describe("without policies", () => {
               "id": 1,
               "username": "abc",
             },
-            "schemaName": "test",
-            "tableName": "test",
           },
         ],
         "data": Object {
@@ -1384,6 +1378,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1392,8 +1387,6 @@ describe("without policies", () => {
               "org": "a",
               "username": "abc",
             },
-            "schemaName": "test",
-            "tableName": "test",
           },
         ],
         "data": Object {
@@ -1426,6 +1419,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1434,8 +1428,6 @@ describe("without policies", () => {
               "org": "a",
               "username": "abc",
             },
-            "schemaName": "test",
-            "tableName": "test",
           },
         ],
         "data": Object {
@@ -1465,6 +1457,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1473,8 +1466,6 @@ describe("without policies", () => {
               "org": "b",
               "username": "abc",
             },
-            "schemaName": "test",
-            "tableName": "test",
           },
         ],
         "data": Object {
@@ -1540,6 +1531,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "update",
+            "path": "test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1548,8 +1540,6 @@ describe("without policies", () => {
               "org": "org",
               "username": "xyb",
             },
-            "schemaName": "test",
-            "tableName": "test",
           },
         ],
         "data": Object {
@@ -1580,6 +1570,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "delete",
+            "path": "test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1588,8 +1579,6 @@ describe("without policies", () => {
               "org": "org",
               "username": "xyb",
             },
-            "schemaName": "test",
-            "tableName": "test",
           },
         ],
         "data": null,
@@ -1669,6 +1658,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/users",
             "row": Object {
               "_links": Object {
                 "posts": "/test/posts?userId=1",
@@ -1678,8 +1668,6 @@ describe("without policies", () => {
               "id": 1,
               "name": "a",
             },
-            "schemaName": "test",
-            "tableName": "users",
           },
         ],
         "data": Object {
@@ -1712,6 +1700,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/users",
             "row": Object {
               "_links": Object {
                 "posts": "/test/posts?userId=2",
@@ -1721,11 +1710,10 @@ describe("without policies", () => {
               "id": 2,
               "name": "a",
             },
-            "schemaName": "test",
-            "tableName": "users",
           },
           Object {
             "mode": "insert",
+            "path": "test/posts",
             "row": Object {
               "_links": Object {
                 "user": "/test/users/2",
@@ -1736,11 +1724,10 @@ describe("without policies", () => {
               "id": 1,
               "userId": 2,
             },
-            "schemaName": "test",
-            "tableName": "posts",
           },
           Object {
             "mode": "insert",
+            "path": "test/posts",
             "row": Object {
               "_links": Object {
                 "user": "/test/users/2",
@@ -1751,8 +1738,6 @@ describe("without policies", () => {
               "id": 2,
               "userId": 2,
             },
-            "schemaName": "test",
-            "tableName": "posts",
           },
         ],
         "data": Object {
@@ -1825,6 +1810,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/users",
             "row": Object {
               "_links": Object {
                 "posts": "/test/posts?userId=3",
@@ -1834,11 +1820,10 @@ describe("without policies", () => {
               "id": 3,
               "name": "a",
             },
-            "schemaName": "test",
-            "tableName": "users",
           },
           Object {
             "mode": "insert",
+            "path": "test/posts",
             "row": Object {
               "_links": Object {
                 "user": "/test/users/3",
@@ -1849,8 +1834,6 @@ describe("without policies", () => {
               "id": 3,
               "userId": 3,
             },
-            "schemaName": "test",
-            "tableName": "posts",
           },
         ],
         "data": Object {
@@ -1891,6 +1874,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "delete",
+            "path": "test/users",
             "row": Object {
               "_links": Object {
                 "posts": "/test/posts?userId=3",
@@ -1900,8 +1884,6 @@ describe("without policies", () => {
               "id": 3,
               "name": "a",
             },
-            "schemaName": "test",
-            "tableName": "users",
           },
         ],
         "data": null,
@@ -1935,6 +1917,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "delete",
+            "path": "test/posts",
             "row": Object {
               "_links": Object {
                 "user": "/test/users/4",
@@ -1945,8 +1928,6 @@ describe("without policies", () => {
               "id": 4,
               "userId": 4,
             },
-            "schemaName": "test",
-            "tableName": "posts",
           },
         ],
         "data": Object {
@@ -2293,14 +2274,13 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
               "_url": "/test/test/1",
               "id": 1,
             },
-            "schemaName": "test",
-            "tableName": "test",
           },
         ],
         "data": Object {
@@ -2335,14 +2315,13 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "update",
+            "path": "test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
               "_url": "/test/test/1",
               "id": 1,
             },
-            "schemaName": "test",
-            "tableName": "test",
           },
         ],
         "data": Object {
@@ -2888,6 +2867,7 @@ describe("with policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/posts",
             "row": Object {
               "_links": Object {},
               "_type": "test/posts",
@@ -2897,8 +2877,6 @@ describe("with policies", () => {
               "orgId": 1,
               "userId": null,
             },
-            "schemaName": "test",
-            "tableName": "posts",
           },
         ],
         "data": Object {
@@ -2957,6 +2935,7 @@ describe("with policies", () => {
         "changes": Array [
           Object {
             "mode": "update",
+            "path": "test/posts",
             "row": Object {
               "_links": Object {
                 "user": "/test/users/1",
@@ -2968,8 +2947,6 @@ describe("with policies", () => {
               "orgId": 1,
               "userId": 1,
             },
-            "schemaName": "test",
-            "tableName": "posts",
           },
         ],
         "data": Object {
@@ -3005,6 +2982,7 @@ describe("with policies", () => {
         "changes": Array [
           Object {
             "mode": "delete",
+            "path": "test/posts",
             "row": Object {
               "_links": Object {
                 "user": "/test/users/1",
@@ -3016,8 +2994,6 @@ describe("with policies", () => {
               "orgId": 1,
               "userId": 1,
             },
-            "schemaName": "test",
-            "tableName": "posts",
           },
         ],
         "data": null,
@@ -3356,6 +3332,7 @@ describe("multitenancy", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -3364,8 +3341,6 @@ describe("multitenancy", () => {
               "id": 2,
               "orgId": 1,
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
         ],
         "data": Object {
@@ -3386,6 +3361,7 @@ describe("multitenancy", () => {
         "changes": Array [
           Object {
             "mode": "update",
+            "path": "test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -3394,8 +3370,6 @@ describe("multitenancy", () => {
               "id": 1,
               "orgId": 1,
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
         ],
         "data": Object {
@@ -3416,6 +3390,7 @@ describe("multitenancy", () => {
         "changes": Array [
           Object {
             "mode": "delete",
+            "path": "test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -3424,8 +3399,6 @@ describe("multitenancy", () => {
               "id": 1,
               "orgId": 1,
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
         ],
         "data": null,
@@ -3537,6 +3510,7 @@ describe("multitenancy", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/test",
             "row": Object {
               "_links": Object {
                 "org": "/test/orgs/1",
@@ -3547,8 +3521,6 @@ describe("multitenancy", () => {
               "orgId": 1,
               "username": "abc",
             },
-            "schemaName": "test",
-            "tableName": "test",
           },
         ],
         "data": Object {
@@ -3669,6 +3641,7 @@ describe("paranoid", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1",
@@ -3678,8 +3651,6 @@ describe("paranoid", () => {
               "deletedAt": null,
               "id": 1,
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
         ],
         "data": Object {
@@ -3706,6 +3677,7 @@ describe("paranoid", () => {
         "changes": Array [
           Object {
             "mode": "delete",
+            "path": "test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1",
@@ -3715,11 +3687,10 @@ describe("paranoid", () => {
               "deletedAt": null,
               "id": 1,
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
           Object {
             "mode": "delete",
+            "path": "test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1",
@@ -3730,11 +3701,10 @@ describe("paranoid", () => {
               "id": 1,
               "itemId": 1,
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
           Object {
             "mode": "delete",
+            "path": "test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=2",
@@ -3745,8 +3715,6 @@ describe("paranoid", () => {
               "id": 2,
               "itemId": 1,
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
         ],
         "data": null,
@@ -3839,6 +3807,7 @@ describe("paranoid", () => {
         "changes": Array [
           Object {
             "mode": "delete",
+            "path": "test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1&orgId=1",
@@ -3849,11 +3818,10 @@ describe("paranoid", () => {
               "id": 1,
               "orgId": 1,
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
           Object {
             "mode": "delete",
+            "path": "test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1&orgId=1",
@@ -3865,8 +3833,6 @@ describe("paranoid", () => {
               "itemId": 1,
               "orgId": 1,
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
         ],
         "data": null,
@@ -3947,14 +3913,13 @@ describe("hidden columns", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
               "_url": "/test/items/1",
               "id": 1,
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
         ],
         "data": Object {
@@ -4105,14 +4070,13 @@ describe("uuid columns", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
               "_url": "/test/items/a8374dd3-0aa0-4ada-8c98-b7ade46900b8",
               "id": "a8374dd3-0aa0-4ada-8c98-b7ade46900b8",
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
         ],
         "data": Object {
@@ -4190,6 +4154,7 @@ describe("uuid columns", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?parentId=96435a51-7af8-4d08-94f3-892a99abd8cd",
@@ -4198,11 +4163,10 @@ describe("uuid columns", () => {
               "_url": "/test/items/96435a51-7af8-4d08-94f3-892a99abd8cd",
               "id": "96435a51-7af8-4d08-94f3-892a99abd8cd",
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
           Object {
             "mode": "insert",
+            "path": "test/subitems",
             "row": Object {
               "_links": Object {
                 "parent": "/test/items/96435a51-7af8-4d08-94f3-892a99abd8cd",
@@ -4212,11 +4176,10 @@ describe("uuid columns", () => {
               "id": "0ae89559-c579-4d1a-8382-0a44693c78d2",
               "parentId": "96435a51-7af8-4d08-94f3-892a99abd8cd",
             },
-            "schemaName": "test",
-            "tableName": "subitems",
           },
           Object {
             "mode": "insert",
+            "path": "test/subitems",
             "row": Object {
               "_links": Object {
                 "parent": "/test/items/96435a51-7af8-4d08-94f3-892a99abd8cd",
@@ -4226,8 +4189,6 @@ describe("uuid columns", () => {
               "id": "3872e801-bf4c-4eb5-b4ab-c70cd9cd03d3",
               "parentId": "96435a51-7af8-4d08-94f3-892a99abd8cd",
             },
-            "schemaName": "test",
-            "tableName": "subitems",
           },
         ],
         "data": Object {
@@ -4285,6 +4246,7 @@ describe("uuid columns", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?parentId=cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
@@ -4293,11 +4255,10 @@ describe("uuid columns", () => {
               "_url": "/test/items/cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
               "id": "cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
           Object {
             "mode": "insert",
+            "path": "test/subitems",
             "row": Object {
               "_links": Object {
                 "parent": "/test/items/cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
@@ -4307,8 +4268,6 @@ describe("uuid columns", () => {
               "id": "bedaa8d1-20d2-4f09-adeb-d67ab0523af5",
               "parentId": "cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
             },
-            "schemaName": "test",
-            "tableName": "subitems",
           },
         ],
         "data": Object {
@@ -4369,6 +4328,7 @@ describe("beforeCommit", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -4376,8 +4336,6 @@ describe("beforeCommit", () => {
               "body": "",
               "id": 1,
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
         ],
         "data": Object {
@@ -4412,6 +4370,7 @@ describe("beforeCommit", () => {
         "changes": Array [
           Object {
             "mode": "update",
+            "path": "test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -4419,8 +4378,6 @@ describe("beforeCommit", () => {
               "body": "abc",
               "id": 1,
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
         ],
         "data": Object {
@@ -4458,6 +4415,7 @@ describe("beforeCommit", () => {
         "changes": Array [
           Object {
             "mode": "delete",
+            "path": "test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -4465,8 +4423,6 @@ describe("beforeCommit", () => {
               "body": "abc",
               "id": 1,
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
         ],
         "data": null,
@@ -4513,6 +4469,7 @@ describe("self references", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/items",
             "row": Object {
               "_links": Object {
                 "items": "/test/items?parentItemId=1",
@@ -4522,8 +4479,6 @@ describe("self references", () => {
               "id": 1,
               "parentItemId": null,
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
         ],
         "data": Object {
@@ -4544,6 +4499,7 @@ describe("self references", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/items",
             "row": Object {
               "_links": Object {
                 "items": "/test/items?parentItemId=2",
@@ -4554,8 +4510,6 @@ describe("self references", () => {
               "id": 2,
               "parentItemId": 1,
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
         ],
         "data": Object {
@@ -4593,6 +4547,7 @@ describe("self references", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/items",
             "row": Object {
               "_links": Object {
                 "items": "/test/items?parentItemId=3",
@@ -4603,8 +4558,6 @@ describe("self references", () => {
               "id": 3,
               "parentItemId": 1,
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
         ],
         "data": Object {
@@ -5264,14 +5217,13 @@ describe("in public schema", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "testTable",
             "row": Object {
               "_links": Object {},
               "_type": "testTable",
               "_url": "/testTable/1",
               "id": 1,
             },
-            "schemaName": "public",
-            "tableName": "testTable",
           },
         ],
         "data": Object {
@@ -5470,6 +5422,7 @@ describe("upsert", () => {
         "changes": Array [
           Object {
             "mode": "update",
+            "path": "test/contacts",
             "row": Object {
               "_links": Object {},
               "_type": "test/contacts",
@@ -5478,8 +5431,6 @@ describe("upsert", () => {
               "name": "updated",
               "phone": "123",
             },
-            "schemaName": "test",
-            "tableName": "contacts",
           },
         ],
         "data": Object {
@@ -5626,6 +5577,7 @@ describe("upsert", () => {
         "changes": Array [
           Object {
             "mode": "update",
+            "path": "test/contacts",
             "row": Object {
               "_links": Object {},
               "_type": "test/contacts",
@@ -5635,8 +5587,6 @@ describe("upsert", () => {
               "orgId": 1,
               "phone": "123",
             },
-            "schemaName": "test",
-            "tableName": "contacts",
           },
         ],
         "data": Object {
@@ -5758,6 +5708,7 @@ describe("ref validations", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -5766,8 +5717,6 @@ describe("ref validations", () => {
               "id": 1,
               "startDate": 2000-01-01T07:00:00.000Z,
             },
-            "schemaName": "test",
-            "tableName": "items",
           },
         ],
         "data": Object {

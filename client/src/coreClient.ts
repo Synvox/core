@@ -10,14 +10,14 @@ function qsStringify(val: any) {
 }
 
 type Collection<T> = T[] & { hasMore: boolean };
+type Change = {
+  mode: "string";
+  path: string;
+  row: unknown;
+};
 type ChangeTo<T> = {
   data: T;
-  changes: {
-    mode: "string";
-    schemaName: string;
-    tableName: "string";
-    row: unknown;
-  }[];
+  changes: Change[];
 };
 
 type Getter<Result, Params extends Record<string, any>> = ((
@@ -37,7 +37,7 @@ type Route<Result, Params extends Record<string, any>> = Getter<
 };
 
 export function table<T, P = {}>(path: string) {
-  return (getUrl: (key: string) => unknown, axios: AxiosInstance) => {
+  const routeFactory: RouteFactory<T, P> = (getUrl, axios, touch) => {
     const getter = (idOrParams?: number | string | P, params?: P) => {
       if (typeof idOrParams === "object") {
         return getUrl(`${path}?${qsStringify(idOrParams)}`) as T;
@@ -54,6 +54,12 @@ export function table<T, P = {}>(path: string) {
       }
     };
 
+    async function handleChanges(changes: Change[]) {
+      await touch((url: string) => {
+        return changes.some((change) => url.includes(change.path));
+      });
+    }
+
     return Object.assign(
       (idOrParams?: number | string | P, params?: P) =>
         getter(idOrParams, params),
@@ -65,6 +71,7 @@ export function table<T, P = {}>(path: string) {
             fullPath += `?${qsStringify(params)}`;
           }
           const { data: result } = await axios.put(fullPath, data);
+          await handleChanges(result.changes);
           return result as ChangeTo<T>;
         },
         post: async (data: any, params?: P) => {
@@ -72,7 +79,8 @@ export function table<T, P = {}>(path: string) {
           if (params && Object.keys(params).length > 0) {
             fullPath += `?${qsStringify(params)}`;
           }
-          const { data: result } = await axios.put(fullPath, data);
+          const { data: result } = await axios.post(fullPath, data);
+          await handleChanges(result.changes);
           return result as ChangeTo<T>;
         },
         delete: async (id: number | string, params?: P) => {
@@ -80,17 +88,21 @@ export function table<T, P = {}>(path: string) {
           if (params && Object.keys(params).length > 0) {
             fullPath += `?${qsStringify(params)}`;
           }
-          const { data: result } = await axios.put(fullPath);
+          const { data: result } = await axios.delete(fullPath);
+          await handleChanges(result.changes);
           return result as ChangeTo<T>;
         },
       }
     ) as Route<T, P>;
   };
+
+  return routeFactory;
 }
 
 type RouteFactory<Result, Params> = (
   getUrl: (url: string) => any,
-  axios: AxiosInstance
+  axios: AxiosInstance,
+  touch: (filter: (key: string) => boolean) => Promise<void>
 ) => Route<Result, Params>;
 
 export function coreClient<
@@ -188,7 +200,7 @@ export function coreClient<
       //@ts-expect-error
       return Object.fromEntries(
         Object.entries(routes).map(([key, createRoute]) => {
-          return [key, createRoute(getUrl, axios)];
+          return [key, createRoute(getUrl, axios, touch)];
         })
       );
     },

@@ -99,6 +99,7 @@ describe("withTimestamps plugin", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "testPlugins/users",
             "row": Object {
               "_links": Object {
                 "posts": "/testPlugins/posts?userId=1",
@@ -109,11 +110,10 @@ describe("withTimestamps plugin", () => {
               "id": 1,
               "updatedAt": 2021-01-01T01:01:00.000Z,
             },
-            "schemaName": "testPlugins",
-            "tableName": "users",
           },
           Object {
             "mode": "insert",
+            "path": "testPlugins/posts",
             "row": Object {
               "_links": Object {
                 "user": "/testPlugins/users/1",
@@ -126,11 +126,10 @@ describe("withTimestamps plugin", () => {
               "updatedAt": 2021-01-01T01:01:00.000Z,
               "userId": 1,
             },
-            "schemaName": "testPlugins",
-            "tableName": "posts",
           },
           Object {
             "mode": "insert",
+            "path": "testPlugins/posts",
             "row": Object {
               "_links": Object {
                 "user": "/testPlugins/users/1",
@@ -143,8 +142,6 @@ describe("withTimestamps plugin", () => {
               "updatedAt": 2021-01-01T01:01:00.000Z,
               "userId": 1,
             },
-            "schemaName": "testPlugins",
-            "tableName": "posts",
           },
         ],
         "data": Object {
@@ -214,6 +211,7 @@ describe("withTimestamps plugin", () => {
         "changes": Array [
           Object {
             "mode": "update",
+            "path": "testPlugins/users",
             "row": Object {
               "_links": Object {
                 "posts": "/testPlugins/posts?userId=1",
@@ -224,8 +222,6 @@ describe("withTimestamps plugin", () => {
               "id": 1,
               "updatedAt": 2021-01-02T01:01:00.000Z,
             },
-            "schemaName": "testPlugins",
-            "tableName": "users",
           },
         ],
         "data": Object {
@@ -264,6 +260,7 @@ describe("withTimestamps plugin", () => {
         "changes": Array [
           Object {
             "mode": "delete",
+            "path": "testPlugins/posts",
             "row": Object {
               "_links": Object {
                 "user": "/testPlugins/users/1",
@@ -276,8 +273,6 @@ describe("withTimestamps plugin", () => {
               "updatedAt": 2021-01-01T01:01:00.000Z,
               "userId": 1,
             },
-            "schemaName": "testPlugins",
-            "tableName": "posts",
           },
         ],
         "data": null,
@@ -318,6 +313,7 @@ describe("withTimestamps plugin", () => {
         "changes": Array [
           Object {
             "mode": "insert",
+            "path": "testPlugins/items",
             "row": Object {
               "_links": Object {},
               "_type": "testPlugins/items",
@@ -326,8 +322,6 @@ describe("withTimestamps plugin", () => {
               "id": 1,
               "updatedAt": 2021-01-02T01:01:00.000Z,
             },
-            "schemaName": "testPlugins",
-            "tableName": "items",
           },
         ],
         "data": Object {

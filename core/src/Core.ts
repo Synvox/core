@@ -96,11 +96,7 @@ export class Core<Context> {
 
       const handler = async (changes: ChangeSummary<any>[]) => {
         const isVisible = async (change: ChangeSummary<any>) => {
-          const table = this.tables.find(
-            (t) =>
-              t.tableName === change.tableName &&
-              t.schemaName === change.schemaName
-          );
+          const table = this.tables.find((t) => t.path === change.path);
 
           if (!table) return false;
 

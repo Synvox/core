@@ -904,8 +904,7 @@ export class Table<Context, T = any> {
   ) {
     const recordChange = async (mode: Mode, row: any) => {
       changes.push({
-        tableName: this.tableName,
-        schemaName: this.schemaName,
+        path: this.path,
         mode: mode,
         row: await this.processTableRow({}, context, row),
       });
