@@ -1,70 +1,8 @@
 {
-  "version": "1.0.0-11",
-  "license": "MIT",
-  "main": "./dist/index.js",
-  "source": "./src/index.ts",
-  "types": "./dist/index.d.ts",
-  "scripts": {
-    "build": "rm -rf dist && tsc",
-    "test": "jest",
-    "prepublishOnly": "npm run build"
-  },
-  "prettier": {},
-  "name": "@synvox/core",
-  "author": "Ryan Allred",
-  "devDependencies": {
-    "@types/atob": "^2.1.2",
-    "@types/btoa": "^1.2.3",
-    "@types/compression": "^1.7.0",
-    "@types/eventsource": "^1.1.5",
-    "@types/express": "^4.17.11",
-    "@types/inflection": "^1.5.28",
-    "@types/jest": "^26.0.21",
-    "@types/pg": "^7.14.11",
-    "@types/set-value": "^2.0.0",
-    "@types/test-listen": "^1.1.0",
-    "axios": "^0.21.1",
-    "compression": "^1.7.4",
-    "eventsource": "^1.1.0",
-    "express": "^4.17.1",
-    "jest": "^26.6.3",
-    "knex": "^0.95.2",
-    "pg": "^8.5.1",
-    "prettier": "^2.2.1",
-    "test-listen": "^1.1.0",
-    "ts-jest": "^26.5.4",
-    "tslib": "^2.1.0",
-    "typescript": "^4.2.3",
-    "yup": "^0.32.9"
-  },
-  "peerDependencies": {
-    "express": "~4.17.1",
-    "knex": "~0.95.2",
-    "pg": "~8.5.1",
-    "yup": "~0.32.9"
-  },
   "dependencies": {
-    "atob": "^2.1.2",
-    "aws-sdk": "^2.868.0",
-    "btoa": "^1.2.1",
-    "inflection": "^1.12.0",
-    "qs": "^6.5.2",
-    "set-value": "^2.0.1"
+    "use-memo-one": "^1.1.2"
   },
-  "jest": {
-    "setupFilesAfterEnv": [],
-    "preset": "ts-jest",
-    "testEnvironment": "node",
-    "coverageDirectory": "./coverage/",
-    "collectCoverage": true,
-    "testMatch": [
-      "<rootDir>/test/**/*.(test|spec).ts?(x)"
-    ],
-    "moduleFileExtensions": [
-      "ts",
-      "tsx",
-      "js",
-      "jsx"
-    ]
+  "devDependencies": {
+    "react-dom": "^17.0.2"
   }
 }

@@ -1,12 +1,10 @@
 {
-  "include": ["src", "types"],
   "compilerOptions": {
     "module": "commonjs",
     "lib": ["dom", "es2019", "dom.iterable"],
     "importHelpers": true,
     "declaration": true,
     "sourceMap": true,
-    "rootDir": "./src",
     "strict": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
@@ -16,7 +14,6 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "target": "es6",
-    "outDir": "dist"
+    "target": "es6"
   }
 }
