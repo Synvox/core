@@ -15,16 +15,13 @@ export default class Cache<Key> {
   private retryCount: number = 1;
   private cacheLife?: number;
   private retryDelay?: (attempt: number, err: Error) => number;
-  constructor(
-    loader: Loader<Key>,
-    { removalTimeout, retryCount, cacheLife, retryDelay }: Options = {}
-  ) {
+  constructor(loader: Loader<Key>, opts: Options = {}) {
     this.loader = loader;
     this.cacheStorage = new Map();
-    if (removalTimeout !== undefined) this.removalTimeout = removalTimeout;
-    if (retryCount !== undefined) this.retryCount = retryCount;
-    if (cacheLife !== undefined) this.cacheLife = cacheLife;
-    if (retryDelay !== undefined) this.retryDelay = retryDelay;
+    this.removalTimeout = opts.removalTimeout ?? 1000 * 60 * 3;
+    this.retryCount = opts.retryCount ?? 1;
+    this.cacheLife = opts.cacheLife ?? undefined;
+    this.retryDelay = opts.retryDelay ?? undefined;
   }
 
   get<Result>(key: Key) {

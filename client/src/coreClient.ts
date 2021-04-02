@@ -97,8 +97,8 @@ export function coreClient<
   Routes extends Record<string, RouteFactory<any, any>>
 >(axios: AxiosInstance, routes: Routes) {
   const cache = new Cache<string>(async (url) => {
-    const { data } = await axios.get(url);
-    const result: [string, any][] = [[url, data]];
+    let { data } = await axios.get(url);
+    const result: [string, any][] = [];
 
     function walk(obj: any): any {
       if (!obj || typeof obj !== "object") return obj;
@@ -124,7 +124,14 @@ export function coreClient<
       );
     }
 
-    walk(data);
+    data = walk(data);
+
+    if (data.meta && data.data && Array.isArray(data.data))
+      data.data = Object.assign(data.data, data.meta);
+
+    if (data.data !== undefined) data = data.data;
+
+    result.push([url, data]);
 
     return result;
   });
@@ -135,27 +142,29 @@ export function coreClient<
       function walk(obj: any): any {
         if (!obj || typeof obj !== "object") return obj;
         if (Array.isArray(obj)) return obj.map(walk);
-        return Object.fromEntries(
-          Object.entries(obj).map(
-            ([key, { _links: links, ...value }]: [string, any]) => {
-              if (links) {
-                return Object.defineProperties(
-                  { ...value },
-                  Object.fromEntries(
-                    Object.entries(links).map(([key, href]: [string, any]) => [
-                      key,
-                      {
-                        get() {
-                          return get(href);
-                        },
-                      },
-                    ])
-                  )
-                );
-              } else return [key, value];
-            }
-          )
-        );
+
+        const returned: any = Array.isArray(obj) ? [] : {};
+
+        for (let [key, value] of Object.entries(obj)) {
+          returned[key] = walk(value);
+        }
+
+        const { _links: links } = obj;
+        if (!links) return returned;
+
+        for (let [key, url] of Object.entries(links)) {
+          if (!obj[key]) {
+            Object.defineProperty(returned, key, {
+              get() {
+                return get(url as string);
+              },
+              enumerable: false,
+              configurable: false,
+            });
+          }
+        }
+
+        return returned;
       }
 
       return walk(obj);

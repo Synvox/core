@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Cache from "./cache";
 import { SubscriptionCallback } from ".";
-import { Modifier } from "./types";
 
 function useForceUpdate() {
   const forceUpdateInner = useState({})[1];
@@ -33,7 +32,7 @@ export function createLoader<Key>({
   modifier = (x: any) => x,
 }: {
   cache: Cache<Key>;
-  modifier?: Modifier<Key, unknown, unknown>;
+  modifier?: <In, Out>(obj: In, get: <T>(key: Key) => T) => Out;
 }) {
   function get<Result>(key: Key) {
     const cacheEntry = cache.get<Result>(key);
