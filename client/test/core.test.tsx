@@ -3,10 +3,13 @@ import { createServer } from "http";
 import testListen from "test-listen";
 import express, { Application } from "express";
 import Axios from "axios";
-import { coreClient, table } from "../src/coreClient";
 import { Core, knexHelpers } from "@synvox/core";
 import { renderHook } from "@testing-library/react-hooks";
 import { act } from "react-dom/test-utils";
+import pg from "pg";
+import { core as coreClient, table } from "../src";
+
+pg.types.setTypeParser(20, "text", Number);
 
 Axios.defaults.adapter = require("axios/lib/adapters/http");
 

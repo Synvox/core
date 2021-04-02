@@ -73,9 +73,10 @@ export function table<T, P = {}>(path: string) {
   return routeFactory;
 }
 
-export function coreClient<
-  Routes extends Record<string, RouteFactory<any, any>>
->(axios: AxiosInstance, routes: Routes) {
+export function core<Routes extends Record<string, RouteFactory<any, any>>>(
+  axios: AxiosInstance,
+  routes: Routes
+) {
   const cache = new Cache<string>(async (url) => {
     let { data } = await axios.get(url);
     const result: [string, any][] = [];

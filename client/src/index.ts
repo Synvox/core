@@ -1,17 +1,6 @@
-import Cache from './cache';
-import { createLoader } from './createLoader';
-import {
-  SubscriptionCallback,
-  CacheEntry,
-  CacheStorage,
-  Loader,
-} from './types';
+import Cache from "./cache";
+import { createLoader } from "./createLoader";
+import { core, table } from "./core";
+export * from "./types";
 
-export {
-  createLoader,
-  Cache,
-  SubscriptionCallback,
-  CacheEntry,
-  CacheStorage,
-  Loader,
-};
+export { createLoader, Cache, core, table };
