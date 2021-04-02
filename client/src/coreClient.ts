@@ -1,6 +1,7 @@
 import { Cache, createLoader } from ".";
-import { AxiosInstance } from "axios";
 import qs from "qs";
+import { RouteFactory, Collection, Change, ChangeTo, Route } from "./types";
+import { AxiosInstance } from "axios";
 
 function qsStringify(val: any) {
   return qs.stringify(val, {
@@ -8,33 +9,6 @@ function qsStringify(val: any) {
     arrayFormat: "brackets",
   });
 }
-
-type Collection<T> = T[] & { hasMore: boolean };
-type Change = {
-  mode: "string";
-  path: string;
-  row: unknown;
-};
-type ChangeTo<T> = {
-  data: T;
-  changes: Change[];
-};
-
-type Getter<Result, Params extends Record<string, any>> = ((
-  idOrParams: number | string,
-  params?: Params
-) => Result) &
-  ((idOrParams?: Params) => Collection<Result>);
-
-type Route<Result, Params extends Record<string, any>> = Getter<
-  Result,
-  Params
-> & {
-  get: Getter<Result, Params>;
-  put: (id: number | string, payload: any) => Promise<ChangeTo<Result>>;
-  post: (payload: any) => Promise<ChangeTo<Result>>;
-  delete: (id: number | string) => Promise<ChangeTo<Result>>;
-};
 
 export function table<T, P = {}>(path: string) {
   const routeFactory: RouteFactory<T, P> = (getUrl, axios, touch) => {
@@ -71,7 +45,7 @@ export function table<T, P = {}>(path: string) {
             fullPath += `?${qsStringify(params)}`;
           }
           const { data: result } = await axios.put(fullPath, data);
-          await handleChanges(result.changes);
+          handleChanges(result.changes);
           return result as ChangeTo<T>;
         },
         post: async (data: any, params?: P) => {
@@ -80,7 +54,7 @@ export function table<T, P = {}>(path: string) {
             fullPath += `?${qsStringify(params)}`;
           }
           const { data: result } = await axios.post(fullPath, data);
-          await handleChanges(result.changes);
+          handleChanges(result.changes);
           return result as ChangeTo<T>;
         },
         delete: async (id: number | string, params?: P) => {
@@ -89,7 +63,7 @@ export function table<T, P = {}>(path: string) {
             fullPath += `?${qsStringify(params)}`;
           }
           const { data: result } = await axios.delete(fullPath);
-          await handleChanges(result.changes);
+          handleChanges(result.changes);
           return result as ChangeTo<T>;
         },
       }
@@ -98,12 +72,6 @@ export function table<T, P = {}>(path: string) {
 
   return routeFactory;
 }
-
-type RouteFactory<Result, Params> = (
-  getUrl: (url: string) => any,
-  axios: AxiosInstance,
-  touch: (filter: (key: string) => boolean) => Promise<void>
-) => Route<Result, Params>;
 
 export function coreClient<
   Routes extends Record<string, RouteFactory<any, any>>
@@ -206,14 +174,3 @@ export function coreClient<
     },
   };
 }
-
-// const { useCore } = coreClient(axios, {
-//   users: table<
-//     { id: string; firstName: string },
-//     { id: string; include: string }
-//   >("/auth/users"),
-// });
-
-// const core = useCore();
-// const a = core.users.get("a", { include: "abc" });
-// const b = core.users();
