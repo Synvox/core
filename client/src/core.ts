@@ -16,6 +16,7 @@ export function table<T, P = {}>(path: string) {
     axios,
     blockUpdatesById,
     handleChanges,
+    lock,
   }) => {
     const getter = (idOrParams?: number | string | P, params?: P) => {
       if (typeof idOrParams === "object") {
@@ -43,30 +44,36 @@ export function table<T, P = {}>(path: string) {
           if (params && Object.keys(params).length > 0) {
             fullPath += `?${qsStringify(params)}`;
           }
-          const { data: result } = await axios.put(fullPath, data);
-          if (result.changeId) blockUpdatesById(result.changeId);
-          result.update = () => handleChanges(result.changes);
-          return result as ChangeTo<T>;
+          return await lock(async () => {
+            const { data: result } = await axios.put(fullPath, data);
+            if (result.changeId) blockUpdatesById(result.changeId);
+            result.update = () => handleChanges(result.changes);
+            return result as ChangeTo<T>;
+          });
         },
         post: async (data: any, params?: P) => {
           let fullPath = path;
           if (params && Object.keys(params).length > 0) {
             fullPath += `?${qsStringify(params)}`;
           }
-          const { data: result } = await axios.post(fullPath, data);
-          if (result.changeId) blockUpdatesById(result.changeId);
-          result.update = () => handleChanges(result.changes);
-          return result as ChangeTo<T>;
+          return await lock(async () => {
+            const { data: result } = await axios.post(fullPath, data);
+            if (result.changeId) blockUpdatesById(result.changeId);
+            result.update = () => handleChanges(result.changes);
+            return result as ChangeTo<T>;
+          });
         },
         delete: async (id: number | string, params?: P) => {
           let fullPath = `${path}/${id}`;
           if (params && Object.keys(params).length > 0) {
             fullPath += `?${qsStringify(params)}`;
           }
-          const { data: result } = await axios.delete(fullPath);
-          if (result.changeId) blockUpdatesById(result.changeId);
-          result.update = () => handleChanges(result.changes);
-          return result as ChangeTo<T>;
+          return await lock(async () => {
+            const { data: result } = await axios.delete(fullPath);
+            if (result.changeId) blockUpdatesById(result.changeId);
+            result.update = () => handleChanges(result.changes);
+            return result as ChangeTo<T>;
+          });
         },
       }
     ) as Route<T, P>;
@@ -157,6 +164,8 @@ export function core<Routes extends Record<string, RouteFactory<any, any>>>(
   });
 
   const handledChangeIds: string[] = [];
+  let waitForUnlockPromise: Promise<void> | null = null;
+
   async function handleChanges(changes: Change[]) {
     await touch((url: string) => {
       return changes.some((change) => url.includes(change.path));
@@ -166,9 +175,19 @@ export function core<Routes extends Record<string, RouteFactory<any, any>>>(
   function sse(url: string) {
     const eventSource = new EventSource(url);
 
-    eventSource.addEventListener("update", (m: any) => {
+    eventSource.addEventListener("update", async (m: any) => {
       const { changeId, changes } = JSON.parse(m.data);
-      if (handledChangeIds.includes(changeId)) return;
+
+      if (waitForUnlockPromise) await waitForUnlockPromise;
+
+      if (handledChangeIds.includes(changeId)) {
+        handledChangeIds.splice(
+          handledChangeIds.findIndex((i) => i === changeId),
+          1
+        );
+        return;
+      }
+
       handleChanges(changes);
     });
 
@@ -177,6 +196,21 @@ export function core<Routes extends Record<string, RouteFactory<any, any>>>(
 
   function blockUpdatesById(id: string) {
     handledChangeIds.push(id);
+  }
+
+  async function lock<T>(fn: () => Promise<T>) {
+    let result: T | undefined;
+    let resolve: (() => void) | null = null;
+    waitForUnlockPromise = new Promise<void>((r) => (resolve = r));
+
+    try {
+      result = await fn();
+    } finally {
+      waitForUnlockPromise = null;
+      resolve!();
+    }
+
+    return result;
   }
 
   return {
@@ -199,7 +233,13 @@ export function core<Routes extends Record<string, RouteFactory<any, any>>>(
         Object.entries(routes).map(([key, createRoute]) => {
           return [
             key,
-            createRoute({ getUrl, axios, handleChanges, blockUpdatesById }),
+            createRoute({
+              getUrl,
+              axios,
+              handleChanges,
+              blockUpdatesById,
+              lock,
+            }),
           ];
         })
       );

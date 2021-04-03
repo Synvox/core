@@ -48,4 +48,5 @@ export type RouteFactory<Result, Params> = (p:{
   axios: AxiosInstance,
   handleChanges: (changes: Change[]) => Promise<void>,
   blockUpdatesById: (id: string)=>void;
+  lock<T>(fn: () => Promise<T>): Promise<T>
 }) => Route<Result, Params>;
