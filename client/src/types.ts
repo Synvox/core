@@ -24,6 +24,7 @@ export type Change = {
 export type ChangeTo<T> = {
   data: T;
   changes: Change[];
+  update: ()=>Promise<void>
 };
 
 export type Getter<Result, Params extends Record<string, any>> = ((
@@ -42,8 +43,9 @@ export type Route<Result, Params extends Record<string, any>> = Getter<
   delete: (id: number | string) => Promise<ChangeTo<Result>>;
 };
 
-export type RouteFactory<Result, Params> = (
+export type RouteFactory<Result, Params> = (p:{
   getUrl: (url: string) => any,
   axios: AxiosInstance,
-  touch: (filter: (key: string) => boolean) => Promise<void>
-) => Route<Result, Params>;
+  handleChanges: (changes: Change[]) => Promise<void>,
+  blockUpdatesById: (id: string)=>void;
+}) => Route<Result, Params>;

@@ -1,5 +1,6 @@
 import Knex from "knex";
 import { knexHelpers, Table, withTimestamps } from "../src";
+import uuid from "uuid";
 
 let queries: string[] = [];
 
@@ -29,6 +30,9 @@ beforeEach(async () => {
     drop schema if exists test_plugins cascade;
     create schema test_plugins;
   `);
+
+  const anonymousId = "uuid-test-value";
+  jest.spyOn(uuid, "v4").mockReturnValue(anonymousId);
 });
 
 afterEach(() => {
@@ -96,6 +100,7 @@ describe("withTimestamps plugin", () => {
       )
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -208,6 +213,7 @@ describe("withTimestamps plugin", () => {
       )
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "update",
@@ -257,6 +263,7 @@ describe("withTimestamps plugin", () => {
       )
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "delete",
@@ -310,6 +317,7 @@ describe("withTimestamps plugin", () => {
     expect(await items.write(knex, {}, { context: "value" }))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",

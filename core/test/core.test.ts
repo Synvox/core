@@ -7,6 +7,7 @@ import Axios from "axios";
 import EventSource from "eventsource";
 import { knexHelpers, Core, StatusError, ChangeSummary } from "../src";
 import compression from "compression";
+import uuid from "uuid";
 
 let queries: string[] = [];
 let server: null | ReturnType<typeof createServer> = null;
@@ -49,6 +50,9 @@ beforeEach(async () => {
     drop schema if exists core_test cascade;
     create schema core_test;
   `);
+
+  const anonymousId = "uuid-test-value";
+  jest.spyOn(uuid, "v4").mockReturnValue(anonymousId);
 });
 
 afterEach(() => {
@@ -234,6 +238,7 @@ describe("listens on server", () => {
     expect((await axios.post(`/coreTest/test/${row.id}/testSub`, {})).data)
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -395,6 +400,7 @@ describe("listens on server", () => {
       ).data
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "update",
@@ -502,6 +508,7 @@ describe("listens on server", () => {
       ).data
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -565,6 +572,7 @@ describe("listens on server", () => {
       ).data
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "update",
@@ -744,6 +752,7 @@ describe("listens on server", () => {
         .data
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "delete",
@@ -1040,26 +1049,32 @@ describe("sse", () => {
 
     expect(messages).toMatchInlineSnapshot(`
       Array [
-        Array [
-          Object {
-            "mode": "insert",
-            "path": "coreTest/test",
-            "row": Object {
-              "_links": Object {},
-              "_type": "coreTest/test",
-              "_url": "/coreTest/test/2?orgId=1",
-              "id": 2,
-              "orgId": 1,
+        Object {
+          "changeId": "uuid-test-value",
+          "changes": Array [
+            Object {
+              "mode": "insert",
+              "path": "coreTest/test",
+              "row": Object {
+                "_links": Object {},
+                "_type": "coreTest/test",
+                "_url": "/coreTest/test/2?orgId=1",
+                "id": 2,
+                "orgId": 1,
+              },
             },
-          },
-        ],
+          ],
+        },
       ]
     `);
 
     // This should not cause an error
-    eventEmitter.emit("change", [
-      { mode: "insert", path: "a/b", row: {} },
-    ] as ChangeSummary<any>[]);
+    eventEmitter.emit("change", {
+      changeId: "abc",
+      changes: [
+        { mode: "insert", path: "a/b", row: {} },
+      ] as ChangeSummary<any>[],
+    });
 
     eventSource.close();
   });
@@ -1108,19 +1123,22 @@ describe("sse", () => {
 
     expect(messages).toMatchInlineSnapshot(`
       Array [
-        Array [
-          Object {
-            "mode": "insert",
-            "path": "coreTest/test",
-            "row": Object {
-              "_links": Object {},
-              "_type": "coreTest/test",
-              "_url": "/coreTest/test/2?orgId=1",
-              "id": 2,
-              "orgId": 1,
+        Object {
+          "changeId": "uuid-test-value",
+          "changes": Array [
+            Object {
+              "mode": "insert",
+              "path": "coreTest/test",
+              "row": Object {
+                "_links": Object {},
+                "_type": "coreTest/test",
+                "_url": "/coreTest/test/2?orgId=1",
+                "id": 2,
+                "orgId": 1,
+              },
             },
-          },
-        ],
+          ],
+        },
       ]
     `);
 
@@ -1181,19 +1199,22 @@ describe("sse", () => {
 
     expect(messages).toMatchInlineSnapshot(`
       Array [
-        Array [
-          Object {
-            "mode": "insert",
-            "path": "coreTest/test",
-            "row": Object {
-              "_links": Object {},
-              "_type": "coreTest/test",
-              "_url": "/coreTest/test/1?orgId=1",
-              "id": 1,
-              "orgId": 1,
+        Object {
+          "changeId": "uuid-test-value",
+          "changes": Array [
+            Object {
+              "mode": "insert",
+              "path": "coreTest/test",
+              "row": Object {
+                "_links": Object {},
+                "_type": "coreTest/test",
+                "_url": "/coreTest/test/1?orgId=1",
+                "id": 1,
+                "orgId": 1,
+              },
             },
-          },
-        ],
+          ],
+        },
       ]
     `);
 
@@ -1243,19 +1264,22 @@ describe("sse", () => {
 
     expect(messages).toMatchInlineSnapshot(`
       Array [
-        Array [
-          Object {
-            "mode": "insert",
-            "path": "coreTest/test",
-            "row": Object {
-              "_links": Object {},
-              "_type": "coreTest/test",
-              "_url": "/coreTest/test/1",
-              "id": 1,
-              "orgId": 1,
+        Object {
+          "changeId": "uuid-test-value",
+          "changes": Array [
+            Object {
+              "mode": "insert",
+              "path": "coreTest/test",
+              "row": Object {
+                "_links": Object {},
+                "_type": "coreTest/test",
+                "_url": "/coreTest/test/1",
+                "id": 1,
+                "orgId": 1,
+              },
             },
-          },
-        ],
+          ],
+        },
       ]
     `);
 

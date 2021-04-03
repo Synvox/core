@@ -5,6 +5,8 @@ import { Knex } from "knex";
 import qs from "qs";
 import atob from "atob";
 import btoa from "btoa";
+import { object, array, StringSchema, mixed } from "yup";
+import { v4 as uuidv4 } from "uuid";
 import {
   Policy,
   YupSchema,
@@ -37,7 +39,6 @@ import {
   NotFoundError,
   ComplexityError,
 } from "./errors";
-import { object, array, StringSchema, mixed } from "yup";
 import { postgresTypesToYupType } from "./lookups";
 import { toSnakeCase } from "./case";
 import { Result, CollectionResult, ChangeResult } from "./Result";
@@ -1774,6 +1775,7 @@ export class Table<Context, T = any> {
 
     const beforeCommitCallbacks: (() => Promise<void>)[] = [];
     const changes: ChangeSummary<T>[] = [];
+    const uuid = uuidv4();
 
     let trxRef: null | Knex.Transaction = null;
 
@@ -1795,8 +1797,9 @@ export class Table<Context, T = any> {
 
     trxRef!.emit("commit");
 
-    if (this.eventEmitter) this.eventEmitter.emit("change", changes);
+    if (this.eventEmitter)
+      this.eventEmitter.emit("change", { id: uuid, changes });
 
-    return new ChangeResult(data, changes);
+    return new ChangeResult(uuid, data, changes);
   }
 }

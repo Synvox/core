@@ -11,7 +11,12 @@ function qsStringify(val: any) {
 }
 
 export function table<T, P = {}>(path: string) {
-  const routeFactory: RouteFactory<T, P> = (getUrl, axios, touch) => {
+  const routeFactory: RouteFactory<T, P> = ({
+    getUrl,
+    axios,
+    blockUpdatesById,
+    handleChanges,
+  }) => {
     const getter = (idOrParams?: number | string | P, params?: P) => {
       if (typeof idOrParams === "object") {
         return getUrl(`${path}?${qsStringify(idOrParams)}`) as T;
@@ -28,12 +33,6 @@ export function table<T, P = {}>(path: string) {
       }
     };
 
-    async function handleChanges(changes: Change[]) {
-      await touch((url: string) => {
-        return changes.some((change) => url.includes(change.path));
-      });
-    }
-
     return Object.assign(
       (idOrParams?: number | string | P, params?: P) =>
         getter(idOrParams, params),
@@ -45,7 +44,8 @@ export function table<T, P = {}>(path: string) {
             fullPath += `?${qsStringify(params)}`;
           }
           const { data: result } = await axios.put(fullPath, data);
-          handleChanges(result.changes);
+          if (result.changeId) blockUpdatesById(result.changeId);
+          result.update = () => handleChanges(result.changes);
           return result as ChangeTo<T>;
         },
         post: async (data: any, params?: P) => {
@@ -54,7 +54,8 @@ export function table<T, P = {}>(path: string) {
             fullPath += `?${qsStringify(params)}`;
           }
           const { data: result } = await axios.post(fullPath, data);
-          handleChanges(result.changes);
+          if (result.changeId) blockUpdatesById(result.changeId);
+          result.update = () => handleChanges(result.changes);
           return result as ChangeTo<T>;
         },
         delete: async (id: number | string, params?: P) => {
@@ -63,7 +64,8 @@ export function table<T, P = {}>(path: string) {
             fullPath += `?${qsStringify(params)}`;
           }
           const { data: result } = await axios.delete(fullPath);
-          handleChanges(result.changes);
+          if (result.changeId) blockUpdatesById(result.changeId);
+          result.update = () => handleChanges(result.changes);
           return result as ChangeTo<T>;
         },
       }
@@ -87,15 +89,17 @@ export function core<Routes extends Record<string, RouteFactory<any, any>>>(
 
       return Object.fromEntries(
         Object.entries(obj).map(([key, obj]: [string, any]) => {
-          if (obj._url) {
-            result.push([obj._url, obj]);
-          }
+          if (obj && typeof obj === "object") {
+            if (obj._url) {
+              result.push([obj._url, obj]);
+            }
 
-          if (obj._links) {
-            for (let linkName in obj._links) {
-              if (obj[linkName]) {
-                walk(obj[linkName]);
-                delete obj[linkName];
+            if (obj._links) {
+              for (let linkName in obj._links) {
+                if (obj[linkName]) {
+                  walk(obj[linkName]);
+                  delete obj[linkName];
+                }
               }
             }
           }
@@ -152,10 +156,34 @@ export function core<Routes extends Record<string, RouteFactory<any, any>>>(
     },
   });
 
+  const handledChangeIds: string[] = [];
+  async function handleChanges(changes: Change[]) {
+    await touch((url: string) => {
+      return changes.some((change) => url.includes(change.path));
+    });
+  }
+
+  function sse(url: string) {
+    const eventSource = new EventSource(url);
+
+    eventSource.addEventListener("update", (m: any) => {
+      const { changeId, changes } = JSON.parse(m.data);
+      if (handledChangeIds.includes(changeId)) return;
+      handleChanges(changes);
+    });
+
+    return eventSource;
+  }
+
+  function blockUpdatesById(id: string) {
+    handledChangeIds.push(id);
+  }
+
   return {
     touch,
     useGetUrl,
     preload,
+    sse,
     useCore(): {
       [name in keyof Routes]: Routes[name] extends RouteFactory<
         infer Result,
@@ -169,7 +197,10 @@ export function core<Routes extends Record<string, RouteFactory<any, any>>>(
       //@ts-expect-error
       return Object.fromEntries(
         Object.entries(routes).map(([key, createRoute]) => {
-          return [key, createRoute(getUrl, axios, touch)];
+          return [
+            key,
+            createRoute({ getUrl, axios, handleChanges, blockUpdatesById }),
+          ];
         })
       );
     },

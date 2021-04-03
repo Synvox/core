@@ -2,6 +2,7 @@
   "name": "@synvox/core-workspace",
   "workspaces": [
     "core",
-    "client"
+    "client",
+    "example"
   ]
 }

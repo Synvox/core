@@ -10,6 +10,7 @@ import { string, date, ref } from "yup";
 import { Mode } from "../src/types";
 import QueryString from "qs";
 import { ComplexityError } from "../src/errors";
+import uuid from "uuid";
 
 let queries: string[] = [];
 
@@ -40,6 +41,9 @@ beforeEach(async () => {
     create schema test;
     drop table if exists public.test_table;
   `);
+
+  const anonymousId = "uuid-test-value";
+  jest.spyOn(uuid, "v4").mockReturnValue(anonymousId);
 });
 
 afterEach(() => {
@@ -943,6 +947,7 @@ describe("without policies", () => {
     queries = [];
     expect(await table.write(knex, {}, {})).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -980,6 +985,7 @@ describe("without policies", () => {
     expect(await table.write(knex, { isBoolean: true, numberCount: 10 }, {}))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -1079,6 +1085,7 @@ describe("without policies", () => {
     expect(await table.write(knex, { isBoolean: "false" }, {}))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -1126,6 +1133,7 @@ describe("without policies", () => {
       )
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -1259,6 +1267,7 @@ describe("without policies", () => {
     expect(await table.write(knex, { email: "test@test.com" }, {}))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -1306,6 +1315,7 @@ describe("without policies", () => {
     expect(await table.write(knex, { username: "abc" }, {}))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -1375,6 +1385,7 @@ describe("without policies", () => {
     expect(await table.write(knex, { username: "abc", org: "a" }, {}))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -1416,6 +1427,7 @@ describe("without policies", () => {
         .catch((e: BadRequestError) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -1454,6 +1466,7 @@ describe("without policies", () => {
     expect(await table.write(knex, { username: "abc", org: "b" }, {}))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -1528,6 +1541,7 @@ describe("without policies", () => {
       await table.write(knex, { id: row!.id, username: "xyb", org: "org" }, {})
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "update",
@@ -1567,6 +1581,7 @@ describe("without policies", () => {
     expect(await table.write(knex, { id: row!.id, _delete: true }, {}))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "delete",
@@ -1655,6 +1670,7 @@ describe("without policies", () => {
     queries = [];
     expect(await users.write(knex, { name: "a" }, {})).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -1697,6 +1713,7 @@ describe("without policies", () => {
       )
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -1807,6 +1824,7 @@ describe("without policies", () => {
         .catch((e: BadRequestError) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -1871,6 +1889,7 @@ describe("without policies", () => {
       await posts.write(knex, { id: 3, user: { id: 3, _delete: true } }, {})
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "delete",
@@ -1914,6 +1933,7 @@ describe("without policies", () => {
       )
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "delete",
@@ -2271,6 +2291,7 @@ describe("without policies", () => {
     expect(await table.write(knex, { dynamic: { abc: 123 } }, { userId: 1 }))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -2312,6 +2333,7 @@ describe("without policies", () => {
       await table.write(knex, { id: 1, dynamic: { abc: 456 } }, { userId: 1 })
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "update",
@@ -2864,6 +2886,7 @@ describe("with policies", () => {
     expect(await posts.write(knex, { orgId: org1.id }, { orgId: org1.id }))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -2901,6 +2924,7 @@ describe("with policies", () => {
     expect(await posts.write(knex, { id: post1.id }, { orgId: org1.id }))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [],
         "data": Object {
           "_links": Object {
@@ -2932,6 +2956,7 @@ describe("with policies", () => {
       )
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "update",
@@ -2979,6 +3004,7 @@ describe("with policies", () => {
         .catch((e: UnauthorizedError) => [e.statusCode, e.message])
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "delete",
@@ -3329,6 +3355,7 @@ describe("multitenancy", () => {
     expect(await items.write(knex, { orgId: org.id }, {}))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -3358,6 +3385,7 @@ describe("multitenancy", () => {
       await items.write(knex, { id: item.id, orgId: org.id, body: "body" }, {})
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "update",
@@ -3387,6 +3415,7 @@ describe("multitenancy", () => {
       await items.write(knex, { id: item.id, orgId: org.id, _delete: true }, {})
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "delete",
@@ -3507,6 +3536,7 @@ describe("multitenancy", () => {
     expect(await table.write(knex, { username: "abc", orgId: org.id }, {}))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -3552,6 +3582,7 @@ describe("multitenancy", () => {
         .catch((e: BadRequestError) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [],
         "data": Object {
           "_links": Object {
@@ -3638,6 +3669,7 @@ describe("paranoid", () => {
 
     expect(await items.write(knex, {}, {})).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -3674,6 +3706,7 @@ describe("paranoid", () => {
     expect(await items.write(knex, { id: 1, _delete: true }, {}))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "delete",
@@ -3804,6 +3837,7 @@ describe("paranoid", () => {
       await items.write(knex, { id: item.id, orgId: org.id, _delete: true }, {})
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "delete",
@@ -3910,6 +3944,7 @@ describe("hidden columns", () => {
     expect(await items.write(knex, { hidden: "value" }, {}))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -4067,6 +4102,7 @@ describe("uuid columns", () => {
 
     expect(await items.write(knex, {}, {})).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -4151,6 +4187,7 @@ describe("uuid columns", () => {
       )
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -4243,6 +4280,7 @@ describe("uuid columns", () => {
       )
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -4325,6 +4363,7 @@ describe("beforeCommit", () => {
 
     expect(await items.write(knex, {}, { id: 1 })).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -4367,6 +4406,7 @@ describe("beforeCommit", () => {
     expect(await items.write(knex, { id: 1, body: "abc" }, { id: 1 }))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "update",
@@ -4412,6 +4452,7 @@ describe("beforeCommit", () => {
     expect(await items.write(knex, { id: 1, _delete: true }, { id: 1 }))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "delete",
@@ -4466,6 +4507,7 @@ describe("self references", () => {
 
     expect(await items.write(knex, {}, {})).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -4496,6 +4538,7 @@ describe("self references", () => {
     expect(await items.write(knex, { parentItemId: 1 }, {}))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -4544,6 +4587,7 @@ describe("self references", () => {
     expect(await items.write(knex, { parentItemId: 1 }, {}))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -5214,6 +5258,7 @@ describe("in public schema", () => {
     queries = [];
     expect(await items.write(knex, {}, {})).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
@@ -5419,6 +5464,7 @@ describe("upsert", () => {
     expect(await contacts.write(knex, { phone: "123", name: "updated" }, {}))
       .toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "update",
@@ -5574,6 +5620,7 @@ describe("upsert", () => {
       )
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "update",
@@ -5705,6 +5752,7 @@ describe("ref validations", () => {
         .catch((e) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",

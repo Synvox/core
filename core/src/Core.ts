@@ -74,9 +74,10 @@ export class Core<Context> {
 
   sse(shouldEventBeSent?: ShouldEventBeSent<Context, any>) {
     const emitter = this.eventEmitter;
-    const sseHandlers = new Set<(changes: ChangeSummary<any>[]) => void>();
+    type ChangeEvent = { id: string; changes: ChangeSummary<any>[] };
+    const sseHandlers = new Set<(changes: ChangeEvent) => void>();
 
-    emitter.on("change", (changes: ChangeSummary<any>[]) => {
+    emitter.on("change", (changes: ChangeEvent) => {
       sseHandlers.forEach((handler) => handler(changes));
     });
 
@@ -94,7 +95,7 @@ export class Core<Context> {
 
       const context = this.getContext(req, res);
 
-      const handler = async (changes: ChangeSummary<any>[]) => {
+      const handler = async ({ id, changes }: ChangeEvent) => {
         const isVisible = async (change: ChangeSummary<any>) => {
           const table = this.tables.find((t) => t.path === change.path);
 
@@ -138,9 +139,12 @@ export class Core<Context> {
 
         const batch =
           [
-            `id: ${Date.now()}`,
+            `id: ${id}`,
             "event: update",
-            `data: ${JSON.stringify(visibleChanges)}`,
+            `data: ${JSON.stringify({
+              changeId: id,
+              changes: visibleChanges,
+            })}`,
           ].join("\n") + "\n\n";
 
         res.write(batch);

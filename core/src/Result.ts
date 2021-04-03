@@ -84,16 +84,19 @@ export class CollectionResult<T extends Record<string, any>>
 }
 
 export class ChangeResult<T> implements ToJSON {
+  id: string;
   data: T;
   changes: ChangeSummary<T>[];
 
-  constructor(data: T, changes: ChangeSummary<T>[]) {
+  constructor(id: string, data: T, changes: ChangeSummary<T>[]) {
+    this.id = id;
     this.data = data;
     this.changes = changes;
   }
 
   toJSON(this: ChangeResult<T>) {
     return {
+      changeId: this.id,
       data: this.data,
       changes: this.changes,
     };

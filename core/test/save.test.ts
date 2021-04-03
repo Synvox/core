@@ -6,6 +6,7 @@ import testListen from "test-listen";
 import express, { Application } from "express";
 import Axios from "axios";
 import { knexHelpers, Core } from "../src";
+import uuid from "uuid";
 
 let queries: string[] = [];
 let server: null | ReturnType<typeof createServer> = null;
@@ -48,6 +49,9 @@ beforeEach(async () => {
     drop schema if exists save_test cascade;
     create schema save_test;
   `);
+
+  const anonymousId = "uuid-test-value";
+  jest.spyOn(uuid, "v4").mockReturnValue(anonymousId);
 });
 
 afterEach(() => {
