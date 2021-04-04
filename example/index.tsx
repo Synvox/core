@@ -34,7 +34,18 @@ function App() {
       </form>
       <ul>
         {tasks.map((task) => (
-          <li key={task.id}>{task.body}</li>
+          <li
+            key={task.id}
+            onClick={async () => {
+              const { update } = await core.tasks.put(task.id, {
+                body: prompt("new body"),
+              });
+
+              update();
+            }}
+          >
+            {task.body}
+          </li>
         ))}
       </ul>
     </div>

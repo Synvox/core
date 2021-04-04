@@ -1,7 +1,8 @@
-import { Cache, createLoader } from ".";
 import qs from "qs";
 import { RouteFactory, Collection, Change, ChangeTo, Route } from "./types";
 import { AxiosInstance } from "axios";
+import Cache from "./cache";
+import { createLoader } from "./createLoader";
 
 function qsStringify(val: any) {
   return qs.stringify(val, {
@@ -94,72 +95,73 @@ export function core<Routes extends Record<string, RouteFactory<any, any>>>(
       if (!obj || typeof obj !== "object") return obj;
       if (Array.isArray(obj)) return obj.map(walk);
 
-      return Object.fromEntries(
-        Object.entries(obj).map(([key, obj]: [string, any]) => {
-          if (obj && typeof obj === "object") {
-            if (obj._url) {
-              result.push([obj._url, obj]);
-            }
-
-            if (obj._links) {
-              for (let linkName in obj._links) {
-                if (obj[linkName]) {
-                  walk(obj[linkName]);
-                  delete obj[linkName];
-                }
-              }
-            }
-          }
-
-          return [key, walk(obj)];
-        })
+      const walkedChild = Object.fromEntries(
+        Object.entries(obj).map(([key, obj]: [string, any]) => [key, walk(obj)])
       );
+
+      if (obj._url) {
+        result.push([obj._url, obj]);
+        return { _url: obj._url };
+      } else {
+        return walkedChild;
+      }
     }
 
     data = walk(data);
 
-    if (data.meta && data.data && Array.isArray(data.data))
-      data.data = Object.assign(data.data, data.meta);
-
-    if (data.data !== undefined) data = data.data;
-
-    result.push([url, data]);
+    if (!result.some((r) => r[0] === url)) result.push([url, data]);
 
     return result;
   });
 
   const { useKey: useGetUrl, touch, preload } = createLoader({
     cache,
-    modifier(obj, get) {
+    modifier(obj: any, get) {
+      let result = { ...obj };
+
       function walk(obj: any): any {
         if (!obj || typeof obj !== "object") return obj;
-        if (Array.isArray(obj)) return obj.map(walk);
+        const isArray = Array.isArray(obj);
+        const returned: any = isArray ? [] : {};
 
-        const returned: any = Array.isArray(obj) ? [] : {};
-
-        for (let [key, value] of Object.entries(obj)) {
-          returned[key] = walk(value);
-        }
-
-        const { _links: links } = obj;
-        if (!links) return returned;
-
-        for (let [key, url] of Object.entries(links)) {
-          if (!obj[key]) {
+        for (let [key, value] of Object.entries<any>(obj)) {
+          if (value?._url) {
             Object.defineProperty(returned, key, {
               get() {
-                return get(url as string);
+                return get(value._url as string);
               },
-              enumerable: false,
+              enumerable: true,
               configurable: false,
             });
+          } else {
+            returned[key] = walk(value);
           }
+        }
+
+        const { _links: links = {} } = obj;
+
+        for (let [key, url] of Object.entries(links)) {
+          Object.defineProperty(returned, key, {
+            get() {
+              return get(url as string);
+            },
+            enumerable: true,
+            configurable: false,
+          });
         }
 
         return returned;
       }
 
-      return walk(obj);
+      if (result.meta && result.data && Array.isArray(result.data)) {
+        result.data = Object.assign(result.data, result.meta);
+      }
+
+      if (result.data !== undefined) result = result.data;
+
+      const returned = walk(result);
+
+      return returned;
     },
   });
 

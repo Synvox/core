@@ -29,6 +29,7 @@ export default class Cache<Key> {
 
     if (!cacheEntry) {
       cacheEntry = {
+        loadedThroughKey: key,
         data: undefined,
         promise: undefined,
         error: undefined,
@@ -38,20 +39,24 @@ export default class Cache<Key> {
       this.cacheStorage.set(key, cacheEntry);
     }
 
-    return cacheEntry as CacheEntry<Result>;
+    return cacheEntry as CacheEntry<Key, Result>;
   }
 
-  set<Result>(key: Key, patch: Partial<CacheEntry<Result>>) {
+  set<Result>(key: Key, patch: Partial<CacheEntry<Key, Result>>) {
     const cacheEntry = this.get(key);
 
     let refreshTimeout: number | undefined = undefined;
     if (this.cacheLife && typeof window !== "undefined") {
       if (cacheEntry.refreshTimeout)
         window.clearTimeout(cacheEntry.refreshTimeout);
-      refreshTimeout = window.setTimeout(async () => {
-        const commitFn = await this.load(key);
-        commitFn();
-      }, this.cacheLife);
+
+      // only schedule reload if this entry was the top level entry
+      if (cacheEntry.loadedThroughKey === key) {
+        refreshTimeout = window.setTimeout(async () => {
+          const commitFn = await this.load(key);
+          commitFn();
+        }, this.cacheLife);
+      }
     }
 
     this.cacheStorage.set(key, {
@@ -73,8 +78,9 @@ export default class Cache<Key> {
 
       return () => {
         let subscribers = new Set<SubscriptionCallback>();
-        for (let [key, data] of patches) {
-          const subs = this.set(key, {
+        for (let [subKey, data] of patches) {
+          const subs = this.set(subKey, {
+            loadedThroughKey: key,
             data: data ?? null,
             promise: undefined,
             error: undefined,
@@ -143,7 +149,8 @@ export default class Cache<Key> {
     const touchedKeys: Key[] = [];
     for (let key of keys) {
       if (filter(key)) {
-        touchedKeys.push(key);
+        const realKey = this.cacheStorage.get(key)!.loadedThroughKey;
+        if (!touchedKeys.includes(realKey)) touchedKeys.push(realKey);
       }
     }
 

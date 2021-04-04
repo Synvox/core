@@ -2,7 +2,8 @@ import { AxiosInstance } from "axios";
 
 export type SubscriptionCallback = () => void;
 
-export type CacheEntry<Result> = {
+export type CacheEntry<Key, Result> = {
+  loadedThroughKey: Key;
   subscribers: Set<SubscriptionCallback>;
   data?: Result;
   promise?: Promise<Result>;
@@ -11,7 +12,7 @@ export type CacheEntry<Result> = {
   refreshTimeout?: number;
 };
 
-export type CacheStorage<Key> = Map<Key, CacheEntry<unknown>>;
+export type CacheStorage<Key> = Map<Key, CacheEntry<Key, unknown>>;
 
 export type Loader<Key> = (key: Key) => Promise<[Key, unknown][]>;
 
@@ -24,7 +25,7 @@ export type Change = {
 export type ChangeTo<T> = {
   data: T;
   changes: Change[];
-  update: ()=>Promise<void>
+  update: () => Promise<void>;
 };
 
 export type Getter<Result, Params extends Record<string, any>> = ((
@@ -43,10 +44,10 @@ export type Route<Result, Params extends Record<string, any>> = Getter<
   delete: (id: number | string) => Promise<ChangeTo<Result>>;
 };
 
-export type RouteFactory<Result, Params> = (p:{
-  getUrl: (url: string) => any,
-  axios: AxiosInstance,
-  handleChanges: (changes: Change[]) => Promise<void>,
-  blockUpdatesById: (id: string)=>void;
-  lock<T>(fn: () => Promise<T>): Promise<T>
+export type RouteFactory<Result, Params> = (p: {
+  getUrl: (url: string) => any;
+  axios: AxiosInstance;
+  handleChanges: (changes: Change[]) => Promise<void>;
+  blockUpdatesById: (id: string) => void;
+  lock<T>(fn: () => Promise<T>): Promise<T>;
 }) => Route<Result, Params>;
