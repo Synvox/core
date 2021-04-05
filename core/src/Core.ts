@@ -247,12 +247,7 @@ export class Core<Context> {
               context
             );
 
-            return {
-              meta: {
-                _url: `${table.baseUrl}/${table.path}/count`,
-              },
-              data: count,
-            };
+            return count;
           })
         );
 
@@ -275,14 +270,7 @@ export class Core<Context> {
                 context
               );
 
-              return {
-                meta: {
-                  _url: `${table.baseUrl}/${table.path}/${
-                    row[table.idColumnName]
-                  }/${getterName}`,
-                },
-                data: row[getterName],
-              };
+              return row[getterName];
             })
           );
         }
@@ -292,13 +280,11 @@ export class Core<Context> {
           wrap(async (req, res) => {
             const knex = await this.getKnex("read");
             const context = this.getContext(req, res);
-            return {
-              data: await table.readOne(
-                knex,
-                { ...req.params, ...req.query },
-                context
-              ),
-            };
+            return await table.readOne(
+              knex,
+              { ...req.params, ...req.query },
+              context
+            );
           })
         );
 

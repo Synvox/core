@@ -156,7 +156,7 @@ export default class Cache<Key> {
 
     const promises: Promise<() => Set<SubscriptionCallback>>[] = [];
     for (let key of touchedKeys) {
-      const entry = this.cacheStorage.get(key)!;
+      const entry = this.get(key);
 
       if (entry.subscribers.size === 0) {
         if (typeof window !== "undefined") {

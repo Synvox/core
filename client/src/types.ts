@@ -16,7 +16,15 @@ export type CacheStorage<Key> = Map<Key, CacheEntry<Key, unknown>>;
 
 export type Loader<Key> = (key: Key) => Promise<[Key, unknown][]>;
 
-export type Collection<T> = T[] & { hasMore: boolean };
+export type Collection<T> = T[] & {
+  hasMore: boolean;
+  page?: number;
+  limit: number;
+  nextPage?: Collection<T>;
+  ids: Collection<string>;
+  count: number;
+};
+
 export type Change = {
   mode: "string";
   path: string;
@@ -34,7 +42,7 @@ export type Getter<Result, Params extends Record<string, any>> = ((
 ) => Result) &
   ((idOrParams?: Params) => Collection<Result>);
 
-export type Route<Result, Params extends Record<string, any>> = Getter<
+export type Handlers<Result, Params extends Record<string, any>> = Getter<
   Result,
   Params
 > & {
@@ -42,12 +50,18 @@ export type Route<Result, Params extends Record<string, any>> = Getter<
   put: (id: number | string, payload: any) => Promise<ChangeTo<Result>>;
   post: (payload: any) => Promise<ChangeTo<Result>>;
   delete: (id: number | string) => Promise<ChangeTo<Result>>;
+  count: (params?: Params) => number;
+  ids: (params?: Params) => Collection<number | string>;
 };
 
 export type RouteFactory<Result, Params> = (p: {
   getUrl: (url: string) => any;
   axios: AxiosInstance;
-  handleChanges: (changes: Change[]) => Promise<void>;
+  touch: Touch<string>;
   blockUpdatesById: (id: string) => void;
   lock<T>(fn: () => Promise<T>): Promise<T>;
-}) => Route<Result, Params>;
+}) => {
+  handlers: Handlers<Result, Params>;
+};
+
+export type Touch<Key> = (filter: (key: Key) => boolean) => Promise<void>;

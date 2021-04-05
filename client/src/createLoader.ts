@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Cache from "./cache";
 import { SubscriptionCallback } from ".";
+import { Touch } from "./types";
 
 function useForceUpdate() {
   const forceUpdateInner = useState({})[1];
@@ -134,6 +135,6 @@ export function createLoader<Key>({
     get,
     useKey,
     preload,
-    touch,
+    touch: touch as Touch<Key>,
   };
 }

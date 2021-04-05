@@ -149,7 +149,7 @@ describe("withTimestamps plugin", () => {
             },
           },
         ],
-        "data": Object {
+        "item": Object {
           "_links": Object {
             "posts": "/testPlugins/posts?userId=1",
           },
@@ -230,7 +230,7 @@ describe("withTimestamps plugin", () => {
             },
           },
         ],
-        "data": Object {
+        "item": Object {
           "_links": Object {
             "posts": "/testPlugins/posts?userId=1",
           },
@@ -282,7 +282,7 @@ describe("withTimestamps plugin", () => {
             },
           },
         ],
-        "data": null,
+        "item": null,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -332,7 +332,7 @@ describe("withTimestamps plugin", () => {
             },
           },
         ],
-        "data": Object {
+        "item": Object {
           "_links": Object {},
           "_type": "testPlugins/items",
           "_url": "/testPlugins/items/1",
@@ -391,7 +391,14 @@ describe("withTimestamps plugin", () => {
     expect(await items.readMany(knex, { since: "1999-01-01 04:05:06" }, {}))
       .toMatchInlineSnapshot(`
       Object {
-        "data": Array [
+        "_links": Object {
+          "count": "/testPlugins/items/count?since=1999-01-01%2004%3A05%3A06",
+          "ids": "/testPlugins/items/ids?since=1999-01-01%2004%3A05%3A06",
+        },
+        "_type": "testPlugins/items",
+        "_url": "/testPlugins/items?since=1999-01-01%2004%3A05%3A06",
+        "hasMore": false,
+        "items": Array [
           Object {
             "_links": Object {},
             "_type": "testPlugins/items",
@@ -409,17 +416,8 @@ describe("withTimestamps plugin", () => {
             "updatedAt": 1999-01-12T10:05:06.000Z,
           },
         ],
-        "meta": Object {
-          "_links": Object {
-            "count": "/testPlugins/items/count?since=1999-01-01%2004%3A05%3A06",
-            "ids": "/testPlugins/items/ids?since=1999-01-01%2004%3A05%3A06",
-          },
-          "_type": "testPlugins/items",
-          "_url": "/testPlugins/items?since=1999-01-01%2004%3A05%3A06",
-          "hasMore": false,
-          "limit": 50,
-          "page": 0,
-        },
+        "limit": 50,
+        "page": 0,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -432,7 +430,14 @@ describe("withTimestamps plugin", () => {
     expect(await items.readMany(knex, { since: "1999-01-10 04:05:06" }, {}))
       .toMatchInlineSnapshot(`
       Object {
-        "data": Array [
+        "_links": Object {
+          "count": "/testPlugins/items/count?since=1999-01-10%2004%3A05%3A06",
+          "ids": "/testPlugins/items/ids?since=1999-01-10%2004%3A05%3A06",
+        },
+        "_type": "testPlugins/items",
+        "_url": "/testPlugins/items?since=1999-01-10%2004%3A05%3A06",
+        "hasMore": false,
+        "items": Array [
           Object {
             "_links": Object {},
             "_type": "testPlugins/items",
@@ -442,17 +447,8 @@ describe("withTimestamps plugin", () => {
             "updatedAt": 1999-01-12T10:05:06.000Z,
           },
         ],
-        "meta": Object {
-          "_links": Object {
-            "count": "/testPlugins/items/count?since=1999-01-10%2004%3A05%3A06",
-            "ids": "/testPlugins/items/ids?since=1999-01-10%2004%3A05%3A06",
-          },
-          "_type": "testPlugins/items",
-          "_url": "/testPlugins/items?since=1999-01-10%2004%3A05%3A06",
-          "hasMore": false,
-          "limit": 50,
-          "page": 0,
-        },
+        "limit": 50,
+        "page": 0,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -465,7 +461,14 @@ describe("withTimestamps plugin", () => {
     expect(await items.readMany(knex, { since: "something bogus" }, {}))
       .toMatchInlineSnapshot(`
       Object {
-        "data": Array [
+        "_links": Object {
+          "count": "/testPlugins/items/count?since=something%20bogus",
+          "ids": "/testPlugins/items/ids?since=something%20bogus",
+        },
+        "_type": "testPlugins/items",
+        "_url": "/testPlugins/items?since=something%20bogus",
+        "hasMore": false,
+        "items": Array [
           Object {
             "_links": Object {},
             "_type": "testPlugins/items",
@@ -483,17 +486,8 @@ describe("withTimestamps plugin", () => {
             "updatedAt": 1999-01-12T10:05:06.000Z,
           },
         ],
-        "meta": Object {
-          "_links": Object {
-            "count": "/testPlugins/items/count?since=something%20bogus",
-            "ids": "/testPlugins/items/ids?since=something%20bogus",
-          },
-          "_type": "testPlugins/items",
-          "_url": "/testPlugins/items?since=something%20bogus",
-          "hasMore": false,
-          "limit": 50,
-          "page": 0,
-        },
+        "limit": 50,
+        "page": 0,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`

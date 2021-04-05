@@ -60,44 +60,38 @@ export class CollectionResult<T extends Record<string, any>>
     Object.assign(this, meta);
   }
 
-  get meta() {
-    return {
-      page: this.page,
-      limit: this.limit,
-      hasMore: this.hasMore,
-      _links: this.links,
-      _type: this.type,
-      _url: this.url,
-    };
-  }
-
-  get data() {
+  get items() {
     return [...this];
   }
 
   toJSON(this: CollectionResult<T>) {
     return {
-      meta: this.meta,
-      data: this.data,
+      _url: this.url,
+      _links: this.links,
+      _type: this.type,
+      page: this.page,
+      limit: this.limit,
+      hasMore: this.hasMore,
+      items: this.items,
     };
   }
 }
 
 export class ChangeResult<T> implements ToJSON {
   id: string;
-  data: T;
+  item: T;
   changes: ChangeSummary<T>[];
 
-  constructor(id: string, data: T, changes: ChangeSummary<T>[]) {
+  constructor(id: string, item: T, changes: ChangeSummary<T>[]) {
     this.id = id;
-    this.data = data;
+    this.item = item;
     this.changes = changes;
   }
 
   toJSON(this: ChangeResult<T>) {
     return {
       changeId: this.id,
-      data: this.data,
+      item: this.item,
       changes: this.changes,
     };
   }

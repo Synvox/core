@@ -1,5 +1,5 @@
 import qs from "qs";
-import { RouteFactory, Collection, Change, ChangeTo, Route } from "./types";
+import { Collection, Change, ChangeTo, Handlers, Touch } from "./types";
 import { AxiosInstance } from "axios";
 import Cache from "./cache";
 import { createLoader } from "./createLoader";
@@ -11,17 +11,46 @@ function qsStringify(val: any) {
   });
 }
 
-export function table<T, P = {}>(path: string) {
-  const routeFactory: RouteFactory<T, P> = ({
+type Options = {
+  shouldTouch?: (change: Change, url: string) => boolean;
+};
+
+class Table<Result, Params = {}> {
+  path: string;
+  touch: Touch<string>;
+  blockUpdatesById: (id: string) => void;
+  lock: <T>(fn: () => Promise<T>) => Promise<T>;
+  shouldTouch: (change: Change, url: string) => boolean;
+  constructor(path: string, options: Options = {}) {
+    this.path = path;
+    this.touch = async () => {};
+    this.blockUpdatesById = () => {};
+    this.lock = async (x) => x();
+    this.shouldTouch =
+      options.shouldTouch ??
+      ((change: Change, url: string) => url.includes(change.path));
+  }
+
+  async handleChanges(changes: Change[]) {
+    await this.touch((url) => {
+      return changes.some((change) => {
+        return this.shouldTouch(change, url);
+      });
+    });
+  }
+
+  handlersFor({
     getUrl,
     axios,
-    blockUpdatesById,
-    handleChanges,
-    lock,
-  }) => {
-    const getter = (idOrParams?: number | string | P, params?: P) => {
+  }: {
+    getUrl: (url: string) => any;
+    axios: AxiosInstance;
+  }): Handlers<Result, Params> {
+    const { path, lock, blockUpdatesById } = this;
+
+    const getter = (idOrParams?: number | string | Params, params?: Params) => {
       if (typeof idOrParams === "object") {
-        return getUrl(`${path}?${qsStringify(idOrParams)}`) as T;
+        return getUrl(`${path}?${qsStringify(idOrParams)}`) as Result;
       } else {
         let fullPath = path;
 
@@ -31,28 +60,28 @@ export function table<T, P = {}>(path: string) {
           fullPath += `?${qsStringify(params)}`;
         }
 
-        return getUrl(fullPath) as Collection<T>;
+        return getUrl(fullPath) as Collection<Result>;
       }
     };
 
     return Object.assign(
-      (idOrParams?: number | string | P, params?: P) =>
+      (idOrParams?: number | string | Params, params?: Params) =>
         getter(idOrParams, params),
       {
         get: getter,
-        put: async (id: number | string, data: any, params?: P) => {
+        put: async (id: number | string, data: any, params?: Params) => {
           let fullPath = `${path}/${id}`;
           if (params && Object.keys(params).length > 0) {
             fullPath += `?${qsStringify(params)}`;
           }
-          return await lock(async () => {
+          return await lock!(async () => {
             const { data: result } = await axios.put(fullPath, data);
             if (result.changeId) blockUpdatesById(result.changeId);
-            result.update = () => handleChanges(result.changes);
-            return result as ChangeTo<T>;
+            result.update = () => this.handleChanges(result.changes);
+            return result as ChangeTo<Result>;
           });
         },
-        post: async (data: any, params?: P) => {
+        post: async (data: any, params?: Params) => {
           let fullPath = path;
           if (params && Object.keys(params).length > 0) {
             fullPath += `?${qsStringify(params)}`;
@@ -60,11 +89,11 @@ export function table<T, P = {}>(path: string) {
           return await lock(async () => {
             const { data: result } = await axios.post(fullPath, data);
             if (result.changeId) blockUpdatesById(result.changeId);
-            result.update = () => handleChanges(result.changes);
-            return result as ChangeTo<T>;
+            result.update = () => this.handleChanges(result.changes);
+            return result as ChangeTo<Result>;
           });
         },
-        delete: async (id: number | string, params?: P) => {
+        delete: async (id: number | string, params?: Params) => {
           let fullPath = `${path}/${id}`;
           if (params && Object.keys(params).length > 0) {
             fullPath += `?${qsStringify(params)}`;
@@ -72,18 +101,34 @@ export function table<T, P = {}>(path: string) {
           return await lock(async () => {
             const { data: result } = await axios.delete(fullPath);
             if (result.changeId) blockUpdatesById(result.changeId);
-            result.update = () => handleChanges(result.changes);
-            return result as ChangeTo<T>;
+            result.update = () => this.handleChanges(result.changes);
+            return result as ChangeTo<Result>;
           });
         },
+        count(params?: Params) {
+          let fullPath = path;
+          if (params && Object.keys(params).length > 0) {
+            fullPath += `?${qsStringify(params)}`;
+          }
+          return getUrl(fullPath) as number;
+        },
+        ids(params?: Params) {
+          let fullPath = path;
+          if (params && Object.keys(params).length > 0) {
+            fullPath += `?${qsStringify(params)}`;
+          }
+          return getUrl(fullPath) as Collection<number | string>;
+        },
       }
-    ) as Route<T, P>;
-  };
-
-  return routeFactory;
+    ) as Handlers<Result, Params>;
+  }
 }
 
-export function core<Routes extends Record<string, RouteFactory<any, any>>>(
+export function table<T, P>(path: string, options: Options = {}) {
+  return new Table<T, P>(path, options);
+}
+
+export function core<Routes extends Record<string, Table<any, any>>>(
   axios: AxiosInstance,
   routes: Routes
 ) {
@@ -93,7 +138,7 @@ export function core<Routes extends Record<string, RouteFactory<any, any>>>(
 
     function walk(obj: any): any {
       if (!obj || typeof obj !== "object") return obj;
-      if (Array.isArray(obj)) return obj.map(walk);
+      if (Array.isArray(obj)) return obj.map((o) => walk(o));
 
       const walkedChild = Object.fromEntries(
         Object.entries(obj).map(([key, obj]: [string, any]) => [key, walk(obj)])
@@ -101,10 +146,9 @@ export function core<Routes extends Record<string, RouteFactory<any, any>>>(
 
       if (obj._url) {
         result.push([obj._url, obj]);
-        return { _url: obj._url };
-      } else {
-        return walkedChild;
       }
+
+      return walkedChild;
     }
 
     data = walk(data);
@@ -117,7 +161,7 @@ export function core<Routes extends Record<string, RouteFactory<any, any>>>(
   const { useKey: useGetUrl, touch, preload } = createLoader({
     cache,
     modifier(obj: any, get) {
-      let result = { ...obj };
+      let result = Array.isArray(obj) ? [...obj] : { ...obj };
 
       function walk(obj: any): any {
         if (!obj || typeof obj !== "object") return obj;
@@ -130,7 +174,7 @@ export function core<Routes extends Record<string, RouteFactory<any, any>>>(
               get() {
                 return get(value._url as string);
               },
-              enumerable: true,
+              enumerable: isArray,
               configurable: false,
             });
           } else {
@@ -141,23 +185,26 @@ export function core<Routes extends Record<string, RouteFactory<any, any>>>(
         const { _links: links = {} } = obj;
 
         for (let [key, url] of Object.entries(links)) {
-          Object.defineProperty(returned, key, {
-            get() {
-              return get(url as string);
-            },
-            enumerable: true,
-            configurable: false,
-          });
+          // including arrays has a special case
+          // because it doesn't load pagination data.
+          if (!Array.isArray(returned[key])) {
+            Object.defineProperty(returned, key, {
+              get() {
+                return get(url as string);
+              },
+              enumerable: false,
+              configurable: false,
+            });
+          }
         }
 
         return returned;
       }
 
-      if (result.meta && result.data && Array.isArray(result.data)) {
-        result.data = Object.assign(result.data, result.meta);
+      if (result && result.items && Array.isArray(result.items)) {
+        const { items, ...others } = result;
+        result = Object.assign(result.items, others);
       }
-
-      if (result.data !== undefined) result = result.data;
 
       const returned = walk(result);
 
@@ -168,17 +215,14 @@ export function core<Routes extends Record<string, RouteFactory<any, any>>>(
   const handledChangeIds: string[] = [];
   let waitForUnlockPromise: Promise<void> | null = null;
 
-  async function handleChanges(changes: Change[]) {
-    await touch((url: string) => {
-      return changes.some((change) => url.includes(change.path));
-    });
-  }
-
   function sse(url: string) {
     const eventSource = new EventSource(url);
 
     eventSource.addEventListener("update", async (m: any) => {
-      const { changeId, changes } = JSON.parse(m.data);
+      const { changeId, changes } = JSON.parse(m.data) as {
+        changeId: string;
+        changes: Change[];
+      };
 
       if (waitForUnlockPromise) await waitForUnlockPromise;
 
@@ -190,7 +234,13 @@ export function core<Routes extends Record<string, RouteFactory<any, any>>>(
         return;
       }
 
-      handleChanges(changes);
+      await touch((url) => {
+        const tables = Object.values(routes);
+        return changes.some((change) => {
+          const table = tables.find((table) => table.path === change.path);
+          return table && table.shouldTouch(change, url);
+        });
+      });
     });
 
     return eventSource;
@@ -215,32 +265,35 @@ export function core<Routes extends Record<string, RouteFactory<any, any>>>(
     return result;
   }
 
+  Object.values(routes).map((table) => {
+    table.touch = touch;
+    table.blockUpdatesById = blockUpdatesById;
+    table.lock = lock;
+  });
+
   return {
     touch,
     useGetUrl,
     preload,
     sse,
     useCore(): {
-      [name in keyof Routes]: Routes[name] extends RouteFactory<
+      [name in keyof Routes]: Routes[name] extends Table<
         infer Result,
         infer Params
       >
-        ? Route<Result, Partial<Params>>
-        : Route<unknown, any>;
+        ? Handlers<Result, Partial<Params>>
+        : Handlers<unknown, any>;
     } {
       const getUrl = useGetUrl();
 
       //@ts-expect-error
       return Object.fromEntries(
-        Object.entries(routes).map(([key, createRoute]) => {
+        Object.entries(routes).map(([key, table]) => {
           return [
             key,
-            createRoute({
+            table.handlersFor({
               getUrl,
               axios,
-              handleChanges,
-              blockUpdatesById,
-              lock,
             }),
           ];
         })

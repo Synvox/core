@@ -3,6 +3,8 @@ const { knexHelpers, Core } = require("@synvox/core");
 const express = require("express");
 const Knex = require("knex").default;
 
+require("pg").types.setTypeParser(20, "text", Number);
+
 const knex = Knex({
   client: "pg",
   connection: {

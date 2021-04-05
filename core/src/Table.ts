@@ -1332,31 +1332,29 @@ export class Table<Context, T = any> {
     const results = await stmt.pluck(`${this.alias}.${this.idColumnName}`);
 
     return {
-      meta: {
-        page,
-        limit,
-        hasMore: results.length >= limit,
-        _url: `${this.baseUrl}/${this.path}/ids${
-          Object.keys(queryParams).length > 0
-            ? `?${qsStringify(queryParams)}`
-            : ""
-        }`,
-        _links: {
-          ...(results.length >= limit && {
-            nextPage: `${this.baseUrl}/${this.path}/ids?${qs.stringify({
-              ...queryParams,
-              page: page + 1,
-            })}`,
-          }),
-          ...(page !== 0 && {
-            previousPage: `${this.baseUrl}/${this.path}/ids?${qs.stringify({
-              ...queryParams,
-              page: page - 1,
-            })}`,
-          }),
-        },
+      page,
+      limit,
+      hasMore: results.length >= limit,
+      _url: `${this.baseUrl}/${this.path}/ids${
+        Object.keys(queryParams).length > 0
+          ? `?${qsStringify(queryParams)}`
+          : ""
+      }`,
+      _links: {
+        ...(results.length >= limit && {
+          nextPage: `${this.baseUrl}/${this.path}/ids?${qs.stringify({
+            ...queryParams,
+            page: page + 1,
+          })}`,
+        }),
+        ...(page !== 0 && {
+          previousPage: `${this.baseUrl}/${this.path}/ids?${qs.stringify({
+            ...queryParams,
+            page: page - 1,
+          })}`,
+        }),
       },
-      data: results,
+      items: results,
     };
   }
 
@@ -1641,12 +1639,6 @@ export class Table<Context, T = any> {
                 nextPage: `${table.baseUrl}/${path}?${qsStringify({
                   ...queryParams,
                   page: page + 1,
-                })}`,
-              }),
-              ...(page !== 0 && {
-                previousPage: `${table.baseUrl}/${path}?${qsStringify({
-                  ...queryParams,
-                  page: page - 1,
                 })}`,
               }),
             }),

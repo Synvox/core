@@ -120,7 +120,7 @@ describe("core", () => {
 
     const { useCore, touch } = coreClient(axios, {
       test: table<Test, any>("/coreTest/test"),
-      testSub: table<TestSub>("/coreTest/testSub"),
+      testSub: table<TestSub, any>("/coreTest/testSub"),
     });
 
     const { result, waitForNextUpdate, rerender } = renderHook(
@@ -145,6 +145,7 @@ describe("core", () => {
           "id": 1,
           "isBoolean": false,
           "numberCount": 0,
+          "testSub": Array [],
           "text": "text",
         },
         "testSub": Array [],
@@ -174,6 +175,7 @@ describe("core", () => {
           "id": 2,
           "isBoolean": false,
           "numberCount": 0,
+          "testSub": Array [],
           "text": "text",
         },
         "testSub": Array [],
@@ -186,14 +188,6 @@ describe("core", () => {
     });
     rerender({ id: 2 });
 
-    expect(await knex("coreTest.testSub")).toMatchInlineSnapshot(`
-      Array [
-        Object {
-          "id": 1,
-          "parentId": 2,
-        },
-      ]
-    `);
     expect(result.current).toMatchInlineSnapshot(`
       Object {
         "result": Object {
@@ -205,6 +199,17 @@ describe("core", () => {
           "id": 2,
           "isBoolean": false,
           "numberCount": 0,
+          "testSub": Array [
+            Object {
+              "_links": Object {
+                "parent": "/coreTest/test/2",
+              },
+              "_type": "coreTest/testSub",
+              "_url": "/coreTest/testSub/1",
+              "id": 1,
+              "parentId": 2,
+            },
+          ],
           "text": "text",
         },
         "testSub": Array [
@@ -242,6 +247,9 @@ describe("core", () => {
         return result;
       });
       await waitForNextUpdate();
+      expect(result.current.hasMore).toMatchInlineSnapshot(`false`);
+      expect(result.current.page).toMatchInlineSnapshot(`0`);
+      expect(result.current.limit).toMatchInlineSnapshot(`50`);
       expect(result.current).toMatchInlineSnapshot(`
         Array [
           Object {
@@ -340,102 +348,122 @@ describe("core", () => {
 
     const { useCore } = coreClient(axios, {
       test: table<Test, any>("/coreTest/test"),
-      testSub: table<TestSub>("/coreTest/testSub"),
+      testSub: table<TestSub, any>("/coreTest/testSub"),
     });
 
-    const { result } = renderHook(() => {
+    const { result, waitForNextUpdate } = renderHook(() => {
       const core = useCore();
-      return core;
+      return {
+        test: core.test(),
+        core,
+      };
     });
 
-    expect(await result.current.test.post({})).toMatchInlineSnapshot(`
-      Object {
-        "changes": Array [
-          Object {
-            "mode": "insert",
-            "path": "coreTest/test",
-            "row": Object {
-              "_links": Object {
-                "testSub": "/coreTest/testSub?parentId=1",
-              },
-              "_type": "coreTest/test",
-              "_url": "/coreTest/test/1",
-              "id": 1,
-              "isBoolean": false,
-              "numberCount": 0,
-              "text": "text",
+    expect(result.current).toMatchInlineSnapshot(`undefined`);
+    await waitForNextUpdate();
+
+    expect((await result.current.core.test.post({})).changes)
+      .toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "mode": "insert",
+          "path": "coreTest/test",
+          "row": Object {
+            "_links": Object {
+              "testSub": "/coreTest/testSub?parentId=1",
             },
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/1",
+            "id": 1,
+            "isBoolean": false,
+            "numberCount": 0,
+            "text": "text",
           },
-        ],
-        "data": Object {
+        },
+      ]
+    `);
+
+    expect((await result.current.core.test.put(1, { isBoolean: true })).changes)
+      .toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "mode": "update",
+          "path": "coreTest/test",
+          "row": Object {
+            "_links": Object {
+              "testSub": "/coreTest/testSub?parentId=1",
+            },
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/1",
+            "id": 1,
+            "isBoolean": true,
+            "numberCount": 0,
+            "text": "text",
+          },
+        },
+      ]
+    `);
+
+    expect((await result.current.core.test.delete(1)).changes)
+      .toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "mode": "delete",
+          "path": "coreTest/test",
+          "row": Object {
+            "_links": Object {
+              "testSub": "/coreTest/testSub?parentId=1",
+            },
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/1",
+            "id": 1,
+            "isBoolean": true,
+            "numberCount": 0,
+            "text": "text",
+          },
+        },
+      ]
+    `);
+
+    const postAction = await result.current.core.test.post({});
+    expect(postAction.changes).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "mode": "insert",
+          "path": "coreTest/test",
+          "row": Object {
+            "_links": Object {
+              "testSub": "/coreTest/testSub?parentId=2",
+            },
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/2",
+            "id": 2,
+            "isBoolean": false,
+            "numberCount": 0,
+            "text": "text",
+          },
+        },
+      ]
+    `);
+
+    await act(async () => {
+      await postAction.update();
+    });
+
+    expect([...result.current.test]).toMatchInlineSnapshot(`
+      Array [
+        Object {
           "_links": Object {
-            "testSub": "/coreTest/testSub?parentId=1",
+            "testSub": "/coreTest/testSub?parentId=2",
           },
           "_type": "coreTest/test",
-          "_url": "/coreTest/test/1",
-          "id": 1,
+          "_url": "/coreTest/test/2",
+          "id": 2,
           "isBoolean": false,
           "numberCount": 0,
           "text": "text",
         },
-      }
-    `);
-
-    expect(await result.current.test.put(1, { isBoolean: true }))
-      .toMatchInlineSnapshot(`
-      Object {
-        "changes": Array [
-          Object {
-            "mode": "update",
-            "path": "coreTest/test",
-            "row": Object {
-              "_links": Object {
-                "testSub": "/coreTest/testSub?parentId=1",
-              },
-              "_type": "coreTest/test",
-              "_url": "/coreTest/test/1",
-              "id": 1,
-              "isBoolean": true,
-              "numberCount": 0,
-              "text": "text",
-            },
-          },
-        ],
-        "data": Object {
-          "_links": Object {
-            "testSub": "/coreTest/testSub?parentId=1",
-          },
-          "_type": "coreTest/test",
-          "_url": "/coreTest/test/1",
-          "id": 1,
-          "isBoolean": true,
-          "numberCount": 0,
-          "text": "text",
-        },
-      }
-    `);
-
-    expect(await result.current.test.delete(1)).toMatchInlineSnapshot(`
-      Object {
-        "changes": Array [
-          Object {
-            "mode": "delete",
-            "path": "coreTest/test",
-            "row": Object {
-              "_links": Object {
-                "testSub": "/coreTest/testSub?parentId=1",
-              },
-              "_type": "coreTest/test",
-              "_url": "/coreTest/test/1",
-              "id": 1,
-              "isBoolean": true,
-              "numberCount": 0,
-              "text": "text",
-            },
-          },
-        ],
-        "data": null,
-      }
+      ]
     `);
   });
 });
