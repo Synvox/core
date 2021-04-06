@@ -179,12 +179,12 @@ export function core<Routes extends Record<string, Table<any, any>>>(
               enumerable: isArray,
               configurable: true,
             });
-          } else if (prop.value && prop.configurable) {
+          } else if ("value" in prop && prop.configurable) {
             const walkedValue = walk(prop.value);
             Object.defineProperty(returned, key, {
-              ...properties[key],
+              ...prop,
               value: walkedValue,
-              enumerable: !key.startsWith("_"),
+              enumerable: !key.startsWith("_") && prop.enumerable !== false,
               configurable: true,
             });
           } else if (prop.configurable) {
