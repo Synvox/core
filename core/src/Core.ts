@@ -620,20 +620,35 @@ export async function saveTsTypes(
         }
       }
 
+      const ignoredSubs = ["include", "cursor", "page", "limit"];
       const queryModifierNames = Object.keys(table.queryModifiers);
+      ignoredSubs.push(...queryModifierNames);
+
       for (let queryModifier of Object.keys(table.queryModifiers)) {
         types += `  ${queryModifier}: any;\n`;
       }
 
-      let subTypeName = paramTypeName;
-      if (queryModifierNames.length) {
-        subTypeName = `Omit<${paramTypeName}, ${queryModifierNames
-          .map((n) => `"${n}"`)
-          .join("|")}>`;
-      }
+      const subTypeName = `Omit<${paramTypeName}, ${ignoredSubs
+        .map((n) => `"${n}"`)
+        .join(" | ")}>`;
 
       types += `  and: ${subTypeName};\n`;
       types += `  or: ${subTypeName};\n`;
+      types += `  cursor: string;\n`;
+      types += `  page: number;\n`;
+      types += `  limit: number;\n`;
+
+      const includable = [
+        ...Object.keys(table.relatedTables.hasMany),
+        ...Object.keys(table.relatedTables.hasOne),
+        ...Object.keys(table.getters),
+        ...Object.keys(table.eagerGetters),
+      ];
+
+      if (includable.length)
+        types += `  include: (${includable
+          .map((v) => `'${v}'`)
+          .join(" | ")})[];\n`;
 
       types += `}>;\n\n`;
     }

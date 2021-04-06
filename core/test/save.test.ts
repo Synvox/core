@@ -516,8 +516,12 @@ describe("saves to files", () => {
         \\"text.gte\\": string | string[];
         \\"text.like\\": string | string[];
         \\"text.ilike\\": string | string[];
-        and: TestParams;
-        or: TestParams;
+        and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        cursor: string;
+        page: number;
+        limit: number;
+        include: ('testSub' | 'testSubNullable')[];
       }>;
 
       export type TestNullable = {
@@ -558,8 +562,11 @@ describe("saves to files", () => {
         \\"text.gte\\": string | string[];
         \\"text.like\\": string | string[];
         \\"text.ilike\\": string | string[];
-        and: TestNullableParams;
-        or: TestNullableParams;
+        and: Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        or: Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        cursor: string;
+        page: number;
+        limit: number;
       }>;
 
       export type TestSub = {
@@ -592,8 +599,12 @@ describe("saves to files", () => {
         \\"arr.gt\\": number[] | null;
         \\"arr.gte\\": number[] | null;
         thing: any;
-        and: Omit<TestSubParams, \\"thing\\">;
-        or: Omit<TestSubParams, \\"thing\\">;
+        and: Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\">;
+        or: Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\">;
+        cursor: string;
+        page: number;
+        limit: number;
+        include: ('parent')[];
       }>;
 
       export type TestSubNullable = {
@@ -625,8 +636,12 @@ describe("saves to files", () => {
         \\"arr.lte\\": number[] | null;
         \\"arr.gt\\": number[] | null;
         \\"arr.gte\\": number[] | null;
-        and: TestSubNullableParams;
-        or: TestSubNullableParams;
+        and: Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        or: Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        cursor: string;
+        page: number;
+        limit: number;
+        include: ('parent')[];
       }>;
       "
     `);
