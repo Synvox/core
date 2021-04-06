@@ -133,8 +133,12 @@ export function core<Routes extends Record<string, Table<any, any>>>(
   routes: Routes
 ) {
   const cache = new Cache<string>(async (url) => {
-    let { data } = await axios.get(url);
+    let {
+      data,
+      config: { baseURL },
+    } = await axios.get(url);
     const result: [string, any][] = [];
+    const base = new URL(baseURL || "", window.location.origin).href;
 
     function walk(obj: any): any {
       if (!obj || typeof obj !== "object") return obj;
@@ -145,7 +149,8 @@ export function core<Routes extends Record<string, Table<any, any>>>(
       );
 
       if (obj._url) {
-        result.push([obj._url, obj]);
+        const url = obj._url.replace(base, "");
+        result.push([url, obj]);
       }
 
       return walkedChild;
