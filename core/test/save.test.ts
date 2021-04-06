@@ -273,9 +273,9 @@ describe("saves to files", () => {
         isBoolean: boolean;
         numberCount: number;
         text: string;
-        '_url': string;
-        '_type': string;
-        '_links': {
+        _url: string;
+        _type: string;
+        _links: {
           testSub: string;
           testSubNullable: string;
         };
@@ -286,9 +286,9 @@ describe("saves to files", () => {
         isBoolean: boolean;
         numberCount: number;
         text: string;
-        '_url': string;
-        '_type': string;
-        '_links': {
+        _url: string;
+        _type: string;
+        _links: {
         };
       };
 
@@ -296,9 +296,9 @@ describe("saves to files", () => {
         id: number;
         parentId: number;
         arr: number[] | null;
-        '_url': string;
-        '_type': string;
-        '_links': {
+        _url: string;
+        _type: string;
+        _links: {
           parent: string;
         };
       };
@@ -307,9 +307,9 @@ describe("saves to files", () => {
         id: number;
         parentId: number | null;
         arr: number[] | null;
-        '_url': string;
-        '_type': string;
-        '_links': {
+        _url: string;
+        _type: string;
+        _links: {
           parent?: string;
         };
       };
@@ -436,6 +436,198 @@ describe("saves to files", () => {
         arr: number[] | null;
         parent?: Test;
       };
+      "
+    `);
+  });
+
+  it("saves types with relations and params", async () => {
+    const path = Path.resolve(__dirname, "./test.ignore4.ts");
+
+    const core = new Core(knex, () => ({}));
+
+    core.table({
+      schemaName: "saveTest",
+      tableName: "test",
+    });
+
+    core.table({
+      schemaName: "saveTest",
+      tableName: "testSub",
+      queryModifiers: {
+        async thing() {},
+      },
+    });
+
+    core.table({
+      schemaName: "saveTest",
+      tableName: "testNullable",
+    });
+
+    core.table({
+      schemaName: "saveTest",
+      tableName: "testSubNullable",
+    });
+
+    await core.saveTsTypes(path, {
+      includeRelations: true,
+      includeLinks: false,
+      includeParams: true,
+    });
+
+    const types = await fs.readFile(path, { encoding: "utf8" });
+    expect(types).toMatchInlineSnapshot(`
+      "export type Test = {
+        id: number;
+        isBoolean: boolean;
+        numberCount: number;
+        text: string;
+        testSub: TestSub[];
+        testSubNullable: TestSubNullable[];
+      };
+
+      export type TestParams = Partial<{
+        id: number | number[];
+        \\"id.eq\\": number | number[];
+        \\"id.neq\\": number | number[];
+        \\"id.lt\\": number | number[];
+        \\"id.lte\\": number | number[];
+        \\"id.gt\\": number | number[];
+        \\"id.gte\\": number | number[];
+        isBoolean: boolean | boolean[];
+        \\"isBoolean.eq\\": boolean | boolean[];
+        \\"isBoolean.neq\\": boolean | boolean[];
+        \\"isBoolean.lt\\": boolean | boolean[];
+        \\"isBoolean.lte\\": boolean | boolean[];
+        \\"isBoolean.gt\\": boolean | boolean[];
+        \\"isBoolean.gte\\": boolean | boolean[];
+        numberCount: number | number[];
+        \\"numberCount.eq\\": number | number[];
+        \\"numberCount.neq\\": number | number[];
+        \\"numberCount.lt\\": number | number[];
+        \\"numberCount.lte\\": number | number[];
+        \\"numberCount.gt\\": number | number[];
+        \\"numberCount.gte\\": number | number[];
+        text: string | string[];
+        \\"text.eq\\": string | string[];
+        \\"text.neq\\": string | string[];
+        \\"text.lt\\": string | string[];
+        \\"text.lte\\": string | string[];
+        \\"text.gt\\": string | string[];
+        \\"text.gte\\": string | string[];
+        \\"text.like\\": string | string[];
+        \\"text.ilike\\": string | string[];
+        and: TestParams;
+        or: TestParams;
+      }>;
+
+      export type TestNullable = {
+        id: number;
+        isBoolean: boolean;
+        numberCount: number;
+        text: string;
+      };
+
+      export type TestNullableParams = Partial<{
+        id: number | number[];
+        \\"id.eq\\": number | number[];
+        \\"id.neq\\": number | number[];
+        \\"id.lt\\": number | number[];
+        \\"id.lte\\": number | number[];
+        \\"id.gt\\": number | number[];
+        \\"id.gte\\": number | number[];
+        isBoolean: boolean | boolean[];
+        \\"isBoolean.eq\\": boolean | boolean[];
+        \\"isBoolean.neq\\": boolean | boolean[];
+        \\"isBoolean.lt\\": boolean | boolean[];
+        \\"isBoolean.lte\\": boolean | boolean[];
+        \\"isBoolean.gt\\": boolean | boolean[];
+        \\"isBoolean.gte\\": boolean | boolean[];
+        numberCount: number | number[];
+        \\"numberCount.eq\\": number | number[];
+        \\"numberCount.neq\\": number | number[];
+        \\"numberCount.lt\\": number | number[];
+        \\"numberCount.lte\\": number | number[];
+        \\"numberCount.gt\\": number | number[];
+        \\"numberCount.gte\\": number | number[];
+        text: string | string[];
+        \\"text.eq\\": string | string[];
+        \\"text.neq\\": string | string[];
+        \\"text.lt\\": string | string[];
+        \\"text.lte\\": string | string[];
+        \\"text.gt\\": string | string[];
+        \\"text.gte\\": string | string[];
+        \\"text.like\\": string | string[];
+        \\"text.ilike\\": string | string[];
+        and: TestNullableParams;
+        or: TestNullableParams;
+      }>;
+
+      export type TestSub = {
+        id: number;
+        parentId: number;
+        arr: number[] | null;
+        parent: Test;
+      };
+
+      export type TestSubParams = Partial<{
+        id: number | number[];
+        \\"id.eq\\": number | number[];
+        \\"id.neq\\": number | number[];
+        \\"id.lt\\": number | number[];
+        \\"id.lte\\": number | number[];
+        \\"id.gt\\": number | number[];
+        \\"id.gte\\": number | number[];
+        parentId: number | number[];
+        \\"parentId.eq\\": number | number[];
+        \\"parentId.neq\\": number | number[];
+        \\"parentId.lt\\": number | number[];
+        \\"parentId.lte\\": number | number[];
+        \\"parentId.gt\\": number | number[];
+        \\"parentId.gte\\": number | number[];
+        arr: number[] | null;
+        \\"arr.eq\\": number[] | null;
+        \\"arr.neq\\": number[] | null;
+        \\"arr.lt\\": number[] | null;
+        \\"arr.lte\\": number[] | null;
+        \\"arr.gt\\": number[] | null;
+        \\"arr.gte\\": number[] | null;
+        thing: any;
+        and: Omit<TestSubParams, \\"thing\\">;
+        or: Omit<TestSubParams, \\"thing\\">;
+      }>;
+
+      export type TestSubNullable = {
+        id: number;
+        parentId: number | null;
+        arr: number[] | null;
+        parent?: Test;
+      };
+
+      export type TestSubNullableParams = Partial<{
+        id: number | number[];
+        \\"id.eq\\": number | number[];
+        \\"id.neq\\": number | number[];
+        \\"id.lt\\": number | number[];
+        \\"id.lte\\": number | number[];
+        \\"id.gt\\": number | number[];
+        \\"id.gte\\": number | number[];
+        parentId: number | null | number | null[];
+        \\"parentId.eq\\": number | null | number | null[];
+        \\"parentId.neq\\": number | null | number | null[];
+        \\"parentId.lt\\": number | null | number | null[];
+        \\"parentId.lte\\": number | null | number | null[];
+        \\"parentId.gt\\": number | null | number | null[];
+        \\"parentId.gte\\": number | null | number | null[];
+        arr: number[] | null;
+        \\"arr.eq\\": number[] | null;
+        \\"arr.neq\\": number[] | null;
+        \\"arr.lt\\": number[] | null;
+        \\"arr.lte\\": number[] | null;
+        \\"arr.gt\\": number[] | null;
+        \\"arr.gte\\": number[] | null;
+        and: TestSubNullableParams;
+        or: TestSubNullableParams;
+      }>;
       "
     `);
   });
