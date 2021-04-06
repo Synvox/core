@@ -133,13 +133,8 @@ export function core<Routes extends Record<string, Table<any, any>>>(
   routes: Routes
 ) {
   const cache = new Cache<string>(async (url) => {
-    let {
-      data,
-      config: { baseURL },
-    } = await axios.get(url);
+    let { data } = await axios.get(url);
     const result: [string, any][] = [];
-    const base = new URL(baseURL || "", window.location.origin).href;
-
     function walk(obj: any): any {
       if (!obj || typeof obj !== "object") return obj;
       if (Array.isArray(obj)) return obj.map((o) => walk(o));
@@ -149,7 +144,7 @@ export function core<Routes extends Record<string, Table<any, any>>>(
       );
 
       if (obj._url) {
-        const url = obj._url.replace(base, "");
+        const url = obj._url;
         result.push([url, obj]);
       }
 
@@ -311,7 +306,11 @@ export function core<Routes extends Record<string, Table<any, any>>>(
         ? Handlers<Result, Partial<Params>>
         : Handlers<unknown, any>;
     } {
-      const getUrl = useGetUrl();
+      const getUrlReal = useGetUrl();
+
+      const getUrl = (url: string) => {
+        return getUrlReal(axios.getUri({ url }));
+      };
 
       //@ts-expect-error
       return Object.fromEntries(
