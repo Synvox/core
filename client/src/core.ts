@@ -306,12 +306,7 @@ export function core<Routes extends Record<string, Table<any, any>>>(
         ? Handlers<Result, Partial<Params>>
         : Handlers<unknown, any>;
     } {
-      const getUrlReal = useGetUrl();
-
-      const getUrl = (url: string) => {
-        const realUri = axios.getUri({ url });
-        return getUrlReal(realUri);
-      };
+      const getUrl = useGetUrl();
 
       //@ts-expect-error
       return Object.fromEntries(
