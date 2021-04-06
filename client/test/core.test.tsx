@@ -134,14 +134,23 @@ describe("core", () => {
 
     expect(result.current).toMatchInlineSnapshot(`undefined`);
     await waitForNextUpdate();
+    //@ts-expect-error
+    expect(result.current.result._links).toMatchInlineSnapshot(`
+      Object {
+        "testSub": "/coreTest/testSub?parentId=1",
+      }
+    `);
+    //@ts-expect-error
+    expect(result.current.result._type).toMatchInlineSnapshot(
+      `"coreTest/test"`
+    );
+    //@ts-expect-error
+    expect(result.current.result._url).toMatchInlineSnapshot(
+      `"/coreTest/test/1"`
+    );
     expect(result.current).toMatchInlineSnapshot(`
       Object {
         "result": Object {
-          "_links": Object {
-            "testSub": "/coreTest/testSub?parentId=1",
-          },
-          "_type": "coreTest/test",
-          "_url": "/coreTest/test/1",
           "id": 1,
           "isBoolean": false,
           "numberCount": 0,
@@ -167,11 +176,6 @@ describe("core", () => {
     expect(result.current).toMatchInlineSnapshot(`
       Object {
         "result": Object {
-          "_links": Object {
-            "testSub": "/coreTest/testSub?parentId=2",
-          },
-          "_type": "coreTest/test",
-          "_url": "/coreTest/test/2",
           "id": 2,
           "isBoolean": false,
           "numberCount": 0,
@@ -191,21 +195,11 @@ describe("core", () => {
     expect(result.current).toMatchInlineSnapshot(`
       Object {
         "result": Object {
-          "_links": Object {
-            "testSub": "/coreTest/testSub?parentId=2",
-          },
-          "_type": "coreTest/test",
-          "_url": "/coreTest/test/2",
           "id": 2,
           "isBoolean": false,
           "numberCount": 0,
           "testSub": Array [
             Object {
-              "_links": Object {
-                "parent": "/coreTest/test/2",
-              },
-              "_type": "coreTest/testSub",
-              "_url": "/coreTest/testSub/1",
               "id": 1,
               "parentId": 2,
             },
@@ -214,11 +208,6 @@ describe("core", () => {
         },
         "testSub": Array [
           Object {
-            "_links": Object {
-              "parent": "/coreTest/test/2",
-            },
-            "_type": "coreTest/testSub",
-            "_url": "/coreTest/testSub/1",
             "id": 1,
             "parentId": 2,
           },
@@ -253,22 +242,12 @@ describe("core", () => {
       expect(result.current).toMatchInlineSnapshot(`
         Array [
           Object {
-            "_links": Object {
-              "testSub": "/coreTest/testSub?parentId=1",
-            },
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/1",
             "id": 1,
             "isBoolean": false,
             "numberCount": 0,
             "text": "text",
           },
           Object {
-            "_links": Object {
-              "testSub": "/coreTest/testSub?parentId=2",
-            },
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/2",
             "id": 2,
             "isBoolean": false,
             "numberCount": 0,
@@ -290,22 +269,12 @@ describe("core", () => {
       expect(result.current).toMatchInlineSnapshot(`
         Array [
           Object {
-            "_links": Object {
-              "testSub": "/coreTest/testSub?parentId=1",
-            },
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/1",
             "id": 1,
             "isBoolean": false,
             "numberCount": 0,
             "text": "text",
           },
           Object {
-            "_links": Object {
-              "testSub": "/coreTest/testSub?parentId=2",
-            },
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/2",
             "id": 2,
             "isBoolean": false,
             "numberCount": 0,
@@ -453,11 +422,6 @@ describe("core", () => {
     expect([...result.current.test]).toMatchInlineSnapshot(`
       Array [
         Object {
-          "_links": Object {
-            "testSub": "/coreTest/testSub?parentId=2",
-          },
-          "_type": "coreTest/test",
-          "_url": "/coreTest/test/2",
           "id": 2,
           "isBoolean": false,
           "numberCount": 0,

@@ -168,17 +168,27 @@ export function core<Routes extends Record<string, Table<any, any>>>(
         const isArray = Array.isArray(obj);
         const returned: any = isArray ? [] : {};
 
-        for (let [key, value] of Object.entries<any>(obj)) {
-          if (value?._url) {
+        const properties = Object.getOwnPropertyDescriptors(obj);
+
+        for (let [key, prop] of Object.entries<any>(properties)) {
+          if (prop.value?._url) {
             Object.defineProperty(returned, key, {
               get() {
-                return get(value._url as string);
+                return get(prop.value._url as string);
               },
               enumerable: isArray,
-              configurable: false,
+              configurable: true,
             });
-          } else {
-            returned[key] = walk(value);
+          } else if (prop.value && prop.configurable) {
+            const walkedValue = walk(prop.value);
+            Object.defineProperty(returned, key, {
+              ...properties[key],
+              value: walkedValue,
+              enumerable: !key.startsWith("_"),
+              configurable: true,
+            });
+          } else if (prop.configurable) {
+            Object.defineProperty(returned, key, prop);
           }
         }
 
@@ -193,7 +203,7 @@ export function core<Routes extends Record<string, Table<any, any>>>(
                 return get(url as string);
               },
               enumerable: false,
-              configurable: false,
+              configurable: true,
             });
           }
         }
@@ -202,8 +212,20 @@ export function core<Routes extends Record<string, Table<any, any>>>(
       }
 
       if (result && result.items && Array.isArray(result.items)) {
-        const { items, ...others } = result;
-        result = Object.assign(result.items, others);
+        const { items: itemsDirect, ...others } = result;
+        result = (itemsDirect as any[]).slice();
+        const properties = Object.fromEntries(
+          Object.entries(others).map(([key, value]) => [
+            key,
+            {
+              value,
+              enumerable: false,
+              configurable: true,
+            },
+          ])
+        );
+
+        Object.defineProperties(result, properties);
       }
 
       const returned = walk(result);
