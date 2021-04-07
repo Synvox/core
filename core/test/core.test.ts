@@ -2,7 +2,7 @@ import Knex from "knex";
 import { EventEmitter } from "events";
 import { createServer } from "http";
 import testListen from "test-listen";
-import express, { Application } from "express";
+import express, { Application, Router } from "express";
 import Axios from "axios";
 import EventSource from "eventsource";
 import { knexHelpers, Core, StatusError, ChangeSummary } from "../src";
@@ -1879,5 +1879,43 @@ describe("methods", () => {
         "select test.id from core_test.test where (test.id = ?) limit ?",
       ]
     `);
+  });
+});
+
+describe("sub routers", () => {
+  it("static methods", async () => {
+    await knex.schema.withSchema("core_test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+    });
+
+    const core = new Core(knex, () => ({ context: "abc" }));
+
+    const router = Router();
+    router.get("/route", (_req, res) => {
+      res.send({ hit: true });
+    });
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+      router,
+    });
+
+    await core.init();
+
+    const app = express();
+    app.use(core.router);
+    const url = await listen(app);
+
+    const axios = Axios.create({ baseURL: url });
+
+    queries = [];
+    expect((await axios.get("/coreTest/test/route")).data)
+      .toMatchInlineSnapshot(`
+      Object {
+        "hit": true,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`Array []`);
   });
 });

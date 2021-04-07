@@ -221,7 +221,7 @@ export class Core<Context> {
 
     const addRoutes = () => {
       for (let table of this.tables) {
-        router.use(table.path, table.router);
+        router.use(`/${table.path}`, table.router);
 
         router.get(
           `/${table.path}/ids`,
