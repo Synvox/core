@@ -1,6 +1,7 @@
+import { createContext, ReactNode, useContext } from "react";
 import qs from "qs";
 import { Collection, Change, ChangeTo, Handlers, Touch } from "./types";
-import { AxiosInstance } from "axios";
+import { AxiosInstance, AxiosRequestConfig } from "axios";
 import Cache from "./cache";
 import { createLoader } from "./createLoader";
 
@@ -40,15 +41,28 @@ class Table<Result, Params = {}> {
   }
 
   handlersFor({
-    getUrl,
+    getUrl: realGetUrl,
     axios,
+    requestConfig,
   }: {
     getUrl: (url: string) => any;
     axios: AxiosInstance;
+    requestConfig: AxiosRequestConfig;
   }): Handlers<Result, Params> {
     const { path, lock, blockUpdatesById } = this;
 
-    const getter = (idOrParams?: number | string | Params, params?: Params) => {
+    function applyConfigToUrl(url: string) {
+      return axios.getUri({
+        ...requestConfig,
+        url,
+      });
+    }
+
+    function getUrl(url: string) {
+      return realGetUrl(applyConfigToUrl(url));
+    }
+
+    function getter(idOrParams?: number | string | Params, params?: Params) {
       if (typeof idOrParams === "object") {
         return getUrl(`${path}?${qsStringify(idOrParams)}`) as Result;
       } else {
@@ -62,7 +76,7 @@ class Table<Result, Params = {}> {
 
         return getUrl(fullPath) as Collection<Result>;
       }
-    };
+    }
 
     return Object.assign(
       (idOrParams?: number | string | Params, params?: Params) =>
@@ -75,7 +89,11 @@ class Table<Result, Params = {}> {
             fullPath += `?${qsStringify(params)}`;
           }
           return await lock!(async () => {
-            const { data: result } = await axios.put(fullPath, data);
+            const { data: result } = await axios.put(
+              applyConfigToUrl(fullPath),
+              data,
+              requestConfig
+            );
             if (result.changeId) blockUpdatesById(result.changeId);
             result.update = () => this.handleChanges(result.changes);
             return result as ChangeTo<Result>;
@@ -87,7 +105,11 @@ class Table<Result, Params = {}> {
             fullPath += `?${qsStringify(params)}`;
           }
           return await lock(async () => {
-            const { data: result } = await axios.post(fullPath, data);
+            const { data: result } = await axios.post(
+              applyConfigToUrl(fullPath),
+              data,
+              requestConfig
+            );
             if (result.changeId) blockUpdatesById(result.changeId);
             result.update = () => this.handleChanges(result.changes);
             return result as ChangeTo<Result>;
@@ -99,7 +121,10 @@ class Table<Result, Params = {}> {
             fullPath += `?${qsStringify(params)}`;
           }
           return await lock(async () => {
-            const { data: result } = await axios.delete(fullPath);
+            const { data: result } = await axios.delete(
+              applyConfigToUrl(fullPath),
+              requestConfig
+            );
             if (result.changeId) blockUpdatesById(result.changeId);
             result.update = () => this.handleChanges(result.changes);
             return result as ChangeTo<Result>;
@@ -126,6 +151,22 @@ class Table<Result, Params = {}> {
 
 export function table<T, P>(path: string, options: Options = {}) {
   return new Table<T, P>(path, options);
+}
+
+const axiosRequestConfigContext = createContext<AxiosRequestConfig>({});
+
+export function AxiosConfigProvider({
+  config,
+  children,
+}: {
+  config: AxiosRequestConfig;
+  children: ReactNode;
+}) {
+  return (
+    <axiosRequestConfigContext.Provider value={config}>
+      {children}
+    </axiosRequestConfigContext.Provider>
+  );
 }
 
 export function core<Routes extends Record<string, Table<any, any>>>(
@@ -306,6 +347,7 @@ export function core<Routes extends Record<string, Table<any, any>>>(
         ? Handlers<Result, Partial<Params>>
         : Handlers<unknown, any>;
     } {
+      const requestConfig = useContext(axiosRequestConfigContext);
       const getUrl = useGetUrl();
 
       //@ts-expect-error
@@ -316,6 +358,7 @@ export function core<Routes extends Record<string, Table<any, any>>>(
             table.handlersFor({
               getUrl,
               axios,
+              requestConfig,
             }),
           ];
         })

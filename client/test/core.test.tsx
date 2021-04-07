@@ -7,7 +7,7 @@ import { Core, knexHelpers } from "@synvox/core";
 import { renderHook } from "@testing-library/react-hooks";
 import { act } from "react-dom/test-utils";
 import pg from "pg";
-import { core as coreClient, table } from "../src";
+import { core as coreClient, table, AxiosConfigProvider } from "../src";
 
 pg.types.setTypeParser(20, "text", Number);
 
@@ -427,6 +427,118 @@ describe("core", () => {
           "numberCount": 0,
           "text": "text",
         },
+      ]
+    `);
+  });
+
+  it("reads", async () => {
+    await knex("coreTest.test").insert({});
+    const core = new Core(knex, () => ({}));
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+    });
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "testSub",
+    });
+
+    const app = express();
+    app.use(core.router);
+    const url = await listen(app);
+    const axios = Axios.create({ baseURL: url });
+
+    let urls: string[] = [];
+    axios.interceptors.request.use((config) => {
+      urls.push(`${config.method} ${config.url!}`);
+      return config;
+    });
+
+    type Test = {
+      id: number;
+      isBoolean: boolean;
+      numberCount: number;
+      text: string;
+      testSub: TestSub[];
+    };
+    type TestSub = {
+      id: number;
+      parentId: number;
+    };
+
+    const { useCore } = coreClient(axios, {
+      test: table<Test, any>("/coreTest/test"),
+      testSub: table<TestSub, any>("/coreTest/testSub"),
+    });
+
+    const { result, waitForNextUpdate } = renderHook(
+      ({ id }: { id: number }) => {
+        const core = useCore();
+        const result = core.test(id, { include: "testSub" });
+        return { result, core };
+      },
+      {
+        initialProps: { id: 1 },
+        wrapper: (p) => {
+          return (
+            <AxiosConfigProvider config={{ params: { orgId: 1 } }}>
+              {p.children}
+            </AxiosConfigProvider>
+          );
+        },
+      }
+    );
+
+    expect(result.current).toMatchInlineSnapshot(`undefined`);
+    await waitForNextUpdate();
+    expect(urls).toMatchInlineSnapshot(`
+      Array [
+        "get /coreTest/test/1?include=testSub&orgId=1",
+      ]
+    `);
+    expect(result.current).toMatchInlineSnapshot(`
+      Object {
+        "core": Object {
+          "test": [Function],
+          "testSub": [Function],
+        },
+        "result": Object {
+          "id": 1,
+          "isBoolean": false,
+          "numberCount": 0,
+          "testSub": Array [],
+          "text": "text",
+        },
+      }
+    `);
+
+    urls = [];
+    expect((await result.current.core.test.post({})).changes)
+      .toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "mode": "insert",
+          "path": "coreTest/test",
+          "row": Object {
+            "_links": Object {
+              "testSub": "/coreTest/testSub?parentId=2",
+            },
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/2",
+            "id": 2,
+            "isBoolean": false,
+            "numberCount": 0,
+            "text": "text",
+          },
+        },
+      ]
+    `);
+
+    expect(urls).toMatchInlineSnapshot(`
+      Array [
+        "post /coreTest/test?orgId=1",
       ]
     `);
   });
