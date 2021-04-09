@@ -1,6 +1,6 @@
 {
   "name": "@synvox/core-client",
-  "version": "2.0.0-8",
+  "version": "2.0.0-9",
   "description": "",
   "source": "src/index.ts",
   "main": "dist/index.js",
@@ -9,7 +9,7 @@
   "unpkg": "dist/index.umd.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "microbundle",
+    "build": "microbundle --jsx React.createElement",
     "test": "jest",
     "prepublishOnly": "npm run build"
   },
