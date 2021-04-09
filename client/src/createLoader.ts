@@ -60,7 +60,6 @@ export function createLoader<Key>({
       subKeys.add(key);
       try {
         const result = get<any>(key);
-        cache.subscribe(key, subscription);
 
         if (result === null || typeof result !== "object") return result;
 
@@ -87,13 +86,7 @@ export function createLoader<Key>({
         }
 
         if (!previouslySubscribedKeys.has(key))
-          thrown
-            .catch(() => {
-              cache.subscribe(key, subscription);
-            })
-            .finally(() => {
-              subscription();
-            });
+          thrown.finally(() => subscription());
 
         throw thrown;
       }
@@ -110,6 +103,7 @@ export function createLoader<Key>({
 
       subscribedKeys.forEach((key) => {
         previouslySubscribedKeys.add(key);
+        cache.subscribe(key, subscription);
       });
     });
 
