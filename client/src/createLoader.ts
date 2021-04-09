@@ -86,7 +86,15 @@ export function createLoader<Key>({
           throw e;
         }
 
-        if (!previouslySubscribedKeys.has(key)) thrown.finally(subscription);
+        if (!previouslySubscribedKeys.has(key))
+          thrown
+            .catch(() => {
+              cache.subscribe(key, subscription);
+            })
+            .finally(() => {
+              subscription();
+            });
+
         throw thrown;
       }
     };
