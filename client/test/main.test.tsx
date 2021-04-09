@@ -148,6 +148,71 @@ it("suspends and loads", async () => {
   `);
 });
 
+it("handles error on first load", async () => {
+  let divideBy = 2;
+  const cache = new Cache(async (num: number) => {
+    if (divideBy === 0) throw new Error("Cannot divide by zero");
+    return [
+      [
+        num,
+        {
+          value: num / divideBy,
+          divideBy,
+          num,
+        },
+      ],
+    ];
+  });
+
+  const { useKey: useDivide, touch } = createLoader({ cache });
+  let error: Error | null = null;
+  let didSuspend: boolean = false;
+
+  const { result, waitForNextUpdate } = renderHook(
+    ({ num }: { num: number }) => {
+      didSuspend = false;
+      try {
+        error = null;
+        const divide = useDivide();
+        const result = divide<{ value: string; a: number; b: number }>(num);
+        return result;
+      } catch (e) {
+        if (e instanceof Error) {
+          error = e;
+          return null;
+        } else {
+          didSuspend = true;
+          throw e;
+        }
+      }
+    },
+    { initialProps: { num: 4 } }
+  );
+
+  // suspends
+  expect(didSuspend).toBe(true);
+  expect(result.current).toMatchInlineSnapshot(`undefined`);
+  await waitForNextUpdate();
+
+  // remote change causing error
+  divideBy = 0;
+  await act(async () => await touch(() => true));
+  expect(error).toMatchInlineSnapshot(`[Error: Cannot divide by zero]`);
+
+  // remote change
+  divideBy = 4;
+  expect(didSuspend).toBe(false);
+  await act(async () => await touch(() => true));
+  expect(didSuspend).toBe(false);
+  expect(result.current).toMatchInlineSnapshot(`
+    Object {
+      "divideBy": 4,
+      "num": 4,
+      "value": 1,
+    }
+  `);
+});
+
 it("preloads", async () => {
   const cache = new Cache(async (num: number) => {
     if (num === 0) throw new Error("I throw on zero");

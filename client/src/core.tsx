@@ -335,6 +335,7 @@ export function core<Routes extends Record<string, Table<any, any>>>(
   });
 
   return {
+    cache,
     touch,
     useGetUrl,
     preload,
