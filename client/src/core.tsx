@@ -62,7 +62,7 @@ class Table<Result, Params = {}> {
       return realGetUrl(applyConfigToUrl(url));
     }
 
-    function getter(idOrParams?: number | string | Params, params?: Params) {
+    function get(idOrParams?: number | string | Params, params?: Params) {
       if (typeof idOrParams === "object") {
         return getUrl(`${path}?${qsStringify(idOrParams)}`) as Result;
       } else {
@@ -80,9 +80,12 @@ class Table<Result, Params = {}> {
 
     return Object.assign(
       (idOrParams?: number | string | Params, params?: Params) =>
-        getter(idOrParams, params),
+        get(idOrParams, params),
       {
-        get: getter,
+        get: get,
+        first: (params?: Params) => {
+          return getUrl(`${path}/first?${qsStringify(params)}`) as Result;
+        },
         put: async (id: number | string, data: any, params?: Params) => {
           let fullPath = `${path}/${id}`;
           if (params && Object.keys(params).length > 0) {

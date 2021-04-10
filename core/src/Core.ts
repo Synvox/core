@@ -40,11 +40,13 @@ export class Core<Context> {
       complexityLimit?: number;
     } = {}
   ) {
-    // a real knex object has a connection property.
+    // a real knex object has takes two parameters
     // ideally we could use instanceof Knex but knex
-    this.getKnex = ((getKnex as unknown) as any).connection
-      ? async () => getKnex as Knex
-      : getKnex;
+    // doesn't have a constructor.
+    this.getKnex =
+      ((getKnex as unknown) as any).length === 2
+        ? async () => getKnex as Knex
+        : getKnex;
 
     this.getContext = getContext;
     this.eventEmitter = options.eventEmitter ?? new EventEmitter();
@@ -274,6 +276,19 @@ export class Core<Context> {
             })
           );
         }
+
+        router.get(
+          `/${table.path}/first`,
+          wrap(async (req, res) => {
+            const knex = await this.getKnex("read");
+            const context = this.getContext(req, res);
+            return await table.readOne(
+              knex,
+              { ...req.params, ...req.query },
+              context
+            );
+          })
+        );
 
         router.get(
           `/${table.path}/:${table.idColumnName}`,

@@ -171,6 +171,44 @@ describe("listens on server", () => {
     `);
   });
 
+  it("reads one using /first", async () => {
+    const [row] = await knex("coreTest.test").insert({}).returning("*");
+
+    const core = new Core(
+      async () => knex,
+      () => ({})
+    );
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+    });
+
+    const app = express();
+    app.use(core.router);
+    const url = await listen(app);
+
+    const axios = Axios.create({ baseURL: url });
+
+    expect(
+      (
+        await axios
+          .get(`/coreTest/test/first?id=${row.id}`)
+          .catch((e) => e.response)
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {},
+        "_type": "coreTest/test",
+        "_url": "/coreTest/test/1",
+        "id": 1,
+        "isBoolean": false,
+        "numberCount": 0,
+        "text": "text",
+      }
+    `);
+  });
+
   it("handles sub resources through redirect (has many)", async () => {
     const [row] = await knex("coreTest.test").insert({}).returning("*");
     await knex("coreTest.testSub").insert({ parentId: row.id }).returning("*");

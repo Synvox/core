@@ -431,7 +431,7 @@ describe("core", () => {
     `);
   });
 
-  it("reads", async () => {
+  it("can accept new params through a provider", async () => {
     await knex("coreTest.test").insert({});
     const core = new Core(knex, () => ({}));
 
@@ -540,6 +540,85 @@ describe("core", () => {
       Array [
         "post /coreTest/test?orgId=1",
       ]
+    `);
+  });
+
+  it("reads using /first", async () => {
+    await knex("coreTest.test").insert({});
+    await knex("coreTest.testSub").insert({ parentId: 1 });
+    const core = new Core(knex, () => ({}));
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+    });
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "testSub",
+    });
+
+    const app = express();
+    app.use(core.router);
+    const url = await listen(app);
+    const axios = Axios.create({ baseURL: url });
+
+    let urls: string[] = [];
+    axios.interceptors.request.use((config) => {
+      urls.push(`${config.method} ${config.url!}`);
+      return config;
+    });
+
+    type Test = {
+      id: number;
+      isBoolean: boolean;
+      numberCount: number;
+      text: string;
+      testSub: TestSub[];
+    };
+    type TestSub = {
+      id: number;
+      parentId: number;
+    };
+
+    const { useCore } = coreClient(axios, {
+      test: table<Test, any>("/coreTest/test"),
+      testSub: table<TestSub, any>("/coreTest/testSub"),
+    });
+
+    const { result, waitForNextUpdate } = renderHook(
+      ({ id }: { id: number }) => {
+        const core = useCore();
+        const result = core.test.first({ id: id, include: "testSub" });
+        return { result };
+      },
+      {
+        initialProps: { id: 1 },
+      }
+    );
+
+    expect(result.current).toMatchInlineSnapshot(`undefined`);
+    await waitForNextUpdate();
+    expect(urls).toMatchInlineSnapshot(`
+      Array [
+        "get /coreTest/test/first?id=1&include=testSub",
+      ]
+    `);
+    expect(result.current).toMatchInlineSnapshot(`
+      Object {
+        "result": Object {
+          "id": 1,
+          "isBoolean": false,
+          "numberCount": 0,
+          "testSub": Array [
+            Object {
+              "id": 1,
+              "parentId": 1,
+            },
+          ],
+          "text": "text",
+        },
+      }
     `);
   });
 });
