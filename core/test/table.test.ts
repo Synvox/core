@@ -3521,7 +3521,7 @@ describe("multitenancy", () => {
       Array [
         "select test.id, test.org_id, test.username from test.test where test.org_id = ? and test.username = ? limit ?",
         "select test.id, test.org_id, test.username from test.test where test.org_id = ? and test.username = ? limit ?",
-        "select orgs.id from test.orgs where orgs.id = ? and orgs.id = ? limit ?",
+        "select orgs.id from test.orgs where orgs.id = ? limit ?",
         "insert into test.test (org_id, username) values (?, ?) returning *",
         "select test.id, test.org_id, test.username from test.test where test.id = ? and test.org_id = ? limit ?",
       ]
@@ -3553,7 +3553,7 @@ describe("multitenancy", () => {
         "select test.id, test.org_id, test.username from test.test where (test.id = ? and test.org_id = ?) limit ?",
         "select test.id, test.org_id, test.username from test.test where not (test.id = ? and test.org_id = ?) and test.org_id = ? and test.username = ? limit ?",
         "select test.id, test.org_id, test.username from test.test where not (test.id = ? and test.org_id = ?) and test.org_id = ? and test.username = ? limit ?",
-        "select orgs.id from test.orgs where orgs.id = ? and orgs.id = ? limit ?",
+        "select orgs.id from test.orgs where orgs.id = ? limit ?",
         "select test.id, test.org_id, test.username from test.test where test.id = ? and test.org_id = ? limit ?",
       ]
     `);
@@ -4516,11 +4516,23 @@ describe("self references", () => {
 
     queries = [];
     expect(
+      await items.write(knex, { parentItemId: null }, {}).catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "parentItemId": "is required",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`Array []`);
+
+    queries = [];
+    expect(
       await items.write(knex, { parentItemId: 123 }, {}).catch((e) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
         "errors": Object {
-          "parentItemId": "not found",
+          "parentItemId": "was not found",
         },
       }
     `);

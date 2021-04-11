@@ -664,42 +664,47 @@ export class Table<Context, T = any> {
     )) {
       const table = this;
 
-      schema[relation.columnName] = mixed().test(
-        "exists",
-        // eslint-disable-next-line no-template-curly-in-string
-        "${path} not found",
-        async function test(value) {
-          const refPlaceholderNumber = 0;
-          const refPlaceholderUUID = "00000000-0000-0000-0000-000000000000";
-          if (
-            value === undefined ||
-            value === refPlaceholderNumber ||
-            value === refPlaceholderUUID
-          )
-            return true;
+      schema[relation.columnName] = mixed()
+        .test("is not null", "${path} is required", async function test(value) {
+          return value !== null;
+        })
+        .test(
+          "exists",
+          // eslint-disable-next-line no-template-curly-in-string
+          "${path} was not found",
+          async function test(value) {
+            const refPlaceholderNumber = 0;
+            const refPlaceholderUUID = "00000000-0000-0000-0000-000000000000";
+            if (
+              value === undefined ||
+              value === null ||
+              value === refPlaceholderNumber ||
+              value === refPlaceholderUUID
+            )
+              return true;
 
-          const { parent } = this;
+            const { parent } = this;
 
-          const stmt = otherTable
-            .query(knex)
-            .clear("select")
-            .select(`${otherTable.alias}.${otherTable.idColumnName}`)
-            .where(`${otherTable.alias}.${otherTable.idColumnName}`, value);
+            const stmt = otherTable
+              .query(knex)
+              .clear("select")
+              .select(`${otherTable.alias}.${otherTable.idColumnName}`)
+              .where(`${otherTable.alias}.${otherTable.idColumnName}`, value);
 
-          await otherTable.applyPolicy(stmt, context, "read");
+            await otherTable.applyPolicy(stmt, context, "read");
 
-          if (table.tenantIdColumnName) {
-            stmt.where(
-              `${otherTable.alias}.${otherTable.idColumnName}`,
-              parent[table.tenantIdColumnName]
-            );
+            if (table.tenantIdColumnName && otherTable.tenantIdColumnName) {
+              stmt.where(
+                `${otherTable.alias}.${otherTable.tenantIdColumnName}`,
+                parent[table.tenantIdColumnName]
+              );
+            }
+
+            const existingRow = await stmt.first();
+
+            return existingRow;
           }
-
-          const existingRow = await stmt.first();
-
-          return existingRow;
-        }
-      );
+        );
     }
 
     return schema;
