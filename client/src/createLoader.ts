@@ -49,12 +49,18 @@ export function createLoader<Key>({
   function useKey() {
     type DataMapValue = { keys: Set<Key>; value: unknown };
     const forceUpdate = useForceUpdate();
+    const previouslySubscribedKeysRef = useRef<Set<Key>>(new Set());
+    const subscribedKeysRef = useRef<Set<Key>>(new Set());
     const subscription = useRef<SubscriptionCallback>(forceUpdate).current;
-    const previouslySubscribedKeys = useRef<Set<Key>>(new Set()).current;
     const dataMap = useState<WeakMap<object, DataMapValue>>(
       () => new WeakMap()
     )[0];
-    const subscribedKeys = new Set<Key>();
+
+    const previouslySubscribedKeys = previouslySubscribedKeysRef.current;
+    const subscribedKeys = subscribedKeysRef.current;
+
+    subscribedKeys.forEach((key) => previouslySubscribedKeys.add(key));
+    subscribedKeysRef.current = new Set<Key>();
 
     const hookGet = <Result>(key: Key, subKeys: Set<Key> = subscribedKeys) => {
       subKeys.add(key);
