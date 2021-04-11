@@ -1,6 +1,6 @@
 {
   "name": "@synvox/core-client",
-  "version": "2.0.0-13",
+  "version": "2.0.0-14",
   "description": "",
   "source": "src/index.ts",
   "main": "dist/index.js",
