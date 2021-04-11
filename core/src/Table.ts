@@ -1694,7 +1694,7 @@ export class Table<Context, T = any> {
       },
     ] of Object.entries(hasOne)) {
       const otherObj = obj[key];
-      if (otherObj === undefined) continue;
+      if (!otherObj) continue;
       if (otherObj[otherTable.idColumnName])
         obj[column] = otherObj[otherTable.idColumnName];
       obj[key] = await otherTable.fixUpserts(knex, otherObj, context);
@@ -1708,7 +1708,7 @@ export class Table<Context, T = any> {
       },
     ] of Object.entries(hasMany)) {
       const otherObjs = obj[key];
-      if (otherObjs === undefined || !Array.isArray(otherObjs)) continue;
+      if (!otherObjs || !Array.isArray(otherObjs)) continue;
 
       obj[key] = await Promise.all(
         obj[key].map((otherObj: any) =>
