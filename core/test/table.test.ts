@@ -1182,7 +1182,7 @@ describe("without policies", () => {
         .catch((e: NotFoundError) => [e.statusCode, e.message])
     ).toMatchInlineSnapshot(`
       Array [
-        401,
+        403,
         "Unauthorized",
       ]
     `);
@@ -2787,7 +2787,7 @@ describe("with policies", () => {
         .catch((e: UnauthorizedError) => [e.statusCode, e.message])
     ).toMatchInlineSnapshot(`
       Array [
-        401,
+        403,
         "Unauthorized",
       ]
     `);
@@ -2805,7 +2805,7 @@ describe("with policies", () => {
         .catch((e: UnauthorizedError) => [e.statusCode, e.message])
     ).toMatchInlineSnapshot(`
       Array [
-        401,
+        403,
         "Unauthorized",
       ]
     `);
@@ -2822,7 +2822,7 @@ describe("with policies", () => {
         .catch((e: UnauthorizedError) => [e.statusCode, e.message])
     ).toMatchInlineSnapshot(`
       Array [
-        401,
+        403,
         "Unauthorized",
       ]
     `);
@@ -2839,7 +2839,7 @@ describe("with policies", () => {
         .catch((e: UnauthorizedError) => [e.statusCode, e.message])
     ).toMatchInlineSnapshot(`
       Array [
-        401,
+        403,
         "Unauthorized",
       ]
     `);

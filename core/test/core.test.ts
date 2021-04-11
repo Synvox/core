@@ -8,6 +8,7 @@ import EventSource from "eventsource";
 import { knexHelpers, Core, StatusError, ChangeSummary } from "../src";
 import compression from "compression";
 import uuid from "uuid";
+import { NotAuthenticatedError } from "../src/errors";
 
 let queries: string[] = [];
 let server: null | ReturnType<typeof createServer> = null;
@@ -2030,6 +2031,81 @@ describe("sub routers", () => {
       .toMatchInlineSnapshot(`
       Object {
         "hit": true,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`Array []`);
+  });
+});
+
+describe("other errors to be thrown", () => {
+  it("Not Authenticated (401)", async () => {
+    await knex.schema.withSchema("core_test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+    });
+
+    const core = new Core(knex, (req) => {
+      return {
+        getUser() {
+          if (req.query.token)
+            return {
+              id: "123",
+              username: "user",
+            };
+          else throw new NotAuthenticatedError();
+        },
+      };
+    });
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+      async policy(_stmt, context) {
+        context.getUser();
+      },
+    });
+
+    await core.init();
+
+    const app = express();
+    app.use(core.router);
+
+    const url = await listen(app);
+    const axios = Axios.create({ baseURL: url });
+
+    queries = [];
+    expect(
+      (await axios.get("/coreTest/test?token=123").catch((e) => e.response))
+        .data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/coreTest/test/count?token=123",
+          "ids": "/coreTest/test/ids?token=123",
+        },
+        "_type": "coreTest/test",
+        "_url": "/coreTest/test?token=123",
+        "hasMore": false,
+        "items": Array [],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id from core_test.test order by test.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    const res = await axios.get("/coreTest/test").catch((e) => e.response);
+    expect({ status: res.status, data: res.data }).toMatchInlineSnapshot(`
+      Object {
+        "data": Object {
+          "errors": Object {
+            "base": "Not Authenticated",
+          },
+        },
+        "status": 401,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`Array []`);

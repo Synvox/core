@@ -31,8 +31,18 @@ export class ComplexityError extends BadRequestError {
   }
 }
 
-export class UnauthorizedError extends StatusError {
+export class NotAuthenticatedError extends StatusError {
   statusCode = 401;
+  constructor() {
+    super("Not Authenticated");
+    this.body = {
+      errors: { base: "Not Authenticated" },
+    };
+  }
+}
+
+export class UnauthorizedError extends StatusError {
+  statusCode = 403;
   constructor() {
     super("Unauthorized");
     this.body = {
