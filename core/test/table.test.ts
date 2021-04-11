@@ -3558,6 +3558,118 @@ describe("multitenancy", () => {
       ]
     `);
   });
+
+  it("checks for existence of foreign key while passing tenant id", async () => {
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
+    });
+
+    await knex.schema.withSchema("test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs").notNullable();
+    });
+
+    await knex.schema.withSchema("test").createTable("sub", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs").notNullable();
+      t.bigInteger("parentId")
+        .references("id")
+        .inTable("test.test")
+        .notNullable();
+    });
+
+    const orgs = new Table({
+      schemaName: "test",
+      tableName: "orgs",
+    });
+    const table = new Table({
+      schemaName: "test",
+      tableName: "test",
+      tenantIdColumnName: "orgId",
+    });
+    const subTable = new Table({
+      schemaName: "test",
+      tableName: "sub",
+      tenantIdColumnName: "orgId",
+    });
+
+    await orgs.init(knex);
+    await table.init(knex);
+    await subTable.init(knex);
+
+    orgs.linkTables([orgs, table, subTable]);
+    table.linkTables([orgs, table, subTable]);
+    subTable.linkTables([orgs, table, subTable]);
+
+    const [org] = await knex("test.orgs").insert({}).returning("*");
+    const [parent] = await knex("test.test")
+      .insert({ orgId: org.id })
+      .returning("*");
+
+    queries = [];
+    expect(
+      await subTable
+        .write(knex, { parentId: 123, orgId: org.id }, {})
+        .catch((e: BadRequestError) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "parentId": "was not found",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id from test.test where test.id = ? and test.org_id = ? limit ?",
+        "select orgs.id from test.orgs where orgs.id = ? limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      await subTable.write(knex, { parentId: parent.id, orgId: org.id }, {})
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "insert",
+            "path": "test/sub",
+            "row": Object {
+              "_links": Object {
+                "org": "/test/orgs/1",
+                "parent": "/test/test/1?orgId=1",
+              },
+              "_type": "test/sub",
+              "_url": "/test/sub/1?orgId=1",
+              "id": 1,
+              "orgId": 1,
+              "parentId": 1,
+            },
+          },
+        ],
+        "item": Object {
+          "_links": Object {
+            "org": "/test/orgs/1",
+            "parent": "/test/test/1?orgId=1",
+          },
+          "_type": "test/sub",
+          "_url": "/test/sub/1?orgId=1",
+          "id": 1,
+          "orgId": 1,
+          "parentId": 1,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id from test.test where test.id = ? and test.org_id = ? limit ?",
+        "select orgs.id from test.orgs where orgs.id = ? limit ?",
+        "insert into test.sub (org_id, parent_id) values (?, ?) returning *",
+        "select sub.id, sub.org_id, sub.parent_id from test.sub where sub.id = ? and sub.org_id = ? limit ?",
+      ]
+    `);
+  });
 });
 
 describe("paranoid", () => {
