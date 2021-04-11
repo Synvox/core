@@ -1791,6 +1791,20 @@ describe("without policies", () => {
     queries = [];
     expect(
       await posts
+        .write(knex, { body: "abc", user: null }, {})
+        .catch((e: BadRequestError) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "userId": "is required",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`Array []`);
+
+    queries = [];
+    expect(
+      await posts
         .write(knex, { name: "a", body: "abc", user: { name: "a" } }, {})
         .catch((e: BadRequestError) => e.body)
     ).toMatchInlineSnapshot(`

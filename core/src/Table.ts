@@ -828,6 +828,11 @@ export class Table<Context, T = any> {
     ] of Object.entries(this.relatedTables.hasOne)) {
       const otherGraph = obj[name];
       if (otherGraph === undefined) continue;
+      if (otherGraph === null) {
+        obj[columnName] = null;
+        delete obj[name];
+        continue;
+      }
 
       const [otherGraphValidated, otherErrors] = await otherTable.validateDeep(
         knex,
@@ -867,7 +872,7 @@ export class Table<Context, T = any> {
       },
     ] of Object.entries(this.relatedTables.hasMany)) {
       const otherGraphs = obj[name];
-      if (otherGraphs === undefined || !Array.isArray(otherGraphs)) continue;
+      if (!otherGraphs || !Array.isArray(otherGraphs)) continue;
 
       errors[name] = {};
       let hadError = false;
