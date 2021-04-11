@@ -50,6 +50,7 @@ class Table<Result, Params = {}> {
     requestConfig: AxiosRequestConfig;
   }): Handlers<Result, Params> {
     const { path, lock, blockUpdatesById } = this;
+    const handleChanges = this.handleChanges.bind(this);
 
     function applyConfigToUrl(url: string) {
       return axios.getUri({
@@ -83,14 +84,18 @@ class Table<Result, Params = {}> {
         get(idOrParams, params),
       {
         get: get,
-        first: (params?: Params) => {
+        first(params?: Params) {
           return getUrl(`${path}/first?${qsStringify(params)}`) as Result;
         },
-        put: async (id: number | string, data: any, params?: Params) => {
+        async put(
+          id: number | string,
+          data: Record<string, any>,
+          params?: Params
+        ) {
           let fullPath = `${path}/${id}`;
-          if (params && Object.keys(params).length > 0) {
+          if (params && Object.keys(params).length > 0)
             fullPath += `?${qsStringify(params)}`;
-          }
+
           return await lock!(async () => {
             const { data: result } = await axios.put(
               applyConfigToUrl(fullPath),
@@ -98,27 +103,43 @@ class Table<Result, Params = {}> {
               requestConfig
             );
             if (result.changeId) blockUpdatesById(result.changeId);
-            result.update = () => this.handleChanges(result.changes);
+            result.update = () => handleChanges(result.changes);
             return result as ChangeTo<Result>;
           });
         },
-        post: async (data: any, params?: Params) => {
+        async post<ReturnValue = ChangeTo<Result>>(
+          pathOrData: string | Record<string, any>,
+          dataOrParams?: Record<string, any> | Params,
+          params?: Params
+        ) {
+          let data = dataOrParams as Record<string, any>;
+          let realParams: Params | undefined = params;
+
           let fullPath = path;
-          if (params && Object.keys(params).length > 0) {
-            fullPath += `?${qsStringify(params)}`;
+          if (typeof pathOrData === "string") {
+            fullPath += pathOrData;
+          } else {
+            data = pathOrData;
+            realParams = dataOrParams as Params;
           }
+
+          if (realParams && Object.keys(realParams).length > 0)
+            fullPath += `?${qsStringify(realParams)}`;
+
           return await lock(async () => {
             const { data: result } = await axios.post(
               applyConfigToUrl(fullPath),
               data,
               requestConfig
             );
-            if (result.changeId) blockUpdatesById(result.changeId);
-            result.update = () => this.handleChanges(result.changes);
-            return result as ChangeTo<Result>;
+            if (!result.changeId) return result;
+
+            blockUpdatesById(result.changeId);
+            result.update = () => handleChanges(result.changes);
+            return result as ReturnValue;
           });
         },
-        delete: async (id: number | string, params?: Params) => {
+        async delete(id: number | string, params?: Params) {
           let fullPath = `${path}/${id}`;
           if (params && Object.keys(params).length > 0) {
             fullPath += `?${qsStringify(params)}`;
@@ -129,7 +150,7 @@ class Table<Result, Params = {}> {
               requestConfig
             );
             if (result.changeId) blockUpdatesById(result.changeId);
-            result.update = () => this.handleChanges(result.changes);
+            result.update = () => handleChanges(result.changes);
             return result as ChangeTo<Result>;
           });
         },

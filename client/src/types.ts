@@ -48,9 +48,17 @@ export type Handlers<Result, Params extends Record<string, any>> = Getter<
 > & {
   get: Getter<Result, Params>;
   first: (params?: Params) => Result;
-  put: (id: number | string, payload: any) => Promise<ChangeTo<Result>>;
-  post: (payload: any) => Promise<ChangeTo<Result>>;
-  delete: (id: number | string) => Promise<ChangeTo<Result>>;
+  put: (
+    id: number | string,
+    payload: any,
+    params?: Params
+  ) => Promise<ChangeTo<Result>>;
+  post: (
+    pathOrData: string | Record<string, any>,
+    dataOrParams?: Record<string, any> | Params,
+    params?: Params
+  ) => Promise<ChangeTo<Result>>;
+  delete: (id: number | string, params?: Params) => Promise<ChangeTo<Result>>;
   count: (params?: Params) => number;
   ids: (params?: Params) => Collection<number | string>;
 };

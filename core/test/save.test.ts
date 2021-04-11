@@ -646,4 +646,81 @@ describe("saves to files", () => {
       "
     `);
   });
+
+  it("adds getters to types", async () => {
+    const path = Path.resolve(__dirname, "./test.ignore5.ts");
+
+    const core = new Core(knex, () => ({}));
+
+    core.table({
+      schemaName: "saveTest",
+      tableName: "test",
+      getters: {
+        async getThing() {
+          return null;
+        },
+      },
+      eagerGetters: {
+        async getOtherThing() {},
+      },
+    });
+
+    await core.saveTsTypes(path, {
+      includeRelations: true,
+      includeLinks: false,
+      includeParams: true,
+    });
+
+    const types = await fs.readFile(path, { encoding: "utf8" });
+    expect(types).toMatchInlineSnapshot(`
+      "export type Test = {
+        id: number;
+        isBoolean: boolean;
+        numberCount: number;
+        text: string;
+        getOtherThing: any;
+        getThing: any;
+      };
+
+      export type TestParams = Partial<{
+        id: number | number[];
+        \\"id.eq\\": number | number[];
+        \\"id.neq\\": number | number[];
+        \\"id.lt\\": number | number[];
+        \\"id.lte\\": number | number[];
+        \\"id.gt\\": number | number[];
+        \\"id.gte\\": number | number[];
+        isBoolean: boolean | boolean[];
+        \\"isBoolean.eq\\": boolean | boolean[];
+        \\"isBoolean.neq\\": boolean | boolean[];
+        \\"isBoolean.lt\\": boolean | boolean[];
+        \\"isBoolean.lte\\": boolean | boolean[];
+        \\"isBoolean.gt\\": boolean | boolean[];
+        \\"isBoolean.gte\\": boolean | boolean[];
+        numberCount: number | number[];
+        \\"numberCount.eq\\": number | number[];
+        \\"numberCount.neq\\": number | number[];
+        \\"numberCount.lt\\": number | number[];
+        \\"numberCount.lte\\": number | number[];
+        \\"numberCount.gt\\": number | number[];
+        \\"numberCount.gte\\": number | number[];
+        text: string | string[];
+        \\"text.eq\\": string | string[];
+        \\"text.neq\\": string | string[];
+        \\"text.lt\\": string | string[];
+        \\"text.lte\\": string | string[];
+        \\"text.gt\\": string | string[];
+        \\"text.gte\\": string | string[];
+        \\"text.like\\": string | string[];
+        \\"text.ilike\\": string | string[];
+        and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        cursor: string;
+        page: number;
+        limit: number;
+        include: ('getThing' | 'getOtherThing')[];
+      }>;
+      "
+    `);
+  });
 });
