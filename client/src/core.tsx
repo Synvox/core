@@ -53,8 +53,20 @@ class Table<Result, Params = {}> {
     const handleChanges = this.handleChanges.bind(this);
 
     function applyConfigToUrl(url: string) {
+      const { params, ...config } = requestConfig;
+
+      if (
+        params &&
+        typeof params === "object" &&
+        !Array.isArray(params) &&
+        Object.keys(params ?? {}).length
+      ) {
+        const paramString = qsStringify(params);
+        url += (url.includes("?") ? "&" : "?") + paramString;
+      }
+
       return axios.getUri({
-        ...requestConfig,
+        ...config,
         url,
       });
     }
@@ -100,7 +112,7 @@ class Table<Result, Params = {}> {
             const { data: result } = await axios.put(
               applyConfigToUrl(fullPath),
               data,
-              requestConfig
+              { ...requestConfig, params: undefined }
             );
             if (result.changeId) blockUpdatesById(result.changeId);
             result.update = () => handleChanges(result.changes);
@@ -130,7 +142,7 @@ class Table<Result, Params = {}> {
             const { data: result } = await axios.post(
               applyConfigToUrl(fullPath),
               data,
-              requestConfig
+              { ...requestConfig, params: undefined }
             );
             if (!result.changeId) return result;
 
@@ -147,7 +159,7 @@ class Table<Result, Params = {}> {
           return await lock(async () => {
             const { data: result } = await axios.delete(
               applyConfigToUrl(fullPath),
-              requestConfig
+              { ...requestConfig, params: undefined }
             );
             if (result.changeId) blockUpdatesById(result.changeId);
             result.update = () => handleChanges(result.changes);
