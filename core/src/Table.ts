@@ -353,7 +353,7 @@ export class Table<Context, T = any> {
           const op = operands[0];
           if (op === "fts") {
             stmt.whereRaw(
-              (not ? "not " : "") + "to_tsvector(??.??) @@ to_tsquery(?)",
+              (not ? "not " : "") + "to_tsvector(??.??) @@ plainto_tsquery(?)",
               [this.alias, columnName, value]
             );
           } else if (Array.isArray(value)) {

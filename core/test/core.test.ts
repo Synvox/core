@@ -1631,7 +1631,7 @@ describe("handles advanced queries", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (to_tsvector(test.text) @@ to_tsquery(?)) order by test.id asc limit ?",
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (to_tsvector(test.text) @@ plainto_tsquery(?)) order by test.id asc limit ?",
       ]
     `);
 
@@ -1677,7 +1677,39 @@ describe("handles advanced queries", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (not to_tsvector(test.text) @@ to_tsquery(?)) order by test.id asc limit ?",
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (not to_tsvector(test.text) @@ plainto_tsquery(?)) order by test.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect((await axios.get(`/coreTest/test?text.fts=quick%20Brown`)).data)
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/coreTest/test/count?text.fts=quick%20Brown",
+          "ids": "/coreTest/test/ids?text.fts=quick%20Brown",
+        },
+        "_type": "coreTest/test",
+        "_url": "/coreTest/test?text.fts=quick%20Brown",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/2",
+            "id": 2,
+            "isBoolean": false,
+            "numberCount": 5,
+            "text": "quick brown fox",
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (to_tsvector(test.text) @@ plainto_tsquery(?)) order by test.id asc limit ?",
       ]
     `);
   });
@@ -1721,7 +1753,7 @@ describe("handles advanced queries", () => {
     );
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (to_tsvector(test.text) @@ to_tsquery(?) or (test.number_count = ? and test.number_count < ?)) order by test.id asc limit ?",
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (to_tsvector(test.text) @@ plainto_tsquery(?) or (test.number_count = ? and test.number_count < ?)) order by test.id asc limit ?",
       ]
     `);
 
