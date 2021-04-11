@@ -1602,17 +1602,17 @@ describe("handles advanced queries", () => {
     expect(
       (
         await axios
-          .get(`/coreTest/test?text.ilike=%Brown%`)
+          .get(`/coreTest/test?text.fts=Brown`)
           .catch((e) => e.response)
       ).data
     ).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "count": "/coreTest/test/count?text.ilike=%25Brown%25",
-          "ids": "/coreTest/test/ids?text.ilike=%25Brown%25",
+          "count": "/coreTest/test/count?text.fts=Brown",
+          "ids": "/coreTest/test/ids?text.fts=Brown",
         },
         "_type": "coreTest/test",
-        "_url": "/coreTest/test?text.ilike=%25Brown%25",
+        "_url": "/coreTest/test?text.fts=Brown",
         "hasMore": false,
         "items": Array [
           Object {
@@ -1631,7 +1631,53 @@ describe("handles advanced queries", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.text ilike ?) order by test.id asc limit ?",
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (to_tsvector(test.text) @@ to_tsquery(?)) order by test.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      (
+        await axios
+          .get(`/coreTest/test?text.not.fts=Brown`)
+          .catch((e) => e.response)
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/coreTest/test/count?text.not.fts=Brown",
+          "ids": "/coreTest/test/ids?text.not.fts=Brown",
+        },
+        "_type": "coreTest/test",
+        "_url": "/coreTest/test?text.not.fts=Brown",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/1",
+            "id": 1,
+            "isBoolean": true,
+            "numberCount": 10,
+            "text": "text",
+          },
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/3",
+            "id": 3,
+            "isBoolean": false,
+            "numberCount": 2,
+            "text": "text",
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (not to_tsvector(test.text) @@ to_tsquery(?)) order by test.id asc limit ?",
       ]
     `);
   });
@@ -1671,11 +1717,11 @@ describe("handles advanced queries", () => {
 
     queries = [];
     await axios.get(
-      `/coreTest/test?text.like=%brown%&or[numberCount]=10&or[numberCount.lt]=3`
+      `/coreTest/test?text.fts=%brown%&or[numberCount]=10&or[numberCount.lt]=3`
     );
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.text like ? or (test.number_count = ? and test.number_count < ?)) order by test.id asc limit ?",
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (to_tsvector(test.text) @@ to_tsquery(?) or (test.number_count = ? and test.number_count < ?)) order by test.id asc limit ?",
       ]
     `);
 

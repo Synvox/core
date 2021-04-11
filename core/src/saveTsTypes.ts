@@ -102,22 +102,26 @@ export async function saveTsTypes(
           array = true;
         }
 
-        let dataType = postgresTypesToJSONTsTypes(type);
-        const baseType = dataType;
+        const ops = ["eq", "neq", "lt", "lte", "gt", "gte"];
+        const baseType = postgresTypesToJSONTsTypes(type);
+        if (baseType === "string") ops.push("fts");
+
+        let dataType = baseType;
         if (array) dataType += "[]";
+        else dataType = `${dataType} | ${dataType}[]`;
 
         if (column.nullable) dataType += " | null";
 
-        const ops = ["eq", "neq", "lt", "lte", "gt", "gte"];
-
-        // select multiple ?id[]=1&id[]=2
-        if (!array) dataType = `${dataType} | ${dataType}[]`;
-
         types += `  ${columnName}: ${dataType};\n`;
 
-        if (baseType === "string") ops.push("like", "ilike");
-
         for (let op of ops) {
+          let dataType = baseType;
+          if (op !== "fts") {
+            if (array) dataType += "[]";
+            else dataType = `${dataType} | ${dataType}[]`;
+            if (column.nullable) dataType += " | null";
+          }
+
           types += `  "${columnName}.${op}": ${dataType};\n`;
         }
       }
