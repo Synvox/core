@@ -873,4 +873,109 @@ describe("saves to files", () => {
       "
     `);
   });
+
+  it("does not save empty lookup tables", async () => {
+    const path = Path.resolve(__dirname, "./test.ignore7.ts");
+
+    const core = new Core(knex, () => ({}));
+
+    await knex("saveTest.types").del();
+
+    core.table({
+      schemaName: "saveTest",
+      tableName: "test",
+    });
+    core.table({
+      schemaName: "saveTest",
+      tableName: "types",
+      isLookupTable: true,
+    });
+
+    await core.saveTsTypes(path, {
+      includeRelations: true,
+      includeLinks: false,
+      includeParams: true,
+    });
+
+    const types = await fs.readFile(path, { encoding: "utf8" });
+    expect(types).toMatchInlineSnapshot(`
+      "export type Test = {
+        id: number;
+        isBoolean: boolean;
+        numberCount: number;
+        text: string;
+        typeId: string;
+        type: Type;
+      };
+
+      export type TestParams = Partial<{
+        id: number | number[];
+        \\"id.eq\\": number | number[];
+        \\"id.neq\\": number | number[];
+        \\"id.lt\\": number | number[];
+        \\"id.lte\\": number | number[];
+        \\"id.gt\\": number | number[];
+        \\"id.gte\\": number | number[];
+        isBoolean: boolean | boolean[];
+        \\"isBoolean.eq\\": boolean | boolean[];
+        \\"isBoolean.neq\\": boolean | boolean[];
+        \\"isBoolean.lt\\": boolean | boolean[];
+        \\"isBoolean.lte\\": boolean | boolean[];
+        \\"isBoolean.gt\\": boolean | boolean[];
+        \\"isBoolean.gte\\": boolean | boolean[];
+        numberCount: number | number[];
+        \\"numberCount.eq\\": number | number[];
+        \\"numberCount.neq\\": number | number[];
+        \\"numberCount.lt\\": number | number[];
+        \\"numberCount.lte\\": number | number[];
+        \\"numberCount.gt\\": number | number[];
+        \\"numberCount.gte\\": number | number[];
+        text: string | string[];
+        \\"text.eq\\": string | string[];
+        \\"text.neq\\": string | string[];
+        \\"text.lt\\": string | string[];
+        \\"text.lte\\": string | string[];
+        \\"text.gt\\": string | string[];
+        \\"text.gte\\": string | string[];
+        \\"text.fts\\": string;
+        typeId: string | string[];
+        \\"typeId.eq\\": string | string[];
+        \\"typeId.neq\\": string | string[];
+        \\"typeId.lt\\": string | string[];
+        \\"typeId.lte\\": string | string[];
+        \\"typeId.gt\\": string | string[];
+        \\"typeId.gte\\": string | string[];
+        \\"typeId.fts\\": string;
+        and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        cursor: string;
+        page: number;
+        limit: number;
+        include: ('type')[];
+      }>;
+
+      export type Type = {
+        id: string;
+        test: Test[];
+      };
+
+      export type TypeParams = Partial<{
+        id: string | string[];
+        \\"id.eq\\": string | string[];
+        \\"id.neq\\": string | string[];
+        \\"id.lt\\": string | string[];
+        \\"id.lte\\": string | string[];
+        \\"id.gt\\": string | string[];
+        \\"id.gte\\": string | string[];
+        \\"id.fts\\": string;
+        and: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        or: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        cursor: string;
+        page: number;
+        limit: number;
+        include: ('test')[];
+      }>;
+      "
+    `);
+  });
 });

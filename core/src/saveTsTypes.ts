@@ -31,11 +31,19 @@ export async function saveTsTypes(
         (r) => r.relation.columnName === columnName
       );
 
-      if (table.isLookupTable && columnName === table.idColumnName) {
+      if (
+        table.isLookupTable &&
+        columnName === table.idColumnName &&
+        table.lookupTableIds.length
+      ) {
         dataType = table.lookupTableIds
           .map((id) => JSON.stringify(id))
           .join(" | ");
-      } else if (hasOne && hasOne.table.isLookupTable) {
+      } else if (
+        hasOne &&
+        hasOne.table.isLookupTable &&
+        hasOne.table.lookupTableIds.length
+      ) {
         dataType = hasOne.table.lookupTableIds
           .map((id) => JSON.stringify(id))
           .join(" | ");
@@ -123,7 +131,11 @@ export async function saveTsTypes(
         const hasOne = Object.values(table.relatedTables.hasOne).find(
           (r) => r.relation.columnName === columnName
         );
-        if (hasOne && hasOne.table.isLookupTable) {
+        if (
+          hasOne &&
+          hasOne.table.isLookupTable &&
+          hasOne.table.lookupTableIds.length
+        ) {
           baseType = hasOne.table.lookupTableIds
             .map((id) => JSON.stringify(id))
             .join(" | ");
