@@ -638,7 +638,7 @@ describe("saves to files", () => {
         \\"arr.lte\\": number[] | null;
         \\"arr.gt\\": number[] | null;
         \\"arr.gte\\": number[] | null;
-        thing: any;
+        thing: unknown;
         and: Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\">;
         or: Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\">;
         cursor: string;
@@ -719,8 +719,8 @@ describe("saves to files", () => {
         numberCount: number;
         text: string;
         typeId: string;
-        getOtherThing: any;
-        getThing: any;
+        getOtherThing: unknown;
+        getThing: unknown;
       };
 
       export type TestParams = Partial<{
