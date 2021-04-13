@@ -117,7 +117,7 @@ export class Core<Context> {
             );
           }
 
-          await table.policy(stmt, context, "read");
+          await table.policy(stmt, context, "read", knex);
 
           return Boolean(await stmt);
         };

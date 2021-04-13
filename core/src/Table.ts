@@ -409,9 +409,10 @@ export class Table<Context, T = any> {
   private async applyPolicy(
     stmt: Knex.QueryBuilder,
     context: Context,
-    mode: Mode
+    mode: Mode,
+    knex: Knex
   ) {
-    await this.policy(stmt, context, mode);
+    await this.policy(stmt, context, mode, knex);
   }
 
   private filterWritable(obj: any) {
@@ -711,7 +712,7 @@ export class Table<Context, T = any> {
               .select(`${otherTable.alias}.${otherTable.idColumnName}`)
               .where(`${otherTable.alias}.${otherTable.idColumnName}`, value);
 
-            await otherTable.applyPolicy(stmt, context, "read");
+            await otherTable.applyPolicy(stmt, context, "read", knex);
 
             if (table.tenantIdColumnName && otherTable.tenantIdColumnName) {
               stmt.where(
@@ -786,7 +787,7 @@ export class Table<Context, T = any> {
         params[this.tenantIdColumnName] = obj[this.tenantIdColumnName];
 
       await this.where(stmt, context, params);
-      await this.applyPolicy(stmt, context, "update");
+      await this.applyPolicy(stmt, context, "update", knex);
 
       const existing = await stmt.first();
 
@@ -947,7 +948,7 @@ export class Table<Context, T = any> {
       graph = this.filterWritable(graph);
 
       const readStmt = table.query(trx);
-      await table.applyPolicy(readStmt, context, "update");
+      await table.applyPolicy(readStmt, context, "update", trx);
 
       const row = await readStmt
         .where(
@@ -989,7 +990,7 @@ export class Table<Context, T = any> {
       );
 
       const stmt = table.query(trx);
-      await table.applyPolicy(stmt, context, "update");
+      await table.applyPolicy(stmt, context, "update", trx);
 
       if (
         Object.keys(filteredByChanged).length ||
@@ -1013,7 +1014,7 @@ export class Table<Context, T = any> {
 
         // in case an update now makes this row inaccessible
         const readStmt = table.query(trx);
-        await table.applyPolicy(readStmt, context, "update");
+        await table.applyPolicy(readStmt, context, "update", trx);
 
         const updatedRow = await readStmt
           .where(
@@ -1092,7 +1093,7 @@ export class Table<Context, T = any> {
       await recordChange("insert", row);
 
       const stmt = table.query(trx);
-      await table.applyPolicy(stmt, context, "insert");
+      await table.applyPolicy(stmt, context, "insert", trx);
 
       let updatedRow = await stmt
         .where(`${table.alias}.${table.idColumnName}`, row[table.idColumnName])
@@ -1149,7 +1150,7 @@ export class Table<Context, T = any> {
       }
 
       const stmt = table.query(trx);
-      await table.applyPolicy(stmt, context, "delete");
+      await table.applyPolicy(stmt, context, "delete", trx);
 
       if (table.tenantIdColumnName && tenantId !== undefined) {
         stmt.where(`${table.alias}.${table.tenantIdColumnName}`, tenantId);
@@ -1331,7 +1332,7 @@ export class Table<Context, T = any> {
 
     const stmt = this.query(knex);
     await this.where(stmt, context, queryParams);
-    await this.applyPolicy(stmt, context, "read");
+    await this.applyPolicy(stmt, context, "read", knex);
 
     stmt.clear("select");
 
@@ -1348,7 +1349,7 @@ export class Table<Context, T = any> {
 
     const stmt = this.query(knex);
     await this.where(stmt, context, queryParams);
-    await this.applyPolicy(stmt, context, "read");
+    await this.applyPolicy(stmt, context, "read", knex);
 
     const page = Number(queryParams.page || 0);
     const limit = Math.max(
@@ -1471,7 +1472,9 @@ export class Table<Context, T = any> {
 
         const aliasOuter = `${alias}_sub_query`;
 
-        await ref.table.withAlias(alias).applyPolicy(subQuery, context, "read");
+        await ref.table
+          .withAlias(alias)
+          .applyPolicy(subQuery, context, "read", knex);
 
         const { bindings, sql } = subQuery.toSQL();
 
@@ -1524,7 +1527,7 @@ export class Table<Context, T = any> {
 
     const stmt = table.query(knex);
     await table.where(stmt, context, { ...queryParams, withDeleted });
-    await table.applyPolicy(stmt, context, "read");
+    await table.applyPolicy(stmt, context, "read", knex);
     await includeRelated(stmt);
 
     return { stmt };
@@ -1771,7 +1774,7 @@ export class Table<Context, T = any> {
         upsertCheckStmt.where(`${this.alias}.${column}`, obj[column]);
       }
 
-      this.applyPolicy(upsertCheckStmt, context, "update");
+      this.applyPolicy(upsertCheckStmt, context, "update", knex);
 
       const visibleConflict = await upsertCheckStmt.first();
 

@@ -48,7 +48,8 @@ export type Policy<Context> = (
   this: Table<Context>,
   query: Knex.QueryBuilder,
   context: Context,
-  mode: Mode
+  mode: Mode,
+  knex: Knex
 ) => Promise<void>;
 
 export type YupSchema = { [columnName: string]: BaseSchema };
