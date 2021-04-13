@@ -16,7 +16,7 @@ type Options = {
   shouldTouch?: (change: Change, url: string) => boolean;
 };
 
-class Table<Result, Params = {}> {
+class Table<Result, Params, ID> {
   path: string;
   touch: Touch<string>;
   blockUpdatesById: (id: string) => void;
@@ -48,7 +48,7 @@ class Table<Result, Params = {}> {
     getUrl: (url: string) => any;
     axios: AxiosInstance;
     requestConfig: AxiosRequestConfig;
-  }): Handlers<Result, Params> {
+  }): Handlers<Result, Params, ID> {
     const { path, lock, blockUpdatesById } = this;
     const handleChanges = this.handleChanges.bind(this);
 
@@ -75,7 +75,7 @@ class Table<Result, Params = {}> {
       return realGetUrl(applyConfigToUrl(url));
     }
 
-    function get(idOrParams?: number | string | Params, params?: Params) {
+    function get(idOrParams?: ID | Params, params?: Params) {
       if (typeof idOrParams === "object") {
         return getUrl(`${path}?${qsStringify(idOrParams)}`) as Result;
       } else {
@@ -92,18 +92,13 @@ class Table<Result, Params = {}> {
     }
 
     return Object.assign(
-      (idOrParams?: number | string | Params, params?: Params) =>
-        get(idOrParams, params),
+      (idOrParams?: ID | Params, params?: Params) => get(idOrParams, params),
       {
         get: get,
         first(params?: Params) {
           return getUrl(`${path}/first?${qsStringify(params)}`) as Result;
         },
-        async put(
-          id: number | string,
-          data: Record<string, any>,
-          params?: Params
-        ) {
+        async put(id: ID, data: Record<string, any>, params?: Params) {
           let fullPath = `${path}/${id}`;
           if (params && Object.keys(params).length > 0)
             fullPath += `?${qsStringify(params)}`;
@@ -151,7 +146,7 @@ class Table<Result, Params = {}> {
             return result as ReturnValue;
           });
         },
-        async delete(id: number | string, params?: Params) {
+        async delete(id: ID, params?: Params) {
           let fullPath = `${path}/${id}`;
           if (params && Object.keys(params).length > 0) {
             fullPath += `?${qsStringify(params)}`;
@@ -178,15 +173,19 @@ class Table<Result, Params = {}> {
           if (params && Object.keys(params).length > 0) {
             fullPath += `?${qsStringify(params)}`;
           }
-          return getUrl(fullPath) as Collection<number | string>;
+          return getUrl(fullPath) as Collection<ID>;
         },
       }
-    ) as Handlers<Result, Params>;
+    ) as Handlers<Result, Params, ID>;
   }
 }
 
-export function table<T, P>(path: string, options: Options = {}) {
-  return new Table<T, P>(path, options);
+export function table<T, P, IDColumnName extends string | number = "id">(
+  path: string,
+  options: Options = {}
+) {
+  type ID = IDColumnName extends keyof T ? T[IDColumnName] : unknown;
+  return new Table<T, P, ID>(path, options);
 }
 
 const axiosRequestConfigContext = createContext<AxiosRequestConfig>({});
@@ -205,7 +204,7 @@ export function AxiosConfigProvider({
   );
 }
 
-export function core<Routes extends Record<string, Table<any, any>>>(
+export function core<Routes extends Record<string, Table<any, any, any>>>(
   axios: AxiosInstance,
   routes: Routes
 ) {
@@ -379,10 +378,11 @@ export function core<Routes extends Record<string, Table<any, any>>>(
     useCore(): {
       [name in keyof Routes]: Routes[name] extends Table<
         infer Result,
-        infer Params
+        infer Params,
+        infer ID
       >
-        ? Handlers<Result, Partial<Params>>
-        : Handlers<unknown, any>;
+        ? Handlers<Result, Partial<Params>, ID>
+        : Handlers<unknown, any, string | number>;
     } {
       const requestConfig = useContext(axiosRequestConfigContext);
       const getUrl = useGetUrl();

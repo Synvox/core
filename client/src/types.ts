@@ -1,7 +1,6 @@
 import { AxiosInstance } from "axios";
 
 export type SubscriptionCallback = () => void;
-export type DataMapValue = { value: unknown };
 
 export type CacheEntry<Key, Result> = {
   loadedThroughKey: Key;
@@ -37,41 +36,38 @@ export type ChangeTo<T> = {
   update: () => Promise<void>;
 };
 
-export type Getter<Result, Params extends Record<string, any>> = ((
-  idOrParams: number | string,
+export type Getter<Result, Params extends Record<string, any>, ID> = ((
+  idOrParams: ID,
   params?: Params
 ) => Result) &
   ((idOrParams?: Params) => Collection<Result>);
 
-export type Handlers<Result, Params extends Record<string, any>> = Getter<
+export type Handlers<Result, Params extends Record<string, any>, ID> = Getter<
   Result,
-  Params
+  Params,
+  ID
 > & {
-  get: Getter<Result, Params>;
+  get: Getter<Result, Params, ID>;
   first: (params?: Params) => Result;
-  put: (
-    id: number | string,
-    payload: any,
-    params?: Params
-  ) => Promise<ChangeTo<Result>>;
+  put: (id: ID, payload: any, params?: Params) => Promise<ChangeTo<Result>>;
   post: (
     pathOrData: string | Record<string, any>,
     dataOrParams?: Record<string, any> | Params,
     params?: Params
   ) => Promise<ChangeTo<Result>>;
-  delete: (id: number | string, params?: Params) => Promise<ChangeTo<Result>>;
+  delete: (id: ID, params?: Params) => Promise<ChangeTo<Result>>;
   count: (params?: Params) => number;
-  ids: (params?: Params) => Collection<number | string>;
+  ids: (params?: Params) => Collection<ID>;
 };
 
-export type RouteFactory<Result, Params> = (p: {
+export type RouteFactory<Result, Params, ID> = (p: {
   getUrl: (url: string) => any;
   axios: AxiosInstance;
   touch: Touch<string>;
   blockUpdatesById: (id: string) => void;
   lock<T>(fn: () => Promise<T>): Promise<T>;
 }) => {
-  handlers: Handlers<Result, Params>;
+  handlers: Handlers<Result, Params, ID>;
 };
 
 export type Touch<Key> = (filter: (key: Key) => boolean) => Promise<void>;

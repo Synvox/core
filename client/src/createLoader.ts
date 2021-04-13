@@ -7,7 +7,7 @@ import {
 } from "react";
 import Cache from "./cache";
 import { isPromise } from "./isPromise";
-import { Touch, DataMapValue } from "./types";
+import { Touch } from "./types";
 
 function useForceUpdate() {
   const forceUpdateInner = useState({})[1];
@@ -45,6 +45,7 @@ export function createLoader<Key>({
   }
 
   function useKey() {
+    type DataMapValue = { keys: Set<Key>; value: unknown };
     const subscription = useForceUpdate();
     const previouslySubscribedKeysRef = useRef<Set<Key>>(new Set());
     const subscribedKeysRef = useRef<Set<Key>>(new Set());
@@ -60,22 +61,28 @@ export function createLoader<Key>({
     subscribedKeysRef.current = new Set<Key>();
     const subscribedKeys = subscribedKeysRef.current;
 
-    const hookGet = <Result>(key: Key) => {
-      subscribedKeys.add(key);
+    const hookGet = <Result>(key: Key, subKeys: Set<Key> = subscribedKeys) => {
+      subKeys.add(key);
       try {
         const result = get<any>(key);
 
-        // only objects can be used as weakmap keys
         if (result === null || typeof result !== "object") return result;
 
         if (dataMap.has(result)) {
-          const { value } = dataMap.get(result) as DataMapValue;
+          const { keys, value } = dataMap.get(result) as DataMapValue;
+          keys.forEach((key) => subKeys.add(key));
           return value as Result;
-        } else {
-          const modifiedResult: Result = modifier<any, Result>(result, hookGet);
-          dataMap.set(result, { value: modifiedResult });
-          return modifiedResult;
         }
+
+        const modifierKeys = new Set<Key>();
+        const modifiedResult: Result = modifier<any, Result>(
+          result,
+          (key: Key) => hookGet(key, modifierKeys)
+        );
+
+        dataMap.set(result, { keys: modifierKeys, value: modifiedResult });
+
+        return modifiedResult;
       } catch (e) {
         const thrown = e as Error | Promise<Result>;
 
@@ -89,7 +96,6 @@ export function createLoader<Key>({
       }
     };
 
-    // subscribe immediately after commit
     useLayoutEffect(() => {
       subscribedKeys.forEach((key) => {
         cache.subscribe(key, subscription);
@@ -107,10 +113,10 @@ export function createLoader<Key>({
 
       subscribedKeys.forEach((key) => {
         previouslySubscribedKeys.add(key);
+        cache.subscribe(key, subscription);
       });
     });
 
-    // unsubscribe from all on unmount
     useEffect(() => {
       return () => {
         previouslySubscribedKeys.forEach((key) =>
