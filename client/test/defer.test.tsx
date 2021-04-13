@@ -1,21 +1,7 @@
 import { renderHook } from "@testing-library/react-hooks";
-import { createLoader, Cache } from "../src";
+import { createLoader, Cache, defer } from "../src";
 
 jest.useFakeTimers();
-
-function isPromise(value: any) {
-  return value && typeof value.then === "function";
-}
-
-export function defer<T>(call: () => T, defaultValue?: T) {
-  try {
-    return { data: call(), loading: false };
-  } catch (e) {
-    if (!isPromise(e)) throw e;
-
-    return { data: defaultValue, loading: true };
-  }
-}
 
 it("suspends and loads", async () => {
   let divideBy = 2;

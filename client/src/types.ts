@@ -1,6 +1,7 @@
 import { AxiosInstance } from "axios";
 
 export type SubscriptionCallback = () => void;
+export type DataMapValue = { value: unknown };
 
 export type CacheEntry<Key, Result> = {
   loadedThroughKey: Key;
