@@ -93,11 +93,11 @@ export async function saveTsTypes(
       }
 
       for (let key of Object.keys(table.eagerGetters)) {
-        types += `  ${key}: any;\n`;
+        types += `  ${key}: unknown;\n`;
       }
 
       for (let key of Object.keys(table.getters)) {
-        types += `  ${key}: any;\n`;
+        types += `  ${key}: unknown;\n`;
       }
     }
 
@@ -157,7 +157,7 @@ export async function saveTsTypes(
       ignoredSubs.push(...queryModifierNames);
 
       for (let queryModifier of Object.keys(table.queryModifiers)) {
-        types += `  ${queryModifier}: any;\n`;
+        types += `  ${queryModifier}: unknown;\n`;
       }
 
       const subTypeName = `Omit<${paramTypeName}, ${ignoredSubs
