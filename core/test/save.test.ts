@@ -494,6 +494,9 @@ describe("saves to files", () => {
     core.table({
       schemaName: "saveTest",
       tableName: "testNullable",
+      idModifiers: {
+        async me() {},
+      },
     });
 
     core.table({
@@ -573,7 +576,7 @@ describe("saves to files", () => {
       };
 
       export type TestNullableParams = Partial<{
-        id: number | number[];
+        id: number | number[] | \\"me\\";
         \\"id.eq\\": number | number[];
         \\"id.neq\\": number | number[];
         \\"id.lt\\": number | number[];

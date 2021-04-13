@@ -148,6 +148,14 @@ export async function saveTsTypes(
         if (array) dataType += "[]";
         else dataType = `${dataType} | ${dataType}[]`;
 
+        const idModifierNames = Object.keys(table.idModifiers);
+        if (columnName === table.idColumnName && idModifierNames.length) {
+          const otherKeys = idModifierNames
+            .map((k) => JSON.stringify(k))
+            .join(" | ");
+          dataType = `${dataType} | ${otherKeys}`;
+        }
+
         if (column.nullable) dataType += " | null";
 
         types += `  ${columnName}: ${dataType};\n`;
