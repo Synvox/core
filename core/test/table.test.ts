@@ -6048,3 +6048,160 @@ describe("lookup tables", () => {
     `);
   });
 });
+
+describe("readonly columns", () => {
+  it("does not allow writing to read only columns", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("text");
+    });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      readOnlyColumns: ["text"],
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    expect(await items.write(knex, { text: "text" }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "insert",
+            "path": "test/items",
+            "row": Object {
+              "_links": Object {},
+              "_type": "test/items",
+              "_url": "/test/items/1",
+              "id": 1,
+              "text": null,
+            },
+          },
+        ],
+        "item": Object {
+          "_links": Object {},
+          "_type": "test/items",
+          "_url": "/test/items/1",
+          "id": 1,
+          "text": null,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "insert into test.items default values returning *",
+        "select items.id, items.text from test.items where items.id = ? limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(await items.write(knex, { id: 1, text: "text" }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [],
+        "item": Object {
+          "_links": Object {},
+          "_type": "test/items",
+          "_url": "/test/items/1",
+          "id": 1,
+          "text": null,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.text from test.items where (items.id = ?) limit ?",
+        "select items.id, items.text from test.items where items.id = ? limit ?",
+      ]
+    `);
+  });
+
+  it("does not allow writing to read only columns when they are foreign keys", async () => {
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
+    });
+
+    await knex("test.orgs").insert([{ id: 1 }, { id: 2 }]);
+
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs");
+    });
+
+    const orgs = new Table({
+      schemaName: "test",
+      tableName: "orgs",
+    });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      readOnlyColumns: ["orgId"],
+    });
+
+    await items.init(knex);
+    await orgs.init(knex);
+    orgs.linkTables([items]);
+    items.linkTables([orgs]);
+
+    queries = [];
+    expect(await items.write(knex, { orgId: 1 }, {})).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "insert",
+            "path": "test/items",
+            "row": Object {
+              "_links": Object {},
+              "_type": "test/items",
+              "_url": "/test/items/1",
+              "id": 1,
+              "orgId": null,
+            },
+          },
+        ],
+        "item": Object {
+          "_links": Object {},
+          "_type": "test/items",
+          "_url": "/test/items/1",
+          "id": 1,
+          "orgId": null,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "insert into test.items default values returning *",
+        "select items.id, items.org_id from test.items where items.id = ? limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(await items.write(knex, { id: 1, orgId: 2 }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [],
+        "item": Object {
+          "_links": Object {},
+          "_type": "test/items",
+          "_url": "/test/items/1",
+          "id": 1,
+          "orgId": null,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.org_id from test.items where (items.id = ?) limit ?",
+        "select items.id, items.org_id from test.items where items.id = ? limit ?",
+      ]
+    `);
+  });
+});

@@ -673,6 +673,8 @@ export class Table<Context, T = any> {
     for (let { table: otherTable, relation } of Object.values(
       this.relatedTables.hasOne
     )) {
+      if (this.readOnlyColumns.includes(relation.columnName)) continue;
+
       const table = this;
 
       schema[relation.columnName] = mixed()
