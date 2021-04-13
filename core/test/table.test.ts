@@ -5974,3 +5974,77 @@ describe("catches common errors", () => {
     );
   });
 });
+
+describe("lookup tables", () => {
+  it("does not query for foreign id on writes", async () => {
+    await knex.schema.withSchema("test").createTable("types", (t) => {
+      t.text("id").primary();
+    });
+
+    await knex("test.types").insert([
+      { id: "type1" },
+      { id: "type2" },
+      { id: "type3" },
+    ]);
+
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("typeId").references("id").inTable("test.types").notNullable();
+    });
+
+    const types = new Table({
+      schemaName: "test",
+      tableName: "types",
+      isLookupTable: true,
+    });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+    });
+
+    await types.init(knex);
+    await items.init(knex);
+
+    types.linkTables([items]);
+    items.linkTables([types]);
+
+    queries = [];
+    expect(await items.write(knex, { typeId: "type1" }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "insert",
+            "path": "test/items",
+            "row": Object {
+              "_links": Object {
+                "type": "/test/types/type1",
+              },
+              "_type": "test/items",
+              "_url": "/test/items/1",
+              "id": 1,
+              "typeId": "type1",
+            },
+          },
+        ],
+        "item": Object {
+          "_links": Object {
+            "type": "/test/types/type1",
+          },
+          "_type": "test/items",
+          "_url": "/test/items/1",
+          "id": 1,
+          "typeId": "type1",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "insert into test.items (type_id) values (?) returning *",
+        "select items.id, items.type_id from test.items where items.id = ? limit ?",
+      ]
+    `);
+  });
+});

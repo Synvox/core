@@ -68,6 +68,14 @@ afterAll(async () => {
 
 describe("saves to files", () => {
   beforeEach(async () => {
+    await knex.schema.withSchema("saveTest").createTable("types", (t) => {
+      t.text("id").primary();
+    });
+    await knex("saveTest.types").insert([
+      { id: "type1" },
+      { id: "type2" },
+      { id: "type3" },
+    ]);
     await knex.schema.withSchema("saveTest").createTable("test", (t) => {
       t.bigIncrements("id").primary();
       t.boolean("is_boolean").notNullable().defaultTo(false);
@@ -75,6 +83,10 @@ describe("saves to files", () => {
       t.specificType("text", "character varying(10)")
         .notNullable()
         .defaultTo("text");
+      t.text("type_id")
+        .references("id")
+        .inTable("save_test.types")
+        .notNullable();
     });
     await knex.schema.withSchema("saveTest").createTable("test_sub", (t) => {
       t.bigIncrements("id").primary();
@@ -161,8 +173,26 @@ describe("saves to files", () => {
                 "nullable": false,
                 "type": "character varying",
               },
+              "typeId": Object {
+                "defaultValue": null,
+                "length": -1,
+                "name": "typeId",
+                "nullable": false,
+                "type": "text",
+              },
             },
-            "relations": Object {},
+            "relations": Object {
+              "typeId": Object {
+                "columnName": "typeId",
+                "deleteRule": "NO ACTION",
+                "referencesColumnName": "id",
+                "referencesSchema": "saveTest",
+                "referencesTable": "types",
+                "schemaName": "save_test",
+                "tableName": "test",
+                "updateRule": "NO ACTION",
+              },
+            },
             "uniqueColumns": Array [],
           },
           "saveTest.testSub": Object {
@@ -233,7 +263,7 @@ describe("saves to files", () => {
       await axios.get("/saveTest/test");
       expect(queries).toMatchInlineSnapshot(`
         Array [
-          "select test.id, test.is_boolean, test.number_count, test.text from save_test.test order by test.id asc limit ?",
+          "select test.id, test.is_boolean, test.number_count, test.text, test.type_id from save_test.test order by test.id asc limit ?",
         ]
       `);
     }
@@ -273,6 +303,7 @@ describe("saves to files", () => {
         isBoolean: boolean;
         numberCount: number;
         text: string;
+        typeId: string;
         _url: string;
         _type: string;
         _links: {
@@ -351,6 +382,7 @@ describe("saves to files", () => {
         isBoolean: boolean;
         numberCount: number;
         text: string;
+        typeId: string;
       };
 
       export type TestNullable = {
@@ -412,6 +444,7 @@ describe("saves to files", () => {
         isBoolean: boolean;
         numberCount: number;
         text: string;
+        typeId: string;
         testSub: TestSub[];
         testSubNullable: TestSubNullable[];
       };
@@ -481,6 +514,7 @@ describe("saves to files", () => {
         isBoolean: boolean;
         numberCount: number;
         text: string;
+        typeId: string;
         testSub: TestSub[];
         testSubNullable: TestSubNullable[];
       };
@@ -515,6 +549,14 @@ describe("saves to files", () => {
         \\"text.gt\\": string | string[];
         \\"text.gte\\": string | string[];
         \\"text.fts\\": string;
+        typeId: string | string[];
+        \\"typeId.eq\\": string | string[];
+        \\"typeId.neq\\": string | string[];
+        \\"typeId.lt\\": string | string[];
+        \\"typeId.lte\\": string | string[];
+        \\"typeId.gt\\": string | string[];
+        \\"typeId.gte\\": string | string[];
+        \\"typeId.fts\\": string;
         and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
         or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
         cursor: string;
@@ -676,6 +718,7 @@ describe("saves to files", () => {
         isBoolean: boolean;
         numberCount: number;
         text: string;
+        typeId: string;
         getOtherThing: any;
         getThing: any;
       };
@@ -710,12 +753,122 @@ describe("saves to files", () => {
         \\"text.gt\\": string | string[];
         \\"text.gte\\": string | string[];
         \\"text.fts\\": string;
+        typeId: string | string[];
+        \\"typeId.eq\\": string | string[];
+        \\"typeId.neq\\": string | string[];
+        \\"typeId.lt\\": string | string[];
+        \\"typeId.lte\\": string | string[];
+        \\"typeId.gt\\": string | string[];
+        \\"typeId.gte\\": string | string[];
+        \\"typeId.fts\\": string;
         and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
         or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
         cursor: string;
         page: number;
         limit: number;
         include: ('getThing' | 'getOtherThing')[];
+      }>;
+      "
+    `);
+  });
+
+  it("saves lookup tables", async () => {
+    const path = Path.resolve(__dirname, "./test.ignore6.ts");
+
+    const core = new Core(knex, () => ({}));
+
+    core.table({
+      schemaName: "saveTest",
+      tableName: "test",
+    });
+    core.table({
+      schemaName: "saveTest",
+      tableName: "types",
+      isLookupTable: true,
+    });
+
+    await core.saveTsTypes(path, {
+      includeRelations: true,
+      includeLinks: false,
+      includeParams: true,
+    });
+
+    const types = await fs.readFile(path, { encoding: "utf8" });
+    expect(types).toMatchInlineSnapshot(`
+      "export type Test = {
+        id: number;
+        isBoolean: boolean;
+        numberCount: number;
+        text: string;
+        typeId: \\"type1\\" | \\"type2\\" | \\"type3\\";
+        type: Type;
+      };
+
+      export type TestParams = Partial<{
+        id: number | number[];
+        \\"id.eq\\": number | number[];
+        \\"id.neq\\": number | number[];
+        \\"id.lt\\": number | number[];
+        \\"id.lte\\": number | number[];
+        \\"id.gt\\": number | number[];
+        \\"id.gte\\": number | number[];
+        isBoolean: boolean | boolean[];
+        \\"isBoolean.eq\\": boolean | boolean[];
+        \\"isBoolean.neq\\": boolean | boolean[];
+        \\"isBoolean.lt\\": boolean | boolean[];
+        \\"isBoolean.lte\\": boolean | boolean[];
+        \\"isBoolean.gt\\": boolean | boolean[];
+        \\"isBoolean.gte\\": boolean | boolean[];
+        numberCount: number | number[];
+        \\"numberCount.eq\\": number | number[];
+        \\"numberCount.neq\\": number | number[];
+        \\"numberCount.lt\\": number | number[];
+        \\"numberCount.lte\\": number | number[];
+        \\"numberCount.gt\\": number | number[];
+        \\"numberCount.gte\\": number | number[];
+        text: string | string[];
+        \\"text.eq\\": string | string[];
+        \\"text.neq\\": string | string[];
+        \\"text.lt\\": string | string[];
+        \\"text.lte\\": string | string[];
+        \\"text.gt\\": string | string[];
+        \\"text.gte\\": string | string[];
+        \\"text.fts\\": string;
+        typeId: (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
+        \\"typeId.eq\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
+        \\"typeId.neq\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
+        \\"typeId.lt\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
+        \\"typeId.lte\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
+        \\"typeId.gt\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
+        \\"typeId.gte\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
+        and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        cursor: string;
+        page: number;
+        limit: number;
+        include: ('type')[];
+      }>;
+
+      export type Type = {
+        id: \\"type1\\" | \\"type2\\" | \\"type3\\";
+        test: Test[];
+      };
+
+      export type TypeParams = Partial<{
+        id: string | string[];
+        \\"id.eq\\": string | string[];
+        \\"id.neq\\": string | string[];
+        \\"id.lt\\": string | string[];
+        \\"id.lte\\": string | string[];
+        \\"id.gt\\": string | string[];
+        \\"id.gte\\": string | string[];
+        \\"id.fts\\": string;
+        and: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        or: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        cursor: string;
+        page: number;
+        limit: number;
+        include: ('test')[];
       }>;
       "
     `);

@@ -26,8 +26,23 @@ export async function saveTsTypes(
         array = true;
       }
 
-      let dataType = postgresTypesToJSONTsTypes(type);
-      if (array) dataType += "[]";
+      let dataType = "";
+      const hasOne = Object.values(table.relatedTables.hasOne).find(
+        (r) => r.relation.columnName === columnName
+      );
+
+      if (table.isLookupTable && columnName === table.idColumnName) {
+        dataType = table.lookupTableIds
+          .map((id) => JSON.stringify(id))
+          .join(" | ");
+      } else if (hasOne && hasOne.table.isLookupTable) {
+        dataType = hasOne.table.lookupTableIds
+          .map((id) => JSON.stringify(id))
+          .join(" | ");
+      } else {
+        dataType = postgresTypesToJSONTsTypes(type);
+        if (array) dataType += "[]";
+      }
 
       if (column.nullable) dataType += " | null";
       types += `  ${columnName}: ${dataType};\n`;
@@ -103,7 +118,18 @@ export async function saveTsTypes(
         }
 
         const ops = ["eq", "neq", "lt", "lte", "gt", "gte"];
-        const baseType = postgresTypesToJSONTsTypes(type);
+        let baseType = postgresTypesToJSONTsTypes(type);
+
+        const hasOne = Object.values(table.relatedTables.hasOne).find(
+          (r) => r.relation.columnName === columnName
+        );
+        if (hasOne && hasOne.table.isLookupTable) {
+          baseType = hasOne.table.lookupTableIds
+            .map((id) => JSON.stringify(id))
+            .join(" | ");
+          baseType = `(${baseType})`;
+        }
+
         if (baseType === "string") ops.push("fts");
 
         let dataType = baseType;

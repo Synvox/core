@@ -93,6 +93,8 @@ export class Table<Context, T = any> {
   defaultSortColumn: string;
   methods: Methods<Context>;
   staticMethods: StaticMethods<Context>;
+  isLookupTable: boolean;
+  lookupTableIds: any[];
 
   constructor(def: TableDef<Context>) {
     this.path =
@@ -131,6 +133,8 @@ export class Table<Context, T = any> {
     this.defaultSortColumn = def.defaultSortColumn ?? this.idColumnName;
     this.methods = def.methods ?? {};
     this.staticMethods = def.staticMethods ?? {};
+    this.isLookupTable = def.isLookupTable ?? false;
+    this.lookupTableIds = [];
   }
 
   private withAlias(alias: string) {
@@ -155,6 +159,9 @@ export class Table<Context, T = any> {
         toSnakeCase(this.tableName)
       ),
     ]);
+
+    if (this.isLookupTable)
+      this.lookupTableIds = await knex(this.tablePath).pluck(this.idColumnName);
 
     if (Object.keys(columns).length === 0)
       throw new Error(`The table ${this.tablePath} did not have any columns.`);
@@ -688,6 +695,13 @@ export class Table<Context, T = any> {
               return true;
 
             const { parent } = this;
+
+            if (
+              otherTable.isLookupTable &&
+              otherTable.lookupTableIds.includes(value)
+            ) {
+              return true;
+            }
 
             const stmt = otherTable
               .query(knex)

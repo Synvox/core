@@ -175,6 +175,7 @@ export type TableDef<T> = { tableName: string } & Partial<{
   defaultSortColumn: string;
   methods: Methods<T>;
   staticMethods: StaticMethods<T>;
+  isLookupTable: boolean;
 }>;
 
 export type KnexGetter = (mode: "read" | "write" | "schema") => Promise<Knex>;
