@@ -231,6 +231,14 @@ export function core<Routes extends Record<string, Table<any, any, any>>>(
         result.push([url, obj]);
       }
 
+      if (typeof obj._links === "object") {
+        for (let [key, value] of Object.entries(obj._links)) {
+          if (obj[key] !== undefined) {
+            result.push([value as string, obj[key]]);
+          }
+        }
+      }
+
       return walkedChild;
     }
 
