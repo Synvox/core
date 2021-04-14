@@ -1,5 +1,9 @@
 import { AxiosInstance } from "axios";
 
+export type ID<T, IDColumnName = "id"> = IDColumnName extends keyof T
+  ? T[IDColumnName]
+  : unknown;
+
 export type SubscriptionCallback = () => void;
 
 export type CacheEntry<Key, Result> = {
@@ -36,28 +40,36 @@ export type ChangeTo<T> = {
   update: () => Promise<void>;
 };
 
-export type Getter<Result, Params extends Record<string, any>, ID> = ((
-  idOrParams: ID,
-  params?: Params
-) => Result) &
+export type Getter<
+  Result,
+  Params extends Record<string, any>,
+  IDColumnName
+> = ((idOrParams: ID<Params, IDColumnName>, params?: Params) => Result) &
   ((idOrParams?: Params) => Collection<Result>);
 
-export type Handlers<Result, Params extends Record<string, any>, ID> = Getter<
+export type Handlers<
   Result,
-  Params,
-  ID
-> & {
-  get: Getter<Result, Params, ID>;
+  Params extends Record<string, any>,
+  IDColumnName
+> = Getter<Result, Params, IDColumnName> & {
+  get: Getter<Result, Params, ID<Params, IDColumnName>>;
   first: (params?: Params) => Result;
-  put: (id: ID, payload: any, params?: Params) => Promise<ChangeTo<Result>>;
+  put: (
+    id: ID<Result, IDColumnName>,
+    payload: any,
+    params?: Params
+  ) => Promise<ChangeTo<Result>>;
   post: (
     pathOrData: string | Record<string, any>,
     dataOrParams?: Record<string, any> | Params,
     params?: Params
   ) => Promise<ChangeTo<Result>>;
-  delete: (id: ID, params?: Params) => Promise<ChangeTo<Result>>;
+  delete: (
+    id: ID<Result, IDColumnName>,
+    params?: Params
+  ) => Promise<ChangeTo<Result>>;
   count: (params?: Params) => number;
-  ids: (params?: Params) => Collection<ID>;
+  ids: (params?: Params) => Collection<ID<Result, IDColumnName>>;
 };
 
 export type RouteFactory<Result, Params, ID> = (p: {

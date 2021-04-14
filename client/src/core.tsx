@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useContext } from "react";
 import qs from "qs";
-import { Collection, Change, ChangeTo, Handlers, Touch } from "./types";
+import { Collection, Change, ChangeTo, Handlers, Touch, ID } from "./types";
 import { AxiosInstance, AxiosRequestConfig } from "axios";
 import Cache from "./cache";
 import { createLoader } from "./createLoader";
@@ -16,7 +16,7 @@ type Options = {
   shouldTouch?: (change: Change, url: string) => boolean;
 };
 
-class Table<Result, Params, ID> {
+class Table<Result, Params, IDColumnName> {
   path: string;
   touch: Touch<string>;
   blockUpdatesById: (id: string) => void;
@@ -48,7 +48,7 @@ class Table<Result, Params, ID> {
     getUrl: (url: string) => any;
     axios: AxiosInstance;
     requestConfig: AxiosRequestConfig;
-  }): Handlers<Result, Params, ID> {
+  }): Handlers<Result, Params, IDColumnName> {
     const { path, lock, blockUpdatesById } = this;
     const handleChanges = this.handleChanges.bind(this);
 
@@ -75,7 +75,10 @@ class Table<Result, Params, ID> {
       return realGetUrl(applyConfigToUrl(url));
     }
 
-    function get(idOrParams?: ID | Params, params?: Params) {
+    function get(
+      idOrParams?: ID<Params, IDColumnName> | Params,
+      params?: Params
+    ) {
       if (typeof idOrParams === "object") {
         return getUrl(`${path}?${qsStringify(idOrParams)}`) as Result;
       } else {
@@ -92,13 +95,18 @@ class Table<Result, Params, ID> {
     }
 
     return Object.assign(
-      (idOrParams?: ID | Params, params?: Params) => get(idOrParams, params),
+      (idOrParams?: ID<Params, IDColumnName> | Params, params?: Params) =>
+        get(idOrParams, params),
       {
         get: get,
         first(params?: Params) {
           return getUrl(`${path}/first?${qsStringify(params)}`) as Result;
         },
-        async put(id: ID, data: Record<string, any>, params?: Params) {
+        async put(
+          id: ID<Params, IDColumnName>,
+          data: Record<string, any>,
+          params?: Params
+        ) {
           let fullPath = `${path}/${id}`;
           if (params && Object.keys(params).length > 0)
             fullPath += `?${qsStringify(params)}`;
@@ -146,7 +154,7 @@ class Table<Result, Params, ID> {
             return result as ReturnValue;
           });
         },
-        async delete(id: ID, params?: Params) {
+        async delete(id: ID<Params, IDColumnName>, params?: Params) {
           let fullPath = `${path}/${id}`;
           if (params && Object.keys(params).length > 0) {
             fullPath += `?${qsStringify(params)}`;
@@ -173,10 +181,10 @@ class Table<Result, Params, ID> {
           if (params && Object.keys(params).length > 0) {
             fullPath += `?${qsStringify(params)}`;
           }
-          return getUrl(fullPath) as Collection<ID>;
+          return getUrl(fullPath) as Collection<ID<Result, IDColumnName>>;
         },
       }
-    ) as Handlers<Result, Params, ID>;
+    ) as Handlers<Result, Params, IDColumnName>;
   }
 }
 
@@ -184,8 +192,7 @@ export function table<T, P, IDColumnName extends string | number = "id">(
   path: string,
   options: Options = {}
 ) {
-  type ID = IDColumnName extends keyof T ? T[IDColumnName] : unknown;
-  return new Table<T, P, ID>(path, options);
+  return new Table<T, P, IDColumnName>(path, options);
 }
 
 const axiosRequestConfigContext = createContext<AxiosRequestConfig>({});
