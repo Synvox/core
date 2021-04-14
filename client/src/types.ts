@@ -1,8 +1,14 @@
 import { AxiosInstance } from "axios";
 
-export type ID<T, IDColumnName = "id"> = IDColumnName extends keyof T
+export type IDColumnType<T, IDColumnName> = IDColumnName extends keyof T
   ? T[IDColumnName]
   : unknown;
+
+export type NotArray<T> = T extends unknown[] ? never : T;
+
+export type ID<T, IDColumnName = "id"> = NotArray<
+  IDColumnType<T, IDColumnName>
+>;
 
 export type SubscriptionCallback = () => void;
 
