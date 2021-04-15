@@ -29,6 +29,22 @@ describe("validation", () => {
     `);
   });
 
+  it("validates custom with label", async () => {
+    const cast = await validate(
+      object({ prop: string().test("test", "did fail", () => false) }),
+      {
+        prop: "",
+      }
+    ).catch((e) => e.body);
+    expect(cast).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "prop": "did fail",
+        },
+      }
+    `);
+  });
+
   it("validates deep", async () => {
     const cast = await validate<{ prop: string }>(
       object({ prop: object({ prop: string() }) }),
@@ -46,7 +62,7 @@ describe("validation", () => {
     `);
   });
 
-  it("validates basic (failure)", async () => {
+  it("validates nested (failure)", async () => {
     const cast = await validate(object({ prop: object({ prop: string() }) }), {
       prop: { prop: [], key: 0 },
     }).catch((e) => e.body);

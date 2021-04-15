@@ -11,23 +11,25 @@ It has many comfort features along the way:
 - Selective eager loading avoiding N+1 queries
   `GET /posts?include[]=author`
 - HATEOAS links for traversing the graph and discovery
-  `GET /users/1 -> { data: { id: 1, _links: { posts: '/links?userId=1' } } }`
+  `GET /users/1 -> { id: 1, _links: { posts: '/links?userId=1' } }`
 - Validations and conflict detection
   `POST /users {username: 'user'} -> { errors: { username: 'is already in use' } }`
 - Customizable yup schema per table
   `schema: { email: yup().required().string().email() }`
 - Graph updates, inserts, and upserts
   `POST /questions {answers: [{ label:'A', isCorrect: true }]}`
+- Batch updates
+  `POST /items [{ prop: 'val' }, {prop: 'val' }]`
 - Tenant id enforcement
   `GET /:tenantId/users -> 400 { errors: { tenantId: 'is required' } }`
 - Cursor and offset based pagination
-  `GET /users -> { meta: {nextPage: '/users?cursor=base64cursor' }, data: [...] }`
+  `GET /users -> { nextPage: '/users?cursor=base64cursor', items: [...] }`
 - ID modifiers
   `GET /users/self` vs `GET /users/1`
 - Query string modifiers
   `GET /deals?userId=1 -> select * from deals where id in (select id from user_deals where id = ?)`
 - Derive default parameters for a table
-  `POST /posts { body: 'Yo' } -> 200 { data: { id: 1, body: 'Yo', userId: 1} }`
+  `POST /posts { body: 'Yo' } -> 200 { id: 1, body: 'Yo', userId: 1}`
 - Before update and after transaction commit hooks
 - Created at and Updated at timestamps
 - Soft deletes with cascading (i.e set `deleted_at` of dependents on soft delete)
@@ -204,8 +206,7 @@ If you need more control over your query, there are a number of operators availa
 - `/table?column.lte=1` which adds "column <= 1"
 - `/table?column.gt=1` which adds "column > 1"
 - `/table?column.gte=1` which adds "column >= 1"
-- `/table?column.like=search` which adds "column like 'search'"
-- `/table?column.ilike=SeArCh` which adds "column ilike SeArCh"
+- `/table?column.fts=Search` runs a full text search on the column
 
 If you want to query for rows `not` `eq` to a value, add `.not` after the column name:
 
@@ -233,9 +234,7 @@ core.table({
   tableName: "contacts",
   queryModifiers: {
     async fullName(value, stmt) {
-      stmt.whereRaw("contacts.first_name || contacts.last_name ilike ?", [
-        value,
-      ]);
+      stmt.whereRaw("contacts.first_name || contacts.last_name = ?", [value]);
     },
   },
 });
@@ -563,19 +562,17 @@ If you called `GET /items`, you may receive a response like this:
 
 ```json
 {
-  "meta": {
-    "_links": {
-      "count": "/items/count",
-      "ids": "/items/ids",
-      "nextPage": "/items?cursor={base64cursor}",
-    },
-    "_type": "items",
-    "_url": "/test/items",
-    "hasMore": true,
-    "limit": 50,
-    "page": 0,
+  "_links": {
+    "count": "/items/count",
+    "ids": "/items/ids",
+    "nextPage": "/items?cursor={base64cursor}",
   },
-  "data": [...]
+  "_type": "items",
+  "_url": "/test/items",
+  "hasMore": true,
+  "limit": 50,
+  "page": 0,
+  "items": [...]
 }
 ```
 

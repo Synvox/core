@@ -128,17 +128,6 @@ export function createLoader<Key>({
     return hookGet;
   }
 
-  async function preload<T>(fn: (g: typeof get) => T) {
-    while (true) {
-      try {
-        return fn(get);
-      } catch (e) {
-        if (!isPromise(e)) throw e;
-        await e;
-      }
-    }
-  }
-
   async function touch(filter: (key: Key) => boolean) {
     await cache.touch(filter);
   }
@@ -146,7 +135,6 @@ export function createLoader<Key>({
   return {
     get,
     useKey,
-    preload,
     touch: touch as Touch<Key>,
   };
 }

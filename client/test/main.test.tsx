@@ -1,6 +1,7 @@
 import { renderHook } from "@testing-library/react-hooks";
 import { act } from "react-dom/test-utils";
 import { createLoader, Cache } from "../src";
+import { preload } from "../src/preload";
 
 jest.useFakeTimers();
 
@@ -226,7 +227,7 @@ it("preloads", async () => {
     ];
   });
 
-  const { preload, get: double } = createLoader({ cache });
+  const { get: double } = createLoader({ cache });
 
   expect(
     await preload(() => {

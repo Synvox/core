@@ -132,6 +132,14 @@ export async function saveTsTypes(
           (r) => r.relation.columnName === columnName
         );
         if (
+          table.isLookupTable &&
+          columnName === table.idColumnName &&
+          table.lookupTableIds.length
+        ) {
+          baseType = table.lookupTableIds
+            .map((id) => JSON.stringify(id))
+            .join(" | ");
+        } else if (
           hasOne &&
           hasOne.table.isLookupTable &&
           hasOne.table.lookupTableIds.length
@@ -159,6 +167,7 @@ export async function saveTsTypes(
         if (column.nullable) dataType += " | null";
 
         types += `  ${columnName}: ${dataType};\n`;
+        types += `  ${columnName}.not: ${dataType};\n`;
 
         for (let op of ops) {
           let dataType = baseType;
@@ -169,6 +178,12 @@ export async function saveTsTypes(
           }
 
           types += `  "${columnName}.${op}": ${dataType};\n`;
+          types += `  "${columnName}.not.${op}": ${dataType};\n`;
+        }
+
+        if (column.nullable) {
+          types += `  ${columnName}.null: any;\n`;
+          types += `  ${columnName}.not.null: any;\n`;
         }
       }
 
@@ -184,8 +199,10 @@ export async function saveTsTypes(
         .map((n) => `"${n}"`)
         .join(" | ")}>`;
 
-      types += `  and: ${subTypeName};\n`;
-      types += `  or: ${subTypeName};\n`;
+      types += `  and: ${subTypeName} | ${subTypeName}[];\n`;
+      types += `  not.and: ${subTypeName} | ${subTypeName}[];\n`;
+      types += `  or: ${subTypeName} | ${subTypeName}[];\n`;
+      types += `  not.or: ${subTypeName} | ${subTypeName}[];\n`;
       types += `  cursor: string;\n`;
       types += `  page: number;\n`;
       types += `  limit: number;\n`;

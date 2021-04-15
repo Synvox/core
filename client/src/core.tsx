@@ -249,7 +249,7 @@ export function core<Routes extends Record<string, Table<any, any, any>>>(
     return result;
   });
 
-  const { useKey: useGetUrl, touch, preload } = createLoader({
+  const { useKey: useGetUrl, touch } = createLoader({
     cache,
     modifier(obj: any, get) {
       let result = Array.isArray(obj) ? [...obj] : { ...obj };
@@ -388,7 +388,6 @@ export function core<Routes extends Record<string, Table<any, any, any>>>(
     cache,
     touch,
     useGetUrl,
-    preload,
     sse,
     useCore(): {
       [name in keyof Routes]: Routes[name] extends Table<

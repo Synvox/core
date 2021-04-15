@@ -994,6 +994,311 @@ describe("without policies", () => {
     `);
   });
 
+  it("write in array batches", async () => {
+    await knex.schema.withSchema("test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+      t.boolean("is_boolean").notNullable().defaultTo(false);
+      t.integer("number_count").notNullable().defaultTo(0);
+      t.specificType("text", "character varying(10)")
+        .notNullable()
+        .defaultTo("text");
+    });
+
+    const table = new Table({
+      schemaName: "test",
+      tableName: "test",
+    });
+
+    await table.init(knex);
+
+    queries = [];
+    expect(
+      await table
+        .write(knex, [{ isBoolean: false }, { isBoolean: [] }], {})
+        .catch((e: BadRequestError) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "1": Object {
+            "isBoolean": "must be a \`boolean\` type, but the final value was: \`[]\`.",
+          },
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`Array []`);
+
+    queries = [];
+    expect(
+      await table.write(knex, [{ isBoolean: false }, { isBoolean: true }], {})
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "insert",
+            "path": "test/test",
+            "row": Object {
+              "_links": Object {},
+              "_type": "test/test",
+              "_url": "/test/test/1",
+              "id": 1,
+              "isBoolean": false,
+              "numberCount": 0,
+              "text": "text",
+            },
+          },
+          Object {
+            "mode": "insert",
+            "path": "test/test",
+            "row": Object {
+              "_links": Object {},
+              "_type": "test/test",
+              "_url": "/test/test/2",
+              "id": 2,
+              "isBoolean": true,
+              "numberCount": 0,
+              "text": "text",
+            },
+          },
+        ],
+        "item": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/test",
+            "_url": "/test/test/1",
+            "id": 1,
+            "isBoolean": false,
+            "numberCount": 0,
+            "text": "text",
+          },
+          Object {
+            "_links": Object {},
+            "_type": "test/test",
+            "_url": "/test/test/2",
+            "id": 2,
+            "isBoolean": true,
+            "numberCount": 0,
+            "text": "text",
+          },
+        ],
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "insert into test.test (is_boolean) values (?) returning *",
+        "insert into test.test (is_boolean) values (?) returning *",
+        "select test.id, test.is_boolean, test.number_count, test.text from test.test where test.id = ? limit ?",
+        "select test.id, test.is_boolean, test.number_count, test.text from test.test where test.id = ? limit ?",
+      ]
+    `);
+  });
+
+  it("reads with several ORs", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.text("id").primary();
+    });
+
+    const [a, b] = await knex("test.items")
+      .insert([{ id: "a" }, { id: "b" }])
+      .returning("*");
+
+    await knex("test.items").insert({ id: "c" });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    expect(await items.readMany(knex, { or: [{ id: a.id }, { id: b.id }] }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/test/items/count?or[][id]=a&or[][id]=b",
+          "ids": "/test/items/ids?or[][id]=a&or[][id]=b",
+        },
+        "_type": "test/items",
+        "_url": "/test/items?or[][id]=a&or[][id]=b",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/a",
+            "id": "a",
+          },
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/b",
+            "id": "b",
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id from test.items where ((items.id = ?) or (items.id = ?)) order by items.id asc limit ?",
+      ]
+    `);
+  });
+
+  it("reads with several ANDs", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("label");
+      t.integer("int");
+    });
+
+    await knex("test.items")
+      .insert([
+        { label: "a", int: 0 },
+        { label: "b", int: 1 },
+        { label: "c", int: 2 },
+      ])
+      .returning("*");
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    expect(
+      await items.readMany(
+        knex,
+        { and: [{ "int.gt": 0 }, { "int.lt": 2 }] },
+        {}
+      )
+    ).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/test/items/count?and[][int.gt]=0&and[][int.lt]=2",
+          "ids": "/test/items/ids?and[][int.gt]=0&and[][int.lt]=2",
+        },
+        "_type": "test/items",
+        "_url": "/test/items?and[][int.gt]=0&and[][int.lt]=2",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/2",
+            "id": 2,
+            "int": 1,
+            "label": "b",
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.label, items.int from test.items where ((items.int > ?) and (items.int < ?)) order by items.id asc limit ?",
+      ]
+    `);
+  });
+
+  it("reads with nulls and not nulls", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("label");
+      t.integer("int");
+    });
+
+    await knex("test.items")
+      .insert([
+        { label: "a", int: 0 },
+        { label: null, int: 1 },
+        { label: "c", int: 2 },
+      ])
+      .returning("*");
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    expect(await items.readMany(knex, { "label.null": true }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/test/items/count?label.null=true",
+          "ids": "/test/items/ids?label.null=true",
+        },
+        "_type": "test/items",
+        "_url": "/test/items?label.null=true",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/2",
+            "id": 2,
+            "int": 1,
+            "label": null,
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.label, items.int from test.items where (items.label is null) order by items.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(await items.readMany(knex, { "label.not.null": true }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/test/items/count?label.not.null=true",
+          "ids": "/test/items/ids?label.not.null=true",
+        },
+        "_type": "test/items",
+        "_url": "/test/items?label.not.null=true",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/1",
+            "id": 1,
+            "int": 0,
+            "label": "a",
+          },
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/3",
+            "id": 3,
+            "int": 2,
+            "label": "c",
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.label, items.int from test.items where (items.label is not null) order by items.id asc limit ?",
+      ]
+    `);
+  });
+
   it("validates", async () => {
     await knex.schema.withSchema("test").createTable("test", (t) => {
       t.bigIncrements("id").primary();
@@ -5553,6 +5858,82 @@ describe("upsert", () => {
         "select contacts.id, contacts.name, contacts.phone from test.contacts where not (contacts.id = ?) and contacts.phone = ? limit ?",
         "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
         "update test.contacts set name = ? where contacts.id = ?",
+        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      await contacts.write(
+        knex,
+        [
+          { phone: "123", name: "updated2" },
+          { phone: "456", name: "updated3" },
+        ],
+        {}
+      )
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "path": "test/contacts",
+            "row": Object {
+              "_links": Object {},
+              "_type": "test/contacts",
+              "_url": "/test/contacts/1",
+              "id": 1,
+              "name": "updated2",
+              "phone": "123",
+            },
+          },
+          Object {
+            "mode": "update",
+            "path": "test/contacts",
+            "row": Object {
+              "_links": Object {},
+              "_type": "test/contacts",
+              "_url": "/test/contacts/2",
+              "id": 2,
+              "name": "updated3",
+              "phone": "456",
+            },
+          },
+        ],
+        "item": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/contacts",
+            "_url": "/test/contacts/1",
+            "id": 1,
+            "name": "updated2",
+            "phone": "123",
+          },
+          Object {
+            "_links": Object {},
+            "_type": "test/contacts",
+            "_url": "/test/contacts/2",
+            "id": 2,
+            "name": "updated3",
+            "phone": "456",
+          },
+        ],
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.phone = ? limit ?",
+        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.phone = ? limit ?",
+        "select contacts.id, contacts.name, contacts.phone from test.contacts where (contacts.id = ?) limit ?",
+        "select contacts.id, contacts.name, contacts.phone from test.contacts where (contacts.id = ?) limit ?",
+        "select contacts.id, contacts.name, contacts.phone from test.contacts where not (contacts.id = ?) and contacts.phone = ? limit ?",
+        "select contacts.id, contacts.name, contacts.phone from test.contacts where not (contacts.id = ?) and contacts.phone = ? limit ?",
+        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
+        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
+        "update test.contacts set name = ? where contacts.id = ?",
+        "update test.contacts set name = ? where contacts.id = ?",
+        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
         "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
       ]
     `);

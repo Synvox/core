@@ -276,7 +276,7 @@ export class Table<Context, T = any> {
     context: Context
   ): Promise<[any, Record<string, string>]> {
     const errors: Record<string, string> = {};
-    const clone = { ...params };
+    const clone = Object.assign(Array.isArray(params) ? [] : {}, params);
 
     for (let [key, value] of Object.entries(params)) {
       const [columnName] = key.split(".");
@@ -353,9 +353,29 @@ export class Table<Context, T = any> {
         if (columnName === this.idColumnName && value in this.idModifiers) {
           // this is an id modifier, and it is async. Ignore it here.
         } else if (columnName === "or") {
-          stmt.orWhere((stmt) => applyFilter(stmt, value));
+          if (Array.isArray(value)) {
+            value.map((value) => {
+              stmt.orWhere((stmt) => {
+                applyFilter(stmt, value);
+              });
+            });
+          } else {
+            stmt.orWhere((stmt) => {
+              applyFilter(stmt, value);
+            });
+          }
         } else if (columnName === "and") {
-          stmt.andWhere((stmt) => applyFilter(stmt, value));
+          if (Array.isArray(value)) {
+            value.map((value) => {
+              stmt.andWhere((stmt) => {
+                applyFilter(stmt, value);
+              });
+            });
+          } else {
+            stmt.andWhere((stmt) => {
+              applyFilter(stmt, value);
+            });
+          }
         } else if (this.columns[columnName]) {
           const op = operands[0];
           if (op === "fts") {
@@ -366,6 +386,9 @@ export class Table<Context, T = any> {
           } else if (Array.isArray(value)) {
             const method = not ? "whereNotIn" : "whereIn";
             stmt[method](`${this.alias}.${columnName}`, value);
+          } else if (op === "null" && this.columns[columnName].nullable) {
+            const method = not ? "whereNot" : "where";
+            stmt[method](`${this.alias}.${columnName}`, null);
           } else {
             const method = not ? "whereNot" : "where";
             stmt[method](
@@ -814,6 +837,31 @@ export class Table<Context, T = any> {
     context: Context,
     changesRemaining: number = this.complexityLimit
   ): Promise<[any, Record<string, string> | undefined]> {
+    if (Array.isArray(obj)) {
+      const results = await Promise.all(
+        obj.map(async (obj) => {
+          return this.validateDeep(knex, obj, context);
+        })
+      );
+
+      const returned = results.reduce(
+        ([rows, errors], [row, error], index) => {
+          if (error) {
+            // ts doesn't like this assignment
+            // @ts-expect-error
+            errors![index] = error;
+          }
+
+          return [[...rows, row], errors];
+        },
+        [[], {}]
+      );
+
+      if (Object.keys(returned[1]!).length === 0) returned[1] = undefined;
+
+      return returned;
+    }
+
     let errors: Record<string, any> = {};
 
     const refPlaceholderNumber = 0;
@@ -1526,6 +1574,7 @@ export class Table<Context, T = any> {
     };
 
     const stmt = table.query(knex);
+
     await table.where(stmt, context, { ...queryParams, withDeleted });
     await table.applyPolicy(stmt, context, "read", knex);
     await includeRelated(stmt);
@@ -1706,7 +1755,17 @@ export class Table<Context, T = any> {
     return paginate(stmt);
   }
 
-  private async fixUpserts(knex: Knex, input: any, context: Context) {
+  private async fixUpserts(
+    knex: Knex,
+    input: any,
+    context: Context
+  ): Promise<any> {
+    if (Array.isArray(input)) {
+      return Promise.all(
+        input.map((obj) => this.fixUpserts(knex, obj, context))
+      );
+    }
+
     const obj = { ...input };
     const { hasOne, hasMany } = this.relatedTables;
 
@@ -1789,7 +1848,7 @@ export class Table<Context, T = any> {
     return obj;
   }
 
-  async write(knex: Knex, obj: T, context: Context) {
+  async write(knex: Knex, obj: T | T[], context: Context) {
     obj = await this.fixUpserts(knex, obj, context);
     const [objValidated, errors] = await this.validateDeep(knex, obj, context);
     obj = objValidated;
@@ -1808,13 +1867,20 @@ export class Table<Context, T = any> {
       // Needs to emit commit after this function finishes
       trxRef = trx;
 
-      const result = await this.updateDeep(
-        trx,
-        obj,
-        context,
-        beforeCommitCallbacks,
-        changes
-      );
+      const result = Array.isArray(obj)
+        ? await Promise.all(
+            obj.map((obj) =>
+              this.updateDeep(trx, obj, context, beforeCommitCallbacks, changes)
+            )
+          )
+        : await this.updateDeep(
+            trx,
+            obj,
+            context,
+            beforeCommitCallbacks,
+            changes
+          );
+
       for (let cb of beforeCommitCallbacks) await cb();
 
       return result;
