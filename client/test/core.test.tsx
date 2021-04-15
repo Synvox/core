@@ -119,8 +119,8 @@ describe("core", () => {
     };
 
     const { useCore, touch } = coreClient(axios, {
-      test: table<Test, any>("/coreTest/test"),
-      testSub: table<TestSub, any>("/coreTest/testSub"),
+      test: table<Test, Test & { include: "testSub" }>("/coreTest/test"),
+      testSub: table<TestSub, TestSub>("/coreTest/testSub"),
     });
 
     const { result, waitForNextUpdate, rerender } = renderHook(
