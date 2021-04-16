@@ -181,6 +181,7 @@ describe("saves to files", () => {
                 "type": "text",
               },
             },
+            "lookupTableIds": Array [],
             "relations": Object {
               "typeId": Object {
                 "columnName": "typeId",
@@ -219,6 +220,7 @@ describe("saves to files", () => {
                 "type": "bigint",
               },
             },
+            "lookupTableIds": Array [],
             "relations": Object {
               "parentId": Object {
                 "columnName": "parentId",
