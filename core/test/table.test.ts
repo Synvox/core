@@ -1407,7 +1407,7 @@ describe("without policies", () => {
     expect(
       await table.write(
         knex,
-        { date: new Date("2000-01-01 04:05:06").toISOString() },
+        { date: new Date("2000-01-01T11:05:06.000Z").toISOString() },
         {}
       )
     ).toMatchInlineSnapshot(`
