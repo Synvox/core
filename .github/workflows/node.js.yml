@@ -46,6 +46,9 @@ jobs:
     - run: npm test
       env:
         NODE_ENV: test
+        POSTGRES_HOST: postgres
+        POSTGRES_USER: pg
+        POSTGRES_PASSWORD: postgres
         USER: pg
         PGHOST: postgres
         PGUSER: pg
