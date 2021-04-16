@@ -517,6 +517,7 @@ export async function saveSchemaToFile(tables: Table<any>[], path: string) {
       columns: table.columns,
       uniqueColumns: table.uniqueColumns,
       relations: table.relations,
+      lookupTableIds: table.lookupTableIds,
     };
     return acc;
   }, {} as Record<string, SavedTable>);

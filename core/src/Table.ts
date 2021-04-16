@@ -49,6 +49,7 @@ export type SavedTable = {
   columns: Columns;
   uniqueColumns: string[][];
   relations: Relations;
+  lookupTableIds: any[];
 };
 
 export class Table<Context, T = any> {
