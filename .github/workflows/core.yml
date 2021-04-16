@@ -35,7 +35,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm ci
-      - run: cd node_modules/@synvox && ls -la
+      - run: cd core && npm run build
       - run: npm run test --workspaces
         env:
           NODE_ENV: test
