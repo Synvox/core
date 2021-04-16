@@ -26,7 +26,7 @@ jobs:
         image: postgres
         # Provide the password for postgres
         env:
-          POSTGRES_USER: user
+          POSTGRES_USER: runner
           POSTGRES_PASSWORD: postgres
         # Set health checks to wait until postgres has started
         options: >-
@@ -51,5 +51,5 @@ jobs:
       env:
         # The hostname used to communicate with the PostgreSQL service container
         POSTGRES_HOST: postgres
-        POSTGRES_USER: user
+        POSTGRES_USER: runner
         POSTGRES_PASSWORD: postgres
