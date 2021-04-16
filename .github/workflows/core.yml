@@ -32,9 +32,6 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    defaults:
-      run:
-        working-directory: ./core
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.node-version }}
@@ -42,7 +39,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm ci
-      - run: npm test
+      - run: npm run test --workspaces
         env:
           NODE_ENV: test
           USER: pg
