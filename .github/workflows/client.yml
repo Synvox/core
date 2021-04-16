@@ -39,9 +39,10 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm ci
-      - run: cd client
       - run: npm ci
+        working-directory: ./client
       - run: npm test
+        working-directory: ./client
         env:
           NODE_ENV: test
           USER: pg
