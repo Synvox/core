@@ -514,7 +514,32 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "export type Test = {
+      "type CollectionParams = {
+        cursor: string;
+        page: number;
+        limit: number;
+      };
+
+      type ColumnParam<Name extends string, Type> = Record<
+        | Name
+        | \`\${Name}.not\`
+        | \`\${Name}.eq\`
+        | \`\${Name}.not.eq\`
+        | \`\${Name}.neq\`
+        | \`\${Name}.lt\`
+        | \`\${Name}.not.lt\`
+        | \`\${Name}.lte\`
+        | \`\${Name}.not.lte\`
+        | \`\${Name}.gt\`
+        | \`\${Name}.not.gt\`
+        | \`\${Name}.gte\`
+        | \`\${Name}.not.gte\`,
+        Type
+      > &
+        (Type extends string ? Record<\`\${Name}.fts\`, Type> : {}) &
+        (Type extends null ? Record<\`\${Name}.null\` | \`\${Name}.not.null\`, any> : {});
+
+      export type Test = {
         id: number;
         isBoolean: boolean;
         numberCount: number;
@@ -524,90 +549,25 @@ describe("saves to files", () => {
         testSubNullable: TestSubNullable[];
       };
 
-      export type TestParams = Partial<{
-        id: number | number[];
-        \\"id.not\\": number | number[];
-        \\"id.eq\\": number | number[];
-        \\"id.not.eq\\": number | number[];
-        \\"id.neq\\": number | number[];
-        \\"id.not.neq\\": number | number[];
-        \\"id.lt\\": number | number[];
-        \\"id.not.lt\\": number | number[];
-        \\"id.lte\\": number | number[];
-        \\"id.not.lte\\": number | number[];
-        \\"id.gt\\": number | number[];
-        \\"id.not.gt\\": number | number[];
-        \\"id.gte\\": number | number[];
-        \\"id.not.gte\\": number | number[];
-        isBoolean: boolean | boolean[];
-        \\"isBoolean.not\\": boolean | boolean[];
-        \\"isBoolean.eq\\": boolean | boolean[];
-        \\"isBoolean.not.eq\\": boolean | boolean[];
-        \\"isBoolean.neq\\": boolean | boolean[];
-        \\"isBoolean.not.neq\\": boolean | boolean[];
-        \\"isBoolean.lt\\": boolean | boolean[];
-        \\"isBoolean.not.lt\\": boolean | boolean[];
-        \\"isBoolean.lte\\": boolean | boolean[];
-        \\"isBoolean.not.lte\\": boolean | boolean[];
-        \\"isBoolean.gt\\": boolean | boolean[];
-        \\"isBoolean.not.gt\\": boolean | boolean[];
-        \\"isBoolean.gte\\": boolean | boolean[];
-        \\"isBoolean.not.gte\\": boolean | boolean[];
-        numberCount: number | number[];
-        \\"numberCount.not\\": number | number[];
-        \\"numberCount.eq\\": number | number[];
-        \\"numberCount.not.eq\\": number | number[];
-        \\"numberCount.neq\\": number | number[];
-        \\"numberCount.not.neq\\": number | number[];
-        \\"numberCount.lt\\": number | number[];
-        \\"numberCount.not.lt\\": number | number[];
-        \\"numberCount.lte\\": number | number[];
-        \\"numberCount.not.lte\\": number | number[];
-        \\"numberCount.gt\\": number | number[];
-        \\"numberCount.not.gt\\": number | number[];
-        \\"numberCount.gte\\": number | number[];
-        \\"numberCount.not.gte\\": number | number[];
-        text: string | string[];
-        \\"text.not\\": string | string[];
-        \\"text.eq\\": string | string[];
-        \\"text.not.eq\\": string | string[];
-        \\"text.neq\\": string | string[];
-        \\"text.not.neq\\": string | string[];
-        \\"text.lt\\": string | string[];
-        \\"text.not.lt\\": string | string[];
-        \\"text.lte\\": string | string[];
-        \\"text.not.lte\\": string | string[];
-        \\"text.gt\\": string | string[];
-        \\"text.not.gt\\": string | string[];
-        \\"text.gte\\": string | string[];
-        \\"text.not.gte\\": string | string[];
-        \\"text.fts\\": string;
-        \\"text.not.fts\\": string;
-        typeId: string | string[];
-        \\"typeId.not\\": string | string[];
-        \\"typeId.eq\\": string | string[];
-        \\"typeId.not.eq\\": string | string[];
-        \\"typeId.neq\\": string | string[];
-        \\"typeId.not.neq\\": string | string[];
-        \\"typeId.lt\\": string | string[];
-        \\"typeId.not.lt\\": string | string[];
-        \\"typeId.lte\\": string | string[];
-        \\"typeId.not.lte\\": string | string[];
-        \\"typeId.gt\\": string | string[];
-        \\"typeId.not.gt\\": string | string[];
-        \\"typeId.gte\\": string | string[];
-        \\"typeId.not.gte\\": string | string[];
-        \\"typeId.fts\\": string;
-        \\"typeId.not.fts\\": string;
-        and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        \\"not.and\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        \\"not.or\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        cursor: string;
-        page: number;
-        limit: number;
-        include: ('testSub' | 'testSubNullable')[];
-      }>;
+      export type TestFilters = Partial<
+        ColumnParam<\\"id\\", number | number[]> &
+          ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
+          ColumnParam<\\"numberCount\\", number | number[]> &
+          ColumnParam<\\"text\\", string | string[]> &
+          ColumnParam<\\"typeId\\", string | string[]> & {
+            and: TestFilters | TestFilters[];
+            \\"not.and\\": TestFilters | TestFilters[];
+            or: TestFilters | TestFilters[];
+            \\"not.or\\": TestFilters | TestFilters[];
+          }
+      >;
+
+      export type TestParams = Partial<
+        TestFilters &
+          CollectionParams & {
+            include: ('testSub' | 'testSubNullable')[];
+          }
+      >;
 
       export type TestNullable = {
         id: number;
@@ -616,73 +576,24 @@ describe("saves to files", () => {
         text: string;
       };
 
-      export type TestNullableParams = Partial<{
-        id: number | number[] | \\"me\\";
-        \\"id.not\\": number | number[] | \\"me\\";
-        \\"id.eq\\": number | number[];
-        \\"id.not.eq\\": number | number[];
-        \\"id.neq\\": number | number[];
-        \\"id.not.neq\\": number | number[];
-        \\"id.lt\\": number | number[];
-        \\"id.not.lt\\": number | number[];
-        \\"id.lte\\": number | number[];
-        \\"id.not.lte\\": number | number[];
-        \\"id.gt\\": number | number[];
-        \\"id.not.gt\\": number | number[];
-        \\"id.gte\\": number | number[];
-        \\"id.not.gte\\": number | number[];
-        isBoolean: boolean | boolean[];
-        \\"isBoolean.not\\": boolean | boolean[];
-        \\"isBoolean.eq\\": boolean | boolean[];
-        \\"isBoolean.not.eq\\": boolean | boolean[];
-        \\"isBoolean.neq\\": boolean | boolean[];
-        \\"isBoolean.not.neq\\": boolean | boolean[];
-        \\"isBoolean.lt\\": boolean | boolean[];
-        \\"isBoolean.not.lt\\": boolean | boolean[];
-        \\"isBoolean.lte\\": boolean | boolean[];
-        \\"isBoolean.not.lte\\": boolean | boolean[];
-        \\"isBoolean.gt\\": boolean | boolean[];
-        \\"isBoolean.not.gt\\": boolean | boolean[];
-        \\"isBoolean.gte\\": boolean | boolean[];
-        \\"isBoolean.not.gte\\": boolean | boolean[];
-        numberCount: number | number[];
-        \\"numberCount.not\\": number | number[];
-        \\"numberCount.eq\\": number | number[];
-        \\"numberCount.not.eq\\": number | number[];
-        \\"numberCount.neq\\": number | number[];
-        \\"numberCount.not.neq\\": number | number[];
-        \\"numberCount.lt\\": number | number[];
-        \\"numberCount.not.lt\\": number | number[];
-        \\"numberCount.lte\\": number | number[];
-        \\"numberCount.not.lte\\": number | number[];
-        \\"numberCount.gt\\": number | number[];
-        \\"numberCount.not.gt\\": number | number[];
-        \\"numberCount.gte\\": number | number[];
-        \\"numberCount.not.gte\\": number | number[];
-        text: string | string[];
-        \\"text.not\\": string | string[];
-        \\"text.eq\\": string | string[];
-        \\"text.not.eq\\": string | string[];
-        \\"text.neq\\": string | string[];
-        \\"text.not.neq\\": string | string[];
-        \\"text.lt\\": string | string[];
-        \\"text.not.lt\\": string | string[];
-        \\"text.lte\\": string | string[];
-        \\"text.not.lte\\": string | string[];
-        \\"text.gt\\": string | string[];
-        \\"text.not.gt\\": string | string[];
-        \\"text.gte\\": string | string[];
-        \\"text.not.gte\\": string | string[];
-        \\"text.fts\\": string;
-        \\"text.not.fts\\": string;
-        and: Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        \\"not.and\\": Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        or: Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        \\"not.or\\": Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        cursor: string;
-        page: number;
-        limit: number;
-      }>;
+      export type TestNullableFilters = Partial<
+        ColumnParam<\\"id\\", number | number[]> &
+          ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
+          ColumnParam<\\"numberCount\\", number | number[]> &
+          ColumnParam<\\"text\\", string | string[]> & {
+            id: \\"me\\"
+            and: TestNullableFilters | TestNullableFilters[];
+            \\"not.and\\": TestNullableFilters | TestNullableFilters[];
+            or: TestNullableFilters | TestNullableFilters[];
+            \\"not.or\\": TestNullableFilters | TestNullableFilters[];
+          }
+      >;
+
+      export type TestNullableParams = Partial<
+        TestNullableFilters &
+          CollectionParams & {
+          }
+      >;
 
       export type TestSub = {
         id: number;
@@ -691,63 +602,26 @@ describe("saves to files", () => {
         parent: Test;
       };
 
-      export type TestSubParams = Partial<{
-        id: number | number[];
-        \\"id.not\\": number | number[];
-        \\"id.eq\\": number | number[];
-        \\"id.not.eq\\": number | number[];
-        \\"id.neq\\": number | number[];
-        \\"id.not.neq\\": number | number[];
-        \\"id.lt\\": number | number[];
-        \\"id.not.lt\\": number | number[];
-        \\"id.lte\\": number | number[];
-        \\"id.not.lte\\": number | number[];
-        \\"id.gt\\": number | number[];
-        \\"id.not.gt\\": number | number[];
-        \\"id.gte\\": number | number[];
-        \\"id.not.gte\\": number | number[];
-        parentId: number | number[];
-        \\"parentId.not\\": number | number[];
-        \\"parentId.eq\\": number | number[];
-        \\"parentId.not.eq\\": number | number[];
-        \\"parentId.neq\\": number | number[];
-        \\"parentId.not.neq\\": number | number[];
-        \\"parentId.lt\\": number | number[];
-        \\"parentId.not.lt\\": number | number[];
-        \\"parentId.lte\\": number | number[];
-        \\"parentId.not.lte\\": number | number[];
-        \\"parentId.gt\\": number | number[];
-        \\"parentId.not.gt\\": number | number[];
-        \\"parentId.gte\\": number | number[];
-        \\"parentId.not.gte\\": number | number[];
-        arr: number[] | null;
-        \\"arr.not\\": number[] | null;
-        \\"arr.eq\\": number[] | null;
-        \\"arr.not.eq\\": number[] | null;
-        \\"arr.neq\\": number[] | null;
-        \\"arr.not.neq\\": number[] | null;
-        \\"arr.lt\\": number[] | null;
-        \\"arr.not.lt\\": number[] | null;
-        \\"arr.lte\\": number[] | null;
-        \\"arr.not.lte\\": number[] | null;
-        \\"arr.gt\\": number[] | null;
-        \\"arr.not.gt\\": number[] | null;
-        \\"arr.gte\\": number[] | null;
-        \\"arr.not.gte\\": number[] | null;
-        \\"arr.null\\": any;
-        \\"arr.not.null\\": any;
-        parent: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
-        \\"parent.not\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+      export type TestSubFilters = Partial<
+        ColumnParam<\\"id\\", number | number[]> &
+          ColumnParam<\\"parentId\\", TestFilters['id'] | TestFilters['id'][]> &
+          ColumnParam<\\"arr\\", number[] | null> & {
+            parent: TestFilters;
+            \\"parent.not\\": TestFilters;
+            and: TestSubFilters | TestSubFilters[];
+            \\"not.and\\": TestSubFilters | TestSubFilters[];
+            or: TestSubFilters | TestSubFilters[];
+            \\"not.or\\": TestSubFilters | TestSubFilters[];
+          }
+      >;
+
+      export type TestSubParams = Partial<
+        TestSubFilters &
+          CollectionParams & {
         thing: unknown;
-        and: Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\"> | Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\">[];
-        \\"not.and\\": Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\"> | Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\">[];
-        or: Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\"> | Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\">[];
-        \\"not.or\\": Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\"> | Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\">[];
-        cursor: string;
-        page: number;
-        limit: number;
-        include: ('parent')[];
-      }>;
+            include: 'parent'[];
+          }
+      >;
 
       export type TestSubNullable = {
         id: number;
@@ -756,64 +630,25 @@ describe("saves to files", () => {
         parent?: Test;
       };
 
-      export type TestSubNullableParams = Partial<{
-        id: number | number[];
-        \\"id.not\\": number | number[];
-        \\"id.eq\\": number | number[];
-        \\"id.not.eq\\": number | number[];
-        \\"id.neq\\": number | number[];
-        \\"id.not.neq\\": number | number[];
-        \\"id.lt\\": number | number[];
-        \\"id.not.lt\\": number | number[];
-        \\"id.lte\\": number | number[];
-        \\"id.not.lte\\": number | number[];
-        \\"id.gt\\": number | number[];
-        \\"id.not.gt\\": number | number[];
-        \\"id.gte\\": number | number[];
-        \\"id.not.gte\\": number | number[];
-        parentId: number | number[] | null;
-        \\"parentId.not\\": number | number[] | null;
-        \\"parentId.eq\\": number | number[] | null;
-        \\"parentId.not.eq\\": number | number[] | null;
-        \\"parentId.neq\\": number | number[] | null;
-        \\"parentId.not.neq\\": number | number[] | null;
-        \\"parentId.lt\\": number | number[] | null;
-        \\"parentId.not.lt\\": number | number[] | null;
-        \\"parentId.lte\\": number | number[] | null;
-        \\"parentId.not.lte\\": number | number[] | null;
-        \\"parentId.gt\\": number | number[] | null;
-        \\"parentId.not.gt\\": number | number[] | null;
-        \\"parentId.gte\\": number | number[] | null;
-        \\"parentId.not.gte\\": number | number[] | null;
-        \\"parentId.null\\": any;
-        \\"parentId.not.null\\": any;
-        arr: number[] | null;
-        \\"arr.not\\": number[] | null;
-        \\"arr.eq\\": number[] | null;
-        \\"arr.not.eq\\": number[] | null;
-        \\"arr.neq\\": number[] | null;
-        \\"arr.not.neq\\": number[] | null;
-        \\"arr.lt\\": number[] | null;
-        \\"arr.not.lt\\": number[] | null;
-        \\"arr.lte\\": number[] | null;
-        \\"arr.not.lte\\": number[] | null;
-        \\"arr.gt\\": number[] | null;
-        \\"arr.not.gt\\": number[] | null;
-        \\"arr.gte\\": number[] | null;
-        \\"arr.not.gte\\": number[] | null;
-        \\"arr.null\\": any;
-        \\"arr.not.null\\": any;
-        parent: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
-        \\"parent.not\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
-        and: Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        \\"not.and\\": Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        or: Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        \\"not.or\\": Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        cursor: string;
-        page: number;
-        limit: number;
-        include: ('parent')[];
-      }>;
+      export type TestSubNullableFilters = Partial<
+        ColumnParam<\\"id\\", number | number[]> &
+          ColumnParam<\\"parentId\\", TestFilters['id'] | TestFilters['id'][] | null> &
+          ColumnParam<\\"arr\\", number[] | null> & {
+            parent: TestFilters;
+            \\"parent.not\\": TestFilters;
+            and: TestSubNullableFilters | TestSubNullableFilters[];
+            \\"not.and\\": TestSubNullableFilters | TestSubNullableFilters[];
+            or: TestSubNullableFilters | TestSubNullableFilters[];
+            \\"not.or\\": TestSubNullableFilters | TestSubNullableFilters[];
+          }
+      >;
+
+      export type TestSubNullableParams = Partial<
+        TestSubNullableFilters &
+          CollectionParams & {
+            include: 'parent'[];
+          }
+      >;
       "
     `);
   });
@@ -844,7 +679,32 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "export type Test = {
+      "type CollectionParams = {
+        cursor: string;
+        page: number;
+        limit: number;
+      };
+
+      type ColumnParam<Name extends string, Type> = Record<
+        | Name
+        | \`\${Name}.not\`
+        | \`\${Name}.eq\`
+        | \`\${Name}.not.eq\`
+        | \`\${Name}.neq\`
+        | \`\${Name}.lt\`
+        | \`\${Name}.not.lt\`
+        | \`\${Name}.lte\`
+        | \`\${Name}.not.lte\`
+        | \`\${Name}.gt\`
+        | \`\${Name}.not.gt\`
+        | \`\${Name}.gte\`
+        | \`\${Name}.not.gte\`,
+        Type
+      > &
+        (Type extends string ? Record<\`\${Name}.fts\`, Type> : {}) &
+        (Type extends null ? Record<\`\${Name}.null\` | \`\${Name}.not.null\`, any> : {});
+
+      export type Test = {
         id: number;
         isBoolean: boolean;
         numberCount: number;
@@ -854,90 +714,25 @@ describe("saves to files", () => {
         getThing: unknown;
       };
 
-      export type TestParams = Partial<{
-        id: number | number[];
-        \\"id.not\\": number | number[];
-        \\"id.eq\\": number | number[];
-        \\"id.not.eq\\": number | number[];
-        \\"id.neq\\": number | number[];
-        \\"id.not.neq\\": number | number[];
-        \\"id.lt\\": number | number[];
-        \\"id.not.lt\\": number | number[];
-        \\"id.lte\\": number | number[];
-        \\"id.not.lte\\": number | number[];
-        \\"id.gt\\": number | number[];
-        \\"id.not.gt\\": number | number[];
-        \\"id.gte\\": number | number[];
-        \\"id.not.gte\\": number | number[];
-        isBoolean: boolean | boolean[];
-        \\"isBoolean.not\\": boolean | boolean[];
-        \\"isBoolean.eq\\": boolean | boolean[];
-        \\"isBoolean.not.eq\\": boolean | boolean[];
-        \\"isBoolean.neq\\": boolean | boolean[];
-        \\"isBoolean.not.neq\\": boolean | boolean[];
-        \\"isBoolean.lt\\": boolean | boolean[];
-        \\"isBoolean.not.lt\\": boolean | boolean[];
-        \\"isBoolean.lte\\": boolean | boolean[];
-        \\"isBoolean.not.lte\\": boolean | boolean[];
-        \\"isBoolean.gt\\": boolean | boolean[];
-        \\"isBoolean.not.gt\\": boolean | boolean[];
-        \\"isBoolean.gte\\": boolean | boolean[];
-        \\"isBoolean.not.gte\\": boolean | boolean[];
-        numberCount: number | number[];
-        \\"numberCount.not\\": number | number[];
-        \\"numberCount.eq\\": number | number[];
-        \\"numberCount.not.eq\\": number | number[];
-        \\"numberCount.neq\\": number | number[];
-        \\"numberCount.not.neq\\": number | number[];
-        \\"numberCount.lt\\": number | number[];
-        \\"numberCount.not.lt\\": number | number[];
-        \\"numberCount.lte\\": number | number[];
-        \\"numberCount.not.lte\\": number | number[];
-        \\"numberCount.gt\\": number | number[];
-        \\"numberCount.not.gt\\": number | number[];
-        \\"numberCount.gte\\": number | number[];
-        \\"numberCount.not.gte\\": number | number[];
-        text: string | string[];
-        \\"text.not\\": string | string[];
-        \\"text.eq\\": string | string[];
-        \\"text.not.eq\\": string | string[];
-        \\"text.neq\\": string | string[];
-        \\"text.not.neq\\": string | string[];
-        \\"text.lt\\": string | string[];
-        \\"text.not.lt\\": string | string[];
-        \\"text.lte\\": string | string[];
-        \\"text.not.lte\\": string | string[];
-        \\"text.gt\\": string | string[];
-        \\"text.not.gt\\": string | string[];
-        \\"text.gte\\": string | string[];
-        \\"text.not.gte\\": string | string[];
-        \\"text.fts\\": string;
-        \\"text.not.fts\\": string;
-        typeId: string | string[];
-        \\"typeId.not\\": string | string[];
-        \\"typeId.eq\\": string | string[];
-        \\"typeId.not.eq\\": string | string[];
-        \\"typeId.neq\\": string | string[];
-        \\"typeId.not.neq\\": string | string[];
-        \\"typeId.lt\\": string | string[];
-        \\"typeId.not.lt\\": string | string[];
-        \\"typeId.lte\\": string | string[];
-        \\"typeId.not.lte\\": string | string[];
-        \\"typeId.gt\\": string | string[];
-        \\"typeId.not.gt\\": string | string[];
-        \\"typeId.gte\\": string | string[];
-        \\"typeId.not.gte\\": string | string[];
-        \\"typeId.fts\\": string;
-        \\"typeId.not.fts\\": string;
-        and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        \\"not.and\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        \\"not.or\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        cursor: string;
-        page: number;
-        limit: number;
-        include: ('getThing' | 'getOtherThing')[];
-      }>;
+      export type TestFilters = Partial<
+        ColumnParam<\\"id\\", number | number[]> &
+          ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
+          ColumnParam<\\"numberCount\\", number | number[]> &
+          ColumnParam<\\"text\\", string | string[]> &
+          ColumnParam<\\"typeId\\", string | string[]> & {
+            and: TestFilters | TestFilters[];
+            \\"not.and\\": TestFilters | TestFilters[];
+            or: TestFilters | TestFilters[];
+            \\"not.or\\": TestFilters | TestFilters[];
+          }
+      >;
+
+      export type TestParams = Partial<
+        TestFilters &
+          CollectionParams & {
+            include: ('getThing' | 'getOtherThing')[];
+          }
+      >;
       "
     `);
   });
@@ -965,7 +760,32 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "export type Test = {
+      "type CollectionParams = {
+        cursor: string;
+        page: number;
+        limit: number;
+      };
+
+      type ColumnParam<Name extends string, Type> = Record<
+        | Name
+        | \`\${Name}.not\`
+        | \`\${Name}.eq\`
+        | \`\${Name}.not.eq\`
+        | \`\${Name}.neq\`
+        | \`\${Name}.lt\`
+        | \`\${Name}.not.lt\`
+        | \`\${Name}.lte\`
+        | \`\${Name}.not.lte\`
+        | \`\${Name}.gt\`
+        | \`\${Name}.not.gt\`
+        | \`\${Name}.gte\`
+        | \`\${Name}.not.gte\`,
+        Type
+      > &
+        (Type extends string ? Record<\`\${Name}.fts\`, Type> : {}) &
+        (Type extends null ? Record<\`\${Name}.null\` | \`\${Name}.not.null\`, any> : {});
+
+      export type Test = {
         id: number;
         isBoolean: boolean;
         numberCount: number;
@@ -974,120 +794,48 @@ describe("saves to files", () => {
         type: Type;
       };
 
-      export type TestParams = Partial<{
-        id: number | number[];
-        \\"id.not\\": number | number[];
-        \\"id.eq\\": number | number[];
-        \\"id.not.eq\\": number | number[];
-        \\"id.neq\\": number | number[];
-        \\"id.not.neq\\": number | number[];
-        \\"id.lt\\": number | number[];
-        \\"id.not.lt\\": number | number[];
-        \\"id.lte\\": number | number[];
-        \\"id.not.lte\\": number | number[];
-        \\"id.gt\\": number | number[];
-        \\"id.not.gt\\": number | number[];
-        \\"id.gte\\": number | number[];
-        \\"id.not.gte\\": number | number[];
-        isBoolean: boolean | boolean[];
-        \\"isBoolean.not\\": boolean | boolean[];
-        \\"isBoolean.eq\\": boolean | boolean[];
-        \\"isBoolean.not.eq\\": boolean | boolean[];
-        \\"isBoolean.neq\\": boolean | boolean[];
-        \\"isBoolean.not.neq\\": boolean | boolean[];
-        \\"isBoolean.lt\\": boolean | boolean[];
-        \\"isBoolean.not.lt\\": boolean | boolean[];
-        \\"isBoolean.lte\\": boolean | boolean[];
-        \\"isBoolean.not.lte\\": boolean | boolean[];
-        \\"isBoolean.gt\\": boolean | boolean[];
-        \\"isBoolean.not.gt\\": boolean | boolean[];
-        \\"isBoolean.gte\\": boolean | boolean[];
-        \\"isBoolean.not.gte\\": boolean | boolean[];
-        numberCount: number | number[];
-        \\"numberCount.not\\": number | number[];
-        \\"numberCount.eq\\": number | number[];
-        \\"numberCount.not.eq\\": number | number[];
-        \\"numberCount.neq\\": number | number[];
-        \\"numberCount.not.neq\\": number | number[];
-        \\"numberCount.lt\\": number | number[];
-        \\"numberCount.not.lt\\": number | number[];
-        \\"numberCount.lte\\": number | number[];
-        \\"numberCount.not.lte\\": number | number[];
-        \\"numberCount.gt\\": number | number[];
-        \\"numberCount.not.gt\\": number | number[];
-        \\"numberCount.gte\\": number | number[];
-        \\"numberCount.not.gte\\": number | number[];
-        text: string | string[];
-        \\"text.not\\": string | string[];
-        \\"text.eq\\": string | string[];
-        \\"text.not.eq\\": string | string[];
-        \\"text.neq\\": string | string[];
-        \\"text.not.neq\\": string | string[];
-        \\"text.lt\\": string | string[];
-        \\"text.not.lt\\": string | string[];
-        \\"text.lte\\": string | string[];
-        \\"text.not.lte\\": string | string[];
-        \\"text.gt\\": string | string[];
-        \\"text.not.gt\\": string | string[];
-        \\"text.gte\\": string | string[];
-        \\"text.not.gte\\": string | string[];
-        \\"text.fts\\": string;
-        \\"text.not.fts\\": string;
-        typeId: (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
-        \\"typeId.not\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
-        \\"typeId.eq\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
-        \\"typeId.not.eq\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
-        \\"typeId.neq\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
-        \\"typeId.not.neq\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
-        \\"typeId.lt\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
-        \\"typeId.not.lt\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
-        \\"typeId.lte\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
-        \\"typeId.not.lte\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
-        \\"typeId.gt\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
-        \\"typeId.not.gt\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
-        \\"typeId.gte\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
-        \\"typeId.not.gte\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
-        type: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
-        \\"type.not\\": Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
-        and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        \\"not.and\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        \\"not.or\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        cursor: string;
-        page: number;
-        limit: number;
-        include: ('type')[];
-      }>;
+      export type TestFilters = Partial<
+        ColumnParam<\\"id\\", number | number[]> &
+          ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
+          ColumnParam<\\"numberCount\\", number | number[]> &
+          ColumnParam<\\"text\\", string | string[]> &
+          ColumnParam<\\"typeId\\", TypeFilters['id'] | TypeFilters['id'][]> & {
+            type: TypeFilters;
+            \\"type.not\\": TypeFilters;
+            and: TestFilters | TestFilters[];
+            \\"not.and\\": TestFilters | TestFilters[];
+            or: TestFilters | TestFilters[];
+            \\"not.or\\": TestFilters | TestFilters[];
+          }
+      >;
+
+      export type TestParams = Partial<
+        TestFilters &
+          CollectionParams & {
+            include: 'type'[];
+          }
+      >;
 
       export type Type = {
         id: \\"type1\\" | \\"type2\\" | \\"type3\\";
         test: Test[];
       };
 
-      export type TypeParams = Partial<{
-        id: \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
-        \\"id.not\\": \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
-        \\"id.eq\\": \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
-        \\"id.not.eq\\": \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
-        \\"id.neq\\": \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
-        \\"id.not.neq\\": \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
-        \\"id.lt\\": \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
-        \\"id.not.lt\\": \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
-        \\"id.lte\\": \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
-        \\"id.not.lte\\": \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
-        \\"id.gt\\": \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
-        \\"id.not.gt\\": \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
-        \\"id.gte\\": \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
-        \\"id.not.gte\\": \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
-        and: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        \\"not.and\\": Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        or: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        \\"not.or\\": Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        cursor: string;
-        page: number;
-        limit: number;
-        include: ('test')[];
-      }>;
+      export type TypeFilters = Partial<
+        ColumnParam<\\"id\\", (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[]> & {
+            and: TypeFilters | TypeFilters[];
+            \\"not.and\\": TypeFilters | TypeFilters[];
+            or: TypeFilters | TypeFilters[];
+            \\"not.or\\": TypeFilters | TypeFilters[];
+          }
+      >;
+
+      export type TypeParams = Partial<
+        TypeFilters &
+          CollectionParams & {
+            include: 'test'[];
+          }
+      >;
       "
     `);
   });
@@ -1117,7 +865,32 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "export type Test = {
+      "type CollectionParams = {
+        cursor: string;
+        page: number;
+        limit: number;
+      };
+
+      type ColumnParam<Name extends string, Type> = Record<
+        | Name
+        | \`\${Name}.not\`
+        | \`\${Name}.eq\`
+        | \`\${Name}.not.eq\`
+        | \`\${Name}.neq\`
+        | \`\${Name}.lt\`
+        | \`\${Name}.not.lt\`
+        | \`\${Name}.lte\`
+        | \`\${Name}.not.lte\`
+        | \`\${Name}.gt\`
+        | \`\${Name}.not.gt\`
+        | \`\${Name}.gte\`
+        | \`\${Name}.not.gte\`,
+        Type
+      > &
+        (Type extends string ? Record<\`\${Name}.fts\`, Type> : {}) &
+        (Type extends null ? Record<\`\${Name}.null\` | \`\${Name}.not.null\`, any> : {});
+
+      export type Test = {
         id: number;
         isBoolean: boolean;
         numberCount: number;
@@ -1126,124 +899,48 @@ describe("saves to files", () => {
         type: Type;
       };
 
-      export type TestParams = Partial<{
-        id: number | number[];
-        \\"id.not\\": number | number[];
-        \\"id.eq\\": number | number[];
-        \\"id.not.eq\\": number | number[];
-        \\"id.neq\\": number | number[];
-        \\"id.not.neq\\": number | number[];
-        \\"id.lt\\": number | number[];
-        \\"id.not.lt\\": number | number[];
-        \\"id.lte\\": number | number[];
-        \\"id.not.lte\\": number | number[];
-        \\"id.gt\\": number | number[];
-        \\"id.not.gt\\": number | number[];
-        \\"id.gte\\": number | number[];
-        \\"id.not.gte\\": number | number[];
-        isBoolean: boolean | boolean[];
-        \\"isBoolean.not\\": boolean | boolean[];
-        \\"isBoolean.eq\\": boolean | boolean[];
-        \\"isBoolean.not.eq\\": boolean | boolean[];
-        \\"isBoolean.neq\\": boolean | boolean[];
-        \\"isBoolean.not.neq\\": boolean | boolean[];
-        \\"isBoolean.lt\\": boolean | boolean[];
-        \\"isBoolean.not.lt\\": boolean | boolean[];
-        \\"isBoolean.lte\\": boolean | boolean[];
-        \\"isBoolean.not.lte\\": boolean | boolean[];
-        \\"isBoolean.gt\\": boolean | boolean[];
-        \\"isBoolean.not.gt\\": boolean | boolean[];
-        \\"isBoolean.gte\\": boolean | boolean[];
-        \\"isBoolean.not.gte\\": boolean | boolean[];
-        numberCount: number | number[];
-        \\"numberCount.not\\": number | number[];
-        \\"numberCount.eq\\": number | number[];
-        \\"numberCount.not.eq\\": number | number[];
-        \\"numberCount.neq\\": number | number[];
-        \\"numberCount.not.neq\\": number | number[];
-        \\"numberCount.lt\\": number | number[];
-        \\"numberCount.not.lt\\": number | number[];
-        \\"numberCount.lte\\": number | number[];
-        \\"numberCount.not.lte\\": number | number[];
-        \\"numberCount.gt\\": number | number[];
-        \\"numberCount.not.gt\\": number | number[];
-        \\"numberCount.gte\\": number | number[];
-        \\"numberCount.not.gte\\": number | number[];
-        text: string | string[];
-        \\"text.not\\": string | string[];
-        \\"text.eq\\": string | string[];
-        \\"text.not.eq\\": string | string[];
-        \\"text.neq\\": string | string[];
-        \\"text.not.neq\\": string | string[];
-        \\"text.lt\\": string | string[];
-        \\"text.not.lt\\": string | string[];
-        \\"text.lte\\": string | string[];
-        \\"text.not.lte\\": string | string[];
-        \\"text.gt\\": string | string[];
-        \\"text.not.gt\\": string | string[];
-        \\"text.gte\\": string | string[];
-        \\"text.not.gte\\": string | string[];
-        \\"text.fts\\": string;
-        \\"text.not.fts\\": string;
-        typeId: string | string[];
-        \\"typeId.not\\": string | string[];
-        \\"typeId.eq\\": string | string[];
-        \\"typeId.not.eq\\": string | string[];
-        \\"typeId.neq\\": string | string[];
-        \\"typeId.not.neq\\": string | string[];
-        \\"typeId.lt\\": string | string[];
-        \\"typeId.not.lt\\": string | string[];
-        \\"typeId.lte\\": string | string[];
-        \\"typeId.not.lte\\": string | string[];
-        \\"typeId.gt\\": string | string[];
-        \\"typeId.not.gt\\": string | string[];
-        \\"typeId.gte\\": string | string[];
-        \\"typeId.not.gte\\": string | string[];
-        \\"typeId.fts\\": string;
-        \\"typeId.not.fts\\": string;
-        type: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
-        \\"type.not\\": Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
-        and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        \\"not.and\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        \\"not.or\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        cursor: string;
-        page: number;
-        limit: number;
-        include: ('type')[];
-      }>;
+      export type TestFilters = Partial<
+        ColumnParam<\\"id\\", number | number[]> &
+          ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
+          ColumnParam<\\"numberCount\\", number | number[]> &
+          ColumnParam<\\"text\\", string | string[]> &
+          ColumnParam<\\"typeId\\", TypeFilters['id'] | TypeFilters['id'][]> & {
+            type: TypeFilters;
+            \\"type.not\\": TypeFilters;
+            and: TestFilters | TestFilters[];
+            \\"not.and\\": TestFilters | TestFilters[];
+            or: TestFilters | TestFilters[];
+            \\"not.or\\": TestFilters | TestFilters[];
+          }
+      >;
+
+      export type TestParams = Partial<
+        TestFilters &
+          CollectionParams & {
+            include: 'type'[];
+          }
+      >;
 
       export type Type = {
         id: string;
         test: Test[];
       };
 
-      export type TypeParams = Partial<{
-        id: string | string[];
-        \\"id.not\\": string | string[];
-        \\"id.eq\\": string | string[];
-        \\"id.not.eq\\": string | string[];
-        \\"id.neq\\": string | string[];
-        \\"id.not.neq\\": string | string[];
-        \\"id.lt\\": string | string[];
-        \\"id.not.lt\\": string | string[];
-        \\"id.lte\\": string | string[];
-        \\"id.not.lte\\": string | string[];
-        \\"id.gt\\": string | string[];
-        \\"id.not.gt\\": string | string[];
-        \\"id.gte\\": string | string[];
-        \\"id.not.gte\\": string | string[];
-        \\"id.fts\\": string;
-        \\"id.not.fts\\": string;
-        and: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        \\"not.and\\": Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        or: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        \\"not.or\\": Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        cursor: string;
-        page: number;
-        limit: number;
-        include: ('test')[];
-      }>;
+      export type TypeFilters = Partial<
+        ColumnParam<\\"id\\", string | string[]> & {
+            and: TypeFilters | TypeFilters[];
+            \\"not.and\\": TypeFilters | TypeFilters[];
+            or: TypeFilters | TypeFilters[];
+            \\"not.or\\": TypeFilters | TypeFilters[];
+          }
+      >;
+
+      export type TypeParams = Partial<
+        TypeFilters &
+          CollectionParams & {
+            include: 'test'[];
+          }
+      >;
       "
     `);
   });

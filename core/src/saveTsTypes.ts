@@ -13,6 +13,33 @@ export async function saveTsTypes(
 
   let types = "";
 
+  if (includeParams) {
+    types += "type CollectionParams = {\n";
+    types += `  cursor: string;\n`;
+    types += `  page: number;\n`;
+    types += `  limit: number;\n`;
+    types += "};\n\n";
+
+    types += `type ColumnParam<Name extends string, Type> = Record<\n`;
+    types += `  | Name\n`;
+    types += `  | \`\${Name}.not\`\n`;
+    types += `  | \`\${Name}.eq\`\n`;
+    types += `  | \`\${Name}.not.eq\`\n`;
+    types += `  | \`\${Name}.neq\`\n`;
+    types += `  | \`\${Name}.lt\`\n`;
+    types += `  | \`\${Name}.not.lt\`\n`;
+    types += `  | \`\${Name}.lte\`\n`;
+    types += `  | \`\${Name}.not.lte\`\n`;
+    types += `  | \`\${Name}.gt\`\n`;
+    types += `  | \`\${Name}.not.gt\`\n`;
+    types += `  | \`\${Name}.gte\`\n`;
+    types += `  | \`\${Name}.not.gte\`,\n`;
+    types += `  Type\n`;
+    types += `> &\n`;
+    types += `  (Type extends string ? Record<\`\${Name}.fts\`, Type> : {}) &\n`;
+    types += `  (Type extends null ? Record<\`\${Name}.null\` | \`\${Name}.not.null\`, any> : {});\n\n`;
+  }
+
   for (let table of tables) {
     types += `export type ${table.className} = {\n`;
     const { columns } = table;
@@ -112,8 +139,11 @@ export async function saveTsTypes(
     types += `};\n\n`;
 
     if (includeParams) {
-      const paramTypeName = `${table.className}Params`;
-      types += `export type ${paramTypeName} = Partial<{\n`;
+      const filtersType = `${table.className}Filters`;
+      const paramsType = `${table.className}Params`;
+      types += `export type ${filtersType} = Partial<\n`;
+
+      const columnTypes: string[] = [];
 
       for (let columnName in columns) {
         const column = columns[columnName];
@@ -139,101 +169,73 @@ export async function saveTsTypes(
           baseType = table.lookupTableIds
             .map((id) => JSON.stringify(id))
             .join(" | ");
-        } else if (
-          hasOne &&
-          hasOne.table.isLookupTable &&
-          hasOne.table.lookupTableIds.length
-        ) {
+          baseType = `(${baseType})`;
+        } else if (hasOne) {
           baseType = hasOne.table.lookupTableIds
             .map((id) => JSON.stringify(id))
             .join(" | ");
-          baseType = `(${baseType})`;
+          baseType = `${hasOne.table.className}Filters['${hasOne.table.idColumnName}']`;
         }
 
         if (baseType === "string") ops.push("fts");
 
-        let dataType = baseType;
-        if (array) dataType += "[]";
-        else dataType = `${dataType} | ${dataType}[]`;
+        if (array) baseType += "[]";
+        else baseType = `${baseType} | ${baseType}[]`;
+        if (column.nullable) baseType += " | null";
+        columnTypes.push(`  ColumnParam<"${columnName}", ${baseType}>`);
+      }
 
-        const idModifierNames = Object.keys(table.idModifiers);
-        if (columnName === table.idColumnName && idModifierNames.length) {
-          const otherKeys = idModifierNames
-            .map((k) => JSON.stringify(k))
-            .join(" | ");
-          dataType = `${dataType} | ${otherKeys}`;
-        }
+      types += columnTypes.join(" &\n  ") + ` & {\n`;
 
-        if (column.nullable) dataType += " | null";
-
-        types += `  ${columnName}: ${dataType};\n`;
-        types += `  "${columnName}.not": ${dataType};\n`;
-
-        for (let op of ops) {
-          let dataType = baseType;
-          if (op !== "fts") {
-            if (array) dataType += "[]";
-            else dataType = `${dataType} | ${dataType}[]`;
-            if (column.nullable) dataType += " | null";
-          }
-
-          types += `  "${columnName}.${op}": ${dataType};\n`;
-          types += `  "${columnName}.not.${op}": ${dataType};\n`;
-        }
-
-        if (column.nullable) {
-          types += `  "${columnName}.null": any;\n`;
-          types += `  "${columnName}.not.null": any;\n`;
-        }
+      const idModifierNames = Object.keys(table.idModifiers);
+      if (idModifierNames.length) {
+        const otherKeys = idModifierNames
+          .map((k) => JSON.stringify(k))
+          .join(" | ");
+        types += `      ${table.idColumnName}: ${otherKeys}\n`;
       }
 
       for (let { table: relatedTable, name } of Object.values(
         table.relatedTables.hasOne
       )) {
-        const ignoredSubs = ["include", "cursor", "page", "limit"];
-        const queryModifierNames = Object.keys(relatedTable.queryModifiers);
-        ignoredSubs.push(...queryModifierNames);
-        const paramTypeName = `${relatedTable.className}Params`;
-        const subTypeName = `Omit<${paramTypeName}, ${ignoredSubs
-          .map((n) => `"${n}"`)
-          .join(" | ")}>`;
-        types += `  ${name}: ${subTypeName};\n`;
-        types += `  "${name}.not": ${subTypeName};\n`;
+        const filtersType = `${relatedTable.className}Filters`;
+        types += `      ${name}: ${filtersType};\n`;
+        types += `      "${name}.not": ${filtersType};\n`;
       }
 
-      const ignoredSubs = ["include", "cursor", "page", "limit"];
-      const queryModifierNames = Object.keys(table.queryModifiers);
-      ignoredSubs.push(...queryModifierNames);
+      types += `      and: ${filtersType} | ${filtersType}[];\n`;
+      types += `      "not.and": ${filtersType} | ${filtersType}[];\n`;
+      types += `      or: ${filtersType} | ${filtersType}[];\n`;
+      types += `      "not.or": ${filtersType} | ${filtersType}[];\n`;
+
+      types += `    }\n`;
+      types += `>;\n\n`;
+
+      types += `export type ${paramsType} = Partial<\n`;
+
+      types += `  ${filtersType} &\n`;
+
+      types += `    CollectionParams & {\n`;
 
       for (let queryModifier of Object.keys(table.queryModifiers)) {
         types += `  ${queryModifier}: unknown;\n`;
       }
 
-      const subTypeName = `Omit<${paramTypeName}, ${ignoredSubs
-        .map((n) => `"${n}"`)
-        .join(" | ")}>`;
-
-      types += `  and: ${subTypeName} | ${subTypeName}[];\n`;
-      types += `  "not.and": ${subTypeName} | ${subTypeName}[];\n`;
-      types += `  or: ${subTypeName} | ${subTypeName}[];\n`;
-      types += `  "not.or": ${subTypeName} | ${subTypeName}[];\n`;
-      types += `  cursor: string;\n`;
-      types += `  page: number;\n`;
-      types += `  limit: number;\n`;
-
-      const includable = [
+      const includeKeys = [
         ...Object.keys(table.relatedTables.hasMany),
         ...Object.keys(table.relatedTables.hasOne),
         ...Object.keys(table.getters),
         ...Object.keys(table.eagerGetters),
       ];
 
-      if (includable.length)
-        types += `  include: (${includable
-          .map((v) => `'${v}'`)
-          .join(" | ")})[];\n`;
+      if (includeKeys.length) {
+        let includeType = includeKeys.map((v) => `'${v}'`).join(" | ");
+        if (includeKeys.length > 1) includeType = `(${includeType})`;
+        types += `      include: ${includeType}[];\n`;
+      }
 
-      types += `}>;\n\n`;
+      types += `    }\n`;
+      types += `>;\n\n`;
     }
   }
 
