@@ -167,7 +167,7 @@ export async function saveTsTypes(
         if (column.nullable) dataType += " | null";
 
         types += `  ${columnName}: ${dataType};\n`;
-        types += `  ${columnName}.not: ${dataType};\n`;
+        types += `  "${columnName}.not": ${dataType};\n`;
 
         for (let op of ops) {
           let dataType = baseType;
@@ -182,8 +182,8 @@ export async function saveTsTypes(
         }
 
         if (column.nullable) {
-          types += `  ${columnName}.null: any;\n`;
-          types += `  ${columnName}.not.null: any;\n`;
+          types += `  "${columnName}.null": any;\n`;
+          types += `  "${columnName}.not.null": any;\n`;
         }
       }
 
@@ -198,7 +198,7 @@ export async function saveTsTypes(
           .map((n) => `"${n}"`)
           .join(" | ")}>`;
         types += `  ${name}: ${subTypeName};\n`;
-        types += `  ${name}.not: ${subTypeName};\n`;
+        types += `  "${name}.not": ${subTypeName};\n`;
       }
 
       const ignoredSubs = ["include", "cursor", "page", "limit"];
@@ -214,9 +214,9 @@ export async function saveTsTypes(
         .join(" | ")}>`;
 
       types += `  and: ${subTypeName} | ${subTypeName}[];\n`;
-      types += `  not.and: ${subTypeName} | ${subTypeName}[];\n`;
+      types += `  "not.and": ${subTypeName} | ${subTypeName}[];\n`;
       types += `  or: ${subTypeName} | ${subTypeName}[];\n`;
-      types += `  not.or: ${subTypeName} | ${subTypeName}[];\n`;
+      types += `  "not.or": ${subTypeName} | ${subTypeName}[];\n`;
       types += `  cursor: string;\n`;
       types += `  page: number;\n`;
       types += `  limit: number;\n`;

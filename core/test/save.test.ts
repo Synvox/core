@@ -526,7 +526,7 @@ describe("saves to files", () => {
 
       export type TestParams = Partial<{
         id: number | number[];
-        id.not: number | number[];
+        \\"id.not\\": number | number[];
         \\"id.eq\\": number | number[];
         \\"id.not.eq\\": number | number[];
         \\"id.neq\\": number | number[];
@@ -540,7 +540,7 @@ describe("saves to files", () => {
         \\"id.gte\\": number | number[];
         \\"id.not.gte\\": number | number[];
         isBoolean: boolean | boolean[];
-        isBoolean.not: boolean | boolean[];
+        \\"isBoolean.not\\": boolean | boolean[];
         \\"isBoolean.eq\\": boolean | boolean[];
         \\"isBoolean.not.eq\\": boolean | boolean[];
         \\"isBoolean.neq\\": boolean | boolean[];
@@ -554,7 +554,7 @@ describe("saves to files", () => {
         \\"isBoolean.gte\\": boolean | boolean[];
         \\"isBoolean.not.gte\\": boolean | boolean[];
         numberCount: number | number[];
-        numberCount.not: number | number[];
+        \\"numberCount.not\\": number | number[];
         \\"numberCount.eq\\": number | number[];
         \\"numberCount.not.eq\\": number | number[];
         \\"numberCount.neq\\": number | number[];
@@ -568,7 +568,7 @@ describe("saves to files", () => {
         \\"numberCount.gte\\": number | number[];
         \\"numberCount.not.gte\\": number | number[];
         text: string | string[];
-        text.not: string | string[];
+        \\"text.not\\": string | string[];
         \\"text.eq\\": string | string[];
         \\"text.not.eq\\": string | string[];
         \\"text.neq\\": string | string[];
@@ -584,7 +584,7 @@ describe("saves to files", () => {
         \\"text.fts\\": string;
         \\"text.not.fts\\": string;
         typeId: string | string[];
-        typeId.not: string | string[];
+        \\"typeId.not\\": string | string[];
         \\"typeId.eq\\": string | string[];
         \\"typeId.not.eq\\": string | string[];
         \\"typeId.neq\\": string | string[];
@@ -600,9 +600,9 @@ describe("saves to files", () => {
         \\"typeId.fts\\": string;
         \\"typeId.not.fts\\": string;
         and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        not.and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
+        \\"not.and\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        not.or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
+        \\"not.or\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         cursor: string;
         page: number;
         limit: number;
@@ -618,7 +618,7 @@ describe("saves to files", () => {
 
       export type TestNullableParams = Partial<{
         id: number | number[] | \\"me\\";
-        id.not: number | number[] | \\"me\\";
+        \\"id.not\\": number | number[] | \\"me\\";
         \\"id.eq\\": number | number[];
         \\"id.not.eq\\": number | number[];
         \\"id.neq\\": number | number[];
@@ -632,7 +632,7 @@ describe("saves to files", () => {
         \\"id.gte\\": number | number[];
         \\"id.not.gte\\": number | number[];
         isBoolean: boolean | boolean[];
-        isBoolean.not: boolean | boolean[];
+        \\"isBoolean.not\\": boolean | boolean[];
         \\"isBoolean.eq\\": boolean | boolean[];
         \\"isBoolean.not.eq\\": boolean | boolean[];
         \\"isBoolean.neq\\": boolean | boolean[];
@@ -646,7 +646,7 @@ describe("saves to files", () => {
         \\"isBoolean.gte\\": boolean | boolean[];
         \\"isBoolean.not.gte\\": boolean | boolean[];
         numberCount: number | number[];
-        numberCount.not: number | number[];
+        \\"numberCount.not\\": number | number[];
         \\"numberCount.eq\\": number | number[];
         \\"numberCount.not.eq\\": number | number[];
         \\"numberCount.neq\\": number | number[];
@@ -660,7 +660,7 @@ describe("saves to files", () => {
         \\"numberCount.gte\\": number | number[];
         \\"numberCount.not.gte\\": number | number[];
         text: string | string[];
-        text.not: string | string[];
+        \\"text.not\\": string | string[];
         \\"text.eq\\": string | string[];
         \\"text.not.eq\\": string | string[];
         \\"text.neq\\": string | string[];
@@ -676,9 +676,9 @@ describe("saves to files", () => {
         \\"text.fts\\": string;
         \\"text.not.fts\\": string;
         and: Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        not.and: Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
+        \\"not.and\\": Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         or: Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        not.or: Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
+        \\"not.or\\": Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         cursor: string;
         page: number;
         limit: number;
@@ -693,7 +693,7 @@ describe("saves to files", () => {
 
       export type TestSubParams = Partial<{
         id: number | number[];
-        id.not: number | number[];
+        \\"id.not\\": number | number[];
         \\"id.eq\\": number | number[];
         \\"id.not.eq\\": number | number[];
         \\"id.neq\\": number | number[];
@@ -707,7 +707,7 @@ describe("saves to files", () => {
         \\"id.gte\\": number | number[];
         \\"id.not.gte\\": number | number[];
         parentId: number | number[];
-        parentId.not: number | number[];
+        \\"parentId.not\\": number | number[];
         \\"parentId.eq\\": number | number[];
         \\"parentId.not.eq\\": number | number[];
         \\"parentId.neq\\": number | number[];
@@ -721,7 +721,7 @@ describe("saves to files", () => {
         \\"parentId.gte\\": number | number[];
         \\"parentId.not.gte\\": number | number[];
         arr: number[] | null;
-        arr.not: number[] | null;
+        \\"arr.not\\": number[] | null;
         \\"arr.eq\\": number[] | null;
         \\"arr.not.eq\\": number[] | null;
         \\"arr.neq\\": number[] | null;
@@ -734,15 +734,15 @@ describe("saves to files", () => {
         \\"arr.not.gt\\": number[] | null;
         \\"arr.gte\\": number[] | null;
         \\"arr.not.gte\\": number[] | null;
-        arr.null: any;
-        arr.not.null: any;
+        \\"arr.null\\": any;
+        \\"arr.not.null\\": any;
         parent: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
-        parent.not: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        \\"parent.not\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
         thing: unknown;
         and: Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\"> | Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\">[];
-        not.and: Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\"> | Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\">[];
+        \\"not.and\\": Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\"> | Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\">[];
         or: Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\"> | Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\">[];
-        not.or: Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\"> | Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\">[];
+        \\"not.or\\": Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\"> | Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\">[];
         cursor: string;
         page: number;
         limit: number;
@@ -758,7 +758,7 @@ describe("saves to files", () => {
 
       export type TestSubNullableParams = Partial<{
         id: number | number[];
-        id.not: number | number[];
+        \\"id.not\\": number | number[];
         \\"id.eq\\": number | number[];
         \\"id.not.eq\\": number | number[];
         \\"id.neq\\": number | number[];
@@ -772,7 +772,7 @@ describe("saves to files", () => {
         \\"id.gte\\": number | number[];
         \\"id.not.gte\\": number | number[];
         parentId: number | number[] | null;
-        parentId.not: number | number[] | null;
+        \\"parentId.not\\": number | number[] | null;
         \\"parentId.eq\\": number | number[] | null;
         \\"parentId.not.eq\\": number | number[] | null;
         \\"parentId.neq\\": number | number[] | null;
@@ -785,10 +785,10 @@ describe("saves to files", () => {
         \\"parentId.not.gt\\": number | number[] | null;
         \\"parentId.gte\\": number | number[] | null;
         \\"parentId.not.gte\\": number | number[] | null;
-        parentId.null: any;
-        parentId.not.null: any;
+        \\"parentId.null\\": any;
+        \\"parentId.not.null\\": any;
         arr: number[] | null;
-        arr.not: number[] | null;
+        \\"arr.not\\": number[] | null;
         \\"arr.eq\\": number[] | null;
         \\"arr.not.eq\\": number[] | null;
         \\"arr.neq\\": number[] | null;
@@ -801,14 +801,14 @@ describe("saves to files", () => {
         \\"arr.not.gt\\": number[] | null;
         \\"arr.gte\\": number[] | null;
         \\"arr.not.gte\\": number[] | null;
-        arr.null: any;
-        arr.not.null: any;
+        \\"arr.null\\": any;
+        \\"arr.not.null\\": any;
         parent: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
-        parent.not: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        \\"parent.not\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
         and: Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        not.and: Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
+        \\"not.and\\": Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         or: Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        not.or: Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
+        \\"not.or\\": Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         cursor: string;
         page: number;
         limit: number;
@@ -856,7 +856,7 @@ describe("saves to files", () => {
 
       export type TestParams = Partial<{
         id: number | number[];
-        id.not: number | number[];
+        \\"id.not\\": number | number[];
         \\"id.eq\\": number | number[];
         \\"id.not.eq\\": number | number[];
         \\"id.neq\\": number | number[];
@@ -870,7 +870,7 @@ describe("saves to files", () => {
         \\"id.gte\\": number | number[];
         \\"id.not.gte\\": number | number[];
         isBoolean: boolean | boolean[];
-        isBoolean.not: boolean | boolean[];
+        \\"isBoolean.not\\": boolean | boolean[];
         \\"isBoolean.eq\\": boolean | boolean[];
         \\"isBoolean.not.eq\\": boolean | boolean[];
         \\"isBoolean.neq\\": boolean | boolean[];
@@ -884,7 +884,7 @@ describe("saves to files", () => {
         \\"isBoolean.gte\\": boolean | boolean[];
         \\"isBoolean.not.gte\\": boolean | boolean[];
         numberCount: number | number[];
-        numberCount.not: number | number[];
+        \\"numberCount.not\\": number | number[];
         \\"numberCount.eq\\": number | number[];
         \\"numberCount.not.eq\\": number | number[];
         \\"numberCount.neq\\": number | number[];
@@ -898,7 +898,7 @@ describe("saves to files", () => {
         \\"numberCount.gte\\": number | number[];
         \\"numberCount.not.gte\\": number | number[];
         text: string | string[];
-        text.not: string | string[];
+        \\"text.not\\": string | string[];
         \\"text.eq\\": string | string[];
         \\"text.not.eq\\": string | string[];
         \\"text.neq\\": string | string[];
@@ -914,7 +914,7 @@ describe("saves to files", () => {
         \\"text.fts\\": string;
         \\"text.not.fts\\": string;
         typeId: string | string[];
-        typeId.not: string | string[];
+        \\"typeId.not\\": string | string[];
         \\"typeId.eq\\": string | string[];
         \\"typeId.not.eq\\": string | string[];
         \\"typeId.neq\\": string | string[];
@@ -930,9 +930,9 @@ describe("saves to files", () => {
         \\"typeId.fts\\": string;
         \\"typeId.not.fts\\": string;
         and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        not.and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
+        \\"not.and\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        not.or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
+        \\"not.or\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         cursor: string;
         page: number;
         limit: number;
@@ -976,7 +976,7 @@ describe("saves to files", () => {
 
       export type TestParams = Partial<{
         id: number | number[];
-        id.not: number | number[];
+        \\"id.not\\": number | number[];
         \\"id.eq\\": number | number[];
         \\"id.not.eq\\": number | number[];
         \\"id.neq\\": number | number[];
@@ -990,7 +990,7 @@ describe("saves to files", () => {
         \\"id.gte\\": number | number[];
         \\"id.not.gte\\": number | number[];
         isBoolean: boolean | boolean[];
-        isBoolean.not: boolean | boolean[];
+        \\"isBoolean.not\\": boolean | boolean[];
         \\"isBoolean.eq\\": boolean | boolean[];
         \\"isBoolean.not.eq\\": boolean | boolean[];
         \\"isBoolean.neq\\": boolean | boolean[];
@@ -1004,7 +1004,7 @@ describe("saves to files", () => {
         \\"isBoolean.gte\\": boolean | boolean[];
         \\"isBoolean.not.gte\\": boolean | boolean[];
         numberCount: number | number[];
-        numberCount.not: number | number[];
+        \\"numberCount.not\\": number | number[];
         \\"numberCount.eq\\": number | number[];
         \\"numberCount.not.eq\\": number | number[];
         \\"numberCount.neq\\": number | number[];
@@ -1018,7 +1018,7 @@ describe("saves to files", () => {
         \\"numberCount.gte\\": number | number[];
         \\"numberCount.not.gte\\": number | number[];
         text: string | string[];
-        text.not: string | string[];
+        \\"text.not\\": string | string[];
         \\"text.eq\\": string | string[];
         \\"text.not.eq\\": string | string[];
         \\"text.neq\\": string | string[];
@@ -1034,7 +1034,7 @@ describe("saves to files", () => {
         \\"text.fts\\": string;
         \\"text.not.fts\\": string;
         typeId: (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
-        typeId.not: (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
+        \\"typeId.not\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
         \\"typeId.eq\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
         \\"typeId.not.eq\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
         \\"typeId.neq\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
@@ -1048,11 +1048,11 @@ describe("saves to files", () => {
         \\"typeId.gte\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
         \\"typeId.not.gte\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
         type: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
-        type.not: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        \\"type.not\\": Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
         and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        not.and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
+        \\"not.and\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        not.or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
+        \\"not.or\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         cursor: string;
         page: number;
         limit: number;
@@ -1066,7 +1066,7 @@ describe("saves to files", () => {
 
       export type TypeParams = Partial<{
         id: \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
-        id.not: \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
+        \\"id.not\\": \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
         \\"id.eq\\": \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
         \\"id.not.eq\\": \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
         \\"id.neq\\": \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
@@ -1080,9 +1080,9 @@ describe("saves to files", () => {
         \\"id.gte\\": \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
         \\"id.not.gte\\": \\"type1\\" | \\"type2\\" | \\"type3\\" | \\"type1\\" | \\"type2\\" | \\"type3\\"[];
         and: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        not.and: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
+        \\"not.and\\": Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         or: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        not.or: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
+        \\"not.or\\": Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         cursor: string;
         page: number;
         limit: number;
@@ -1128,7 +1128,7 @@ describe("saves to files", () => {
 
       export type TestParams = Partial<{
         id: number | number[];
-        id.not: number | number[];
+        \\"id.not\\": number | number[];
         \\"id.eq\\": number | number[];
         \\"id.not.eq\\": number | number[];
         \\"id.neq\\": number | number[];
@@ -1142,7 +1142,7 @@ describe("saves to files", () => {
         \\"id.gte\\": number | number[];
         \\"id.not.gte\\": number | number[];
         isBoolean: boolean | boolean[];
-        isBoolean.not: boolean | boolean[];
+        \\"isBoolean.not\\": boolean | boolean[];
         \\"isBoolean.eq\\": boolean | boolean[];
         \\"isBoolean.not.eq\\": boolean | boolean[];
         \\"isBoolean.neq\\": boolean | boolean[];
@@ -1156,7 +1156,7 @@ describe("saves to files", () => {
         \\"isBoolean.gte\\": boolean | boolean[];
         \\"isBoolean.not.gte\\": boolean | boolean[];
         numberCount: number | number[];
-        numberCount.not: number | number[];
+        \\"numberCount.not\\": number | number[];
         \\"numberCount.eq\\": number | number[];
         \\"numberCount.not.eq\\": number | number[];
         \\"numberCount.neq\\": number | number[];
@@ -1170,7 +1170,7 @@ describe("saves to files", () => {
         \\"numberCount.gte\\": number | number[];
         \\"numberCount.not.gte\\": number | number[];
         text: string | string[];
-        text.not: string | string[];
+        \\"text.not\\": string | string[];
         \\"text.eq\\": string | string[];
         \\"text.not.eq\\": string | string[];
         \\"text.neq\\": string | string[];
@@ -1186,7 +1186,7 @@ describe("saves to files", () => {
         \\"text.fts\\": string;
         \\"text.not.fts\\": string;
         typeId: string | string[];
-        typeId.not: string | string[];
+        \\"typeId.not\\": string | string[];
         \\"typeId.eq\\": string | string[];
         \\"typeId.not.eq\\": string | string[];
         \\"typeId.neq\\": string | string[];
@@ -1202,11 +1202,11 @@ describe("saves to files", () => {
         \\"typeId.fts\\": string;
         \\"typeId.not.fts\\": string;
         type: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
-        type.not: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
+        \\"type.not\\": Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">;
         and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        not.and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
+        \\"not.and\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        not.or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
+        \\"not.or\\": Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         cursor: string;
         page: number;
         limit: number;
@@ -1220,7 +1220,7 @@ describe("saves to files", () => {
 
       export type TypeParams = Partial<{
         id: string | string[];
-        id.not: string | string[];
+        \\"id.not\\": string | string[];
         \\"id.eq\\": string | string[];
         \\"id.not.eq\\": string | string[];
         \\"id.neq\\": string | string[];
@@ -1236,9 +1236,9 @@ describe("saves to files", () => {
         \\"id.fts\\": string;
         \\"id.not.fts\\": string;
         and: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        not.and: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
+        \\"not.and\\": Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         or: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
-        not.or: Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
+        \\"not.or\\": Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TypeParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         cursor: string;
         page: number;
         limit: number;
