@@ -195,6 +195,24 @@ describe("works with views", () => {
     `);
 
     queries = [];
+    expect(
+      await table
+        .write(knex, { isBoolean: {}, orgId: org.id }, {})
+        .catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "isBoolean": "must be a \`boolean\` type, but the final value was: \`{}\`.",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select orgs.id from test.orgs where orgs.id = ? limit ?",
+      ]
+    `);
+
+    queries = [];
     expect(await table.write(knex, { isBoolean: true, orgId: org.id }, {}))
       .toMatchInlineSnapshot(`
       Object {
