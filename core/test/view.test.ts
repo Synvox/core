@@ -1,6 +1,5 @@
 import Knex from "knex";
 import { knexHelpers, Relation, Table } from "../src";
-import uuid from "uuid";
 
 let queries: string[] = [];
 
@@ -27,13 +26,9 @@ const knex = Knex({
 
 beforeEach(async () => {
   await knex.raw(`
-    drop schema if exists test cascade;
-    create schema test;
-    drop table if exists public.test_table;
+    drop schema if exists view_test cascade;
+    create schema view_test;
   `);
-
-  const anonymousId = "uuid-test-value";
-  jest.spyOn(uuid, "v4").mockReturnValue(anonymousId);
 });
 
 afterEach(() => {
@@ -46,11 +41,11 @@ afterAll(async () => {
 
 describe("works with views", () => {
   it("reads", async () => {
-    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+    await knex.schema.withSchema("viewTest").createTable("orgs", (t) => {
       t.bigIncrements("id").primary();
     });
 
-    await knex.schema.withSchema("test").createTable("test", (t) => {
+    await knex.schema.withSchema("viewTest").createTable("test", (t) => {
       t.bigIncrements("id").primary();
       t.boolean("is_boolean").notNullable().defaultTo(false);
       t.integer("number_count").notNullable().defaultTo(0);
@@ -61,22 +56,22 @@ describe("works with views", () => {
     });
 
     await knex.raw(`
-      create view test.view as
-        select * from test.test where is_boolean
+      create view view_test.view as
+        select * from view_test.test where is_boolean
     `);
 
     const orgs = new Table({
-      schemaName: "test",
+      schemaName: "viewTest",
       tableName: "orgs",
     });
 
     const table = new Table({
-      schemaName: "test",
+      schemaName: "viewTest",
       tableName: "view",
       relations: {
         org: new Relation({
           columnName: "orgId",
-          referencesSchema: "test",
+          referencesSchema: "viewTest",
           referencesTable: "orgs",
         }),
       },
@@ -87,9 +82,12 @@ describe("works with views", () => {
     orgs.linkTables([table]);
     table.linkTables([orgs]);
 
-    const [org] = await knex("test.orgs").insert({}).returning("*");
+    const [org] = await knex("viewTest.orgs").insert({}).returning("*");
     for (let i = 0; i < 2; i++)
-      await knex("test.test").insert({ isBoolean: i % 2 === 0, orgId: org.id });
+      await knex("viewTest.test").insert({
+        isBoolean: i % 2 === 0,
+        orgId: org.id,
+      });
 
     expect(table.columns).toMatchInlineSnapshot(`
       Object {
@@ -136,28 +134,28 @@ describe("works with views", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "count": "/test/view/count?include=org",
-          "ids": "/test/view/ids?include=org",
+          "count": "/viewTest/view/count?include=org",
+          "ids": "/viewTest/view/ids?include=org",
         },
-        "_type": "test/view",
-        "_url": "/test/view?include=org",
+        "_type": "viewTest/view",
+        "_url": "/viewTest/view?include=org",
         "hasMore": false,
         "items": Array [
           Object {
             "_links": Object {
-              "org": "/test/orgs/1",
+              "org": "/viewTest/orgs/1",
             },
-            "_type": "test/view",
-            "_url": "/test/view/1",
+            "_type": "viewTest/view",
+            "_url": "/viewTest/view/1",
             "id": 1,
             "isBoolean": true,
             "numberCount": 0,
             "org": Object {
               "_links": Object {
-                "view": "/test/view?orgId=1",
+                "view": "/viewTest/view?orgId=1",
               },
-              "_type": "test/orgs",
-              "_url": "/test/orgs/1",
+              "_type": "viewTest/orgs",
+              "_url": "/viewTest/orgs/1",
               "id": 1,
             },
             "orgId": 1,
@@ -170,7 +168,7 @@ describe("works with views", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select view.id, view.is_boolean, view.number_count, view.text, view.org_id, (select row_to_json(orgs_sub_query) from (select orgs.id from test.orgs where orgs.id = view.org_id limit ?) orgs_sub_query) as org from test.view order by view.id asc limit ?",
+        "select view.id, view.is_boolean, view.number_count, view.text, view.org_id, (select row_to_json(orgs_sub_query) from (select orgs.id from view_test.orgs where orgs.id = view.org_id limit ?) orgs_sub_query) as org from view_test.view order by view.id asc limit ?",
       ]
     `);
 
@@ -188,9 +186,9 @@ describe("works with views", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select orgs.id from test.orgs where orgs.id = ? limit ?",
-        "insert into test.view (is_boolean, org_id) values (?, ?) returning *",
-        "select view.id, view.is_boolean, view.number_count, view.text, view.org_id from test.view where view.id = ? limit ?",
+        "select orgs.id from view_test.orgs where orgs.id = ? limit ?",
+        "insert into view_test.view (is_boolean, org_id) values (?, ?) returning *",
+        "select view.id, view.is_boolean, view.number_count, view.text, view.org_id from view_test.view where view.id = ? limit ?",
       ]
     `);
 
@@ -208,7 +206,7 @@ describe("works with views", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select orgs.id from test.orgs where orgs.id = ? limit ?",
+        "select orgs.id from view_test.orgs where orgs.id = ? limit ?",
       ]
     `);
 
@@ -216,17 +214,17 @@ describe("works with views", () => {
     expect(await table.write(knex, { isBoolean: true, orgId: org.id }, {}))
       .toMatchInlineSnapshot(`
       Object {
-        "changeId": "uuid-test-value",
+        "changeId": "7bbb86b5-fb7e-4131-bd30-7afe97fb9bae",
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/view",
+            "path": "viewTest/view",
             "row": Object {
               "_links": Object {
-                "org": "/test/orgs/1",
+                "org": "/viewTest/orgs/1",
               },
-              "_type": "test/view",
-              "_url": "/test/view/4",
+              "_type": "viewTest/view",
+              "_url": "/viewTest/view/4",
               "id": 4,
               "isBoolean": true,
               "numberCount": 0,
@@ -237,10 +235,10 @@ describe("works with views", () => {
         ],
         "item": Object {
           "_links": Object {
-            "org": "/test/orgs/1",
+            "org": "/viewTest/orgs/1",
           },
-          "_type": "test/view",
-          "_url": "/test/view/4",
+          "_type": "viewTest/view",
+          "_url": "/viewTest/view/4",
           "id": 4,
           "isBoolean": true,
           "numberCount": 0,
@@ -251,9 +249,9 @@ describe("works with views", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select orgs.id from test.orgs where orgs.id = ? limit ?",
-        "insert into test.view (is_boolean, org_id) values (?, ?) returning *",
-        "select view.id, view.is_boolean, view.number_count, view.text, view.org_id from test.view where view.id = ? limit ?",
+        "select orgs.id from view_test.orgs where orgs.id = ? limit ?",
+        "insert into view_test.view (is_boolean, org_id) values (?, ?) returning *",
+        "select view.id, view.is_boolean, view.number_count, view.text, view.org_id from view_test.view where view.id = ? limit ?",
       ]
     `);
   });
