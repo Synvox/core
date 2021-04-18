@@ -280,8 +280,8 @@ export class Table<Context, T = any> {
   private async validateWhere(
     params: any,
     context: Context
-  ): Promise<[any, Record<string, string>]> {
-    const errors: Record<string, string> = {};
+  ): Promise<[any, Record<string, any>]> {
+    const errors: Record<string, any> = {};
     const clone = Object.assign(Array.isArray(params) ? [] : {}, params);
 
     for (let [key, value] of Object.entries(params)) {
@@ -289,7 +289,15 @@ export class Table<Context, T = any> {
       if (columnName === "and" || columnName === "or") {
         const [val, err] = await this.validateWhere(value, context);
         clone[key] = val;
-        Object.assign(errors, err);
+        if (Object.keys(err).length) errors[key] = err;
+        continue;
+      }
+
+      if (columnName in this.relatedTables.hasOne) {
+        const { table: otherTable } = this.relatedTables.hasOne[columnName];
+        const [val, err] = await otherTable.validateWhere(value, context);
+        clone[key] = val;
+        if (Object.keys(err).length) errors[key] = err;
         continue;
       }
 
@@ -328,6 +336,8 @@ export class Table<Context, T = any> {
 
   async getFilters(
     params: Record<string, any>,
+    context: Context,
+    mode: Mode,
     knex: Knex,
     wrap: (
       stmt: Knex.QueryBuilder,
@@ -357,19 +367,62 @@ export class Table<Context, T = any> {
 
       if (columnName === this.idColumnName && value in this.idModifiers) {
         // this is an id modifier, and it is async. Ignore it here.
+      } else if (
+        columnName in this.relatedTables.hasOne &&
+        typeof value === "object"
+      ) {
+        const { relation, table: relatedTable } = this.relatedTables.hasOne[
+          columnName
+        ];
+
+        const subQuery = relatedTable.query(knex);
+
+        (await relatedTable.getFilters(value, context, mode, knex))(subQuery);
+        await relatedTable.applyPolicy(subQuery, context, mode, knex);
+
+        subQuery.where(
+          `${relatedTable.alias}.${relation.referencesColumnName}`,
+          knex.raw("??", [`${this.alias}.${relation.columnName}`])
+        );
+
+        if (this.tenantIdColumnName && relatedTable.tenantIdColumnName) {
+          subQuery.where(
+            `${relatedTable.alias}.${relatedTable.tenantIdColumnName}`,
+            knex.raw("??", `${this.alias}.${this.tenantIdColumnName}`)
+          );
+        }
+
+        subQuery
+          .clear("select")
+          .select(`${relatedTable.alias}.${relation.referencesColumnName}`);
+
+        onStmt((stmt) => {
+          stmt[not ? "whereNotIn" : "whereIn"](
+            `${this.alias}.${relation.columnName}`,
+            subQuery
+          );
+        });
       } else if (columnName === "or") {
         if (Array.isArray(value)) {
           await Promise.all(
             value.map(async (value) => {
-              const apply = await this.getFilters(value, knex, (stmt, fn) =>
-                stmt.orWhere(fn)
+              const apply = await this.getFilters(
+                value,
+                context,
+                mode,
+                knex,
+                (stmt, fn) => stmt.orWhere(fn)
               );
               onStmt(apply);
             })
           );
         } else {
-          const apply = await this.getFilters(value, knex, (stmt, fn) =>
-            stmt.orWhere(fn)
+          const apply = await this.getFilters(
+            value,
+            context,
+            mode,
+            knex,
+            (stmt, fn) => stmt.orWhere(fn)
           );
           onStmt(apply);
         }
@@ -377,16 +430,24 @@ export class Table<Context, T = any> {
         if (Array.isArray(value)) {
           await Promise.all(
             value.map(async (value) => {
-              const apply = await this.getFilters(value, knex, (stmt, fn) =>
-                stmt.andWhere(fn)
+              const apply = await this.getFilters(
+                value,
+                context,
+                mode,
+                knex,
+                (stmt, fn) => stmt.andWhere(fn)
               );
 
               onStmt(apply);
             })
           );
         } else {
-          const apply = await this.getFilters(value, knex, (stmt, fn) =>
-            stmt.andWhere(fn)
+          const apply = await this.getFilters(
+            value,
+            context,
+            mode,
+            knex,
+            (stmt, fn) => stmt.andWhere(fn)
           );
           onStmt(apply);
         }
@@ -445,6 +506,7 @@ export class Table<Context, T = any> {
   private async where(
     stmt: Knex.QueryBuilder,
     context: Context,
+    mode: Mode,
     params: Record<string, any>,
     knex: Knex
   ) {
@@ -462,7 +524,7 @@ export class Table<Context, T = any> {
       }
     }
 
-    const apply = await this.getFilters(params, knex);
+    const apply = await this.getFilters(params, context, mode, knex);
 
     stmt.where((stmt) => {
       apply(stmt);
@@ -853,7 +915,7 @@ export class Table<Context, T = any> {
       )
         params[this.tenantIdColumnName] = obj[this.tenantIdColumnName];
 
-      await this.where(stmt, context, params, knex);
+      await this.where(stmt, context, "update", params, knex);
       await this.applyPolicy(stmt, context, "update", knex);
 
       const existing = await stmt.first();
@@ -1423,7 +1485,7 @@ export class Table<Context, T = any> {
     };
 
     const stmt = this.query(knex);
-    await this.where(stmt, context, queryParams, knex);
+    await this.where(stmt, context, "read", queryParams, knex);
     await this.applyPolicy(stmt, context, "read", knex);
 
     stmt.clear("select");
@@ -1440,7 +1502,7 @@ export class Table<Context, T = any> {
     };
 
     const stmt = this.query(knex);
-    await this.where(stmt, context, queryParams, knex);
+    await this.where(stmt, context, "read", queryParams, knex);
     await this.applyPolicy(stmt, context, "read", knex);
 
     const page = Number(queryParams.page || 0);
@@ -1619,7 +1681,13 @@ export class Table<Context, T = any> {
 
     const stmt = table.query(knex);
 
-    await table.where(stmt, context, { ...queryParams, withDeleted }, knex);
+    await table.where(
+      stmt,
+      context,
+      "read",
+      { ...queryParams, withDeleted },
+      knex
+    );
     await table.applyPolicy(stmt, context, "read", knex);
     await includeRelated(stmt);
 

@@ -4458,7 +4458,9 @@ describe("uuid columns", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "errors": Object {
-          "id": "must be a valid UUID",
+          "or": Object {
+            "id": "must be a valid UUID",
+          },
         },
       }
     `);
@@ -6582,6 +6584,319 @@ describe("readonly columns", () => {
       Array [
         "select items.id, items.org_id from test.items where (items.id = ?) limit ?",
         "select items.id, items.org_id from test.items where items.id = ? limit ?",
+      ]
+    `);
+  });
+});
+
+describe("filters involving foreign keys", () => {
+  it("can filter on values of a foreign key", async () => {
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
+      t.boolean("isBoolean").defaultTo(false);
+    });
+
+    await knex("test.orgs").insert([
+      { id: 1, isBoolean: true },
+      { id: 2, isBoolean: false },
+    ]);
+
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs");
+    });
+
+    await knex("test.items").insert([{ orgId: 1 }, { orgId: 2 }]);
+
+    const orgs = new Table({
+      schemaName: "test",
+      tableName: "orgs",
+    });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+    });
+
+    await items.init(knex);
+    await orgs.init(knex);
+    orgs.linkTables([items]);
+    items.linkTables([orgs]);
+
+    queries = [];
+    expect(await items.readOne(knex, { org: { isBoolean: false } }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "org": "/test/orgs/2",
+        },
+        "_type": "test/items",
+        "_url": "/test/items/2",
+        "id": 2,
+        "orgId": 2,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.org_id from test.items where (items.org_id in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items.org_id)) limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(await items.readOne(knex, { "org.not": { isBoolean: false } }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "org": "/test/orgs/1",
+        },
+        "_type": "test/items",
+        "_url": "/test/items/1",
+        "id": 1,
+        "orgId": 1,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.org_id from test.items where (items.org_id not in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items.org_id)) limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(await items.readOne(knex, { org: { isBoolean: true } }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "org": "/test/orgs/1",
+        },
+        "_type": "test/items",
+        "_url": "/test/items/1",
+        "id": 1,
+        "orgId": 1,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.org_id from test.items where (items.org_id in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items.org_id)) limit ?",
+      ]
+    `);
+  });
+
+  it("validates filters on values of a foreign key", async () => {
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
+      t.boolean("isBoolean").defaultTo(false);
+    });
+
+    await knex("test.orgs").insert([
+      { id: 1, isBoolean: true },
+      { id: 2, isBoolean: false },
+    ]);
+
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs");
+    });
+
+    await knex("test.items").insert([{ orgId: 1 }, { orgId: 2 }]);
+
+    const orgs = new Table({
+      schemaName: "test",
+      tableName: "orgs",
+    });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+    });
+
+    await items.init(knex);
+    await orgs.init(knex);
+    orgs.linkTables([items]);
+    items.linkTables([orgs]);
+
+    queries = [];
+    expect(
+      await items
+        .readOne(knex, { org: { isBoolean: {} } }, {})
+        .catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "org": Object {
+            "isBoolean": "must be a \`boolean\` type, but the final value was: \`{}\`.",
+          },
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`Array []`);
+  });
+
+  it("can filter on values of a foreign key with tenant ids", async () => {
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
+    });
+
+    await knex("test.orgs").insert([{ id: 1 }]);
+
+    await knex.schema.withSchema("test").createTable("teams", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs");
+      t.boolean("isBoolean").defaultTo(false);
+    });
+
+    await knex("test.teams").insert([
+      { id: 1, isBoolean: true, orgId: 1 },
+      { id: 2, isBoolean: false, orgId: 1 },
+    ]);
+
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs");
+      t.bigInteger("teamId").references("id").inTable("test.teams");
+    });
+
+    await knex("test.items").insert([
+      { orgId: 1, teamId: 1 },
+      { orgId: 1, teamId: 2 },
+    ]);
+
+    const orgs = new Table({
+      schemaName: "test",
+      tableName: "orgs",
+    });
+
+    const teams = new Table({
+      schemaName: "test",
+      tableName: "teams",
+      tenantIdColumnName: "orgId",
+    });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      tenantIdColumnName: "orgId",
+    });
+
+    await orgs.init(knex);
+    await items.init(knex);
+    await teams.init(knex);
+    items.linkTables([items, orgs, teams]);
+    orgs.linkTables([items, orgs, teams]);
+    teams.linkTables([items, orgs, teams]);
+
+    queries = [];
+    expect(
+      await items.readOne(knex, { orgId: 1, team: { isBoolean: false } }, {})
+    ).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "org": "/test/orgs/1",
+          "team": "/test/teams/2?orgId=1",
+        },
+        "_type": "test/items",
+        "_url": "/test/items/2?orgId=1",
+        "id": 2,
+        "orgId": 1,
+        "teamId": 2,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.org_id, items.team_id from test.items where (items.org_id = ? and items.team_id in (select teams.id from test.teams where teams.is_boolean = ? and teams.id = items.team_id and teams.org_id = items.org_id)) limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      await items.readOne(knex, { orgId: 1, team: { isBoolean: true } }, {})
+    ).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "org": "/test/orgs/1",
+          "team": "/test/teams/1?orgId=1",
+        },
+        "_type": "test/items",
+        "_url": "/test/items/1?orgId=1",
+        "id": 1,
+        "orgId": 1,
+        "teamId": 1,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.org_id, items.team_id from test.items where (items.org_id = ? and items.team_id in (select teams.id from test.teams where teams.is_boolean = ? and teams.id = items.team_id and teams.org_id = items.org_id)) limit ?",
+      ]
+    `);
+  });
+
+  it("can filter on values of a foreign key several layers deep", async () => {
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
+    });
+
+    await knex("test.orgs").insert([{ id: 1 }]);
+
+    await knex.schema.withSchema("test").createTable("teams", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs");
+    });
+
+    await knex("test.teams").insert([
+      { id: 1, orgId: 1 },
+      { id: 2, orgId: 1 },
+    ]);
+
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs");
+      t.bigInteger("teamId").references("id").inTable("test.teams");
+    });
+
+    await knex("test.items").insert([
+      { orgId: 1, teamId: 1 },
+      { orgId: 1, teamId: 2 },
+    ]);
+
+    const orgs = new Table({
+      schemaName: "test",
+      tableName: "orgs",
+    });
+
+    const teams = new Table({
+      schemaName: "test",
+      tableName: "teams",
+    });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+    });
+
+    await orgs.init(knex);
+    await items.init(knex);
+    await teams.init(knex);
+    items.linkTables([items, orgs, teams]);
+    orgs.linkTables([items, orgs, teams]);
+    teams.linkTables([items, orgs, teams]);
+
+    queries = [];
+    expect(await items.readOne(knex, { team: { org: { id: 1 } } }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "org": "/test/orgs/1",
+          "team": "/test/teams/1",
+        },
+        "_type": "test/items",
+        "_url": "/test/items/1",
+        "id": 1,
+        "orgId": 1,
+        "teamId": 1,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.org_id, items.team_id from test.items where (items.team_id in (select teams.id from test.teams where teams.org_id in (select orgs.id from test.orgs where orgs.id = ? and orgs.id = teams.org_id) and teams.id = items.team_id)) limit ?",
       ]
     `);
   });

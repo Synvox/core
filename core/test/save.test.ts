@@ -736,6 +736,8 @@ describe("saves to files", () => {
         \\"arr.not.gte\\": number[] | null;
         arr.null: any;
         arr.not.null: any;
+        parent: TestParams;
+        parent.not: TestParams;
         thing: unknown;
         and: Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\"> | Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\">[];
         not.and: Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\"> | Omit<TestSubParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\" | \\"thing\\">[];
@@ -801,6 +803,8 @@ describe("saves to files", () => {
         \\"arr.not.gte\\": number[] | null;
         arr.null: any;
         arr.not.null: any;
+        parent: TestParams;
+        parent.not: TestParams;
         and: Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         not.and: Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         or: Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestSubNullableParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
@@ -1043,6 +1047,8 @@ describe("saves to files", () => {
         \\"typeId.not.gt\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
         \\"typeId.gte\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
         \\"typeId.not.gte\\": (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[];
+        type: TypeParams;
+        type.not: TypeParams;
         and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         not.and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
@@ -1195,6 +1201,8 @@ describe("saves to files", () => {
         \\"typeId.not.gte\\": string | string[];
         \\"typeId.fts\\": string;
         \\"typeId.not.fts\\": string;
+        type: TypeParams;
+        type.not: TypeParams;
         and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         not.and: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];
         or: Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\"> | Omit<TestParams, \\"include\\" | \\"cursor\\" | \\"page\\" | \\"limit\\">[];

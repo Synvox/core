@@ -187,6 +187,13 @@ export async function saveTsTypes(
         }
       }
 
+      for (let { table: relatedTable, name } of Object.values(
+        table.relatedTables.hasOne
+      )) {
+        types += `  ${name}: ${`${relatedTable.className}Params`};\n`;
+        types += `  ${name}.not: ${`${relatedTable.className}Params`};\n`;
+      }
+
       const ignoredSubs = ["include", "cursor", "page", "limit"];
       const queryModifierNames = Object.keys(table.queryModifiers);
       ignoredSubs.push(...queryModifierNames);
