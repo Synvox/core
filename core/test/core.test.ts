@@ -570,6 +570,103 @@ describe("listens on server", () => {
     `);
   });
 
+  it("inserts multiple", async () => {
+    const core = new Core(knex, () => ({}));
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+    });
+
+    const app = express();
+    app.use(core.router);
+    const url = await listen(app);
+
+    const axios = Axios.create({ baseURL: url });
+
+    await core.init();
+
+    queries = [];
+    expect(
+      (
+        await axios
+          .post("/coreTest/test?numberCount=789", [
+            {
+              isBoolean: true,
+              numberCount: 5,
+              text: "abc",
+            },
+            {
+              isBoolean: false,
+              numberCount: 5,
+              text: "xyz",
+            },
+          ])
+          .catch((e) => e.response)
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "insert",
+            "path": "coreTest/test",
+            "row": Object {
+              "_links": Object {},
+              "_type": "coreTest/test",
+              "_url": "/coreTest/test/1",
+              "id": 1,
+              "isBoolean": true,
+              "numberCount": 789,
+              "text": "abc",
+            },
+          },
+          Object {
+            "mode": "insert",
+            "path": "coreTest/test",
+            "row": Object {
+              "_links": Object {},
+              "_type": "coreTest/test",
+              "_url": "/coreTest/test/2",
+              "id": 2,
+              "isBoolean": false,
+              "numberCount": 789,
+              "text": "xyz",
+            },
+          },
+        ],
+        "item": Array [
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/1",
+            "id": 1,
+            "isBoolean": true,
+            "numberCount": 789,
+            "text": "abc",
+          },
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/2",
+            "id": 2,
+            "isBoolean": false,
+            "numberCount": 789,
+            "text": "xyz",
+          },
+        ],
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "insert into core_test.test (is_boolean, number_count, text) values (?, ?, ?) returning *",
+        "insert into core_test.test (is_boolean, number_count, text) values (?, ?, ?) returning *",
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
+      ]
+    `);
+  });
+
   it("updates", async () => {
     const [row] = await knex("coreTest.test").insert({}).returning("*");
 
