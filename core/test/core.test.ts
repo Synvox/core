@@ -1851,7 +1851,7 @@ describe("handles advanced queries", () => {
     );
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (to_tsvector(test.text) @@ plainto_tsquery(?) or (test.number_count = ? and test.number_count < ?)) order by test.id asc limit ?",
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (to_tsvector(test.text) @@ plainto_tsquery(?) or (test.number_count = ?) or (test.number_count < ?)) order by test.id asc limit ?",
       ]
     `);
 

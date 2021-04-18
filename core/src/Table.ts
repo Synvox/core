@@ -326,15 +326,18 @@ export class Table<Context, T = any> {
     return [clone, errors];
   }
 
-  private async where(
-    stmt: Knex.QueryBuilder,
-    context: Context,
-    params: Record<string, any>
+  async getFilters(
+    params: Record<string, any>,
+    knex: Knex,
+    wrap: (
+      stmt: Knex.QueryBuilder,
+      fn: (knex: Knex.QueryBuilder) => void
+    ) => void = (knex, fn) => fn(knex)
   ) {
-    if (this.tenantIdColumnName && !params[this.tenantIdColumnName])
-      throw new BadRequestError({
-        [this.tenantIdColumnName]: `is required`,
-      });
+    const operations: ((stmt: Knex.QueryBuilder) => void)[] = [];
+    const onStmt = (fn: (stmt: Knex.QueryBuilder) => void) => {
+      operations.push(fn);
+    };
 
     function translateOp<Opts extends Record<string, string>>(
       opts: Opts,
@@ -344,59 +347,71 @@ export class Table<Context, T = any> {
       return opts[selected] ?? opts[defaultKey];
     }
 
-    const applyFilter = (
-      stmt: Knex.QueryBuilder,
-      params: Record<string, any>
-    ) => {
-      for (let [key, value] of Object.entries(params)) {
-        const [columnName, ...operands] = key.split(".");
-        let not = false;
-        if (operands[0] === "not") {
-          operands.shift();
-          not = true;
-        }
+    for (let [key, value] of Object.entries(params)) {
+      const [columnName, ...operands] = key.split(".");
+      let not = false;
+      if (operands[0] === "not") {
+        operands.shift();
+        not = true;
+      }
 
-        if (columnName === this.idColumnName && value in this.idModifiers) {
-          // this is an id modifier, and it is async. Ignore it here.
-        } else if (columnName === "or") {
-          if (Array.isArray(value)) {
-            value.map((value) => {
-              stmt.orWhere((stmt) => {
-                applyFilter(stmt, value);
-              });
-            });
-          } else {
-            stmt.orWhere((stmt) => {
-              applyFilter(stmt, value);
-            });
-          }
-        } else if (columnName === "and") {
-          if (Array.isArray(value)) {
-            value.map((value) => {
-              stmt.andWhere((stmt) => {
-                applyFilter(stmt, value);
-              });
-            });
-          } else {
-            stmt.andWhere((stmt) => {
-              applyFilter(stmt, value);
-            });
-          }
-        } else if (this.columns[columnName]) {
-          const op = operands[0];
-          if (op === "fts") {
+      if (columnName === this.idColumnName && value in this.idModifiers) {
+        // this is an id modifier, and it is async. Ignore it here.
+      } else if (columnName === "or") {
+        if (Array.isArray(value)) {
+          await Promise.all(
+            value.map(async (value) => {
+              const apply = await this.getFilters(value, knex, (stmt, fn) =>
+                stmt.orWhere(fn)
+              );
+              onStmt(apply);
+            })
+          );
+        } else {
+          const apply = await this.getFilters(value, knex, (stmt, fn) =>
+            stmt.orWhere(fn)
+          );
+          onStmt(apply);
+        }
+      } else if (columnName === "and") {
+        if (Array.isArray(value)) {
+          await Promise.all(
+            value.map(async (value) => {
+              const apply = await this.getFilters(value, knex, (stmt, fn) =>
+                stmt.andWhere(fn)
+              );
+
+              onStmt(apply);
+            })
+          );
+        } else {
+          const apply = await this.getFilters(value, knex, (stmt, fn) =>
+            stmt.andWhere(fn)
+          );
+          onStmt(apply);
+        }
+      } else if (this.columns[columnName]) {
+        const op = operands[0];
+        if (op === "fts") {
+          onStmt((stmt) => {
             stmt.whereRaw(
               (not ? "not " : "") + "to_tsvector(??.??) @@ plainto_tsquery(?)",
               [this.alias, columnName, value]
             );
-          } else if (Array.isArray(value)) {
-            const method = not ? "whereNotIn" : "whereIn";
+          });
+        } else if (Array.isArray(value)) {
+          const method = not ? "whereNotIn" : "whereIn";
+          onStmt((stmt) => {
             stmt[method](`${this.alias}.${columnName}`, value);
-          } else if (op === "null" && this.columns[columnName].nullable) {
-            const method = not ? "whereNot" : "where";
+          });
+        } else if (op === "null" && this.columns[columnName].nullable) {
+          const method = not ? "whereNot" : "where";
+          onStmt((stmt) => {
             stmt[method](`${this.alias}.${columnName}`, null);
-          } else {
-            const method = not ? "whereNot" : "where";
+          });
+        } else {
+          const method = not ? "whereNot" : "where";
+          onStmt((stmt) => {
             stmt[method](
               `${this.alias}.${columnName}`,
               translateOp(
@@ -413,10 +428,31 @@ export class Table<Context, T = any> {
               ),
               value
             );
-          }
+          });
         }
       }
+    }
+
+    return function apply(stmt: Knex.QueryBuilder) {
+      for (let operation of operations) {
+        wrap(stmt, (stmt) => {
+          operation(stmt);
+        });
+      }
     };
+  }
+
+  private async where(
+    stmt: Knex.QueryBuilder,
+    context: Context,
+    params: Record<string, any>,
+    knex: Knex
+  ) {
+    if (this.tenantIdColumnName && !params[this.tenantIdColumnName]) {
+      throw new BadRequestError({
+        [this.tenantIdColumnName]: `is required`,
+      });
+    }
 
     for (let [columnName, value] of Object.entries(params)) {
       if (columnName === this.idColumnName && value in this.idModifiers) {
@@ -426,8 +462,10 @@ export class Table<Context, T = any> {
       }
     }
 
+    const apply = await this.getFilters(params, knex);
+
     stmt.where((stmt) => {
-      applyFilter(stmt, params);
+      apply(stmt);
     });
 
     if (this.paranoid) {
@@ -672,13 +710,13 @@ export class Table<Context, T = any> {
             // are found that are not visible to the user
 
             if (parent[table.idColumnName]) {
-              stmt.whereNot(function () {
-                this.where(
+              stmt.whereNot((builder) => {
+                builder.where(
                   `${table.alias}.${[table.idColumnName]}`,
                   parent[table.idColumnName]
                 );
                 if (table.tenantIdColumnName) {
-                  this.where(
+                  builder.where(
                     `${table.alias}.${table.tenantIdColumnName}`,
                     parent[table.tenantIdColumnName]
                   );
@@ -815,7 +853,7 @@ export class Table<Context, T = any> {
       )
         params[this.tenantIdColumnName] = obj[this.tenantIdColumnName];
 
-      await this.where(stmt, context, params);
+      await this.where(stmt, context, params, knex);
       await this.applyPolicy(stmt, context, "update", knex);
 
       const existing = await stmt.first();
@@ -1009,9 +1047,9 @@ export class Table<Context, T = any> {
           `${table.alias}.${[table.idColumnName]}`,
           graph[table.idColumnName]
         )
-        .modify(function () {
+        .modify((builder) => {
           if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
-            this.where(
+            builder.where(
               `${table.alias}.${table.tenantIdColumnName}`,
               graph[table.tenantIdColumnName]
             );
@@ -1056,9 +1094,9 @@ export class Table<Context, T = any> {
               `${table.alias}.${[table.idColumnName]}`,
               graph[table.idColumnName]
             )
-            .modify(function () {
+            .modify((builder) => {
               if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
-                this.where(
+                builder.where(
                   `${table.alias}.${table.tenantIdColumnName}`,
                   graph[table.tenantIdColumnName]
                 );
@@ -1075,9 +1113,9 @@ export class Table<Context, T = any> {
             `${table.alias}.${table.idColumnName}`,
             row[table.idColumnName]
           )
-          .modify(function () {
+          .modify((builder) => {
             if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
-              this.where(
+              builder.where(
                 `${table.alias}.${table.tenantIdColumnName}`,
                 graph[table.tenantIdColumnName]
               );
@@ -1151,9 +1189,9 @@ export class Table<Context, T = any> {
 
       let updatedRow = await stmt
         .where(`${table.alias}.${table.idColumnName}`, row[table.idColumnName])
-        .modify(function () {
+        .modify((builder) => {
           if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
-            this.where(
+            builder.where(
               `${table.alias}.${table.tenantIdColumnName}`,
               graph[table.tenantIdColumnName]
             );
@@ -1254,9 +1292,9 @@ export class Table<Context, T = any> {
           const stmt = otherTable
             .query(trx)
             .where(`${otherTable.alias}.${columnName}`, id)
-            .modify(function () {
+            .modify((builder) => {
               if (table.tenantIdColumnName && tenantId !== undefined) {
-                this.where(
+                builder.where(
                   `${otherTable.alias}.${otherTable.tenantIdColumnName}`,
                   tenantId
                 );
@@ -1385,7 +1423,7 @@ export class Table<Context, T = any> {
     };
 
     const stmt = this.query(knex);
-    await this.where(stmt, context, queryParams);
+    await this.where(stmt, context, queryParams, knex);
     await this.applyPolicy(stmt, context, "read", knex);
 
     stmt.clear("select");
@@ -1402,7 +1440,7 @@ export class Table<Context, T = any> {
     };
 
     const stmt = this.query(knex);
-    await this.where(stmt, context, queryParams);
+    await this.where(stmt, context, queryParams, knex);
     await this.applyPolicy(stmt, context, "read", knex);
 
     const page = Number(queryParams.page || 0);
@@ -1581,7 +1619,7 @@ export class Table<Context, T = any> {
 
     const stmt = table.query(knex);
 
-    await table.where(stmt, context, { ...queryParams, withDeleted });
+    await table.where(stmt, context, { ...queryParams, withDeleted }, knex);
     await table.applyPolicy(stmt, context, "read", knex);
     await includeRelated(stmt);
 
@@ -1658,19 +1696,19 @@ export class Table<Context, T = any> {
       if (queryParams.cursor) {
         const cursor = JSON.parse(atob(queryParams.cursor));
         // keyset pagination
-        statement.where(function () {
+        statement.where((builder) => {
           sorts.forEach((sort, index) => {
-            this.orWhere(function () {
+            builder.orWhere((builder) => {
               sorts
                 .slice(0, index)
                 .map(({ column }) =>
-                  this.where(
+                  builder.where(
                     `${table.tableName}.${column}`,
                     "=",
                     cursor[column]
                   )
                 );
-              this.where(
+              builder.where(
                 `${table.tableName}.${sort.column}`,
                 sort.order === "asc" ? ">" : "<",
                 cursor[sort.column]

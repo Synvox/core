@@ -1,5 +1,6 @@
 import Knex from "knex";
 import { knexHelpers, Relation, Table } from "../src";
+import uuid from "uuid";
 
 let queries: string[] = [];
 
@@ -29,6 +30,9 @@ beforeEach(async () => {
     drop schema if exists view_test cascade;
     create schema view_test;
   `);
+
+  const anonymousId = "uuid-test-value";
+  jest.spyOn(uuid, "v4").mockReturnValue(anonymousId);
 });
 
 afterEach(() => {
@@ -214,7 +218,7 @@ describe("works with views", () => {
     expect(await table.write(knex, { isBoolean: true, orgId: org.id }, {}))
       .toMatchInlineSnapshot(`
       Object {
-        "changeId": "7bbb86b5-fb7e-4131-bd30-7afe97fb9bae",
+        "changeId": "uuid-test-value",
         "changes": Array [
           Object {
             "mode": "insert",
