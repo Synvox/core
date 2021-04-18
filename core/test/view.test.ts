@@ -56,7 +56,10 @@ describe("works with views", () => {
       t.specificType("text", "character varying(10)")
         .notNullable()
         .defaultTo("text");
-      t.bigInteger("orgId").references("id").inTable("test.orgs").notNullable();
+      t.bigInteger("orgId")
+        .references("id")
+        .inTable("viewTest.orgs")
+        .notNullable();
     });
 
     await knex.raw(`
