@@ -180,6 +180,51 @@ describe("works with views", () => {
     `);
 
     queries = [];
+    expect(await orgs.readMany(knex, { include: "view" }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/viewTest/orgs/count?include=view",
+          "ids": "/viewTest/orgs/ids?include=view",
+        },
+        "_type": "viewTest/orgs",
+        "_url": "/viewTest/orgs?include=view",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {
+              "view": "/viewTest/view?orgId=1",
+            },
+            "_type": "viewTest/orgs",
+            "_url": "/viewTest/orgs/1",
+            "id": 1,
+            "view": Array [
+              Object {
+                "_links": Object {
+                  "org": "/viewTest/orgs/1",
+                },
+                "_type": "viewTest/view",
+                "_url": "/viewTest/view/1",
+                "id": 1,
+                "isBoolean": true,
+                "numberCount": 0,
+                "orgId": 1,
+                "text": "text",
+              },
+            ],
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select orgs.id, array(select row_to_json(view_sub_query) from (select view.id, view.is_boolean, view.number_count, view.text, view.org_id from view_test.view where view.org_id = orgs.id limit ?) view_sub_query) as view from view_test.orgs order by orgs.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
     expect(
       await table
         .write(knex, { isBoolean: false, orgId: org.id }, {})
