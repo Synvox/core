@@ -6679,6 +6679,96 @@ describe("filters involving foreign keys", () => {
         "select items.id, items.org_id from test.items where (items.org_id in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items.org_id)) limit ?",
       ]
     `);
+
+    queries = [];
+    expect(
+      await items.readMany(knex, { org: { isBoolean: [true, false] } }, {})
+    ).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/test/items/count?org[isBoolean][]=true&org[isBoolean][]=false",
+          "ids": "/test/items/ids?org[isBoolean][]=true&org[isBoolean][]=false",
+        },
+        "_type": "test/items",
+        "_url": "/test/items?org[isBoolean][]=true&org[isBoolean][]=false",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {
+              "org": "/test/orgs/1",
+            },
+            "_type": "test/items",
+            "_url": "/test/items/1",
+            "id": 1,
+            "orgId": 1,
+          },
+          Object {
+            "_links": Object {
+              "org": "/test/orgs/2",
+            },
+            "_type": "test/items",
+            "_url": "/test/items/2",
+            "id": 2,
+            "orgId": 2,
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.org_id from test.items where (items.org_id in (select orgs.id from test.orgs where orgs.is_boolean in (?, ?) and orgs.id = items.org_id)) order by items.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      await items.readMany(
+        knex,
+        {
+          or: [{ org: { isBoolean: true } }, { org: { isBoolean: false } }],
+        },
+        {}
+      )
+    ).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/test/items/count?or[][org][isBoolean]=true&or[][org][isBoolean]=false",
+          "ids": "/test/items/ids?or[][org][isBoolean]=true&or[][org][isBoolean]=false",
+        },
+        "_type": "test/items",
+        "_url": "/test/items?or[][org][isBoolean]=true&or[][org][isBoolean]=false",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {
+              "org": "/test/orgs/1",
+            },
+            "_type": "test/items",
+            "_url": "/test/items/1",
+            "id": 1,
+            "orgId": 1,
+          },
+          Object {
+            "_links": Object {
+              "org": "/test/orgs/2",
+            },
+            "_type": "test/items",
+            "_url": "/test/items/2",
+            "id": 2,
+            "orgId": 2,
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.org_id from test.items where ((items.org_id in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items.org_id)) or (items.org_id in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items.org_id))) order by items.id asc limit ?",
+      ]
+    `);
   });
 
   it("validates filters on values of a foreign key", async () => {
