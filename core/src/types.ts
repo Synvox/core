@@ -4,6 +4,17 @@ import { Knex } from "knex";
 import { mixed, object, BaseSchema } from "yup";
 import { Table } from "./Table";
 
+export type RelationDef = {
+  schemaName?: string;
+  tableName?: string;
+  columnName: string;
+  referencesSchema?: string;
+  referencesTable: string;
+  referencesColumnName?: string;
+  deleteRule?: string;
+  updateRule?: string;
+};
+
 export class Relation {
   schemaName: string;
   tableName: string;
@@ -14,14 +25,14 @@ export class Relation {
   deleteRule: string;
   updateRule: string;
   constructor(def: RelationDef) {
-    this.schemaName = def.schemaName;
-    this.tableName = def.tableName;
+    this.schemaName = def.schemaName ?? "public";
+    this.tableName = def.tableName ?? "";
     this.columnName = def.columnName;
-    this.referencesSchema = def.referencesSchema;
+    this.referencesSchema = def.referencesSchema ?? "public";
     this.referencesTable = def.referencesTable;
-    this.referencesColumnName = def.referencesColumnName;
-    this.deleteRule = def.deleteRule;
-    this.updateRule = def.updateRule;
+    this.referencesColumnName = def.referencesColumnName ?? "id";
+    this.deleteRule = def.deleteRule ?? "NO ACTION";
+    this.updateRule = def.updateRule ?? "NO ACTION";
   }
 }
 
@@ -118,17 +129,6 @@ export type Column = {
 };
 
 export type Columns = Record<string, Column>;
-
-export type RelationDef = {
-  schemaName: string;
-  tableName: string;
-  columnName: string;
-  referencesSchema: string;
-  referencesTable: string;
-  referencesColumnName: string;
-  deleteRule: string;
-  updateRule: string;
-};
 
 export type Relations = Record<string, Relation>;
 

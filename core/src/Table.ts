@@ -185,6 +185,11 @@ export class Table<Context, T = any> {
       ...this.uniqueColumns,
     ];
 
+    Object.values(this.relations).forEach((relation) => {
+      relation.tableName = this.tableName;
+      relation.schemaName = this.schemaName;
+    });
+
     this.relations = { ...relations, ...this.relations };
 
     if (this.paranoid && !("deletedAt" in this.columns))
