@@ -566,6 +566,7 @@ describe("saves to files", () => {
         TestFilters &
           CollectionParams & {
             include: ('testSub' | 'testSubNullable')[];
+            sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId')[];
           }
       >;
 
@@ -592,6 +593,7 @@ describe("saves to files", () => {
       export type TestNullableParams = Partial<
         TestNullableFilters &
           CollectionParams & {
+            sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text')[];
           }
       >;
 
@@ -620,6 +622,7 @@ describe("saves to files", () => {
           CollectionParams & {
         thing: unknown;
             include: 'parent'[];
+            sort: 'id' | '-id' | 'parentId' | '-parentId' | 'arr' | '-arr' | ('id' | '-id' | 'parentId' | '-parentId' | 'arr' | '-arr')[];
           }
       >;
 
@@ -647,6 +650,7 @@ describe("saves to files", () => {
         TestSubNullableFilters &
           CollectionParams & {
             include: 'parent'[];
+            sort: 'id' | '-id' | 'parentId' | '-parentId' | 'arr' | '-arr' | ('id' | '-id' | 'parentId' | '-parentId' | 'arr' | '-arr')[];
           }
       >;
       "
@@ -731,6 +735,7 @@ describe("saves to files", () => {
         TestFilters &
           CollectionParams & {
             include: ('getThing' | 'getOtherThing')[];
+            sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId')[];
           }
       >;
       "
@@ -813,6 +818,7 @@ describe("saves to files", () => {
         TestFilters &
           CollectionParams & {
             include: 'type'[];
+            sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId')[];
           }
       >;
 
@@ -834,6 +840,7 @@ describe("saves to files", () => {
         TypeFilters &
           CollectionParams & {
             include: 'test'[];
+            sort: 'id' | '-id' | ('id' | '-id')[];
           }
       >;
       "
@@ -918,6 +925,7 @@ describe("saves to files", () => {
         TestFilters &
           CollectionParams & {
             include: 'type'[];
+            sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId')[];
           }
       >;
 
@@ -939,6 +947,7 @@ describe("saves to files", () => {
         TypeFilters &
           CollectionParams & {
             include: 'test'[];
+            sort: 'id' | '-id' | ('id' | '-id')[];
           }
       >;
       "

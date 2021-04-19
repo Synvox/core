@@ -207,14 +207,11 @@ export async function saveTsTypes(
       types += `      "not.and": ${filtersType} | ${filtersType}[];\n`;
       types += `      or: ${filtersType} | ${filtersType}[];\n`;
       types += `      "not.or": ${filtersType} | ${filtersType}[];\n`;
-
       types += `    }\n`;
       types += `>;\n\n`;
 
       types += `export type ${paramsType} = Partial<\n`;
-
       types += `  ${filtersType} &\n`;
-
       types += `    CollectionParams & {\n`;
 
       for (let queryModifier of Object.keys(table.queryModifiers)) {
@@ -233,6 +230,14 @@ export async function saveTsTypes(
         if (includeKeys.length > 1) includeType = `(${includeType})`;
         types += `      include: ${includeType}[];\n`;
       }
+
+      const sortType = Object.keys(table.columns)
+        .map((name) => [name, `-${name}`])
+        .reduce((acc, c) => acc.concat(c), [])
+        .map((v) => `'${v}'`)
+        .join(" | ");
+
+      types += `      sort: ${sortType} | (${sortType})[];\n`;
 
       types += `    }\n`;
       types += `>;\n\n`;

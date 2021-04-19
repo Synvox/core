@@ -2774,7 +2774,7 @@ describe("without policies", () => {
         "_links": Object {
           "count": "/test/jobs/count?limit=2",
           "ids": "/test/jobs/ids?limit=2",
-          "nextPage": "/test/jobs?limit=2&cursor=eyJpZCI6MiwiaXNBY3RpdmUiOmZhbHNlfQ%3D%3D",
+          "nextPage": "/test/jobs?limit=2&cursor=eyJpZCI6Mn0%3D",
         },
         "_type": "test/jobs",
         "_url": "/test/jobs?limit=2",

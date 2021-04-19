@@ -1741,22 +1741,22 @@ export class Table<Context, T = any> {
       const page = Number(queryParams.page || 0);
       const limit = Math.max(0, Math.min(250, Number(queryParams.limit) || 50));
 
-      const sorts: { column: string; order: "asc" | "desc" }[] = [];
+      const sorts: { columnName: string; order: "asc" | "desc" }[] = [];
       if (sort) {
         if (!Array.isArray(sort)) sort = [sort];
 
-        sort.forEach((column: string) => {
+        sort.forEach((columnName: string) => {
           let order = "asc";
-          if (column.startsWith("-")) {
+          if (columnName.startsWith("-")) {
             order = "desc";
-            column = column.slice(1);
+            columnName = columnName.slice(1);
           }
 
           if (
-            column in table.columns! &&
+            columnName in table.columns! &&
             (order === "asc" || order === "desc")
           ) {
-            sorts.push({ column, order });
+            sorts.push({ columnName, order });
           }
         });
       }
@@ -1769,17 +1769,17 @@ export class Table<Context, T = any> {
             builder.orWhere((builder) => {
               sorts
                 .slice(0, index)
-                .map(({ column }) =>
+                .map(({ columnName }) =>
                   builder.where(
-                    `${table.tableName}.${column}`,
+                    `${table.tableName}.${columnName}`,
                     "=",
-                    cursor[column]
+                    cursor[columnName]
                   )
                 );
               builder.where(
-                `${table.tableName}.${sort.column}`,
+                `${table.tableName}.${sort.columnName}`,
                 sort.order === "asc" ? ">" : "<",
-                cursor[sort.column]
+                cursor[sort.columnName]
               );
             });
           });
@@ -1791,32 +1791,33 @@ export class Table<Context, T = any> {
       statement.limit(limit);
 
       if (sorts.length === 0) {
-        let column = this.defaultSortColumn;
+        let columnName = this.defaultSortColumn;
         let order: "asc" | "desc" = "asc";
 
-        if (column.startsWith("-")) {
+        if (columnName.startsWith("-")) {
           order = "desc";
-          column = column.slice(1);
+          columnName = columnName.slice(1);
         }
 
         sorts.push({
-          column,
+          columnName,
           order,
         });
 
         if (this.defaultSortColumn !== this.idColumnName) {
           sorts.push({
-            column: this.idColumnName,
+            columnName: this.idColumnName,
             order: "asc",
           });
         }
       }
 
       sorts.forEach((s) =>
-        statement.orderBy(`${table.alias}.${s.column}`, s.order)
+        statement.orderBy(`${table.alias}.${s.columnName}`, s.order)
       );
 
       const results = await statement;
+      const last = results[results.length - 1];
 
       const links = {
         ...(!queryParams.page
@@ -1824,7 +1825,15 @@ export class Table<Context, T = any> {
               ...(results.length >= limit && {
                 nextPage: `${table.baseUrl}/${path}?${qsStringify({
                   ...queryParams,
-                  cursor: btoa(JSON.stringify(results[results.length - 1])),
+                  cursor: btoa(
+                    JSON.stringify(
+                      Object.fromEntries(
+                        sorts.map((sort) => {
+                          return [sort.columnName, last[sort.columnName]];
+                        })
+                      )
+                    )
+                  ),
                 })}`,
               }),
             }
