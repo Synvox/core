@@ -275,7 +275,7 @@ describe("listens on server", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "coreTest/testSub",
+            "path": "/coreTest/testSub",
             "row": Object {
               "_links": Object {
                 "parent": "/coreTest/test/1",
@@ -433,7 +433,7 @@ describe("listens on server", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "coreTest/test",
+            "path": "/coreTest/test",
             "row": Object {
               "_links": Object {
                 "testSub": "/coreTest/testSub?parentId=1",
@@ -539,7 +539,7 @@ describe("listens on server", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "coreTest/test",
+            "path": "/coreTest/test",
             "row": Object {
               "_links": Object {},
               "_type": "coreTest/test",
@@ -610,7 +610,7 @@ describe("listens on server", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "coreTest/test",
+            "path": "/coreTest/test",
             "row": Object {
               "_links": Object {},
               "_type": "coreTest/test",
@@ -623,7 +623,7 @@ describe("listens on server", () => {
           },
           Object {
             "mode": "insert",
-            "path": "coreTest/test",
+            "path": "/coreTest/test",
             "row": Object {
               "_links": Object {},
               "_type": "coreTest/test",
@@ -700,7 +700,7 @@ describe("listens on server", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "coreTest/test",
+            "path": "/coreTest/test",
             "row": Object {
               "_links": Object {},
               "_type": "coreTest/test",
@@ -880,7 +880,7 @@ describe("listens on server", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "coreTest/test",
+            "path": "/coreTest/test",
             "row": Object {
               "_links": Object {},
               "_type": "coreTest/test",
@@ -1162,7 +1162,7 @@ describe("sse", () => {
           "changes": Array [
             Object {
               "mode": "insert",
-              "path": "coreTest/test",
+              "path": "/coreTest/test",
               "row": Object {
                 "_links": Object {},
                 "_type": "coreTest/test",
@@ -1236,7 +1236,7 @@ describe("sse", () => {
           "changes": Array [
             Object {
               "mode": "insert",
-              "path": "coreTest/test",
+              "path": "/coreTest/test",
               "row": Object {
                 "_links": Object {},
                 "_type": "coreTest/test",
@@ -1312,7 +1312,7 @@ describe("sse", () => {
           "changes": Array [
             Object {
               "mode": "insert",
-              "path": "coreTest/test",
+              "path": "/coreTest/test",
               "row": Object {
                 "_links": Object {},
                 "_type": "coreTest/test",
@@ -1377,7 +1377,7 @@ describe("sse", () => {
           "changes": Array [
             Object {
               "mode": "insert",
-              "path": "coreTest/test",
+              "path": "/coreTest/test",
               "row": Object {
                 "_links": Object {},
                 "_type": "coreTest/test",

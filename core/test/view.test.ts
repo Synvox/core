@@ -292,7 +292,7 @@ describe("works with views", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "viewTest/view",
+            "path": "/viewTest/view",
             "row": Object {
               "_links": Object {
                 "org": "/viewTest/orgs/1",
@@ -344,7 +344,7 @@ describe("works with views", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "viewTest/view",
+            "path": "/viewTest/view",
             "row": Object {
               "_links": Object {
                 "org": "/viewTest/orgs/1",
@@ -570,7 +570,7 @@ describe("works with views", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "viewTest/view",
+            "path": "/viewTest/view",
             "row": Object {
               "_links": Object {
                 "org": "/viewTest/orgs/1",
@@ -615,7 +615,7 @@ describe("works with views", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "viewTest/view",
+            "path": "/viewTest/view",
             "row": Object {
               "_links": Object {
                 "org": "/viewTest/orgs/1",

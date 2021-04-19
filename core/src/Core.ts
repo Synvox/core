@@ -99,7 +99,7 @@ export class Core<Context> {
 
       const handler = async ({ id, changes }: ChangeEvent) => {
         const isVisible = async (change: ChangeSummary<any>) => {
-          const table = this.tables.find((t) => t.path === change.path);
+          const table = this.tables.find((t) => `/${t.path}` === change.path);
 
           if (!table) return false;
 

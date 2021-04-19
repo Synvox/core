@@ -104,7 +104,7 @@ describe("withTimestamps plugin", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "testPlugins/users",
+            "path": "/testPlugins/users",
             "row": Object {
               "_links": Object {
                 "posts": "/testPlugins/posts?userId=1",
@@ -118,7 +118,7 @@ describe("withTimestamps plugin", () => {
           },
           Object {
             "mode": "insert",
-            "path": "testPlugins/posts",
+            "path": "/testPlugins/posts",
             "row": Object {
               "_links": Object {
                 "user": "/testPlugins/users/1",
@@ -134,7 +134,7 @@ describe("withTimestamps plugin", () => {
           },
           Object {
             "mode": "insert",
-            "path": "testPlugins/posts",
+            "path": "/testPlugins/posts",
             "row": Object {
               "_links": Object {
                 "user": "/testPlugins/users/1",
@@ -217,7 +217,7 @@ describe("withTimestamps plugin", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "testPlugins/users",
+            "path": "/testPlugins/users",
             "row": Object {
               "_links": Object {
                 "posts": "/testPlugins/posts?userId=1",
@@ -267,7 +267,7 @@ describe("withTimestamps plugin", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "testPlugins/posts",
+            "path": "/testPlugins/posts",
             "row": Object {
               "_links": Object {
                 "user": "/testPlugins/users/1",
@@ -321,7 +321,7 @@ describe("withTimestamps plugin", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "testPlugins/items",
+            "path": "/testPlugins/items",
             "row": Object {
               "_links": Object {},
               "_type": "testPlugins/items",

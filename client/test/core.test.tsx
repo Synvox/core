@@ -821,10 +821,7 @@ describe("core", () => {
     });
 
     const app = express();
-    app.use(
-      "/sse",
-      core.sse(async () => true)
-    );
+    app.use("/sse", core.sse());
     app.use(core.router);
     const url = await listen(app);
     const axios = Axios.create({ baseURL: url });
@@ -879,36 +876,7 @@ describe("core", () => {
     `);
 
     urls = [];
-    expect((await axios.post("/coreTest/test", {})).data)
-      .toMatchInlineSnapshot(`
-      Object {
-        "changeId": "uuid-test-value",
-        "changes": Array [
-          Object {
-            "mode": "insert",
-            "path": "/coreTest/test",
-            "row": Object {
-              "_links": Object {},
-              "_type": "coreTest/test",
-              "_url": "/coreTest/test/2",
-              "id": 2,
-              "isBoolean": false,
-              "numberCount": 0,
-              "text": "text",
-            },
-          },
-        ],
-        "item": Object {
-          "_links": Object {},
-          "_type": "coreTest/test",
-          "_url": "/coreTest/test/2",
-          "id": 2,
-          "isBoolean": false,
-          "numberCount": 0,
-          "text": "text",
-        },
-      }
-    `);
+    await axios.post("/coreTest/test", {});
     await waitForNextUpdate();
     expect(urls).toMatchInlineSnapshot(`
       Array [

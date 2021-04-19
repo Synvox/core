@@ -925,7 +925,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -963,7 +963,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1036,7 +1036,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1049,7 +1049,7 @@ describe("without policies", () => {
           },
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1368,7 +1368,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1416,7 +1416,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1550,7 +1550,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1598,7 +1598,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1668,7 +1668,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1707,7 +1707,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1746,7 +1746,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1821,7 +1821,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1861,7 +1861,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1950,7 +1950,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/users",
+            "path": "/test/users",
             "row": Object {
               "_links": Object {
                 "posts": "/test/posts?userId=1",
@@ -1993,7 +1993,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/users",
+            "path": "/test/users",
             "row": Object {
               "_links": Object {
                 "posts": "/test/posts?userId=2",
@@ -2006,7 +2006,7 @@ describe("without policies", () => {
           },
           Object {
             "mode": "insert",
-            "path": "test/posts",
+            "path": "/test/posts",
             "row": Object {
               "_links": Object {
                 "user": "/test/users/2",
@@ -2020,7 +2020,7 @@ describe("without policies", () => {
           },
           Object {
             "mode": "insert",
-            "path": "test/posts",
+            "path": "/test/posts",
             "row": Object {
               "_links": Object {
                 "user": "/test/users/2",
@@ -2118,7 +2118,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/users",
+            "path": "/test/users",
             "row": Object {
               "_links": Object {
                 "posts": "/test/posts?userId=3",
@@ -2131,7 +2131,7 @@ describe("without policies", () => {
           },
           Object {
             "mode": "insert",
-            "path": "test/posts",
+            "path": "/test/posts",
             "row": Object {
               "_links": Object {
                 "user": "/test/users/3",
@@ -2183,7 +2183,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "test/users",
+            "path": "/test/users",
             "row": Object {
               "_links": Object {
                 "posts": "/test/posts?userId=3",
@@ -2227,7 +2227,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "test/posts",
+            "path": "/test/posts",
             "row": Object {
               "_links": Object {
                 "user": "/test/users/4",
@@ -2583,7 +2583,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -2625,7 +2625,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -3166,7 +3166,7 @@ describe("with policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/posts",
+            "path": "/test/posts",
             "row": Object {
               "_links": Object {},
               "_type": "test/posts",
@@ -3236,7 +3236,7 @@ describe("with policies", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "test/posts",
+            "path": "/test/posts",
             "row": Object {
               "_links": Object {
                 "user": "/test/users/1",
@@ -3284,7 +3284,7 @@ describe("with policies", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "test/posts",
+            "path": "/test/posts",
             "row": Object {
               "_links": Object {
                 "user": "/test/users/1",
@@ -3629,7 +3629,7 @@ describe("multitenancy", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -3659,7 +3659,7 @@ describe("multitenancy", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -3689,7 +3689,7 @@ describe("multitenancy", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -3811,7 +3811,7 @@ describe("multitenancy", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {
                 "org": "/test/orgs/1",
@@ -3953,7 +3953,7 @@ describe("multitenancy", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/sub",
+            "path": "/test/sub",
             "row": Object {
               "_links": Object {
                 "org": "/test/orgs/1",
@@ -4056,7 +4056,7 @@ describe("paranoid", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1",
@@ -4093,7 +4093,7 @@ describe("paranoid", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1",
@@ -4106,7 +4106,7 @@ describe("paranoid", () => {
           },
           Object {
             "mode": "delete",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1",
@@ -4120,7 +4120,7 @@ describe("paranoid", () => {
           },
           Object {
             "mode": "delete",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=2",
@@ -4222,7 +4222,7 @@ describe("paranoid", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1&orgId=1",
@@ -4236,7 +4236,7 @@ describe("paranoid", () => {
           },
           Object {
             "mode": "delete",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1&orgId=1",
@@ -4327,7 +4327,7 @@ describe("hidden columns", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -4485,7 +4485,7 @@ describe("uuid columns", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -4570,7 +4570,7 @@ describe("uuid columns", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?parentId=96435a51-7af8-4d08-94f3-892a99abd8cd",
@@ -4582,7 +4582,7 @@ describe("uuid columns", () => {
           },
           Object {
             "mode": "insert",
-            "path": "test/subitems",
+            "path": "/test/subitems",
             "row": Object {
               "_links": Object {
                 "parent": "/test/items/96435a51-7af8-4d08-94f3-892a99abd8cd",
@@ -4595,7 +4595,7 @@ describe("uuid columns", () => {
           },
           Object {
             "mode": "insert",
-            "path": "test/subitems",
+            "path": "/test/subitems",
             "row": Object {
               "_links": Object {
                 "parent": "/test/items/96435a51-7af8-4d08-94f3-892a99abd8cd",
@@ -4663,7 +4663,7 @@ describe("uuid columns", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?parentId=cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
@@ -4675,7 +4675,7 @@ describe("uuid columns", () => {
           },
           Object {
             "mode": "insert",
-            "path": "test/subitems",
+            "path": "/test/subitems",
             "row": Object {
               "_links": Object {
                 "parent": "/test/items/cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
@@ -4746,7 +4746,7 @@ describe("beforeCommit", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -4789,7 +4789,7 @@ describe("beforeCommit", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -4835,7 +4835,7 @@ describe("beforeCommit", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -4890,7 +4890,7 @@ describe("self references", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "items": "/test/items?parentItemId=1",
@@ -4921,7 +4921,7 @@ describe("self references", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "items": "/test/items?parentItemId=2",
@@ -4982,7 +4982,7 @@ describe("self references", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "items": "/test/items?parentItemId=3",
@@ -5628,7 +5628,7 @@ describe("in public schema", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "testTable",
+            "path": "/testTable",
             "row": Object {
               "_links": Object {},
               "_type": "testTable",
@@ -5832,7 +5832,7 @@ describe("upsert", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "test/contacts",
+            "path": "/test/contacts",
             "row": Object {
               "_links": Object {},
               "_type": "test/contacts",
@@ -5880,7 +5880,7 @@ describe("upsert", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "test/contacts",
+            "path": "/test/contacts",
             "row": Object {
               "_links": Object {},
               "_type": "test/contacts",
@@ -5892,7 +5892,7 @@ describe("upsert", () => {
           },
           Object {
             "mode": "update",
-            "path": "test/contacts",
+            "path": "/test/contacts",
             "row": Object {
               "_links": Object {},
               "_type": "test/contacts",
@@ -6064,7 +6064,7 @@ describe("upsert", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "test/contacts",
+            "path": "/test/contacts",
             "row": Object {
               "_links": Object {},
               "_type": "test/contacts",
@@ -6196,7 +6196,7 @@ describe("ref validations", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -6400,7 +6400,7 @@ describe("lookup tables", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "type": "/test/types/type1",
@@ -6455,7 +6455,7 @@ describe("readonly columns", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -6539,7 +6539,7 @@ describe("readonly columns", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
