@@ -42,3 +42,5 @@ jobs:
           USER: pg
           PGUSER: pg
           PGPASSWORD: postgres
+      - name: Codecov
+        uses: codecov/codecov-action@v1.4.0
