@@ -906,11 +906,56 @@ describe("core", () => {
       }
     `);
 
-    const { update } = await result.current.core.test.post({});
-    await new Promise((r) => setTimeout(r, 100));
+    const { update, changes } = await result.current.core.test.post({});
+    expect(changes).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "mode": "insert",
+          "path": "/coreTest/test",
+          "row": Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/3",
+            "id": 3,
+            "isBoolean": false,
+            "numberCount": 0,
+            "text": "text",
+          },
+        },
+      ]
+    `);
+
     await act(async () => {
       await update();
     });
+
+    expect(result.current).toMatchInlineSnapshot(`
+      Object {
+        "core": Object {
+          "test": [Function],
+        },
+        "result": Array [
+          Object {
+            "id": 1,
+            "isBoolean": false,
+            "numberCount": 0,
+            "text": "text",
+          },
+          Object {
+            "id": 2,
+            "isBoolean": false,
+            "numberCount": 0,
+            "text": "text",
+          },
+          Object {
+            "id": 3,
+            "isBoolean": false,
+            "numberCount": 0,
+            "text": "text",
+          },
+        ],
+      }
+    `);
 
     eventSource.close();
   });
