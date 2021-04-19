@@ -44,7 +44,7 @@ afterAll(async () => {
 });
 
 describe("works with views", () => {
-  it("reads", async () => {
+  it("works with auto-updatable views", async () => {
     await knex.schema.withSchema("viewTest").createTable("orgs", (t) => {
       t.bigIncrements("id").primary();
     });
@@ -64,7 +64,14 @@ describe("works with views", () => {
 
     await knex.raw(`
       create view view_test.view as
-        select * from view_test.test where is_boolean
+        select
+          id,
+          is_boolean,
+          number_count,
+          text as body,
+          text || ' appended' as body_appended,
+          org_id
+        from view_test.test where is_boolean
     `);
 
     const orgs = new Table({
@@ -81,6 +88,374 @@ describe("works with views", () => {
           referencesSchema: "viewTest",
           referencesTable: "orgs",
         }),
+      },
+      readOnlyColumns: ["bodyAppended"],
+    });
+
+    await table.init(knex);
+    await orgs.init(knex);
+    orgs.linkTables([table]);
+    table.linkTables([orgs]);
+
+    const [org] = await knex("viewTest.orgs").insert({}).returning("*");
+    for (let i = 0; i < 2; i++)
+      await knex("viewTest.test").insert({
+        isBoolean: i % 2 === 0,
+        orgId: org.id,
+      });
+
+    expect(table.columns).toMatchInlineSnapshot(`
+      Object {
+        "body": Object {
+          "defaultValue": null,
+          "length": 10,
+          "name": "body",
+          "nullable": true,
+          "type": "character varying",
+        },
+        "bodyAppended": Object {
+          "defaultValue": null,
+          "length": -1,
+          "name": "bodyAppended",
+          "nullable": true,
+          "type": "text",
+        },
+        "id": Object {
+          "defaultValue": null,
+          "length": -1,
+          "name": "id",
+          "nullable": true,
+          "type": "bigint",
+        },
+        "isBoolean": Object {
+          "defaultValue": null,
+          "length": -1,
+          "name": "isBoolean",
+          "nullable": true,
+          "type": "boolean",
+        },
+        "numberCount": Object {
+          "defaultValue": null,
+          "length": -1,
+          "name": "numberCount",
+          "nullable": true,
+          "type": "integer",
+        },
+        "orgId": Object {
+          "defaultValue": null,
+          "length": -1,
+          "name": "orgId",
+          "nullable": true,
+          "type": "bigint",
+        },
+      }
+    `);
+
+    queries = [];
+    expect(await table.readMany(knex, { include: "org" }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/viewTest/view/count?include=org",
+          "ids": "/viewTest/view/ids?include=org",
+        },
+        "_type": "viewTest/view",
+        "_url": "/viewTest/view?include=org",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {
+              "org": "/viewTest/orgs/1",
+            },
+            "_type": "viewTest/view",
+            "_url": "/viewTest/view/1",
+            "body": "text",
+            "bodyAppended": "text appended",
+            "id": 1,
+            "isBoolean": true,
+            "numberCount": 0,
+            "org": Object {
+              "_links": Object {
+                "view": "/viewTest/view?orgId=1",
+              },
+              "_type": "viewTest/orgs",
+              "_url": "/viewTest/orgs/1",
+              "id": 1,
+            },
+            "orgId": 1,
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select view.id, view.is_boolean, view.number_count, view.body, view.body_appended, view.org_id, (select row_to_json(orgs_sub_query) from (select orgs.id from view_test.orgs where orgs.id = view.org_id limit ?) orgs_sub_query) as org from view_test.view order by view.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(await orgs.readMany(knex, { include: "view" }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/viewTest/orgs/count?include=view",
+          "ids": "/viewTest/orgs/ids?include=view",
+        },
+        "_type": "viewTest/orgs",
+        "_url": "/viewTest/orgs?include=view",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {
+              "view": "/viewTest/view?orgId=1",
+            },
+            "_type": "viewTest/orgs",
+            "_url": "/viewTest/orgs/1",
+            "id": 1,
+            "view": Array [
+              Object {
+                "_links": Object {
+                  "org": "/viewTest/orgs/1",
+                },
+                "_type": "viewTest/view",
+                "_url": "/viewTest/view/1",
+                "body": "text",
+                "bodyAppended": "text appended",
+                "id": 1,
+                "isBoolean": true,
+                "numberCount": 0,
+                "orgId": 1,
+              },
+            ],
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select orgs.id, array(select row_to_json(view_sub_query) from (select view.id, view.is_boolean, view.number_count, view.body, view.body_appended, view.org_id from view_test.view where view.org_id = orgs.id limit ?) view_sub_query) as view from view_test.orgs order by orgs.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      await table
+        .write(knex, { isBoolean: false, orgId: org.id }, {})
+        .catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "base": "Unauthorized",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select orgs.id from view_test.orgs where orgs.id = ? limit ?",
+        "insert into view_test.view (is_boolean, org_id) values (?, ?) returning *",
+        "select view.id, view.is_boolean, view.number_count, view.body, view.body_appended, view.org_id from view_test.view where view.id = ? limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      await table
+        .write(knex, { isBoolean: {}, orgId: org.id }, {})
+        .catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "isBoolean": "must be a \`boolean\` type, but the final value was: \`{}\`.",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select orgs.id from view_test.orgs where orgs.id = ? limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      await table.write(
+        knex,
+        { isBoolean: true, body: "body text", orgId: org.id },
+        {}
+      )
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "insert",
+            "path": "viewTest/view",
+            "row": Object {
+              "_links": Object {
+                "org": "/viewTest/orgs/1",
+              },
+              "_type": "viewTest/view",
+              "_url": "/viewTest/view/4",
+              "body": "body text",
+              "bodyAppended": "body text appended",
+              "id": 4,
+              "isBoolean": true,
+              "numberCount": 0,
+              "orgId": 1,
+            },
+          },
+        ],
+        "item": Object {
+          "_links": Object {
+            "org": "/viewTest/orgs/1",
+          },
+          "_type": "viewTest/view",
+          "_url": "/viewTest/view/4",
+          "body": "body text",
+          "bodyAppended": "body text appended",
+          "id": 4,
+          "isBoolean": true,
+          "numberCount": 0,
+          "orgId": 1,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select orgs.id from view_test.orgs where orgs.id = ? limit ?",
+        "insert into view_test.view (body, is_boolean, org_id) values (?, ?, ?) returning *",
+        "select view.id, view.is_boolean, view.number_count, view.body, view.body_appended, view.org_id from view_test.view where view.id = ? limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      await table.write(
+        knex,
+        { isBoolean: true, bodyAppended: "body text", orgId: org.id },
+        {}
+      )
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "insert",
+            "path": "viewTest/view",
+            "row": Object {
+              "_links": Object {
+                "org": "/viewTest/orgs/1",
+              },
+              "_type": "viewTest/view",
+              "_url": "/viewTest/view/5",
+              "body": "text",
+              "bodyAppended": "text appended",
+              "id": 5,
+              "isBoolean": true,
+              "numberCount": 0,
+              "orgId": 1,
+            },
+          },
+        ],
+        "item": Object {
+          "_links": Object {
+            "org": "/viewTest/orgs/1",
+          },
+          "_type": "viewTest/view",
+          "_url": "/viewTest/view/5",
+          "body": "text",
+          "bodyAppended": "text appended",
+          "id": 5,
+          "isBoolean": true,
+          "numberCount": 0,
+          "orgId": 1,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select orgs.id from view_test.orgs where orgs.id = ? limit ?",
+        "insert into view_test.view (is_boolean, org_id) values (?, ?) returning *",
+        "select view.id, view.is_boolean, view.number_count, view.body, view.body_appended, view.org_id from view_test.view where view.id = ? limit ?",
+      ]
+    `);
+  });
+
+  it("works with instead of", async () => {
+    await knex.schema.withSchema("viewTest").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
+    });
+
+    await knex.schema.withSchema("viewTest").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+      t.boolean("is_boolean").notNullable().defaultTo(false);
+      t.integer("number_count").notNullable().defaultTo(0);
+      t.specificType("text", "character varying(10)")
+        .notNullable()
+        .defaultTo("text");
+      t.bigInteger("orgId")
+        .references("id")
+        .inTable("viewTest.orgs")
+        .notNullable();
+    });
+
+    await knex.raw(`
+      create view view_test.view as
+        select
+          *
+        from view_test.test where is_boolean;
+
+      create or replace function view_test.view_update_row() returns trigger as $$
+        begin
+          if (tg_op = 'DELETE') then
+            delete from view_test.test
+            where test.id = new.id;
+
+            return old;
+          elsif (tg_op = 'UPDATE') then
+            update view_test.test
+            set number_count = new.number_count
+            where id = old.id
+            returning * into new;
+            
+            return new;
+          elsif (tg_op = 'INSERT') then
+            insert into view_test.test(is_boolean, number_count, org_id)
+            values (new.is_boolean, new.number_count, new.org_id)
+            returning * into new;
+            
+            return new;
+          end if;
+        end;
+      $$ language plpgsql;
+
+      create trigger view_update
+      instead of insert or update or delete on view_test.view
+      for each row execute procedure view_test.view_update_row();
+    `);
+
+    const orgs = new Table({
+      schemaName: "viewTest",
+      tableName: "orgs",
+    });
+
+    const table = new Table({
+      schemaName: "viewTest",
+      tableName: "view",
+      relations: {
+        org: new Relation({
+          columnName: "orgId",
+          referencesSchema: "viewTest",
+          referencesTable: "orgs",
+        }),
+      },
+      async defaultParams() {
+        return {
+          isBoolean: true,
+        };
       },
     });
 
@@ -141,11 +516,11 @@ describe("works with views", () => {
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "count": "/viewTest/view/count?include=org",
-          "ids": "/viewTest/view/ids?include=org",
+          "count": "/viewTest/view/count?isBoolean=true&include=org",
+          "ids": "/viewTest/view/ids?isBoolean=true&include=org",
         },
         "_type": "viewTest/view",
-        "_url": "/viewTest/view?include=org",
+        "_url": "/viewTest/view?isBoolean=true&include=org",
         "hasMore": false,
         "items": Array [
           Object {
@@ -175,95 +550,12 @@ describe("works with views", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select view.id, view.is_boolean, view.number_count, view.text, view.org_id, (select row_to_json(orgs_sub_query) from (select orgs.id from view_test.orgs where orgs.id = view.org_id limit ?) orgs_sub_query) as org from view_test.view order by view.id asc limit ?",
+        "select view.id, view.is_boolean, view.number_count, view.text, view.org_id, (select row_to_json(orgs_sub_query) from (select orgs.id from view_test.orgs where orgs.id = view.org_id limit ?) orgs_sub_query) as org from view_test.view where (view.is_boolean = ?) order by view.id asc limit ?",
       ]
     `);
 
     queries = [];
-    expect(await orgs.readMany(knex, { include: "view" }, {}))
-      .toMatchInlineSnapshot(`
-      Object {
-        "_links": Object {
-          "count": "/viewTest/orgs/count?include=view",
-          "ids": "/viewTest/orgs/ids?include=view",
-        },
-        "_type": "viewTest/orgs",
-        "_url": "/viewTest/orgs?include=view",
-        "hasMore": false,
-        "items": Array [
-          Object {
-            "_links": Object {
-              "view": "/viewTest/view?orgId=1",
-            },
-            "_type": "viewTest/orgs",
-            "_url": "/viewTest/orgs/1",
-            "id": 1,
-            "view": Array [
-              Object {
-                "_links": Object {
-                  "org": "/viewTest/orgs/1",
-                },
-                "_type": "viewTest/view",
-                "_url": "/viewTest/view/1",
-                "id": 1,
-                "isBoolean": true,
-                "numberCount": 0,
-                "orgId": 1,
-                "text": "text",
-              },
-            ],
-          },
-        ],
-        "limit": 50,
-        "page": 0,
-      }
-    `);
-    expect(queries).toMatchInlineSnapshot(`
-      Array [
-        "select orgs.id, array(select row_to_json(view_sub_query) from (select view.id, view.is_boolean, view.number_count, view.text, view.org_id from view_test.view where view.org_id = orgs.id limit ?) view_sub_query) as view from view_test.orgs order by orgs.id asc limit ?",
-      ]
-    `);
-
-    queries = [];
-    expect(
-      await table
-        .write(knex, { isBoolean: false, orgId: org.id }, {})
-        .catch((e) => e.body)
-    ).toMatchInlineSnapshot(`
-      Object {
-        "errors": Object {
-          "base": "Unauthorized",
-        },
-      }
-    `);
-    expect(queries).toMatchInlineSnapshot(`
-      Array [
-        "select orgs.id from view_test.orgs where orgs.id = ? limit ?",
-        "insert into view_test.view (is_boolean, org_id) values (?, ?) returning *",
-        "select view.id, view.is_boolean, view.number_count, view.text, view.org_id from view_test.view where view.id = ? limit ?",
-      ]
-    `);
-
-    queries = [];
-    expect(
-      await table
-        .write(knex, { isBoolean: {}, orgId: org.id }, {})
-        .catch((e) => e.body)
-    ).toMatchInlineSnapshot(`
-      Object {
-        "errors": Object {
-          "isBoolean": "must be a \`boolean\` type, but the final value was: \`{}\`.",
-        },
-      }
-    `);
-    expect(queries).toMatchInlineSnapshot(`
-      Array [
-        "select orgs.id from view_test.orgs where orgs.id = ? limit ?",
-      ]
-    `);
-
-    queries = [];
-    expect(await table.write(knex, { isBoolean: true, orgId: org.id }, {}))
+    expect(await table.write(knex, { numberCount: 718, orgId: 1 }, {}))
       .toMatchInlineSnapshot(`
       Object {
         "changeId": "uuid-test-value",
@@ -276,10 +568,10 @@ describe("works with views", () => {
                 "org": "/viewTest/orgs/1",
               },
               "_type": "viewTest/view",
-              "_url": "/viewTest/view/4",
-              "id": 4,
+              "_url": "/viewTest/view/3",
+              "id": 3,
               "isBoolean": true,
-              "numberCount": 0,
+              "numberCount": 718,
               "orgId": 1,
               "text": "text",
             },
@@ -290,10 +582,10 @@ describe("works with views", () => {
             "org": "/viewTest/orgs/1",
           },
           "_type": "viewTest/view",
-          "_url": "/viewTest/view/4",
-          "id": 4,
+          "_url": "/viewTest/view/3",
+          "id": 3,
           "isBoolean": true,
-          "numberCount": 0,
+          "numberCount": 718,
           "orgId": 1,
           "text": "text",
         },
@@ -302,8 +594,41 @@ describe("works with views", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select orgs.id from view_test.orgs where orgs.id = ? limit ?",
-        "insert into view_test.view (is_boolean, org_id) values (?, ?) returning *",
+        "insert into view_test.view (is_boolean, number_count, org_id) values (?, ?, ?) returning *",
         "select view.id, view.is_boolean, view.number_count, view.text, view.org_id from view_test.view where view.id = ? limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(await table.write(knex, { id: 3, _delete: true }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "delete",
+            "path": "viewTest/view",
+            "row": Object {
+              "_links": Object {
+                "org": "/viewTest/orgs/1",
+              },
+              "_type": "viewTest/view",
+              "_url": "/viewTest/view/3",
+              "id": 3,
+              "isBoolean": true,
+              "numberCount": 718,
+              "orgId": 1,
+              "text": "text",
+            },
+          },
+        ],
+        "item": null,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select view.id, view.is_boolean, view.number_count, view.text, view.org_id from view_test.view where view.id = ? limit ?",
+        "delete from view_test.view where view.id = ?",
       ]
     `);
   });
