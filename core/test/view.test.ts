@@ -409,6 +409,9 @@ describe("works with views", () => {
         from view_test.test where is_boolean;
 
       create or replace function view_test.view_update_row() returns trigger as $$
+        declare
+          row_id bigint;
+          new_row view_test.view%ROWTYPE;
         begin
           if (tg_op = 'DELETE') then
             delete from view_test.test
@@ -419,15 +422,20 @@ describe("works with views", () => {
             update view_test.test
             set number_count = new.number_count
             where id = old.id
-            returning * into new;
+            returning id into row_id;
+
+            select * from view_test.view where id=row_id into new_row;
             
-            return new;
+            return new_row;
           elsif (tg_op = 'INSERT') then
             insert into view_test.test(is_boolean, number_count, org_id)
             values (new.is_boolean, new.number_count, new.org_id)
-            returning * into new;
+            returning id into row_id;
+
+            select * from view_test.view where id=row_id into new_row;
             
-            return new;
+            return new_row;
+          
           end if;
         end;
       $$ language plpgsql;
