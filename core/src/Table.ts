@@ -3,8 +3,6 @@ import { Router } from "express";
 import { classify } from "inflection";
 import { Knex } from "knex";
 import qs from "qs";
-import atob from "atob";
-import btoa from "btoa";
 import { object, array, StringSchema, mixed } from "yup";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -51,6 +49,10 @@ export type SavedTable = {
   relations: Relations;
   lookupTableIds: any[];
 };
+
+const toBase64 = (str: string) => Buffer.from(str, "utf-8").toString("base64");
+const fromBase64 = (str: string) =>
+  Buffer.from(str, "base64").toString("utf-8");
 
 export class Table<Context, T = any> {
   path: string;
@@ -1762,7 +1764,7 @@ export class Table<Context, T = any> {
       }
 
       if (queryParams.cursor) {
-        const cursor = JSON.parse(atob(queryParams.cursor));
+        const cursor = JSON.parse(fromBase64(queryParams.cursor));
         // keyset pagination
         statement.where((builder) => {
           sorts.forEach((sort, index) => {
@@ -1825,7 +1827,7 @@ export class Table<Context, T = any> {
               ...(results.length >= limit && {
                 nextPage: `${table.baseUrl}/${path}?${qsStringify({
                   ...queryParams,
-                  cursor: btoa(
+                  cursor: toBase64(
                     JSON.stringify(
                       Object.fromEntries(
                         sorts.map((sort) => {
