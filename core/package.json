@@ -13,8 +13,6 @@
   "name": "@synvox/core",
   "author": "Ryan Allred",
   "devDependencies": {
-    "@types/atob": "^2.1.2",
-    "@types/btoa": "^1.2.3",
     "@types/compression": "^1.7.0",
     "@types/eventsource": "^1.1.5",
     "@types/express": "^4.17.11",
@@ -46,9 +44,7 @@
     "yup": "~0.32.9"
   },
   "dependencies": {
-    "atob": "^2.1.2",
     "aws-sdk": "^2.868.0",
-    "btoa": "^1.2.1",
     "inflection": "^1.12.0",
     "qs": "^6.5.2",
     "set-value": "^2.0.1"
@@ -68,5 +64,10 @@
       "js",
       "jsx"
     ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/synvox/core.git",
+    "directory": "core"
   }
 }

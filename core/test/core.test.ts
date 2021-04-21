@@ -275,7 +275,7 @@ describe("listens on server", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "coreTest/testSub",
+            "path": "/coreTest/testSub",
             "row": Object {
               "_links": Object {
                 "parent": "/coreTest/test/1",
@@ -433,7 +433,7 @@ describe("listens on server", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "coreTest/test",
+            "path": "/coreTest/test",
             "row": Object {
               "_links": Object {
                 "testSub": "/coreTest/testSub?parentId=1",
@@ -539,7 +539,7 @@ describe("listens on server", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "coreTest/test",
+            "path": "/coreTest/test",
             "row": Object {
               "_links": Object {},
               "_type": "coreTest/test",
@@ -565,6 +565,103 @@ describe("listens on server", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into core_test.test (is_boolean, number_count, text) values (?, ?, ?) returning *",
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
+      ]
+    `);
+  });
+
+  it("inserts multiple", async () => {
+    const core = new Core(knex, () => ({}));
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+    });
+
+    const app = express();
+    app.use(core.router);
+    const url = await listen(app);
+
+    const axios = Axios.create({ baseURL: url });
+
+    await core.init();
+
+    queries = [];
+    expect(
+      (
+        await axios
+          .post("/coreTest/test?numberCount=789", [
+            {
+              isBoolean: true,
+              numberCount: 5,
+              text: "abc",
+            },
+            {
+              isBoolean: false,
+              numberCount: 5,
+              text: "xyz",
+            },
+          ])
+          .catch((e) => e.response)
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "insert",
+            "path": "/coreTest/test",
+            "row": Object {
+              "_links": Object {},
+              "_type": "coreTest/test",
+              "_url": "/coreTest/test/1",
+              "id": 1,
+              "isBoolean": true,
+              "numberCount": 789,
+              "text": "abc",
+            },
+          },
+          Object {
+            "mode": "insert",
+            "path": "/coreTest/test",
+            "row": Object {
+              "_links": Object {},
+              "_type": "coreTest/test",
+              "_url": "/coreTest/test/2",
+              "id": 2,
+              "isBoolean": false,
+              "numberCount": 789,
+              "text": "xyz",
+            },
+          },
+        ],
+        "item": Array [
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/1",
+            "id": 1,
+            "isBoolean": true,
+            "numberCount": 789,
+            "text": "abc",
+          },
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/2",
+            "id": 2,
+            "isBoolean": false,
+            "numberCount": 789,
+            "text": "xyz",
+          },
+        ],
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "insert into core_test.test (is_boolean, number_count, text) values (?, ?, ?) returning *",
+        "insert into core_test.test (is_boolean, number_count, text) values (?, ?, ?) returning *",
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
         "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
       ]
     `);
@@ -603,7 +700,7 @@ describe("listens on server", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "coreTest/test",
+            "path": "/coreTest/test",
             "row": Object {
               "_links": Object {},
               "_type": "coreTest/test",
@@ -783,7 +880,7 @@ describe("listens on server", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "coreTest/test",
+            "path": "/coreTest/test",
             "row": Object {
               "_links": Object {},
               "_type": "coreTest/test",
@@ -1065,7 +1162,7 @@ describe("sse", () => {
           "changes": Array [
             Object {
               "mode": "insert",
-              "path": "coreTest/test",
+              "path": "/coreTest/test",
               "row": Object {
                 "_links": Object {},
                 "_type": "coreTest/test",
@@ -1139,7 +1236,7 @@ describe("sse", () => {
           "changes": Array [
             Object {
               "mode": "insert",
-              "path": "coreTest/test",
+              "path": "/coreTest/test",
               "row": Object {
                 "_links": Object {},
                 "_type": "coreTest/test",
@@ -1215,7 +1312,7 @@ describe("sse", () => {
           "changes": Array [
             Object {
               "mode": "insert",
-              "path": "coreTest/test",
+              "path": "/coreTest/test",
               "row": Object {
                 "_links": Object {},
                 "_type": "coreTest/test",
@@ -1280,7 +1377,7 @@ describe("sse", () => {
           "changes": Array [
             Object {
               "mode": "insert",
-              "path": "coreTest/test",
+              "path": "/coreTest/test",
               "row": Object {
                 "_links": Object {},
                 "_type": "coreTest/test",
@@ -1754,7 +1851,7 @@ describe("handles advanced queries", () => {
     );
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (to_tsvector(test.text) @@ plainto_tsquery(?) or (test.number_count = ? and test.number_count < ?)) order by test.id asc limit ?",
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (to_tsvector(test.text) @@ plainto_tsquery(?) or (test.number_count = ?) or (test.number_count < ?)) order by test.id asc limit ?",
       ]
     `);
 

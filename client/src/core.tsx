@@ -170,14 +170,14 @@ class Table<Result, Params, IDColumnName> {
           });
         },
         count(params?: Params) {
-          let fullPath = path;
+          let fullPath = `${path}/count`;
           if (params && Object.keys(params).length > 0) {
             fullPath += `?${qsStringify(params)}`;
           }
           return getUrl(fullPath) as number;
         },
         ids(params?: Params) {
-          let fullPath = path;
+          let fullPath = `${path}/ids`;
           if (params && Object.keys(params).length > 0) {
             fullPath += `?${qsStringify(params)}`;
           }

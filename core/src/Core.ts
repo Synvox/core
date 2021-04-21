@@ -99,7 +99,7 @@ export class Core<Context> {
 
       const handler = async ({ id, changes }: ChangeEvent) => {
         const isVisible = async (change: ChangeSummary<any>) => {
-          const table = this.tables.find((t) => t.path === change.path);
+          const table = this.tables.find((t) => `/${t.path}` === change.path);
 
           if (!table) return false;
 
@@ -357,11 +357,12 @@ export class Core<Context> {
           wrap(async (req, res) => {
             const knex = await this.getKnex("write");
             const context = this.getContext(req, res);
-            return await table.write(
-              knex,
-              { ...req.body, ...req.params, ...req.query },
-              context
-            );
+
+            const body = Array.isArray(req.body)
+              ? req.body.map((b) => ({ ...b, ...req.params, ...req.query }))
+              : { ...req.body, ...req.params, ...req.query };
+
+            return await table.write(knex, body, context);
           })
         );
 

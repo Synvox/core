@@ -925,7 +925,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -963,7 +963,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1036,7 +1036,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1049,7 +1049,7 @@ describe("without policies", () => {
           },
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1368,7 +1368,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1416,7 +1416,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1550,7 +1550,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1598,7 +1598,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1668,7 +1668,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1707,7 +1707,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1746,7 +1746,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1821,7 +1821,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1861,7 +1861,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -1950,7 +1950,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/users",
+            "path": "/test/users",
             "row": Object {
               "_links": Object {
                 "posts": "/test/posts?userId=1",
@@ -1993,7 +1993,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/users",
+            "path": "/test/users",
             "row": Object {
               "_links": Object {
                 "posts": "/test/posts?userId=2",
@@ -2006,7 +2006,7 @@ describe("without policies", () => {
           },
           Object {
             "mode": "insert",
-            "path": "test/posts",
+            "path": "/test/posts",
             "row": Object {
               "_links": Object {
                 "user": "/test/users/2",
@@ -2020,7 +2020,7 @@ describe("without policies", () => {
           },
           Object {
             "mode": "insert",
-            "path": "test/posts",
+            "path": "/test/posts",
             "row": Object {
               "_links": Object {
                 "user": "/test/users/2",
@@ -2118,7 +2118,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/users",
+            "path": "/test/users",
             "row": Object {
               "_links": Object {
                 "posts": "/test/posts?userId=3",
@@ -2131,7 +2131,7 @@ describe("without policies", () => {
           },
           Object {
             "mode": "insert",
-            "path": "test/posts",
+            "path": "/test/posts",
             "row": Object {
               "_links": Object {
                 "user": "/test/users/3",
@@ -2183,7 +2183,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "test/users",
+            "path": "/test/users",
             "row": Object {
               "_links": Object {
                 "posts": "/test/posts?userId=3",
@@ -2227,7 +2227,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "test/posts",
+            "path": "/test/posts",
             "row": Object {
               "_links": Object {
                 "user": "/test/users/4",
@@ -2583,7 +2583,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -2625,7 +2625,7 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {},
               "_type": "test/test",
@@ -2774,7 +2774,7 @@ describe("without policies", () => {
         "_links": Object {
           "count": "/test/jobs/count?limit=2",
           "ids": "/test/jobs/ids?limit=2",
-          "nextPage": "/test/jobs?limit=2&cursor=eyJpZCI6MiwiaXNBY3RpdmUiOmZhbHNlfQ%3D%3D",
+          "nextPage": "/test/jobs?limit=2&cursor=eyJpZCI6Mn0%3D",
         },
         "_type": "test/jobs",
         "_url": "/test/jobs?limit=2",
@@ -3166,7 +3166,7 @@ describe("with policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/posts",
+            "path": "/test/posts",
             "row": Object {
               "_links": Object {},
               "_type": "test/posts",
@@ -3236,7 +3236,7 @@ describe("with policies", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "test/posts",
+            "path": "/test/posts",
             "row": Object {
               "_links": Object {
                 "user": "/test/users/1",
@@ -3284,7 +3284,7 @@ describe("with policies", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "test/posts",
+            "path": "/test/posts",
             "row": Object {
               "_links": Object {
                 "user": "/test/users/1",
@@ -3629,7 +3629,7 @@ describe("multitenancy", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -3659,7 +3659,7 @@ describe("multitenancy", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -3689,7 +3689,7 @@ describe("multitenancy", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -3811,7 +3811,7 @@ describe("multitenancy", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/test",
+            "path": "/test/test",
             "row": Object {
               "_links": Object {
                 "org": "/test/orgs/1",
@@ -3953,7 +3953,7 @@ describe("multitenancy", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/sub",
+            "path": "/test/sub",
             "row": Object {
               "_links": Object {
                 "org": "/test/orgs/1",
@@ -4056,7 +4056,7 @@ describe("paranoid", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1",
@@ -4093,7 +4093,7 @@ describe("paranoid", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1",
@@ -4106,7 +4106,7 @@ describe("paranoid", () => {
           },
           Object {
             "mode": "delete",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1",
@@ -4120,7 +4120,7 @@ describe("paranoid", () => {
           },
           Object {
             "mode": "delete",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=2",
@@ -4222,7 +4222,7 @@ describe("paranoid", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1&orgId=1",
@@ -4236,7 +4236,7 @@ describe("paranoid", () => {
           },
           Object {
             "mode": "delete",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1&orgId=1",
@@ -4327,7 +4327,7 @@ describe("hidden columns", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -4458,7 +4458,9 @@ describe("uuid columns", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "errors": Object {
-          "id": "must be a valid UUID",
+          "or": Object {
+            "id": "must be a valid UUID",
+          },
         },
       }
     `);
@@ -4483,7 +4485,7 @@ describe("uuid columns", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -4568,7 +4570,7 @@ describe("uuid columns", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?parentId=96435a51-7af8-4d08-94f3-892a99abd8cd",
@@ -4580,7 +4582,7 @@ describe("uuid columns", () => {
           },
           Object {
             "mode": "insert",
-            "path": "test/subitems",
+            "path": "/test/subitems",
             "row": Object {
               "_links": Object {
                 "parent": "/test/items/96435a51-7af8-4d08-94f3-892a99abd8cd",
@@ -4593,7 +4595,7 @@ describe("uuid columns", () => {
           },
           Object {
             "mode": "insert",
-            "path": "test/subitems",
+            "path": "/test/subitems",
             "row": Object {
               "_links": Object {
                 "parent": "/test/items/96435a51-7af8-4d08-94f3-892a99abd8cd",
@@ -4661,7 +4663,7 @@ describe("uuid columns", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?parentId=cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
@@ -4673,7 +4675,7 @@ describe("uuid columns", () => {
           },
           Object {
             "mode": "insert",
-            "path": "test/subitems",
+            "path": "/test/subitems",
             "row": Object {
               "_links": Object {
                 "parent": "/test/items/cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
@@ -4744,7 +4746,7 @@ describe("beforeCommit", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -4787,7 +4789,7 @@ describe("beforeCommit", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -4833,7 +4835,7 @@ describe("beforeCommit", () => {
         "changes": Array [
           Object {
             "mode": "delete",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -4888,7 +4890,7 @@ describe("self references", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "items": "/test/items?parentItemId=1",
@@ -4919,7 +4921,7 @@ describe("self references", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "items": "/test/items?parentItemId=2",
@@ -4980,7 +4982,7 @@ describe("self references", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "items": "/test/items?parentItemId=3",
@@ -5626,7 +5628,7 @@ describe("in public schema", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "testTable",
+            "path": "/testTable",
             "row": Object {
               "_links": Object {},
               "_type": "testTable",
@@ -5830,7 +5832,7 @@ describe("upsert", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "test/contacts",
+            "path": "/test/contacts",
             "row": Object {
               "_links": Object {},
               "_type": "test/contacts",
@@ -5878,7 +5880,7 @@ describe("upsert", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "test/contacts",
+            "path": "/test/contacts",
             "row": Object {
               "_links": Object {},
               "_type": "test/contacts",
@@ -5890,7 +5892,7 @@ describe("upsert", () => {
           },
           Object {
             "mode": "update",
-            "path": "test/contacts",
+            "path": "/test/contacts",
             "row": Object {
               "_links": Object {},
               "_type": "test/contacts",
@@ -6062,7 +6064,7 @@ describe("upsert", () => {
         "changes": Array [
           Object {
             "mode": "update",
-            "path": "test/contacts",
+            "path": "/test/contacts",
             "row": Object {
               "_links": Object {},
               "_type": "test/contacts",
@@ -6194,7 +6196,7 @@ describe("ref validations", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -6398,7 +6400,7 @@ describe("lookup tables", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {
                 "type": "/test/types/type1",
@@ -6453,7 +6455,7 @@ describe("readonly columns", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -6537,7 +6539,7 @@ describe("readonly columns", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "test/items",
+            "path": "/test/items",
             "row": Object {
               "_links": Object {},
               "_type": "test/items",
@@ -6582,6 +6584,409 @@ describe("readonly columns", () => {
       Array [
         "select items.id, items.org_id from test.items where (items.id = ?) limit ?",
         "select items.id, items.org_id from test.items where items.id = ? limit ?",
+      ]
+    `);
+  });
+});
+
+describe("filters involving foreign keys", () => {
+  it("can filter on values of a foreign key", async () => {
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
+      t.boolean("isBoolean").defaultTo(false);
+    });
+
+    await knex("test.orgs").insert([
+      { id: 1, isBoolean: true },
+      { id: 2, isBoolean: false },
+    ]);
+
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs");
+    });
+
+    await knex("test.items").insert([{ orgId: 1 }, { orgId: 2 }]);
+
+    const orgs = new Table({
+      schemaName: "test",
+      tableName: "orgs",
+    });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+    });
+
+    await items.init(knex);
+    await orgs.init(knex);
+    orgs.linkTables([items]);
+    items.linkTables([orgs]);
+
+    queries = [];
+    expect(await items.readOne(knex, { org: { isBoolean: false } }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "org": "/test/orgs/2",
+        },
+        "_type": "test/items",
+        "_url": "/test/items/2",
+        "id": 2,
+        "orgId": 2,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.org_id from test.items where (items.org_id in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items.org_id)) limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(await items.readOne(knex, { "org.not": { isBoolean: false } }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "org": "/test/orgs/1",
+        },
+        "_type": "test/items",
+        "_url": "/test/items/1",
+        "id": 1,
+        "orgId": 1,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.org_id from test.items where (items.org_id not in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items.org_id)) limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(await items.readOne(knex, { org: { isBoolean: true } }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "org": "/test/orgs/1",
+        },
+        "_type": "test/items",
+        "_url": "/test/items/1",
+        "id": 1,
+        "orgId": 1,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.org_id from test.items where (items.org_id in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items.org_id)) limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      await items.readMany(knex, { org: { isBoolean: [true, false] } }, {})
+    ).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/test/items/count?org[isBoolean][]=true&org[isBoolean][]=false",
+          "ids": "/test/items/ids?org[isBoolean][]=true&org[isBoolean][]=false",
+        },
+        "_type": "test/items",
+        "_url": "/test/items?org[isBoolean][]=true&org[isBoolean][]=false",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {
+              "org": "/test/orgs/1",
+            },
+            "_type": "test/items",
+            "_url": "/test/items/1",
+            "id": 1,
+            "orgId": 1,
+          },
+          Object {
+            "_links": Object {
+              "org": "/test/orgs/2",
+            },
+            "_type": "test/items",
+            "_url": "/test/items/2",
+            "id": 2,
+            "orgId": 2,
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.org_id from test.items where (items.org_id in (select orgs.id from test.orgs where orgs.is_boolean in (?, ?) and orgs.id = items.org_id)) order by items.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      await items.readMany(
+        knex,
+        {
+          or: [{ org: { isBoolean: true } }, { org: { isBoolean: false } }],
+        },
+        {}
+      )
+    ).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/test/items/count?or[][org][isBoolean]=true&or[][org][isBoolean]=false",
+          "ids": "/test/items/ids?or[][org][isBoolean]=true&or[][org][isBoolean]=false",
+        },
+        "_type": "test/items",
+        "_url": "/test/items?or[][org][isBoolean]=true&or[][org][isBoolean]=false",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {
+              "org": "/test/orgs/1",
+            },
+            "_type": "test/items",
+            "_url": "/test/items/1",
+            "id": 1,
+            "orgId": 1,
+          },
+          Object {
+            "_links": Object {
+              "org": "/test/orgs/2",
+            },
+            "_type": "test/items",
+            "_url": "/test/items/2",
+            "id": 2,
+            "orgId": 2,
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.org_id from test.items where ((items.org_id in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items.org_id)) or (items.org_id in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items.org_id))) order by items.id asc limit ?",
+      ]
+    `);
+  });
+
+  it("validates filters on values of a foreign key", async () => {
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
+      t.boolean("isBoolean").defaultTo(false);
+    });
+
+    await knex("test.orgs").insert([
+      { id: 1, isBoolean: true },
+      { id: 2, isBoolean: false },
+    ]);
+
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs");
+    });
+
+    await knex("test.items").insert([{ orgId: 1 }, { orgId: 2 }]);
+
+    const orgs = new Table({
+      schemaName: "test",
+      tableName: "orgs",
+    });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+    });
+
+    await items.init(knex);
+    await orgs.init(knex);
+    orgs.linkTables([items]);
+    items.linkTables([orgs]);
+
+    queries = [];
+    expect(
+      await items
+        .readOne(knex, { org: { isBoolean: {} } }, {})
+        .catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "org": Object {
+            "isBoolean": "must be a \`boolean\` type, but the final value was: \`{}\`.",
+          },
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`Array []`);
+  });
+
+  it("can filter on values of a foreign key with tenant ids", async () => {
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
+    });
+
+    await knex("test.orgs").insert([{ id: 1 }]);
+
+    await knex.schema.withSchema("test").createTable("teams", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs");
+      t.boolean("isBoolean").defaultTo(false);
+    });
+
+    await knex("test.teams").insert([
+      { id: 1, isBoolean: true, orgId: 1 },
+      { id: 2, isBoolean: false, orgId: 1 },
+    ]);
+
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs");
+      t.bigInteger("teamId").references("id").inTable("test.teams");
+    });
+
+    await knex("test.items").insert([
+      { orgId: 1, teamId: 1 },
+      { orgId: 1, teamId: 2 },
+    ]);
+
+    const orgs = new Table({
+      schemaName: "test",
+      tableName: "orgs",
+    });
+
+    const teams = new Table({
+      schemaName: "test",
+      tableName: "teams",
+      tenantIdColumnName: "orgId",
+    });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      tenantIdColumnName: "orgId",
+    });
+
+    await orgs.init(knex);
+    await items.init(knex);
+    await teams.init(knex);
+    items.linkTables([items, orgs, teams]);
+    orgs.linkTables([items, orgs, teams]);
+    teams.linkTables([items, orgs, teams]);
+
+    queries = [];
+    expect(
+      await items.readOne(knex, { orgId: 1, team: { isBoolean: false } }, {})
+    ).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "org": "/test/orgs/1",
+          "team": "/test/teams/2?orgId=1",
+        },
+        "_type": "test/items",
+        "_url": "/test/items/2?orgId=1",
+        "id": 2,
+        "orgId": 1,
+        "teamId": 2,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.org_id, items.team_id from test.items where (items.org_id = ? and items.team_id in (select teams.id from test.teams where teams.is_boolean = ? and teams.id = items.team_id and teams.org_id = items.org_id)) limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      await items.readOne(knex, { orgId: 1, team: { isBoolean: true } }, {})
+    ).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "org": "/test/orgs/1",
+          "team": "/test/teams/1?orgId=1",
+        },
+        "_type": "test/items",
+        "_url": "/test/items/1?orgId=1",
+        "id": 1,
+        "orgId": 1,
+        "teamId": 1,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.org_id, items.team_id from test.items where (items.org_id = ? and items.team_id in (select teams.id from test.teams where teams.is_boolean = ? and teams.id = items.team_id and teams.org_id = items.org_id)) limit ?",
+      ]
+    `);
+  });
+
+  it("can filter on values of a foreign key several layers deep", async () => {
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
+    });
+
+    await knex("test.orgs").insert([{ id: 1 }]);
+
+    await knex.schema.withSchema("test").createTable("teams", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs");
+    });
+
+    await knex("test.teams").insert([
+      { id: 1, orgId: 1 },
+      { id: 2, orgId: 1 },
+    ]);
+
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("orgId").references("id").inTable("test.orgs");
+      t.bigInteger("teamId").references("id").inTable("test.teams");
+    });
+
+    await knex("test.items").insert([
+      { orgId: 1, teamId: 1 },
+      { orgId: 1, teamId: 2 },
+    ]);
+
+    const orgs = new Table({
+      schemaName: "test",
+      tableName: "orgs",
+    });
+
+    const teams = new Table({
+      schemaName: "test",
+      tableName: "teams",
+    });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+    });
+
+    await orgs.init(knex);
+    await items.init(knex);
+    await teams.init(knex);
+    items.linkTables([items, orgs, teams]);
+    orgs.linkTables([items, orgs, teams]);
+    teams.linkTables([items, orgs, teams]);
+
+    queries = [];
+    expect(await items.readOne(knex, { team: { org: { id: 1 } } }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "org": "/test/orgs/1",
+          "team": "/test/teams/1",
+        },
+        "_type": "test/items",
+        "_url": "/test/items/1",
+        "id": 1,
+        "orgId": 1,
+        "teamId": 1,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.org_id, items.team_id from test.items where (items.team_id in (select teams.id from test.teams where teams.org_id in (select orgs.id from test.orgs where orgs.id = ? and orgs.id = teams.org_id) and teams.id = items.team_id)) limit ?",
       ]
     `);
   });

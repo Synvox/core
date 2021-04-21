@@ -3,8 +3,6 @@ import { Router } from "express";
 import { classify } from "inflection";
 import { Knex } from "knex";
 import qs from "qs";
-import atob from "atob";
-import btoa from "btoa";
 import { object, array, StringSchema, mixed } from "yup";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -51,6 +49,10 @@ export type SavedTable = {
   relations: Relations;
   lookupTableIds: any[];
 };
+
+const toBase64 = (str: string) => Buffer.from(str, "utf-8").toString("base64");
+const fromBase64 = (str: string) =>
+  Buffer.from(str, "base64").toString("utf-8");
 
 export class Table<Context, T = any> {
   path: string;
@@ -185,6 +187,11 @@ export class Table<Context, T = any> {
       ...this.uniqueColumns,
     ];
 
+    Object.values(this.relations).forEach((relation) => {
+      relation.tableName = this.tableName;
+      relation.schemaName = this.schemaName;
+    });
+
     this.relations = { ...relations, ...this.relations };
 
     if (this.paranoid && !("deletedAt" in this.columns))
@@ -275,8 +282,8 @@ export class Table<Context, T = any> {
   private async validateWhere(
     params: any,
     context: Context
-  ): Promise<[any, Record<string, string>]> {
-    const errors: Record<string, string> = {};
+  ): Promise<[any, Record<string, any>]> {
+    const errors: Record<string, any> = {};
     const clone = Object.assign(Array.isArray(params) ? [] : {}, params);
 
     for (let [key, value] of Object.entries(params)) {
@@ -284,7 +291,15 @@ export class Table<Context, T = any> {
       if (columnName === "and" || columnName === "or") {
         const [val, err] = await this.validateWhere(value, context);
         clone[key] = val;
-        Object.assign(errors, err);
+        if (Object.keys(err).length) errors[key] = err;
+        continue;
+      }
+
+      if (columnName in this.relatedTables.hasOne) {
+        const { table: otherTable } = this.relatedTables.hasOne[columnName];
+        const [val, err] = await otherTable.validateWhere(value, context);
+        clone[key] = val;
+        if (Object.keys(err).length) errors[key] = err;
         continue;
       }
 
@@ -321,15 +336,20 @@ export class Table<Context, T = any> {
     return [clone, errors];
   }
 
-  private async where(
-    stmt: Knex.QueryBuilder,
+  async getFilters(
+    params: Record<string, any>,
     context: Context,
-    params: Record<string, any>
+    mode: Mode,
+    knex: Knex,
+    wrap: (
+      stmt: Knex.QueryBuilder,
+      fn: (knex: Knex.QueryBuilder) => void
+    ) => void = (knex, fn) => fn(knex)
   ) {
-    if (this.tenantIdColumnName && !params[this.tenantIdColumnName])
-      throw new BadRequestError({
-        [this.tenantIdColumnName]: `is required`,
-      });
+    const operations: ((stmt: Knex.QueryBuilder) => void)[] = [];
+    const onStmt = (fn: (stmt: Knex.QueryBuilder) => void) => {
+      operations.push(fn);
+    };
 
     function translateOp<Opts extends Record<string, string>>(
       opts: Opts,
@@ -339,59 +359,122 @@ export class Table<Context, T = any> {
       return opts[selected] ?? opts[defaultKey];
     }
 
-    const applyFilter = (
-      stmt: Knex.QueryBuilder,
-      params: Record<string, any>
-    ) => {
-      for (let [key, value] of Object.entries(params)) {
-        const [columnName, ...operands] = key.split(".");
-        let not = false;
-        if (operands[0] === "not") {
-          operands.shift();
-          not = true;
+    for (let [key, value] of Object.entries(params)) {
+      const [columnName, ...operands] = key.split(".");
+      let not = false;
+      if (operands[0] === "not") {
+        operands.shift();
+        not = true;
+      }
+
+      if (columnName === this.idColumnName && value in this.idModifiers) {
+        // this is an id modifier, and it is async. Ignore it here.
+      } else if (
+        columnName in this.relatedTables.hasOne &&
+        typeof value === "object"
+      ) {
+        const { relation, table: relatedTable } = this.relatedTables.hasOne[
+          columnName
+        ];
+
+        const subQuery = relatedTable.query(knex);
+
+        (await relatedTable.getFilters(value, context, mode, knex))(subQuery);
+        await relatedTable.applyPolicy(subQuery, context, mode, knex);
+
+        subQuery.where(
+          `${relatedTable.alias}.${relation.referencesColumnName}`,
+          knex.raw("??", [`${this.alias}.${relation.columnName}`])
+        );
+
+        if (this.tenantIdColumnName && relatedTable.tenantIdColumnName) {
+          subQuery.where(
+            `${relatedTable.alias}.${relatedTable.tenantIdColumnName}`,
+            knex.raw("??", `${this.alias}.${this.tenantIdColumnName}`)
+          );
         }
 
-        if (columnName === this.idColumnName && value in this.idModifiers) {
-          // this is an id modifier, and it is async. Ignore it here.
-        } else if (columnName === "or") {
-          if (Array.isArray(value)) {
-            value.map((value) => {
-              stmt.orWhere((stmt) => {
-                applyFilter(stmt, value);
-              });
-            });
-          } else {
-            stmt.orWhere((stmt) => {
-              applyFilter(stmt, value);
-            });
-          }
-        } else if (columnName === "and") {
-          if (Array.isArray(value)) {
-            value.map((value) => {
-              stmt.andWhere((stmt) => {
-                applyFilter(stmt, value);
-              });
-            });
-          } else {
-            stmt.andWhere((stmt) => {
-              applyFilter(stmt, value);
-            });
-          }
-        } else if (this.columns[columnName]) {
-          const op = operands[0];
-          if (op === "fts") {
+        subQuery
+          .clear("select")
+          .select(`${relatedTable.alias}.${relation.referencesColumnName}`);
+
+        onStmt((stmt) => {
+          stmt[not ? "whereNotIn" : "whereIn"](
+            `${this.alias}.${relation.columnName}`,
+            subQuery
+          );
+        });
+      } else if (columnName === "or") {
+        if (Array.isArray(value)) {
+          await Promise.all(
+            value.map(async (value) => {
+              const apply = await this.getFilters(
+                value,
+                context,
+                mode,
+                knex,
+                (stmt, fn) => stmt.orWhere(fn)
+              );
+              onStmt(apply);
+            })
+          );
+        } else {
+          const apply = await this.getFilters(
+            value,
+            context,
+            mode,
+            knex,
+            (stmt, fn) => stmt.orWhere(fn)
+          );
+          onStmt(apply);
+        }
+      } else if (columnName === "and") {
+        if (Array.isArray(value)) {
+          await Promise.all(
+            value.map(async (value) => {
+              const apply = await this.getFilters(
+                value,
+                context,
+                mode,
+                knex,
+                (stmt, fn) => stmt.andWhere(fn)
+              );
+
+              onStmt(apply);
+            })
+          );
+        } else {
+          const apply = await this.getFilters(
+            value,
+            context,
+            mode,
+            knex,
+            (stmt, fn) => stmt.andWhere(fn)
+          );
+          onStmt(apply);
+        }
+      } else if (this.columns[columnName]) {
+        const op = operands[0];
+        if (op === "fts") {
+          onStmt((stmt) => {
             stmt.whereRaw(
               (not ? "not " : "") + "to_tsvector(??.??) @@ plainto_tsquery(?)",
               [this.alias, columnName, value]
             );
-          } else if (Array.isArray(value)) {
-            const method = not ? "whereNotIn" : "whereIn";
+          });
+        } else if (Array.isArray(value)) {
+          const method = not ? "whereNotIn" : "whereIn";
+          onStmt((stmt) => {
             stmt[method](`${this.alias}.${columnName}`, value);
-          } else if (op === "null" && this.columns[columnName].nullable) {
-            const method = not ? "whereNot" : "where";
+          });
+        } else if (op === "null" && this.columns[columnName].nullable) {
+          const method = not ? "whereNot" : "where";
+          onStmt((stmt) => {
             stmt[method](`${this.alias}.${columnName}`, null);
-          } else {
-            const method = not ? "whereNot" : "where";
+          });
+        } else {
+          const method = not ? "whereNot" : "where";
+          onStmt((stmt) => {
             stmt[method](
               `${this.alias}.${columnName}`,
               translateOp(
@@ -408,10 +491,32 @@ export class Table<Context, T = any> {
               ),
               value
             );
-          }
+          });
         }
       }
+    }
+
+    return function apply(stmt: Knex.QueryBuilder) {
+      for (let operation of operations) {
+        wrap(stmt, (stmt) => {
+          operation(stmt);
+        });
+      }
     };
+  }
+
+  private async where(
+    stmt: Knex.QueryBuilder,
+    context: Context,
+    mode: Mode,
+    params: Record<string, any>,
+    knex: Knex
+  ) {
+    if (this.tenantIdColumnName && !params[this.tenantIdColumnName]) {
+      throw new BadRequestError({
+        [this.tenantIdColumnName]: `is required`,
+      });
+    }
 
     for (let [columnName, value] of Object.entries(params)) {
       if (columnName === this.idColumnName && value in this.idModifiers) {
@@ -421,8 +526,10 @@ export class Table<Context, T = any> {
       }
     }
 
+    const apply = await this.getFilters(params, context, mode, knex);
+
     stmt.where((stmt) => {
-      applyFilter(stmt, params);
+      apply(stmt);
     });
 
     if (this.paranoid) {
@@ -667,13 +774,13 @@ export class Table<Context, T = any> {
             // are found that are not visible to the user
 
             if (parent[table.idColumnName]) {
-              stmt.whereNot(function () {
-                this.where(
+              stmt.whereNot((builder) => {
+                builder.where(
                   `${table.alias}.${[table.idColumnName]}`,
                   parent[table.idColumnName]
                 );
                 if (table.tenantIdColumnName) {
-                  this.where(
+                  builder.where(
                     `${table.alias}.${table.tenantIdColumnName}`,
                     parent[table.tenantIdColumnName]
                   );
@@ -810,7 +917,7 @@ export class Table<Context, T = any> {
       )
         params[this.tenantIdColumnName] = obj[this.tenantIdColumnName];
 
-      await this.where(stmt, context, params);
+      await this.where(stmt, context, "update", params, knex);
       await this.applyPolicy(stmt, context, "update", knex);
 
       const existing = await stmt.first();
@@ -985,7 +1092,7 @@ export class Table<Context, T = any> {
   ) {
     const recordChange = async (mode: Mode, row: any) => {
       changes.push({
-        path: this.path,
+        path: `/${this.path}`,
         mode: mode,
         row: await this.processTableRow({}, context, row),
       });
@@ -1004,9 +1111,9 @@ export class Table<Context, T = any> {
           `${table.alias}.${[table.idColumnName]}`,
           graph[table.idColumnName]
         )
-        .modify(function () {
+        .modify((builder) => {
           if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
-            this.where(
+            builder.where(
               `${table.alias}.${table.tenantIdColumnName}`,
               graph[table.tenantIdColumnName]
             );
@@ -1051,9 +1158,9 @@ export class Table<Context, T = any> {
               `${table.alias}.${[table.idColumnName]}`,
               graph[table.idColumnName]
             )
-            .modify(function () {
+            .modify((builder) => {
               if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
-                this.where(
+                builder.where(
                   `${table.alias}.${table.tenantIdColumnName}`,
                   graph[table.tenantIdColumnName]
                 );
@@ -1070,9 +1177,9 @@ export class Table<Context, T = any> {
             `${table.alias}.${table.idColumnName}`,
             row[table.idColumnName]
           )
-          .modify(function () {
+          .modify((builder) => {
             if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
-              this.where(
+              builder.where(
                 `${table.alias}.${table.tenantIdColumnName}`,
                 graph[table.tenantIdColumnName]
               );
@@ -1146,9 +1253,9 @@ export class Table<Context, T = any> {
 
       let updatedRow = await stmt
         .where(`${table.alias}.${table.idColumnName}`, row[table.idColumnName])
-        .modify(function () {
+        .modify((builder) => {
           if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
-            this.where(
+            builder.where(
               `${table.alias}.${table.tenantIdColumnName}`,
               graph[table.tenantIdColumnName]
             );
@@ -1249,9 +1356,9 @@ export class Table<Context, T = any> {
           const stmt = otherTable
             .query(trx)
             .where(`${otherTable.alias}.${columnName}`, id)
-            .modify(function () {
+            .modify((builder) => {
               if (table.tenantIdColumnName && tenantId !== undefined) {
-                this.where(
+                builder.where(
                   `${otherTable.alias}.${otherTable.tenantIdColumnName}`,
                   tenantId
                 );
@@ -1380,7 +1487,7 @@ export class Table<Context, T = any> {
     };
 
     const stmt = this.query(knex);
-    await this.where(stmt, context, queryParams);
+    await this.where(stmt, context, "read", queryParams, knex);
     await this.applyPolicy(stmt, context, "read", knex);
 
     stmt.clear("select");
@@ -1397,7 +1504,7 @@ export class Table<Context, T = any> {
     };
 
     const stmt = this.query(knex);
-    await this.where(stmt, context, queryParams);
+    await this.where(stmt, context, "read", queryParams, knex);
     await this.applyPolicy(stmt, context, "read", knex);
 
     const page = Number(queryParams.page || 0);
@@ -1576,7 +1683,13 @@ export class Table<Context, T = any> {
 
     const stmt = table.query(knex);
 
-    await table.where(stmt, context, { ...queryParams, withDeleted });
+    await table.where(
+      stmt,
+      context,
+      "read",
+      { ...queryParams, withDeleted },
+      knex
+    );
     await table.applyPolicy(stmt, context, "read", knex);
     await includeRelated(stmt);
 
@@ -1630,45 +1743,45 @@ export class Table<Context, T = any> {
       const page = Number(queryParams.page || 0);
       const limit = Math.max(0, Math.min(250, Number(queryParams.limit) || 50));
 
-      const sorts: { column: string; order: "asc" | "desc" }[] = [];
+      const sorts: { columnName: string; order: "asc" | "desc" }[] = [];
       if (sort) {
         if (!Array.isArray(sort)) sort = [sort];
 
-        sort.forEach((column: string) => {
+        sort.forEach((columnName: string) => {
           let order = "asc";
-          if (column.startsWith("-")) {
+          if (columnName.startsWith("-")) {
             order = "desc";
-            column = column.slice(1);
+            columnName = columnName.slice(1);
           }
 
           if (
-            column in table.columns! &&
+            columnName in table.columns! &&
             (order === "asc" || order === "desc")
           ) {
-            sorts.push({ column, order });
+            sorts.push({ columnName, order });
           }
         });
       }
 
       if (queryParams.cursor) {
-        const cursor = JSON.parse(atob(queryParams.cursor));
+        const cursor = JSON.parse(fromBase64(queryParams.cursor));
         // keyset pagination
-        statement.where(function () {
+        statement.where((builder) => {
           sorts.forEach((sort, index) => {
-            this.orWhere(function () {
+            builder.orWhere((builder) => {
               sorts
                 .slice(0, index)
-                .map(({ column }) =>
-                  this.where(
-                    `${table.tableName}.${column}`,
+                .map(({ columnName }) =>
+                  builder.where(
+                    `${table.tableName}.${columnName}`,
                     "=",
-                    cursor[column]
+                    cursor[columnName]
                   )
                 );
-              this.where(
-                `${table.tableName}.${sort.column}`,
+              builder.where(
+                `${table.tableName}.${sort.columnName}`,
                 sort.order === "asc" ? ">" : "<",
-                cursor[sort.column]
+                cursor[sort.columnName]
               );
             });
           });
@@ -1680,32 +1793,33 @@ export class Table<Context, T = any> {
       statement.limit(limit);
 
       if (sorts.length === 0) {
-        let column = this.defaultSortColumn;
+        let columnName = this.defaultSortColumn;
         let order: "asc" | "desc" = "asc";
 
-        if (column.startsWith("-")) {
+        if (columnName.startsWith("-")) {
           order = "desc";
-          column = column.slice(1);
+          columnName = columnName.slice(1);
         }
 
         sorts.push({
-          column,
+          columnName,
           order,
         });
 
         if (this.defaultSortColumn !== this.idColumnName) {
           sorts.push({
-            column: this.idColumnName,
+            columnName: this.idColumnName,
             order: "asc",
           });
         }
       }
 
       sorts.forEach((s) =>
-        statement.orderBy(`${table.alias}.${s.column}`, s.order)
+        statement.orderBy(`${table.alias}.${s.columnName}`, s.order)
       );
 
       const results = await statement;
+      const last = results[results.length - 1];
 
       const links = {
         ...(!queryParams.page
@@ -1713,7 +1827,15 @@ export class Table<Context, T = any> {
               ...(results.length >= limit && {
                 nextPage: `${table.baseUrl}/${path}?${qsStringify({
                   ...queryParams,
-                  cursor: btoa(JSON.stringify(results[results.length - 1])),
+                  cursor: toBase64(
+                    JSON.stringify(
+                      Object.fromEntries(
+                        sorts.map((sort) => {
+                          return [sort.columnName, last[sort.columnName]];
+                        })
+                      )
+                    )
+                  ),
                 })}`,
               }),
             }
