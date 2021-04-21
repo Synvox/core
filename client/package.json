@@ -1,6 +1,7 @@
 {
   "name": "@synvox/core-client",
   "version": "2.0.0",
+  "license": "MIT",
   "description": "",
   "source": "src/index.ts",
   "main": "dist/index.js",
@@ -15,7 +16,6 @@
   },
   "keywords": [],
   "author": "Ryan Allred",
-  "license": "ISC",
   "devDependencies": {
     "@testing-library/react": "^11.2.6",
     "@testing-library/react-hooks": "^5.1.1",
@@ -63,5 +63,10 @@
   },
   "dependencies": {
     "qs": "^6.5.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/synvox/core.git",
+    "directory": "client"
   }
 }
