@@ -493,10 +493,12 @@ export class Core<Context> {
       includeLinks = true,
       includeRelations = false,
       includeParams = false,
+      includeKnex = false,
     }: {
       includeLinks?: boolean;
       includeRelations?: boolean;
       includeParams?: boolean;
+      includeKnex?: boolean;
     } = {}
   ) {
     await this.init();
@@ -505,7 +507,8 @@ export class Core<Context> {
       path,
       includeLinks,
       includeRelations,
-      includeParams
+      includeParams,
+      includeKnex
     );
   }
 }

@@ -953,4 +953,114 @@ describe("saves to files", () => {
       "
     `);
   });
+
+  it("saves knex types", async () => {
+    await knex.schema.createTable("save_test_table", (t) => {
+      t.bigIncrements("id");
+    });
+
+    const path = Path.resolve(__dirname, "./test.ignore8.ts");
+
+    const core = new Core(knex, () => ({}));
+
+    core.table({
+      tableName: "saveTestTable",
+    });
+
+    core.table({
+      schemaName: "saveTest",
+      tableName: "test",
+    });
+
+    core.table({
+      schemaName: "saveTest",
+      tableName: "testSub",
+    });
+
+    core.table({
+      schemaName: "saveTest",
+      tableName: "testNullable",
+    });
+
+    core.table({
+      schemaName: "saveTest",
+      tableName: "testSubNullable",
+    });
+
+    await core.saveTsTypes(path, { includeLinks: false, includeKnex: true });
+
+    const types = await fs.readFile(path, { encoding: "utf8" });
+    expect(types).toMatchInlineSnapshot(`
+      "import { Knex } from \\"knex\\";
+
+      type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
+
+      declare module 'knex/types/tables' {
+        interface Tables {
+          [\\"saveTestTable\\"]: Knex.CompositeTableType<
+            SaveTestTable,
+            Optional<SaveTestTable, \\"id\\">,
+            Partial<SaveTestTable>
+          >;
+          [\\"public.saveTestTable\\"]: Knex.CompositeTableType<
+            SaveTestTable,
+            Optional<SaveTestTable, \\"id\\">,
+            Partial<SaveTestTable>
+          >;
+          [\\"saveTest.test\\"]: Knex.CompositeTableType<
+            Test,
+            Optional<Test, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">,
+            Partial<Test>
+          >;
+          [\\"saveTest.testNullable\\"]: Knex.CompositeTableType<
+            TestNullable,
+            Optional<TestNullable, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">,
+            Partial<TestNullable>
+          >;
+          [\\"saveTest.testSub\\"]: Knex.CompositeTableType<
+            TestSub,
+            Optional<TestSub, \\"id\\" | \\"arr\\">,
+            Partial<TestSub>
+          >;
+          [\\"saveTest.testSubNullable\\"]: Knex.CompositeTableType<
+            TestSubNullable,
+            Optional<TestSubNullable, \\"id\\" | \\"parentId\\" | \\"arr\\">,
+            Partial<TestSubNullable>
+          >;
+        }
+      }
+
+      export type SaveTestTable = {
+        id: number;
+      };
+
+      export type Test = {
+        id: number;
+        isBoolean: boolean;
+        numberCount: number;
+        text: string;
+        typeId: string;
+      };
+
+      export type TestNullable = {
+        id: number;
+        isBoolean: boolean;
+        numberCount: number;
+        text: string;
+      };
+
+      export type TestSub = {
+        id: number;
+        parentId: number;
+        arr: number[] | null;
+      };
+
+      export type TestSubNullable = {
+        id: number;
+        parentId: number | null;
+        arr: number[] | null;
+      };
+      "
+    `);
+  });
 });

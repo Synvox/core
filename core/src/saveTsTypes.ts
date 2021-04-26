@@ -7,11 +7,34 @@ export async function saveTsTypes(
   path: string,
   includeLinks: boolean,
   includeRelations: boolean,
-  includeParams: boolean
+  includeParams: boolean,
+  includeKnex: boolean
 ) {
   tables = tables.sort((a, b) => a.tablePath.localeCompare(b.tablePath));
 
   let types = "";
+
+  if (includeKnex) {
+    types += `import { Knex } from "knex";\n\n`;
+    types += `type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;\n\n`;
+    types += `declare module 'knex/types/tables' {\n`;
+    types += `  interface Tables {\n`;
+    for (let table of tables) {
+      const optionalFields = Object.values(table.columns)
+        .filter((c) => c.nullable || Boolean(c.defaultValue))
+        .map((c) => JSON.stringify(c.name))
+        .join(" | ");
+      const insertType = `Optional<${table.className}, ${optionalFields}>`;
+      const updateType = `Partial<${table.className}>`;
+      let type = `Knex.CompositeTableType<\n      ${table.className},\n      ${insertType},\n      ${updateType}\n    >`;
+
+      if (table.schemaName === "public")
+        types += `    ["${table.tableName}"]: ${type};\n`;
+      types += `    ["${table.tablePath}"]: ${type};\n`;
+    }
+    types += `  }\n`;
+    types += `}\n\n`;
+  }
 
   if (includeParams) {
     types += "type CollectionParams = {\n";
