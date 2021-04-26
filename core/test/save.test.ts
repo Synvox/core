@@ -955,6 +955,7 @@ describe("saves to files", () => {
   });
 
   it("saves knex types", async () => {
+    await knex.raw(`drop table if exists save_test_table`);
     await knex.schema.createTable("save_test_table", (t) => {
       t.bigIncrements("id");
     });
@@ -997,32 +998,32 @@ describe("saves to files", () => {
 
       declare module 'knex/types/tables' {
         interface Tables {
-          [\\"saveTestTable\\"]: Knex.CompositeTableType<
+          \\"saveTestTable\\": Knex.CompositeTableType<
             SaveTestTable,
             Optional<SaveTestTable, \\"id\\">,
             Partial<SaveTestTable>
           >;
-          [\\"public.saveTestTable\\"]: Knex.CompositeTableType<
+          \\"public.saveTestTable\\": Knex.CompositeTableType<
             SaveTestTable,
             Optional<SaveTestTable, \\"id\\">,
             Partial<SaveTestTable>
           >;
-          [\\"saveTest.test\\"]: Knex.CompositeTableType<
+          \\"saveTest.test\\": Knex.CompositeTableType<
             Test,
             Optional<Test, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">,
             Partial<Test>
           >;
-          [\\"saveTest.testNullable\\"]: Knex.CompositeTableType<
+          \\"saveTest.testNullable\\": Knex.CompositeTableType<
             TestNullable,
             Optional<TestNullable, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">,
             Partial<TestNullable>
           >;
-          [\\"saveTest.testSub\\"]: Knex.CompositeTableType<
+          \\"saveTest.testSub\\": Knex.CompositeTableType<
             TestSub,
             Optional<TestSub, \\"id\\" | \\"arr\\">,
             Partial<TestSub>
           >;
-          [\\"saveTest.testSubNullable\\"]: Knex.CompositeTableType<
+          \\"saveTest.testSubNullable\\": Knex.CompositeTableType<
             TestSubNullable,
             Optional<TestSubNullable, \\"id\\" | \\"parentId\\" | \\"arr\\">,
             Partial<TestSubNullable>

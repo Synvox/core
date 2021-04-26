@@ -29,8 +29,8 @@ export async function saveTsTypes(
       let type = `Knex.CompositeTableType<\n      ${table.className},\n      ${insertType},\n      ${updateType}\n    >`;
 
       if (table.schemaName === "public")
-        types += `    ["${table.tableName}"]: ${type};\n`;
-      types += `    ["${table.tablePath}"]: ${type};\n`;
+        types += `    "${table.tableName}": ${type};\n`;
+      types += `    "${table.tablePath}": ${type};\n`;
     }
     types += `  }\n`;
     types += `}\n\n`;
