@@ -578,11 +578,10 @@ describe("saves to files", () => {
         ColumnParam<\\"numberCount\\", number | number[]> &
         ColumnParam<\\"text\\", string | string[]>
 
-      export type TestNullableParams = TestNullableFilters &
+      export type TestNullableParams = (TestNullableFilters | { id: TestNullableFilters }) &
         CollectionParams & {
           sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text')[];
         } & {
-          id: \\"me\\"
           and: Partial<TestNullableFilters> | Partial<TestNullableFilters>[];
           \\"not.and\\": Partial<TestNullableFilters> | Partial<TestNullableFilters>[];
           or: Partial<TestNullableFilters> | Partial<TestNullableFilters>[];

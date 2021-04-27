@@ -212,7 +212,16 @@ export async function saveTsTypes(
 
       types += columnTypes.join(" &\n  ") + `\n\n`;
 
-      types += `export type ${paramsType} = ${filtersType} &\n`;
+      let filterTypeNameWithIdModifiers = filtersType;
+      const idModifierTypes = Object.keys(table.idModifiers)
+        .map((name) => JSON.stringify(name))
+        .join(" | ");
+
+      if (idModifierTypes) {
+        filterTypeNameWithIdModifiers = `(${filtersType} | { ${table.idColumnName}: ${filterTypeNameWithIdModifiers} })`;
+      }
+
+      types += `export type ${paramsType} = ${filterTypeNameWithIdModifiers} &\n`;
       types += `  CollectionParams & {\n`;
 
       for (let queryModifier of Object.keys(table.queryModifiers)) {
@@ -240,14 +249,6 @@ export async function saveTsTypes(
 
       types += `    sort: ${sortType} | (${sortType})[];\n`;
       types += `  } & {\n`;
-
-      const idModifierNames = Object.keys(table.idModifiers);
-      if (idModifierNames.length) {
-        const otherKeys = idModifierNames
-          .map((k) => JSON.stringify(k))
-          .join(" | ");
-        types += `    ${table.idColumnName}: ${otherKeys}\n`;
-      }
 
       for (let { table: relatedTable, name } of Object.values(
         table.relatedTables.hasOne
