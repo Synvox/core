@@ -409,6 +409,20 @@ export class Core<Context> {
           })
         );
 
+        router.put(
+          `/${table.path}`,
+          wrap(async (req, res) => {
+            const knex = await this.getKnex("write");
+            const context = this.getContext(req, res);
+            return await table.writeAll(
+              knex,
+              { ...req.params, ...req.query },
+              { ...req.body },
+              context
+            );
+          })
+        );
+
         router.delete(
           `/${table.path}/:${table.idColumnName}`,
           wrap(async (req, res) => {

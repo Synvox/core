@@ -1549,14 +1549,17 @@ export class Table<Context, T = any> {
     knex: Knex,
     input: Record<string, any>,
     context: Context,
-    { withDeleted = input.withDeleted ?? false }: { withDeleted?: boolean } = {}
+    {
+      withDeleted = input.withDeleted ?? false,
+      mode = "read",
+    }: { withDeleted?: boolean; mode?: Mode } = {}
   ) {
     let [queryParams, errors] = await this.validateWhere(input, context);
 
     if (Object.keys(errors).length) throw new BadRequestError(errors);
 
     queryParams = {
-      ...(await this.defaultParams(context, "read")),
+      ...(await this.defaultParams(context, mode)),
       ...queryParams,
     };
 
@@ -2015,5 +2018,137 @@ export class Table<Context, T = any> {
       this.eventEmitter.emit("change", { id: uuid, changes });
 
     return new ChangeResult(uuid, data, changes);
+  }
+
+  async writeAll(
+    knex: Knex,
+    queryParams: Record<string, any>,
+    patch: any,
+    context: Context
+  ) {
+    let isDelete = patch._delete;
+    if (isDelete && this.paranoid) {
+      isDelete = false;
+      patch.deletedAt = Date.now();
+      delete patch._delete;
+    }
+    const mode = isDelete ? "delete" : "update";
+
+    const [objValidated, errors] = await this.validateDeep(
+      knex,
+      patch,
+      context
+    );
+    patch = objValidated;
+
+    if (errors) {
+      throw new BadRequestError(errors);
+    }
+
+    const beforeCommitCallbacks: (() => Promise<void>)[] = [];
+    const changes: ChangeSummary<any>[] = [];
+    const uuid = uuidv4();
+
+    let trxRef: null | Knex.Transaction = null;
+    const validatedRows = await knex.transaction(async (trx) => {
+      const { stmt } = await this.read(trx, queryParams, context, {
+        mode,
+      });
+      const previousRows = await stmt;
+      trxRef = trx;
+
+      stmt.clear("select").select(`${this.alias}.${this.idColumnName}`);
+
+      const updateStmt = this.query(trx)
+        .whereIn(`${this.alias}.${this.idColumnName}`, stmt)
+        .returning("*");
+
+      if (isDelete) updateStmt.del();
+      else updateStmt.update(patch);
+
+      const rows = await updateStmt;
+
+      const results = await Promise.all(
+        rows.map(async (row) => {
+          const [objValidated, errors] = await validateAgainst(
+            object(this.getYupSchema()),
+            row,
+            context
+          );
+
+          changes.push({
+            mode,
+            path: `/${this.path}`,
+            row: objValidated,
+          });
+
+          if (this.afterUpdate && !isDelete) {
+            const previousRow = previousRows.find(
+              (r) => r[this.idColumnName] === row[this.idColumnName]
+            );
+
+            beforeCommitCallbacks.push(() => {
+              return this.afterUpdate!.call(
+                this,
+                trx,
+                context,
+                mode,
+                previousRow,
+                row
+              );
+            });
+          }
+
+          return [objValidated, errors] as [any, Record<string, any>];
+        })
+      );
+
+      const errors = results.reduce((acc, [row, errors]) => {
+        const key = row[this.idColumnName];
+        if (errors && Object.keys(errors).length) acc[key] = errors;
+        return acc;
+      }, {} as Record<string, any>);
+
+      if (Object.keys(errors).length) {
+        throw new BadRequestError(errors);
+      }
+
+      if (!isDelete) {
+        const rowCountStmt = this.query(trx)
+          .clear("select")
+          .whereIn(
+            `${this.alias}.${this.idColumnName}`,
+            rows.map((r) => r[this.idColumnName])
+          )
+          .count();
+
+        this.applyPolicy(rowCountStmt, context, mode, knex);
+
+        const [{ count: rowCount }] = await rowCountStmt;
+        if (rowCount !== rows.length) throw new UnauthorizedError();
+      }
+
+      for (let cb of beforeCommitCallbacks) await cb();
+
+      const validatedRows = results.map((result) => result[0]);
+      return validatedRows;
+    });
+
+    const rows = await Promise.all(
+      validatedRows.map(async (row) => {
+        return await this.processTableRow(
+          { ...queryParams, include: undefined },
+          context,
+          row
+        );
+      })
+    );
+
+    trxRef!.emit("commit");
+
+    if (this.eventEmitter)
+      this.eventEmitter.emit("change", { id: uuid, changes });
+
+    return new ChangeResult(uuid, rows, changes);
   }
 }

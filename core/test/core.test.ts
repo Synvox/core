@@ -287,7 +287,7 @@ describe("listens on server", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "parent": "/coreTest/test/1",
           },
@@ -447,7 +447,7 @@ describe("listens on server", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "testSub": "/coreTest/testSub?parentId=1",
           },
@@ -551,7 +551,7 @@ describe("listens on server", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "coreTest/test",
           "_url": "/coreTest/test/1",
@@ -635,7 +635,7 @@ describe("listens on server", () => {
             },
           },
         ],
-        "item": Array [
+        "result": Array [
           Object {
             "_links": Object {},
             "_type": "coreTest/test",
@@ -712,7 +712,7 @@ describe("listens on server", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "coreTest/test",
           "_url": "/coreTest/test/1",
@@ -722,6 +722,71 @@ describe("listens on server", () => {
           "text": "abc",
         },
       }
+    `);
+  });
+
+  it("updates bulk", async () => {
+    const [row] = await knex("coreTest.test").insert({}).returning("*");
+
+    const core = new Core(knex, () => ({}));
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+    });
+
+    const app = express();
+    app.use(core.router);
+    const url = await listen(app);
+
+    const axios = Axios.create({ baseURL: url });
+    await core.init();
+
+    queries = [];
+    expect(
+      (
+        await axios
+          .put(`/coreTest/test?id[]=${row.id}`, {
+            numberCount: 10,
+            isBoolean: true,
+            text: "abc",
+          })
+          .catch((e) => e.response)
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "path": "/coreTest/test",
+            "row": Object {
+              "id": 1,
+              "isBoolean": true,
+              "numberCount": 10,
+              "text": "abc",
+            },
+          },
+        ],
+        "result": Array [
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/1",
+            "id": 1,
+            "isBoolean": true,
+            "numberCount": 10,
+            "text": "abc",
+          },
+        ],
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.id in (?))",
+        "update core_test.test set number_count = ?, is_boolean = ?, text = ? where test.id in (select test.id from core_test.test where (test.id in (?))) returning *",
+        "select count(*) from core_test.test where test.id in (?)",
+      ]
     `);
   });
 
@@ -892,7 +957,7 @@ describe("listens on server", () => {
             },
           },
         ],
-        "item": null,
+        "result": null,
       }
     `);
   });

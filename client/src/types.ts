@@ -44,8 +44,9 @@ export type Change = {
   path: string;
   row: unknown;
 };
+
 export type ChangeTo<T> = {
-  data: T;
+  result: T;
   changes: Change[];
   update: () => Promise<void>;
 };

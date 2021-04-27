@@ -6,11 +6,12 @@ import {
   NotFoundError,
   UnauthorizedError,
 } from "../src";
-import { string, date, ref } from "yup";
+import { string, date, ref, number } from "yup";
 import { Mode } from "../src/types";
 import QueryString from "qs";
 import { ComplexityError } from "../src/errors";
 import uuid from "uuid";
+import { EventEmitter } from "events";
 
 let queries: string[] = [];
 
@@ -937,7 +938,7 @@ describe("without policies", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -975,7 +976,7 @@ describe("without policies", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/2",
@@ -1061,7 +1062,7 @@ describe("without policies", () => {
             },
           },
         ],
-        "item": Array [
+        "result": Array [
           Object {
             "_links": Object {},
             "_type": "test/test",
@@ -1382,7 +1383,7 @@ describe("without policies", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -1430,7 +1431,7 @@ describe("without policies", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -1560,7 +1561,7 @@ describe("without policies", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -1608,7 +1609,7 @@ describe("without policies", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -1679,7 +1680,7 @@ describe("without policies", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -1718,7 +1719,7 @@ describe("without policies", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -1757,7 +1758,7 @@ describe("without policies", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -1806,7 +1807,7 @@ describe("without policies", () => {
     expect(queries).toMatchInlineSnapshot(`Array []`);
 
     await knex("test.test").truncate();
-    const { item } = await table.write(
+    const { result: item } = await table.write(
       knex,
       { username: "xyz", org: "org" },
       {}
@@ -1832,7 +1833,7 @@ describe("without policies", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -1872,7 +1873,7 @@ describe("without policies", () => {
             },
           },
         ],
-        "item": null,
+        "result": null,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -1962,7 +1963,7 @@ describe("without policies", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "posts": "/test/posts?userId=1",
           },
@@ -2033,7 +2034,7 @@ describe("without policies", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "posts": "/test/posts?userId=2",
           },
@@ -2144,7 +2145,7 @@ describe("without policies", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "user": "/test/users/3",
           },
@@ -2195,7 +2196,7 @@ describe("without policies", () => {
             },
           },
         ],
-        "item": null,
+        "result": null,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -2240,7 +2241,7 @@ describe("without policies", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "posts": "/test/posts?userId=4",
           },
@@ -2592,7 +2593,7 @@ describe("without policies", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -2634,7 +2635,7 @@ describe("without policies", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/test",
           "_url": "/test/test/1",
@@ -3178,7 +3179,7 @@ describe("with policies", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/posts",
           "_url": "/test/posts/4",
@@ -3202,7 +3203,7 @@ describe("with policies", () => {
       Object {
         "changeId": "uuid-test-value",
         "changes": Array [],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "user": "/test/users/1",
           },
@@ -3250,7 +3251,7 @@ describe("with policies", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "user": "/test/users/1",
           },
@@ -3298,7 +3299,7 @@ describe("with policies", () => {
             },
           },
         ],
-        "item": null,
+        "result": null,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -3640,7 +3641,7 @@ describe("multitenancy", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/items",
           "_url": "/test/items/2?orgId=1",
@@ -3670,7 +3671,7 @@ describe("multitenancy", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/items",
           "_url": "/test/items/1?orgId=1",
@@ -3700,7 +3701,7 @@ describe("multitenancy", () => {
             },
           },
         ],
-        "item": null,
+        "result": null,
       }
     `);
   });
@@ -3824,7 +3825,7 @@ describe("multitenancy", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "org": "/test/orgs/1",
           },
@@ -3855,7 +3856,7 @@ describe("multitenancy", () => {
       Object {
         "changeId": "uuid-test-value",
         "changes": Array [],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "org": "/test/orgs/1",
           },
@@ -3967,7 +3968,7 @@ describe("multitenancy", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "org": "/test/orgs/1",
             "parent": "/test/test/1?orgId=1",
@@ -4068,7 +4069,7 @@ describe("paranoid", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "subitems": "/test/subitems?itemId=1",
           },
@@ -4133,7 +4134,7 @@ describe("paranoid", () => {
             },
           },
         ],
-        "item": null,
+        "result": null,
       }
     `);
 
@@ -4250,7 +4251,7 @@ describe("paranoid", () => {
             },
           },
         ],
-        "item": null,
+        "result": null,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -4336,7 +4337,7 @@ describe("hidden columns", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/items",
           "_url": "/test/items/1",
@@ -4494,7 +4495,7 @@ describe("uuid columns", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/items",
           "_url": "/test/items/a8374dd3-0aa0-4ada-8c98-b7ade46900b8",
@@ -4607,7 +4608,7 @@ describe("uuid columns", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "subitems": "/test/subitems?parentId=96435a51-7af8-4d08-94f3-892a99abd8cd",
           },
@@ -4687,7 +4688,7 @@ describe("uuid columns", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "parent": "/test/items/cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
           },
@@ -4756,7 +4757,7 @@ describe("beforeCommit", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/items",
           "_url": "/test/items/1",
@@ -4799,7 +4800,7 @@ describe("beforeCommit", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/items",
           "_url": "/test/items/1",
@@ -4845,7 +4846,7 @@ describe("beforeCommit", () => {
             },
           },
         ],
-        "item": null,
+        "result": null,
       }
     `);
     expect(results).toMatchInlineSnapshot(`
@@ -4902,7 +4903,7 @@ describe("self references", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "items": "/test/items?parentItemId=1",
           },
@@ -4934,7 +4935,7 @@ describe("self references", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "items": "/test/items?parentItemId=2",
             "parentItem": "/test/items/1",
@@ -4995,7 +4996,7 @@ describe("self references", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "items": "/test/items?parentItemId=3",
             "parentItem": "/test/items/1",
@@ -5637,7 +5638,7 @@ describe("in public schema", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "testTable",
           "_url": "/testTable/1",
@@ -5843,7 +5844,7 @@ describe("upsert", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/contacts",
           "_url": "/test/contacts/1",
@@ -5903,7 +5904,7 @@ describe("upsert", () => {
             },
           },
         ],
-        "item": Array [
+        "result": Array [
           Object {
             "_links": Object {},
             "_type": "test/contacts",
@@ -6076,7 +6077,7 @@ describe("upsert", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/contacts",
           "_url": "/test/contacts/1?orgId=1",
@@ -6207,7 +6208,7 @@ describe("ref validations", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/items",
           "_url": "/test/items/1",
@@ -6412,7 +6413,7 @@ describe("lookup tables", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "type": "/test/types/type1",
           },
@@ -6465,7 +6466,7 @@ describe("readonly columns", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/items",
           "_url": "/test/items/1",
@@ -6487,7 +6488,7 @@ describe("readonly columns", () => {
       Object {
         "changeId": "uuid-test-value",
         "changes": Array [],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/items",
           "_url": "/test/items/1",
@@ -6549,7 +6550,7 @@ describe("readonly columns", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/items",
           "_url": "/test/items/1",
@@ -6571,7 +6572,7 @@ describe("readonly columns", () => {
       Object {
         "changeId": "uuid-test-value",
         "changes": Array [],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "test/items",
           "_url": "/test/items/1",
@@ -6987,6 +6988,538 @@ describe("filters involving foreign keys", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select items.id, items.org_id, items.team_id from test.items where (items.team_id in (select teams.id from test.teams where teams.org_id in (select orgs.id from test.orgs where orgs.id = ? and orgs.id = teams.org_id) and teams.id = items.team_id)) limit ?",
+      ]
+    `);
+  });
+});
+
+describe("batch updates", () => {
+  it("writes updating via params", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("field");
+    });
+
+    for (let i = 0; i < 3; i++) await knex("test.items").insert({});
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    expect(
+      await items
+        .writeAll(knex, { id: ["1"] }, { field: "abc" }, {})
+        .catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "path": "/test/items",
+            "row": Object {
+              "field": "abc",
+              "id": 1,
+            },
+          },
+        ],
+        "result": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/1",
+            "field": "abc",
+            "id": 1,
+          },
+        ],
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.field from test.items where (items.id in (?))",
+        "update test.items set field = ? where items.id in (select items.id from test.items where (items.id in (?))) returning *",
+        "select count(*) from test.items where items.id in (?)",
+      ]
+    `);
+  });
+
+  it("fires before commit callbacks", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("field");
+    });
+
+    for (let i = 0; i < 3; i++) await knex("test.items").insert({});
+
+    let calls = 0;
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      async afterUpdate() {
+        calls++;
+      },
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    expect(
+      await items
+        .writeAll(knex, { id: ["1", 2] }, { field: "abc" }, {})
+        .catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "path": "/test/items",
+            "row": Object {
+              "field": "abc",
+              "id": 1,
+            },
+          },
+          Object {
+            "mode": "update",
+            "path": "/test/items",
+            "row": Object {
+              "field": "abc",
+              "id": 2,
+            },
+          },
+        ],
+        "result": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/1",
+            "field": "abc",
+            "id": 1,
+          },
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/2",
+            "field": "abc",
+            "id": 2,
+          },
+        ],
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.field from test.items where (items.id in (?, ?))",
+        "update test.items set field = ? where items.id in (select items.id from test.items where (items.id in (?, ?))) returning *",
+        "select count(*) from test.items where items.id in (?, ?)",
+      ]
+    `);
+    expect(calls).toBe(2);
+  });
+
+  it("fires event emitter", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("field");
+    });
+
+    for (let i = 0; i < 3; i++) await knex("test.items").insert({});
+
+    const eventEmitter = new EventEmitter();
+    const changes: any[] = [];
+    eventEmitter.on("change", (change) => {
+      changes.push(change);
+    });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      eventEmitter,
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    expect(
+      await items
+        .writeAll(knex, { id: ["1"] }, { field: "abc" }, {})
+        .catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "path": "/test/items",
+            "row": Object {
+              "field": "abc",
+              "id": 1,
+            },
+          },
+        ],
+        "result": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/1",
+            "field": "abc",
+            "id": 1,
+          },
+        ],
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.field from test.items where (items.id in (?))",
+        "update test.items set field = ? where items.id in (select items.id from test.items where (items.id in (?))) returning *",
+        "select count(*) from test.items where items.id in (?)",
+      ]
+    `);
+    expect(changes).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "changes": Array [
+            Object {
+              "mode": "update",
+              "path": "/test/items",
+              "row": Object {
+                "field": "abc",
+                "id": 1,
+              },
+            },
+          ],
+          "id": "uuid-test-value",
+        },
+      ]
+    `);
+  });
+
+  it("deletes via params", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("field");
+    });
+
+    for (let i = 0; i < 3; i++) await knex("test.items").insert({});
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    expect(
+      await items
+        .writeAll(knex, { id: ["1"] }, { _delete: true }, {})
+        .catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "delete",
+            "path": "/test/items",
+            "row": Object {
+              "field": null,
+              "id": 1,
+            },
+          },
+        ],
+        "result": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/1",
+            "field": null,
+            "id": 1,
+          },
+        ],
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.field from test.items where (items.id in (?))",
+        "delete from test.items where items.id in (select items.id from test.items where (items.id in (?))) returning *",
+      ]
+    `);
+  });
+
+  it("deletes paranoid via params", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("field");
+      t.timestamp("deletedAt");
+    });
+
+    for (let i = 0; i < 3; i++) await knex("test.items").insert({});
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      paranoid: true,
+    });
+
+    await items.init(knex);
+
+    jest.spyOn(Date, "now").mockReturnValue(0);
+
+    queries = [];
+    expect(
+      await items
+        .writeAll(knex, { id: ["1"] }, { _delete: true }, {})
+        .catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "path": "/test/items",
+            "row": Object {
+              "deletedAt": 2000-01-01T07:00:00.000Z,
+              "field": null,
+              "id": 1,
+            },
+          },
+        ],
+        "result": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/1",
+            "deletedAt": 2000-01-01T07:00:00.000Z,
+            "field": null,
+            "id": 1,
+          },
+        ],
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.field, items.deleted_at from test.items where (items.id in (?)) and items.deleted_at is null",
+        "update test.items set deleted_at = ? where items.id in (select items.id from test.items where (items.id in (?)) and items.deleted_at is null) returning *",
+        "select count(*) from test.items where items.id in (?)",
+      ]
+    `);
+  });
+
+  it("does not update outside policy", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("field");
+      t.boolean("isVisible");
+    });
+
+    for (let i = 0; i < 3; i++)
+      await knex("test.items").insert({ isVisible: true });
+    for (let i = 0; i < 3; i++)
+      await knex("test.items").insert({ isVisible: false });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      async policy(stmt) {
+        stmt.where("isVisible", true);
+      },
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    expect(
+      await items.writeAll(knex, {}, { field: "abc" }, {}).catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "path": "/test/items",
+            "row": Object {
+              "field": "abc",
+              "id": 1,
+              "isVisible": true,
+            },
+          },
+          Object {
+            "mode": "update",
+            "path": "/test/items",
+            "row": Object {
+              "field": "abc",
+              "id": 2,
+              "isVisible": true,
+            },
+          },
+          Object {
+            "mode": "update",
+            "path": "/test/items",
+            "row": Object {
+              "field": "abc",
+              "id": 3,
+              "isVisible": true,
+            },
+          },
+        ],
+        "result": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/1",
+            "field": "abc",
+            "id": 1,
+            "isVisible": true,
+          },
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/2",
+            "field": "abc",
+            "id": 2,
+            "isVisible": true,
+          },
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/3",
+            "field": "abc",
+            "id": 3,
+            "isVisible": true,
+          },
+        ],
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.field, items.is_visible from test.items where is_visible = ?",
+        "update test.items set field = ? where items.id in (select items.id from test.items where is_visible = ?) returning *",
+        "select count(*) from test.items where items.id in (?, ?, ?) and is_visible = ?",
+      ]
+    `);
+  });
+
+  it("does not allow updates that move rows outside policy", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("field");
+      t.boolean("isVisible");
+    });
+
+    for (let i = 0; i < 3; i++)
+      await knex("test.items").insert({ isVisible: true });
+    for (let i = 0; i < 3; i++)
+      await knex("test.items").insert({ isVisible: false });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      async policy(stmt) {
+        stmt.where("isVisible", true);
+      },
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    expect(
+      await items
+        .writeAll(knex, {}, { isVisible: false }, {})
+        .catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "base": "Unauthorized",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.field, items.is_visible from test.items where is_visible = ?",
+        "update test.items set is_visible = ? where items.id in (select items.id from test.items where is_visible = ?) returning *",
+        "select count(*) from test.items where items.id in (?, ?, ?) and is_visible = ?",
+      ]
+    `);
+  });
+
+  it("validates before writes", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.integer("int");
+      t.boolean("isVisible");
+    });
+
+    for (let i = 0; i < 3; i++)
+      await knex("test.items").insert({ isVisible: true });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      schema: {
+        int: number().max(10),
+      },
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    expect(await items.writeAll(knex, {}, { int: 11 }, {}).catch((e) => e.body))
+      .toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "int": "must be less than or equal to 10",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`Array []`);
+  });
+
+  it("validates after writes", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.integer("int");
+    });
+
+    for (let i = 0; i < 3; i++) await knex("test.items").insert({ int: 1 });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      schema: {
+        int: number().test("test", "${path} didn't validate", function (value) {
+          if (this.parent.id && value! > 10) return false;
+          return true;
+        }),
+      },
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    expect(
+      await items.writeAll(knex, {}, { int: 100 }, {}).catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "1": Object {
+            "int": "didn't validate",
+          },
+          "2": Object {
+            "int": "didn't validate",
+          },
+          "3": Object {
+            "int": "didn't validate",
+          },
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select items.id, items.int from test.items",
+        "update test.items set int = ? where items.id in (select items.id from test.items) returning *",
       ]
     `);
   });

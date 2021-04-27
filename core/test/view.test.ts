@@ -308,7 +308,7 @@ describe("works with views", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "org": "/viewTest/orgs/1",
           },
@@ -360,7 +360,7 @@ describe("works with views", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "org": "/viewTest/orgs/1",
           },
@@ -585,7 +585,7 @@ describe("works with views", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "org": "/viewTest/orgs/1",
           },
@@ -630,7 +630,7 @@ describe("works with views", () => {
             },
           },
         ],
-        "item": null,
+        "result": null,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`

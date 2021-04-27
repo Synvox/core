@@ -149,7 +149,7 @@ describe("withTimestamps plugin", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "posts": "/testPlugins/posts?userId=1",
           },
@@ -230,7 +230,7 @@ describe("withTimestamps plugin", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {
             "posts": "/testPlugins/posts?userId=1",
           },
@@ -282,7 +282,7 @@ describe("withTimestamps plugin", () => {
             },
           },
         ],
-        "item": null,
+        "result": null,
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
@@ -332,7 +332,7 @@ describe("withTimestamps plugin", () => {
             },
           },
         ],
-        "item": Object {
+        "result": Object {
           "_links": Object {},
           "_type": "testPlugins/items",
           "_url": "/testPlugins/items/1",
