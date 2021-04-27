@@ -24,7 +24,9 @@ export async function saveTsTypes(
         .filter((c) => c.nullable || Boolean(c.defaultValue))
         .map((c) => JSON.stringify(c.name))
         .join(" | ");
-      const insertType = `Optional<${table.className}, ${optionalFields}>`;
+      const insertType = optionalFields.trim()
+        ? `Optional<${table.className}, ${optionalFields}>`
+        : table.className;
       const updateType = `Partial<${table.className}>`;
       let type = `Knex.CompositeTableType<\n      ${table.className},\n      ${insertType},\n      ${updateType}\n    >`;
 

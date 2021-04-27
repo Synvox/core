@@ -960,6 +960,12 @@ describe("saves to files", () => {
       t.bigIncrements("id");
     });
 
+    await knex.schema
+      .withSchema("saveTest")
+      .createTable("lookup_table", (t) => {
+        t.text("id").primary();
+      });
+
     const path = Path.resolve(__dirname, "./test.ignore8.ts");
 
     const core = new Core(knex, () => ({}));
@@ -988,6 +994,11 @@ describe("saves to files", () => {
       tableName: "testSubNullable",
     });
 
+    core.table({
+      schemaName: "saveTest",
+      tableName: "lookupTable",
+    });
+
     await core.saveTsTypes(path, { includeLinks: false, includeKnex: true });
 
     const types = await fs.readFile(path, { encoding: "utf8" });
@@ -1007,6 +1018,11 @@ describe("saves to files", () => {
             SaveTestTable,
             Optional<SaveTestTable, \\"id\\">,
             Partial<SaveTestTable>
+          >;
+          \\"saveTest.lookupTable\\": Knex.CompositeTableType<
+            LookupTable,
+            LookupTable,
+            Partial<LookupTable>
           >;
           \\"saveTest.test\\": Knex.CompositeTableType<
             Test,
@@ -1033,6 +1049,10 @@ describe("saves to files", () => {
 
       export type SaveTestTable = {
         id: number;
+      };
+
+      export type LookupTable = {
+        id: string;
       };
 
       export type Test = {
