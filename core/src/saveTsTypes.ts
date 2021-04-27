@@ -218,7 +218,7 @@ export async function saveTsTypes(
         .join(" | ");
 
       if (idModifierTypes) {
-        filterTypeNameWithIdModifiers = `(${filtersType} | { ${table.idColumnName}: ${filterTypeNameWithIdModifiers} })`;
+        filterTypeNameWithIdModifiers = `(${filtersType} | { ${table.idColumnName}: ${idModifierTypes} })`;
       }
 
       types += `export type ${paramsType} = ${filterTypeNameWithIdModifiers} &\n`;

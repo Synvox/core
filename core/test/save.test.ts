@@ -578,7 +578,7 @@ describe("saves to files", () => {
         ColumnParam<\\"numberCount\\", number | number[]> &
         ColumnParam<\\"text\\", string | string[]>
 
-      export type TestNullableParams = (TestNullableFilters | { id: TestNullableFilters }) &
+      export type TestNullableParams = (TestNullableFilters | { id: \\"me\\" }) &
         CollectionParams & {
           sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text')[];
         } & {
