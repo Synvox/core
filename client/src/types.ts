@@ -1,5 +1,9 @@
 import { AxiosInstance } from "axios";
 
+type DeepPartial<T> = {
+  [P in keyof T]?: DeepPartial<T[P]>;
+};
+
 export type IDColumnType<T, IDColumnName> = IDColumnName extends keyof T
   ? T[IDColumnName]
   : unknown;
@@ -57,25 +61,25 @@ export type Handlers<
   Result,
   Params extends Record<string, any>,
   IDColumnName
-> = Getter<Result, Params, IDColumnName> & {
-  get: Getter<Result, Params, ID<Params, IDColumnName>>;
-  first: (params?: Params) => Result;
+> = Getter<Result, DeepPartial<Params>, IDColumnName> & {
+  get: Getter<Result, DeepPartial<Params>, ID<Params, IDColumnName>>;
+  first: (params?: DeepPartial<Params>) => Result;
   put: (
     id: ID<Result, IDColumnName>,
     payload: any,
-    params?: Params
+    params?: DeepPartial<Params>
   ) => Promise<ChangeTo<Result>>;
   post: (
     pathOrData: string | Record<string, any>,
-    dataOrParams?: Record<string, any> | Params,
-    params?: Params
+    dataOrParams?: Record<string, any> | DeepPartial<Params>,
+    params?: DeepPartial<Params>
   ) => Promise<ChangeTo<Result>>;
   delete: (
     id: ID<Result, IDColumnName>,
-    params?: Params
+    params?: DeepPartial<Params>
   ) => Promise<ChangeTo<Result>>;
-  count: (params?: Params) => number;
-  ids: (params?: Params) => Collection<ID<Result, IDColumnName>>;
+  count: (params?: DeepPartial<Params>) => number;
+  ids: (params?: DeepPartial<Params>) => Collection<ID<Result, IDColumnName>>;
 };
 
 export type RouteFactory<Result, Params, ID> = (p: {

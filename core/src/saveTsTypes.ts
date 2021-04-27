@@ -195,7 +195,7 @@ export async function saveTsTypes(
             .map((id) => JSON.stringify(id))
             .join(" | ");
           baseType = `(${baseType})`;
-        } else if (hasOne) {
+        } else if (hasOne && hasOne.table !== table) {
           baseType = hasOne.table.lookupTableIds
             .map((id) => JSON.stringify(id))
             .join(" | ");
@@ -212,12 +212,11 @@ export async function saveTsTypes(
 
       types += columnTypes.join(" &\n  ") + `\n\n`;
 
-      types += `export type ${paramsType} = Partial<\n`;
-      types += `  Partial<${filtersType}> &\n`;
-      types += `    CollectionParams & {\n`;
+      types += `export type ${paramsType} = ${filtersType} &\n`;
+      types += `  CollectionParams & {\n`;
 
       for (let queryModifier of Object.keys(table.queryModifiers)) {
-        types += `      ${queryModifier}: unknown;\n`;
+        types += `    ${queryModifier}: unknown;\n`;
       }
 
       const includeKeys = [
@@ -230,7 +229,7 @@ export async function saveTsTypes(
       if (includeKeys.length) {
         let includeType = includeKeys.map((v) => `'${v}'`).join(" | ");
         if (includeKeys.length > 1) includeType = `(${includeType})`;
-        types += `      include: ${includeType}[];\n`;
+        types += `    include: ${includeType}[];\n`;
       }
 
       const sortType = Object.keys(table.columns)
@@ -239,31 +238,30 @@ export async function saveTsTypes(
         .map((v) => `'${v}'`)
         .join(" | ");
 
-      types += `      sort: ${sortType} | (${sortType})[];\n`;
-      types += `    } & {\n`;
+      types += `    sort: ${sortType} | (${sortType})[];\n`;
+      types += `  } & {\n`;
 
       const idModifierNames = Object.keys(table.idModifiers);
       if (idModifierNames.length) {
         const otherKeys = idModifierNames
           .map((k) => JSON.stringify(k))
           .join(" | ");
-        types += `      ${table.idColumnName}: ${otherKeys}\n`;
+        types += `    ${table.idColumnName}: ${otherKeys}\n`;
       }
 
       for (let { table: relatedTable, name } of Object.values(
         table.relatedTables.hasOne
       )) {
         const filtersType = `${relatedTable.className}Filters`;
-        types += `      ${name}: Partial<${filtersType}>;\n`;
-        types += `      "${name}.not": Partial<${filtersType}>;\n`;
+        types += `    ${name}: Partial<${filtersType}>;\n`;
+        types += `    "${name}.not": Partial<${filtersType}>;\n`;
       }
 
-      types += `      and: Partial<${filtersType}> | Partial<${filtersType}>[];\n`;
-      types += `      "not.and": Partial<${filtersType}> | Partial<${filtersType}>[];\n`;
-      types += `      or: Partial<${filtersType}> | Partial<${filtersType}>[];\n`;
-      types += `      "not.or": Partial<${filtersType}> | Partial<${filtersType}>[];\n`;
-      types += `    }\n`;
-      types += `>;\n\n`;
+      types += `    and: Partial<${filtersType}> | Partial<${filtersType}>[];\n`;
+      types += `    "not.and": Partial<${filtersType}> | Partial<${filtersType}>[];\n`;
+      types += `    or: Partial<${filtersType}> | Partial<${filtersType}>[];\n`;
+      types += `    "not.or": Partial<${filtersType}> | Partial<${filtersType}>[];\n`;
+      types += `  };\n\n`;
     }
   }
 
