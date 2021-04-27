@@ -166,7 +166,7 @@ export async function saveTsTypes(
     if (includeParams) {
       const filtersType = `${table.className}Filters`;
       const paramsType = `${table.className}Params`;
-      types += `export type ${filtersType} = Partial<\n`;
+      types += `export type ${filtersType} = `;
 
       const columnTypes: string[] = [];
 
@@ -207,40 +207,17 @@ export async function saveTsTypes(
         if (array) baseType += "[]";
         else baseType = `${baseType} | ${baseType}[]`;
         if (column.nullable) baseType += " | null";
-        columnTypes.push(`  ColumnParam<"${columnName}", ${baseType}>`);
+        columnTypes.push(`ColumnParam<"${columnName}", ${baseType}>`);
       }
 
-      types += columnTypes.join(" &\n  ") + ` & {\n`;
-
-      const idModifierNames = Object.keys(table.idModifiers);
-      if (idModifierNames.length) {
-        const otherKeys = idModifierNames
-          .map((k) => JSON.stringify(k))
-          .join(" | ");
-        types += `      ${table.idColumnName}: ${otherKeys}\n`;
-      }
-
-      for (let { table: relatedTable, name } of Object.values(
-        table.relatedTables.hasOne
-      )) {
-        const filtersType = `${relatedTable.className}Filters`;
-        types += `      ${name}: ${filtersType};\n`;
-        types += `      "${name}.not": ${filtersType};\n`;
-      }
-
-      types += `      and: ${filtersType} | ${filtersType}[];\n`;
-      types += `      "not.and": ${filtersType} | ${filtersType}[];\n`;
-      types += `      or: ${filtersType} | ${filtersType}[];\n`;
-      types += `      "not.or": ${filtersType} | ${filtersType}[];\n`;
-      types += `    }\n`;
-      types += `>;\n\n`;
+      types += columnTypes.join(" &\n  ") + `\n\n`;
 
       types += `export type ${paramsType} = Partial<\n`;
-      types += `  ${filtersType} &\n`;
+      types += `  Partial<${filtersType}> &\n`;
       types += `    CollectionParams & {\n`;
 
       for (let queryModifier of Object.keys(table.queryModifiers)) {
-        types += `  ${queryModifier}: unknown;\n`;
+        types += `      ${queryModifier}: unknown;\n`;
       }
 
       const includeKeys = [
@@ -263,7 +240,28 @@ export async function saveTsTypes(
         .join(" | ");
 
       types += `      sort: ${sortType} | (${sortType})[];\n`;
+      types += `    } & {\n`;
 
+      const idModifierNames = Object.keys(table.idModifiers);
+      if (idModifierNames.length) {
+        const otherKeys = idModifierNames
+          .map((k) => JSON.stringify(k))
+          .join(" | ");
+        types += `      ${table.idColumnName}: ${otherKeys}\n`;
+      }
+
+      for (let { table: relatedTable, name } of Object.values(
+        table.relatedTables.hasOne
+      )) {
+        const filtersType = `${relatedTable.className}Filters`;
+        types += `      ${name}: Partial<${filtersType}>;\n`;
+        types += `      "${name}.not": Partial<${filtersType}>;\n`;
+      }
+
+      types += `      and: Partial<${filtersType}> | Partial<${filtersType}>[];\n`;
+      types += `      "not.and": Partial<${filtersType}> | Partial<${filtersType}>[];\n`;
+      types += `      or: Partial<${filtersType}> | Partial<${filtersType}>[];\n`;
+      types += `      "not.or": Partial<${filtersType}> | Partial<${filtersType}>[];\n`;
       types += `    }\n`;
       types += `>;\n\n`;
     }

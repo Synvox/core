@@ -549,24 +549,22 @@ describe("saves to files", () => {
         testSubNullable: TestSubNullable[];
       };
 
-      export type TestFilters = Partial<
-        ColumnParam<\\"id\\", number | number[]> &
-          ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
-          ColumnParam<\\"numberCount\\", number | number[]> &
-          ColumnParam<\\"text\\", string | string[]> &
-          ColumnParam<\\"typeId\\", string | string[]> & {
-            and: TestFilters | TestFilters[];
-            \\"not.and\\": TestFilters | TestFilters[];
-            or: TestFilters | TestFilters[];
-            \\"not.or\\": TestFilters | TestFilters[];
-          }
-      >;
+      export type TestFilters = ColumnParam<\\"id\\", number | number[]> &
+        ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
+        ColumnParam<\\"numberCount\\", number | number[]> &
+        ColumnParam<\\"text\\", string | string[]> &
+        ColumnParam<\\"typeId\\", string | string[]>
 
       export type TestParams = Partial<
-        TestFilters &
+        Partial<TestFilters> &
           CollectionParams & {
             include: ('testSub' | 'testSubNullable')[];
             sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId')[];
+          } & {
+            and: Partial<TestFilters> | Partial<TestFilters>[];
+            \\"not.and\\": Partial<TestFilters> | Partial<TestFilters>[];
+            or: Partial<TestFilters> | Partial<TestFilters>[];
+            \\"not.or\\": Partial<TestFilters> | Partial<TestFilters>[];
           }
       >;
 
@@ -577,23 +575,21 @@ describe("saves to files", () => {
         text: string;
       };
 
-      export type TestNullableFilters = Partial<
-        ColumnParam<\\"id\\", number | number[]> &
-          ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
-          ColumnParam<\\"numberCount\\", number | number[]> &
-          ColumnParam<\\"text\\", string | string[]> & {
-            id: \\"me\\"
-            and: TestNullableFilters | TestNullableFilters[];
-            \\"not.and\\": TestNullableFilters | TestNullableFilters[];
-            or: TestNullableFilters | TestNullableFilters[];
-            \\"not.or\\": TestNullableFilters | TestNullableFilters[];
-          }
-      >;
+      export type TestNullableFilters = ColumnParam<\\"id\\", number | number[]> &
+        ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
+        ColumnParam<\\"numberCount\\", number | number[]> &
+        ColumnParam<\\"text\\", string | string[]>
 
       export type TestNullableParams = Partial<
-        TestNullableFilters &
+        Partial<TestNullableFilters> &
           CollectionParams & {
             sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text')[];
+          } & {
+            id: \\"me\\"
+            and: Partial<TestNullableFilters> | Partial<TestNullableFilters>[];
+            \\"not.and\\": Partial<TestNullableFilters> | Partial<TestNullableFilters>[];
+            or: Partial<TestNullableFilters> | Partial<TestNullableFilters>[];
+            \\"not.or\\": Partial<TestNullableFilters> | Partial<TestNullableFilters>[];
           }
       >;
 
@@ -604,25 +600,23 @@ describe("saves to files", () => {
         parent: Test;
       };
 
-      export type TestSubFilters = Partial<
-        ColumnParam<\\"id\\", number | number[]> &
-          ColumnParam<\\"parentId\\", TestFilters['id'] | TestFilters['id'][]> &
-          ColumnParam<\\"arr\\", number[] | null> & {
-            parent: TestFilters;
-            \\"parent.not\\": TestFilters;
-            and: TestSubFilters | TestSubFilters[];
-            \\"not.and\\": TestSubFilters | TestSubFilters[];
-            or: TestSubFilters | TestSubFilters[];
-            \\"not.or\\": TestSubFilters | TestSubFilters[];
-          }
-      >;
+      export type TestSubFilters = ColumnParam<\\"id\\", number | number[]> &
+        ColumnParam<\\"parentId\\", TestFilters['id'] | TestFilters['id'][]> &
+        ColumnParam<\\"arr\\", number[] | null>
 
       export type TestSubParams = Partial<
-        TestSubFilters &
+        Partial<TestSubFilters> &
           CollectionParams & {
-        thing: unknown;
+            thing: unknown;
             include: 'parent'[];
             sort: 'id' | '-id' | 'parentId' | '-parentId' | 'arr' | '-arr' | ('id' | '-id' | 'parentId' | '-parentId' | 'arr' | '-arr')[];
+          } & {
+            parent: Partial<TestFilters>;
+            \\"parent.not\\": Partial<TestFilters>;
+            and: Partial<TestSubFilters> | Partial<TestSubFilters>[];
+            \\"not.and\\": Partial<TestSubFilters> | Partial<TestSubFilters>[];
+            or: Partial<TestSubFilters> | Partial<TestSubFilters>[];
+            \\"not.or\\": Partial<TestSubFilters> | Partial<TestSubFilters>[];
           }
       >;
 
@@ -633,24 +627,22 @@ describe("saves to files", () => {
         parent?: Test;
       };
 
-      export type TestSubNullableFilters = Partial<
-        ColumnParam<\\"id\\", number | number[]> &
-          ColumnParam<\\"parentId\\", TestFilters['id'] | TestFilters['id'][] | null> &
-          ColumnParam<\\"arr\\", number[] | null> & {
-            parent: TestFilters;
-            \\"parent.not\\": TestFilters;
-            and: TestSubNullableFilters | TestSubNullableFilters[];
-            \\"not.and\\": TestSubNullableFilters | TestSubNullableFilters[];
-            or: TestSubNullableFilters | TestSubNullableFilters[];
-            \\"not.or\\": TestSubNullableFilters | TestSubNullableFilters[];
-          }
-      >;
+      export type TestSubNullableFilters = ColumnParam<\\"id\\", number | number[]> &
+        ColumnParam<\\"parentId\\", TestFilters['id'] | TestFilters['id'][] | null> &
+        ColumnParam<\\"arr\\", number[] | null>
 
       export type TestSubNullableParams = Partial<
-        TestSubNullableFilters &
+        Partial<TestSubNullableFilters> &
           CollectionParams & {
             include: 'parent'[];
             sort: 'id' | '-id' | 'parentId' | '-parentId' | 'arr' | '-arr' | ('id' | '-id' | 'parentId' | '-parentId' | 'arr' | '-arr')[];
+          } & {
+            parent: Partial<TestFilters>;
+            \\"parent.not\\": Partial<TestFilters>;
+            and: Partial<TestSubNullableFilters> | Partial<TestSubNullableFilters>[];
+            \\"not.and\\": Partial<TestSubNullableFilters> | Partial<TestSubNullableFilters>[];
+            or: Partial<TestSubNullableFilters> | Partial<TestSubNullableFilters>[];
+            \\"not.or\\": Partial<TestSubNullableFilters> | Partial<TestSubNullableFilters>[];
           }
       >;
       "
@@ -718,24 +710,22 @@ describe("saves to files", () => {
         getThing: unknown;
       };
 
-      export type TestFilters = Partial<
-        ColumnParam<\\"id\\", number | number[]> &
-          ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
-          ColumnParam<\\"numberCount\\", number | number[]> &
-          ColumnParam<\\"text\\", string | string[]> &
-          ColumnParam<\\"typeId\\", string | string[]> & {
-            and: TestFilters | TestFilters[];
-            \\"not.and\\": TestFilters | TestFilters[];
-            or: TestFilters | TestFilters[];
-            \\"not.or\\": TestFilters | TestFilters[];
-          }
-      >;
+      export type TestFilters = ColumnParam<\\"id\\", number | number[]> &
+        ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
+        ColumnParam<\\"numberCount\\", number | number[]> &
+        ColumnParam<\\"text\\", string | string[]> &
+        ColumnParam<\\"typeId\\", string | string[]>
 
       export type TestParams = Partial<
-        TestFilters &
+        Partial<TestFilters> &
           CollectionParams & {
             include: ('getThing' | 'getOtherThing')[];
             sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId')[];
+          } & {
+            and: Partial<TestFilters> | Partial<TestFilters>[];
+            \\"not.and\\": Partial<TestFilters> | Partial<TestFilters>[];
+            or: Partial<TestFilters> | Partial<TestFilters>[];
+            \\"not.or\\": Partial<TestFilters> | Partial<TestFilters>[];
           }
       >;
       "
@@ -799,26 +789,24 @@ describe("saves to files", () => {
         type: Type;
       };
 
-      export type TestFilters = Partial<
-        ColumnParam<\\"id\\", number | number[]> &
-          ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
-          ColumnParam<\\"numberCount\\", number | number[]> &
-          ColumnParam<\\"text\\", string | string[]> &
-          ColumnParam<\\"typeId\\", TypeFilters['id'] | TypeFilters['id'][]> & {
-            type: TypeFilters;
-            \\"type.not\\": TypeFilters;
-            and: TestFilters | TestFilters[];
-            \\"not.and\\": TestFilters | TestFilters[];
-            or: TestFilters | TestFilters[];
-            \\"not.or\\": TestFilters | TestFilters[];
-          }
-      >;
+      export type TestFilters = ColumnParam<\\"id\\", number | number[]> &
+        ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
+        ColumnParam<\\"numberCount\\", number | number[]> &
+        ColumnParam<\\"text\\", string | string[]> &
+        ColumnParam<\\"typeId\\", TypeFilters['id'] | TypeFilters['id'][]>
 
       export type TestParams = Partial<
-        TestFilters &
+        Partial<TestFilters> &
           CollectionParams & {
             include: 'type'[];
             sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId')[];
+          } & {
+            type: Partial<TypeFilters>;
+            \\"type.not\\": Partial<TypeFilters>;
+            and: Partial<TestFilters> | Partial<TestFilters>[];
+            \\"not.and\\": Partial<TestFilters> | Partial<TestFilters>[];
+            or: Partial<TestFilters> | Partial<TestFilters>[];
+            \\"not.or\\": Partial<TestFilters> | Partial<TestFilters>[];
           }
       >;
 
@@ -827,20 +815,18 @@ describe("saves to files", () => {
         test: Test[];
       };
 
-      export type TypeFilters = Partial<
-        ColumnParam<\\"id\\", (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[]> & {
-            and: TypeFilters | TypeFilters[];
-            \\"not.and\\": TypeFilters | TypeFilters[];
-            or: TypeFilters | TypeFilters[];
-            \\"not.or\\": TypeFilters | TypeFilters[];
-          }
-      >;
+      export type TypeFilters = ColumnParam<\\"id\\", (\\"type1\\" | \\"type2\\" | \\"type3\\") | (\\"type1\\" | \\"type2\\" | \\"type3\\")[]>
 
       export type TypeParams = Partial<
-        TypeFilters &
+        Partial<TypeFilters> &
           CollectionParams & {
             include: 'test'[];
             sort: 'id' | '-id' | ('id' | '-id')[];
+          } & {
+            and: Partial<TypeFilters> | Partial<TypeFilters>[];
+            \\"not.and\\": Partial<TypeFilters> | Partial<TypeFilters>[];
+            or: Partial<TypeFilters> | Partial<TypeFilters>[];
+            \\"not.or\\": Partial<TypeFilters> | Partial<TypeFilters>[];
           }
       >;
       "
@@ -906,26 +892,24 @@ describe("saves to files", () => {
         type: Type;
       };
 
-      export type TestFilters = Partial<
-        ColumnParam<\\"id\\", number | number[]> &
-          ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
-          ColumnParam<\\"numberCount\\", number | number[]> &
-          ColumnParam<\\"text\\", string | string[]> &
-          ColumnParam<\\"typeId\\", TypeFilters['id'] | TypeFilters['id'][]> & {
-            type: TypeFilters;
-            \\"type.not\\": TypeFilters;
-            and: TestFilters | TestFilters[];
-            \\"not.and\\": TestFilters | TestFilters[];
-            or: TestFilters | TestFilters[];
-            \\"not.or\\": TestFilters | TestFilters[];
-          }
-      >;
+      export type TestFilters = ColumnParam<\\"id\\", number | number[]> &
+        ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
+        ColumnParam<\\"numberCount\\", number | number[]> &
+        ColumnParam<\\"text\\", string | string[]> &
+        ColumnParam<\\"typeId\\", TypeFilters['id'] | TypeFilters['id'][]>
 
       export type TestParams = Partial<
-        TestFilters &
+        Partial<TestFilters> &
           CollectionParams & {
             include: 'type'[];
             sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId')[];
+          } & {
+            type: Partial<TypeFilters>;
+            \\"type.not\\": Partial<TypeFilters>;
+            and: Partial<TestFilters> | Partial<TestFilters>[];
+            \\"not.and\\": Partial<TestFilters> | Partial<TestFilters>[];
+            or: Partial<TestFilters> | Partial<TestFilters>[];
+            \\"not.or\\": Partial<TestFilters> | Partial<TestFilters>[];
           }
       >;
 
@@ -934,20 +918,18 @@ describe("saves to files", () => {
         test: Test[];
       };
 
-      export type TypeFilters = Partial<
-        ColumnParam<\\"id\\", string | string[]> & {
-            and: TypeFilters | TypeFilters[];
-            \\"not.and\\": TypeFilters | TypeFilters[];
-            or: TypeFilters | TypeFilters[];
-            \\"not.or\\": TypeFilters | TypeFilters[];
-          }
-      >;
+      export type TypeFilters = ColumnParam<\\"id\\", string | string[]>
 
       export type TypeParams = Partial<
-        TypeFilters &
+        Partial<TypeFilters> &
           CollectionParams & {
             include: 'test'[];
             sort: 'id' | '-id' | ('id' | '-id')[];
+          } & {
+            and: Partial<TypeFilters> | Partial<TypeFilters>[];
+            \\"not.and\\": Partial<TypeFilters> | Partial<TypeFilters>[];
+            or: Partial<TypeFilters> | Partial<TypeFilters>[];
+            \\"not.or\\": Partial<TypeFilters> | Partial<TypeFilters>[];
           }
       >;
       "
