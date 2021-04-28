@@ -90,6 +90,10 @@ export class Table<Context, T = any> {
     context: Context,
     mode: Omit<Mode, "delete">
   ) => Promise<Partial<T>>;
+  enforcedParams: (
+    context: Context,
+    mode: Omit<Mode, "delete" | "read">
+  ) => Promise<Partial<T>>;
   allowUpserts: boolean;
   complexityLimit: number;
   complexityWeight: number;
@@ -98,6 +102,7 @@ export class Table<Context, T = any> {
   staticMethods: StaticMethods<Context>;
   isLookupTable: boolean;
   lookupTableIds: any[];
+  maxBulkUpdates: number;
 
   constructor(def: TableDef<Context>) {
     this.path =
@@ -130,6 +135,7 @@ export class Table<Context, T = any> {
     this.idGenerator = def.idGenerator;
     this.eventEmitter = def.eventEmitter;
     this.defaultParams = def.defaultParams ?? (async () => ({}));
+    this.enforcedParams = def.enforcedParams ?? (async () => ({}));
     this.allowUpserts = def.allowUpserts ?? false;
     this.complexityLimit = def.complexityLimit ?? 500;
     this.complexityWeight = def.complexityWeight ?? 1;
@@ -137,6 +143,7 @@ export class Table<Context, T = any> {
     this.methods = def.methods ?? {};
     this.staticMethods = def.staticMethods ?? {};
     this.isLookupTable = def.isLookupTable ?? false;
+    this.maxBulkUpdates = def.maxBulkUpdates || 0;
     this.lookupTableIds = [];
   }
 
@@ -870,9 +877,17 @@ export class Table<Context, T = any> {
     const table = this;
 
     if (obj[this.idColumnName]) {
-      obj = { ...(await this.defaultParams(context, "update")), ...obj };
+      obj = {
+        ...(await this.defaultParams(context, "update")),
+        ...obj,
+        ...(await this.enforcedParams(context, "update")),
+      };
     } else {
-      obj = { ...(await this.defaultParams(context, "insert")), ...obj };
+      obj = {
+        ...(await this.defaultParams(context, "insert")),
+        ...obj,
+        ...(await this.enforcedParams(context, "insert")),
+      };
     }
 
     let existingSchema = object();
@@ -1633,7 +1648,7 @@ export class Table<Context, T = any> {
 
         await ref.table
           .withAlias(alias)
-          .applyPolicy(subQuery, context, "read", knex);
+          .applyPolicy(subQuery, context, mode, knex);
 
         const { bindings, sql } = subQuery.toSQL();
 
@@ -1689,11 +1704,11 @@ export class Table<Context, T = any> {
     await table.where(
       stmt,
       context,
-      "read",
+      mode,
       { ...queryParams, withDeleted },
       knex
     );
-    await table.applyPolicy(stmt, context, "read", knex);
+    await table.applyPolicy(stmt, context, mode, knex);
     await includeRelated(stmt);
 
     return { stmt };
@@ -2032,16 +2047,24 @@ export class Table<Context, T = any> {
       patch.deletedAt = Date.now();
       delete patch._delete;
     }
+
     const mode = isDelete ? "delete" : "update";
 
-    const [objValidated, errors] = await this.validateDeep(
-      knex,
-      patch,
+    const [patchValidated, errors] = await validateAgainst(
+      object(this.getYupSchema()),
+      isDelete
+        ? patch
+        : {
+            ...(await this.defaultParams(context, mode)),
+            ...patch,
+            ...(await this.enforcedParams(context, mode)),
+          },
       context
     );
-    patch = objValidated;
+    patch = patchValidated;
+    patch = this.filterWritable(patch);
 
-    if (errors) {
+    if (errors && Object.keys(errors).length) {
       throw new BadRequestError(errors);
     }
 
@@ -2054,6 +2077,14 @@ export class Table<Context, T = any> {
       const { stmt } = await this.read(trx, queryParams, context, {
         mode,
       });
+
+      const [{ count: initialRowCount }] = await stmt
+        .clone()
+        .clear("select")
+        .count();
+
+      if (initialRowCount > this.maxBulkUpdates) throw new ComplexityError();
+
       const previousRows = await stmt;
       trxRef = trx;
 
@@ -2062,6 +2093,29 @@ export class Table<Context, T = any> {
       const updateStmt = this.query(trx)
         .whereIn(`${this.alias}.${this.idColumnName}`, stmt)
         .returning("*");
+
+      if (this.beforeUpdate) {
+        await Promise.all(
+          previousRows.map(async (row) => {
+            const expected = { ...row, ...patch };
+            const draft = { ...expected };
+
+            await this.beforeUpdate!(trx, context, mode, draft, row);
+
+            const delta = Object.fromEntries(
+              Object.entries(draft).filter(([key, value]) => {
+                return expected[key] !== value;
+              })
+            );
+
+            if (Object.keys(delta).length) {
+              await this.query(trx)
+                .update(delta)
+                .where(this.idColumnName, row[this.idColumnName]);
+            }
+          })
+        );
+      }
 
       if (isDelete) updateStmt.del();
       else updateStmt.update(patch);
@@ -2082,21 +2136,23 @@ export class Table<Context, T = any> {
             row: objValidated,
           });
 
-          if (this.afterUpdate && !isDelete) {
+          if (!isDelete) {
             const previousRow = previousRows.find(
               (r) => r[this.idColumnName] === row[this.idColumnName]
             );
 
-            beforeCommitCallbacks.push(() => {
-              return this.afterUpdate!.call(
-                this,
-                trx,
-                context,
-                mode,
-                previousRow,
-                row
-              );
-            });
+            if (this.afterUpdate) {
+              beforeCommitCallbacks.push(() => {
+                return this.afterUpdate!.call(
+                  this,
+                  trx,
+                  context,
+                  mode,
+                  previousRow,
+                  row
+                );
+              });
+            }
           }
 
           return [objValidated, errors] as [any, Record<string, any>];

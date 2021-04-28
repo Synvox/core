@@ -299,6 +299,7 @@ describe("core", () => {
     core.table({
       schemaName: "coreTest",
       tableName: "test",
+      maxBulkUpdates: 100,
     });
 
     core.table({
@@ -324,7 +325,7 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, any>("/coreTest/test"),
+      test: table<Test, Test>("/coreTest/test"),
       testSub: table<TestSub, any>("/coreTest/testSub"),
     });
 
@@ -381,6 +382,28 @@ describe("core", () => {
       ]
     `);
 
+    expect(
+      (
+        await result.current.core.test.put(
+          { isBoolean: true },
+          { numberCount: 54321 }
+        )
+      ).changes
+    ).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "mode": "update",
+          "path": "/coreTest/test",
+          "row": Object {
+            "id": 1,
+            "isBoolean": true,
+            "numberCount": 54321,
+            "text": "text",
+          },
+        },
+      ]
+    `);
+
     expect((await result.current.core.test.delete(1)).changes)
       .toMatchInlineSnapshot(`
       Array [
@@ -395,7 +418,7 @@ describe("core", () => {
             "_url": "/coreTest/test/1",
             "id": 1,
             "isBoolean": true,
-            "numberCount": 0,
+            "numberCount": 54321,
             "text": "text",
           },
         },
@@ -477,7 +500,7 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, any>("/coreTest/test"),
+      test: table<Test, Test & { include: "testSub" }>("/coreTest/test"),
       testSub: table<TestSub, any>("/coreTest/testSub"),
     });
 
@@ -590,14 +613,14 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, any>("/coreTest/test"),
+      test: table<Test, Test & { include: "testSub" }>("/coreTest/test"),
       testSub: table<TestSub, any>("/coreTest/testSub"),
     });
 
     const { result, waitForNextUpdate } = renderHook(
       ({ id }: { id: number }) => {
         const core = useCore();
-        const result = core.test.first({ id: id, include: "testSub" });
+        const result = core.test.first({ id, include: "testSub" });
         return { result };
       },
       {
@@ -669,7 +692,7 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, any>("/coreTest/test"),
+      test: table<Test, Test>("/coreTest/test"),
       testSub: table<TestSub, any>("/coreTest/testSub"),
     });
 

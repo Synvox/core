@@ -5,6 +5,7 @@ import {
   BadRequestError,
   NotFoundError,
   UnauthorizedError,
+  withTimestamps,
 } from "../src";
 import { string, date, ref, number } from "yup";
 import { Mode } from "../src/types";
@@ -2863,6 +2864,119 @@ describe("without policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select jobs.id, jobs.is_active from test.jobs order by jobs.id asc limit ? offset ?",
+      ]
+    `);
+  });
+
+  it("writes", async () => {
+    await knex.schema.withSchema("test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+
+      t.integer("version").notNullable().defaultTo(0);
+    });
+
+    const table = new Table({
+      schemaName: "test",
+      tableName: "test",
+      async beforeUpdate(_trx, _context, _mode, draft, current) {
+        if (draft) draft.version = (current?.version ?? 0) + 1;
+      },
+    });
+
+    await table.init(knex);
+
+    queries = [];
+    expect(await table.write(knex, {}, {})).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "insert",
+            "path": "/test/test",
+            "row": Object {
+              "_links": Object {},
+              "_type": "test/test",
+              "_url": "/test/test/1",
+              "id": 1,
+              "version": 1,
+            },
+          },
+        ],
+        "result": Object {
+          "_links": Object {},
+          "_type": "test/test",
+          "_url": "/test/test/1",
+          "id": 1,
+          "version": 1,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "insert into test.test (version) values (?) returning *",
+        "select test.id, test.version from test.test where test.id = ? limit ?",
+      ]
+    `);
+    queries = [];
+    expect(await table.write(knex, { id: 1, version: 123 }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "path": "/test/test",
+            "row": Object {
+              "_links": Object {},
+              "_type": "test/test",
+              "_url": "/test/test/1",
+              "id": 1,
+              "version": 2,
+            },
+          },
+        ],
+        "result": Object {
+          "_links": Object {},
+          "_type": "test/test",
+          "_url": "/test/test/1",
+          "id": 1,
+          "version": 2,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id, test.version from test.test where (test.id = ?) limit ?",
+        "select test.id, test.version from test.test where test.id = ? limit ?",
+        "update test.test set version = ? where test.id = ?",
+        "select test.id, test.version from test.test where test.id = ? limit ?",
+      ]
+    `);
+    queries = [];
+    expect(await table.write(knex, { id: 1, version: 456, _delete: true }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "delete",
+            "path": "/test/test",
+            "row": Object {
+              "_links": Object {},
+              "_type": "test/test",
+              "_url": "/test/test/1",
+              "id": 1,
+              "version": 2,
+            },
+          },
+        ],
+        "result": null,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id, test.version from test.test where test.id = ? limit ?",
+        "delete from test.test where test.id = ?",
       ]
     `);
   });
@@ -7005,6 +7119,7 @@ describe("batch updates", () => {
     const items = new Table({
       schemaName: "test",
       tableName: "items",
+      maxBulkUpdates: 100,
     });
 
     await items.init(knex);
@@ -7040,6 +7155,7 @@ describe("batch updates", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
+        "select count(*) from test.items where (items.id in (?))",
         "select items.id, items.field from test.items where (items.id in (?))",
         "update test.items set field = ? where items.id in (select items.id from test.items where (items.id in (?))) returning *",
         "select count(*) from test.items where items.id in (?)",
@@ -7062,6 +7178,7 @@ describe("batch updates", () => {
       async afterUpdate() {
         calls++;
       },
+      maxBulkUpdates: 100,
     });
 
     await items.init(knex);
@@ -7112,6 +7229,7 @@ describe("batch updates", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
+        "select count(*) from test.items where (items.id in (?, ?))",
         "select items.id, items.field from test.items where (items.id in (?, ?))",
         "update test.items set field = ? where items.id in (select items.id from test.items where (items.id in (?, ?))) returning *",
         "select count(*) from test.items where items.id in (?, ?)",
@@ -7138,6 +7256,7 @@ describe("batch updates", () => {
       schemaName: "test",
       tableName: "items",
       eventEmitter,
+      maxBulkUpdates: 100,
     });
 
     await items.init(knex);
@@ -7173,6 +7292,7 @@ describe("batch updates", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
+        "select count(*) from test.items where (items.id in (?))",
         "select items.id, items.field from test.items where (items.id in (?))",
         "update test.items set field = ? where items.id in (select items.id from test.items where (items.id in (?))) returning *",
         "select count(*) from test.items where items.id in (?)",
@@ -7208,6 +7328,7 @@ describe("batch updates", () => {
     const items = new Table({
       schemaName: "test",
       tableName: "items",
+      maxBulkUpdates: 100,
     });
 
     await items.init(knex);
@@ -7243,6 +7364,7 @@ describe("batch updates", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
+        "select count(*) from test.items where (items.id in (?))",
         "select items.id, items.field from test.items where (items.id in (?))",
         "delete from test.items where items.id in (select items.id from test.items where (items.id in (?))) returning *",
       ]
@@ -7262,6 +7384,7 @@ describe("batch updates", () => {
       schemaName: "test",
       tableName: "items",
       paranoid: true,
+      maxBulkUpdates: 100,
     });
 
     await items.init(knex);
@@ -7301,6 +7424,7 @@ describe("batch updates", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
+        "select count(*) from test.items where (items.id in (?)) and items.deleted_at is null",
         "select items.id, items.field, items.deleted_at from test.items where (items.id in (?)) and items.deleted_at is null",
         "update test.items set deleted_at = ? where items.id in (select items.id from test.items where (items.id in (?)) and items.deleted_at is null) returning *",
         "select count(*) from test.items where items.id in (?)",
@@ -7323,9 +7447,10 @@ describe("batch updates", () => {
     const items = new Table({
       schemaName: "test",
       tableName: "items",
-      async policy(stmt) {
-        stmt.where("isVisible", true);
+      async policy(stmt, _, mode) {
+        if (mode === "update") stmt.where("isVisible", true);
       },
+      maxBulkUpdates: 100,
     });
 
     await items.init(knex);
@@ -7395,6 +7520,7 @@ describe("batch updates", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
+        "select count(*) from test.items where is_visible = ?",
         "select items.id, items.field, items.is_visible from test.items where is_visible = ?",
         "update test.items set field = ? where items.id in (select items.id from test.items where is_visible = ?) returning *",
         "select count(*) from test.items where items.id in (?, ?, ?) and is_visible = ?",
@@ -7417,9 +7543,10 @@ describe("batch updates", () => {
     const items = new Table({
       schemaName: "test",
       tableName: "items",
-      async policy(stmt) {
-        stmt.where("isVisible", true);
+      async policy(stmt, _, mode) {
+        if (mode === "update") stmt.where("isVisible", true);
       },
+      maxBulkUpdates: 100,
     });
 
     await items.init(knex);
@@ -7438,6 +7565,7 @@ describe("batch updates", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
+        "select count(*) from test.items where is_visible = ?",
         "select items.id, items.field, items.is_visible from test.items where is_visible = ?",
         "update test.items set is_visible = ? where items.id in (select items.id from test.items where is_visible = ?) returning *",
         "select count(*) from test.items where items.id in (?, ?, ?) and is_visible = ?",
@@ -7461,6 +7589,7 @@ describe("batch updates", () => {
       schema: {
         int: number().max(10),
       },
+      maxBulkUpdates: 100,
     });
 
     await items.init(knex);
@@ -7494,6 +7623,7 @@ describe("batch updates", () => {
           return true;
         }),
       },
+      maxBulkUpdates: 100,
     });
 
     await items.init(knex);
@@ -7518,8 +7648,248 @@ describe("batch updates", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
+        "select count(*) from test.items",
         "select items.id, items.int from test.items",
         "update test.items set int = ? where items.id in (select items.id from test.items) returning *",
+      ]
+    `);
+  });
+
+  it("works with before updates", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.integer("int");
+      t.integer("version").defaultTo(0);
+    });
+
+    for (let i = 0; i < 3; i++) await knex("test.items").insert({ int: 1 });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      maxBulkUpdates: 100,
+      async beforeUpdate(_trx, _context, _mode, draft, current) {
+        draft.version = (current?.version ?? 0) + 1;
+      },
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    expect(
+      await items.writeAll(knex, {}, { int: 100 }, {}).catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "path": "/test/items",
+            "row": Object {
+              "id": 1,
+              "int": 100,
+              "version": 1,
+            },
+          },
+          Object {
+            "mode": "update",
+            "path": "/test/items",
+            "row": Object {
+              "id": 2,
+              "int": 100,
+              "version": 1,
+            },
+          },
+          Object {
+            "mode": "update",
+            "path": "/test/items",
+            "row": Object {
+              "id": 3,
+              "int": 100,
+              "version": 1,
+            },
+          },
+        ],
+        "result": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/1",
+            "id": 1,
+            "int": 100,
+            "version": 1,
+          },
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/2",
+            "id": 2,
+            "int": 100,
+            "version": 1,
+          },
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/3",
+            "id": 3,
+            "int": 100,
+            "version": 1,
+          },
+        ],
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select count(*) from test.items",
+        "select items.id, items.int, items.version from test.items",
+        "update test.items set version = ? where id = ?",
+        "update test.items set version = ? where id = ?",
+        "update test.items set version = ? where id = ?",
+        "update test.items set int = ? where items.id in (select items.id from test.items) returning *",
+        "select count(*) from test.items where items.id in (?, ?, ?)",
+      ]
+    `);
+  });
+
+  it("works with timestamps", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.integer("int");
+      t.timestamps();
+    });
+
+    jest
+      .spyOn(global.Date, "now")
+      .mockImplementation(() => Date.parse("2021-01-01T01:01:00.000Z"));
+
+    for (let i = 0; i < 3; i++)
+      await knex("test.items").insert({
+        int: 1,
+        createdAt: new Date(Date.now()),
+        updatedAt: new Date(Date.now()),
+      });
+
+    jest
+      .spyOn(global.Date, "now")
+      .mockImplementation(() => Date.parse("2021-01-02T01:01:00.000Z"));
+
+    const items = new Table(
+      withTimestamps({
+        schemaName: "test",
+        tableName: "items",
+        maxBulkUpdates: 100,
+      })
+    );
+
+    await items.init(knex);
+
+    queries = [];
+    expect(
+      await items.writeAll(knex, {}, { int: 100 }, {}).catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "path": "/test/items",
+            "row": Object {
+              "createdAt": 2021-01-01T01:01:00.000Z,
+              "id": 1,
+              "int": 100,
+              "updatedAt": 2021-01-02T01:01:00.000Z,
+            },
+          },
+          Object {
+            "mode": "update",
+            "path": "/test/items",
+            "row": Object {
+              "createdAt": 2021-01-01T01:01:00.000Z,
+              "id": 2,
+              "int": 100,
+              "updatedAt": 2021-01-02T01:01:00.000Z,
+            },
+          },
+          Object {
+            "mode": "update",
+            "path": "/test/items",
+            "row": Object {
+              "createdAt": 2021-01-01T01:01:00.000Z,
+              "id": 3,
+              "int": 100,
+              "updatedAt": 2021-01-02T01:01:00.000Z,
+            },
+          },
+        ],
+        "result": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/1",
+            "createdAt": 2021-01-01T01:01:00.000Z,
+            "id": 1,
+            "int": 100,
+            "updatedAt": 2021-01-02T01:01:00.000Z,
+          },
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/2",
+            "createdAt": 2021-01-01T01:01:00.000Z,
+            "id": 2,
+            "int": 100,
+            "updatedAt": 2021-01-02T01:01:00.000Z,
+          },
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/3",
+            "createdAt": 2021-01-01T01:01:00.000Z,
+            "id": 3,
+            "int": 100,
+            "updatedAt": 2021-01-02T01:01:00.000Z,
+          },
+        ],
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select count(*) from test.items",
+        "select items.id, items.int, items.created_at, items.updated_at from test.items",
+        "update test.items set int = ?, updated_at = ? where items.id in (select items.id from test.items) returning *",
+        "select count(*) from test.items where items.id in (?, ?, ?)",
+      ]
+    `);
+  });
+
+  it("fails when too many rows are selected", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.integer("int");
+    });
+
+    for (let i = 0; i < 3; i++) await knex("test.items").insert({ int: 1 });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      maxBulkUpdates: 0,
+    });
+
+    await items.init(knex);
+
+    queries = [];
+    expect(await items.writeAll(knex, {}, { int: 1 }, {}).catch((e) => e.body))
+      .toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "base": "Complexity limit reached",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select count(*) from test.items",
       ]
     `);
   });

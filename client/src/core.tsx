@@ -103,11 +103,15 @@ class Table<Result, Params, IDColumnName> {
           return getUrl(`${path}/first?${qsStringify(params)}`) as Result;
         },
         async put(
-          id: ID<Params, IDColumnName>,
+          idOrQuery: ID<Result, IDColumnName> | Params,
           data: Record<string, any>,
           params?: Params
         ) {
-          let fullPath = `${path}/${id}`;
+          let fullPath = path;
+          if (typeof idOrQuery === "object")
+            params = { ...params, ...(idOrQuery as Params) };
+          else fullPath += `/${idOrQuery}`;
+
           if (params && Object.keys(params).length > 0)
             fullPath += `?${qsStringify(params)}`;
 

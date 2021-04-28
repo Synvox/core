@@ -733,6 +733,7 @@ describe("listens on server", () => {
     core.table({
       schemaName: "coreTest",
       tableName: "test",
+      maxBulkUpdates: 100,
     });
 
     const app = express();
@@ -783,6 +784,7 @@ describe("listens on server", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
+        "select count(*) from core_test.test where (test.id in (?))",
         "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.id in (?))",
         "update core_test.test set number_count = ?, is_boolean = ?, text = ? where test.id in (select test.id from core_test.test where (test.id in (?))) returning *",
         "select count(*) from core_test.test where test.id in (?)",

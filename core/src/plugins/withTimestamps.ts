@@ -1,4 +1,4 @@
-import { TableDef } from '../types';
+import { TableDef } from "../types";
 
 /**
  * Updates created_at and updated_at timestamps on update and insert
@@ -15,21 +15,22 @@ export default function withTimestamps<T>(table: TableDef<T>): TableDef<T> {
         const date = new Date(value);
         if (isNaN(date.getTime())) return;
 
-        query.where(`${this.alias}.updatedAt`, '>', date);
+        query.where(`${this.alias}.updatedAt`, ">", date);
       },
       ...table.queryModifiers,
     },
-    async beforeUpdate(trx, context, mode, draft, current) {
-      if (table.beforeUpdate)
-        await table.beforeUpdate.call(this, trx, context, mode, draft, current);
+    async enforcedParams(context, mode) {
+      const params = {
+        ...(table.enforcedParams
+          ? await table.enforcedParams(context, mode)
+          : {}),
+      };
+      const date = new Date(Date.now());
+      params.updatedAt = date;
+      if (mode === "insert") params.createdAt = date;
+      else params.createdAt = undefined;
 
-      // if the row was hard deleted
-      if (!draft) return;
-
-      draft.updatedAt = new Date(Date.now());
-
-      if (mode === 'insert') draft.createdAt = new Date(Date.now());
-      else delete draft.createdAt;
+      return params;
     },
   };
 }

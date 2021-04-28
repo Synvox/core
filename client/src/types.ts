@@ -66,13 +66,13 @@ export type Handlers<
   get: Getter<Result, DeepPartial<Params>, ID<Params, IDColumnName>>;
   first: (params?: DeepPartial<Params>) => Result;
   put: (
-    id: ID<Result, IDColumnName>,
+    idOrQuery: ID<Result, IDColumnName> | DeepPartial<Params>,
     payload: any,
     params?: DeepPartial<Params>
   ) => Promise<ChangeTo<Result>>;
   post: (
     pathOrData: string | Record<string, any>,
-    dataOrParams?: Record<string, any> | DeepPartial<Params>,
+    dataOrParams?: any | DeepPartial<Params>,
     params?: DeepPartial<Params>
   ) => Promise<ChangeTo<Result>>;
   delete: (

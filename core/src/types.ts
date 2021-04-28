@@ -170,6 +170,10 @@ export type TableDef<T> = { tableName: string } & Partial<{
     context: T,
     mode: Omit<Mode, "delete">
   ) => Promise<Partial<any>>;
+  enforcedParams?: (
+    context: T,
+    mode: Omit<Mode, "delete" | "read">
+  ) => Promise<Partial<any>>;
   allowUpserts?: boolean;
   complexityLimit?: number;
   complexityWeight?: number;
@@ -177,6 +181,7 @@ export type TableDef<T> = { tableName: string } & Partial<{
   methods: Methods<T>;
   staticMethods: StaticMethods<T>;
   isLookupTable: boolean;
+  maxBulkUpdates?: number;
 }>;
 
 export type KnexGetter = (mode: "read" | "write" | "schema") => Promise<Knex>;
