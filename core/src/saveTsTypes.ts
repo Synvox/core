@@ -200,17 +200,33 @@ export async function saveTsTypes(
             .map((id) => JSON.stringify(id))
             .join(" | ");
           baseType = `${hasOne.table.className}Filters['${hasOne.table.idColumnName}']`;
+        } else {
+          if (baseType === "string") ops.push("fts");
+          if (array) baseType += "[]";
+          else baseType = `${baseType} | ${baseType}[]`;
         }
 
-        if (baseType === "string") ops.push("fts");
-
-        if (array) baseType += "[]";
-        else baseType = `${baseType} | ${baseType}[]`;
         if (column.nullable) baseType += " | null";
+
         columnTypes.push(`ColumnParam<"${columnName}", ${baseType}>`);
       }
 
-      types += columnTypes.join(" &\n  ") + `\n\n`;
+      types += columnTypes.join(" &\n  ");
+
+      types += ` & {\n`;
+      for (let { table: relatedTable, name } of Object.values(
+        table.relatedTables.hasOne
+      )) {
+        const filtersType = `${relatedTable.className}Filters`;
+        types += `    ${name}: ${filtersType};\n`;
+        types += `    "${name}.not": ${filtersType};\n`;
+      }
+
+      types += `    and: ${filtersType} | ${filtersType}[];\n`;
+      types += `    "not.and": ${filtersType} | ${filtersType}[];\n`;
+      types += `    or: ${filtersType} | ${filtersType}[];\n`;
+      types += `    "not.or": ${filtersType} | ${filtersType}[];\n`;
+      types += `  };\n\n`;
 
       let filterTypeNameWithIdModifiers = filtersType;
       const idModifierTypes = Object.keys(table.idModifiers)
@@ -248,20 +264,6 @@ export async function saveTsTypes(
         .join(" | ");
 
       types += `    sort: ${sortType} | (${sortType})[];\n`;
-      types += `  } & {\n`;
-
-      for (let { table: relatedTable, name } of Object.values(
-        table.relatedTables.hasOne
-      )) {
-        const filtersType = `${relatedTable.className}Filters`;
-        types += `    ${name}: Partial<${filtersType}>;\n`;
-        types += `    "${name}.not": Partial<${filtersType}>;\n`;
-      }
-
-      types += `    and: Partial<${filtersType}> | Partial<${filtersType}>[];\n`;
-      types += `    "not.and": Partial<${filtersType}> | Partial<${filtersType}>[];\n`;
-      types += `    or: Partial<${filtersType}> | Partial<${filtersType}>[];\n`;
-      types += `    "not.or": Partial<${filtersType}> | Partial<${filtersType}>[];\n`;
       types += `  };\n\n`;
     }
   }
