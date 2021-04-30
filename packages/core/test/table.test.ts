@@ -7404,7 +7404,7 @@ describe("batch updates", () => {
             "mode": "update",
             "path": "/test/items",
             "row": Object {
-              "deletedAt": 2000-01-01T07:00:00.000Z,
+              "deletedAt": 2000-01-01T00:00:00.000Z,
               "field": null,
               "id": 1,
             },
@@ -7415,7 +7415,7 @@ describe("batch updates", () => {
             "_links": Object {},
             "_type": "test/items",
             "_url": "/test/items/1",
-            "deletedAt": 2000-01-01T07:00:00.000Z,
+            "deletedAt": 2000-01-01T00:00:00.000Z,
             "field": null,
             "id": 1,
           },

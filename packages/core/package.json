@@ -38,7 +38,8 @@
       "tsx",
       "js",
       "jsx"
-    ]
+    ],
+    "globalSetup": "<rootDir>/test/setup.ts"
   },
   "repository": {
     "type": "git",
