@@ -56,8 +56,8 @@ const knex = Knex({
 
 beforeEach(async () => {
   await knex.raw(`
-    drop schema if exists core_test cascade;
-    create schema core_test;
+    drop schema if exists core_client_test cascade;
+    create schema core_client_test;
   `);
 
   const anonymousId = "uuid-test-value";
@@ -78,34 +78,38 @@ afterAll(async () => {
 
 describe("core", () => {
   beforeEach(async () => {
-    await knex.schema.withSchema("core_test").createTable("test", (t) => {
-      t.bigIncrements("id").primary();
-      t.boolean("is_boolean").notNullable().defaultTo(false);
-      t.integer("number_count").notNullable().defaultTo(0);
-      t.specificType("text", "character varying(10)")
-        .notNullable()
-        .defaultTo("text");
-    });
-    await knex.schema.withSchema("core_test").createTable("test_sub", (t) => {
-      t.bigIncrements("id").primary();
-      t.bigInteger("parent_id")
-        .references("id")
-        .inTable("core_test.test")
-        .notNullable();
-    });
+    await knex.schema
+      .withSchema("core_client_test")
+      .createTable("test", (t) => {
+        t.bigIncrements("id").primary();
+        t.boolean("is_boolean").notNullable().defaultTo(false);
+        t.integer("number_count").notNullable().defaultTo(0);
+        t.specificType("text", "character varying(10)")
+          .notNullable()
+          .defaultTo("text");
+      });
+    await knex.schema
+      .withSchema("core_client_test")
+      .createTable("test_sub", (t) => {
+        t.bigIncrements("id").primary();
+        t.bigInteger("parent_id")
+          .references("id")
+          .inTable("core_client_test.test")
+          .notNullable();
+      });
   });
 
   it("reads", async () => {
-    await knex("coreTest.test").insert({});
+    await knex("coreClientTest.test").insert({});
     const core = new Core(knex, () => ({}));
 
     core.table({
-      schemaName: "coreTest",
+      schemaName: "coreClientTest",
       tableName: "test",
     });
 
     core.table({
-      schemaName: "coreTest",
+      schemaName: "coreClientTest",
       tableName: "testSub",
     });
 
@@ -127,8 +131,8 @@ describe("core", () => {
     };
 
     const { useCore, touch } = coreClient(axios, {
-      test: table<Test, Test & { include: "testSub" }>("/coreTest/test"),
-      testSub: table<TestSub, TestSub>("/coreTest/testSub"),
+      test: table<Test, Test & { include: "testSub" }>("/coreClientTest/test"),
+      testSub: table<TestSub, TestSub>("/coreClientTest/testSub"),
     });
 
     const { result, waitForNextUpdate, rerender } = renderHook(
@@ -145,16 +149,16 @@ describe("core", () => {
     //@ts-expect-error
     expect(result.current.result._links).toMatchInlineSnapshot(`
       Object {
-        "testSub": "/coreTest/testSub?parentId=1",
+        "testSub": "/coreClientTest/testSub?parentId=1",
       }
     `);
     //@ts-expect-error
     expect(result.current.result._type).toMatchInlineSnapshot(
-      `"coreTest/test"`
+      `"coreClientTest/test"`
     );
     //@ts-expect-error
     expect(result.current.result._url).toMatchInlineSnapshot(
-      `"/coreTest/test/1"`
+      `"/coreClientTest/test/1"`
     );
     expect(result.current).toMatchInlineSnapshot(`
       Object {
@@ -175,7 +179,7 @@ describe("core", () => {
       `[Error: Request failed with status code 404]`
     );
 
-    await knex("coreTest.test").insert({});
+    await knex("coreClientTest.test").insert({});
     await act(async () => {
       await touch(() => true);
     });
@@ -194,7 +198,7 @@ describe("core", () => {
       }
     `);
 
-    await knex("coreTest.testSub").insert({ parentId: 2 });
+    await knex("coreClientTest.testSub").insert({ parentId: 2 });
     await act(async () => {
       await touch(() => true);
     });
@@ -297,13 +301,13 @@ describe("core", () => {
     const core = new Core(knex, () => ({}));
 
     core.table({
-      schemaName: "coreTest",
+      schemaName: "coreClientTest",
       tableName: "test",
       maxBulkUpdates: 100,
     });
 
     core.table({
-      schemaName: "coreTest",
+      schemaName: "coreClientTest",
       tableName: "testSub",
     });
 
@@ -325,8 +329,8 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, Test>("/coreTest/test"),
-      testSub: table<TestSub, any>("/coreTest/testSub"),
+      test: table<Test, Test>("/coreClientTest/test"),
+      testSub: table<TestSub, any>("/coreClientTest/testSub"),
     });
 
     const { result, waitForNextUpdate } = renderHook(() => {
@@ -345,13 +349,13 @@ describe("core", () => {
       Array [
         Object {
           "mode": "insert",
-          "path": "/coreTest/test",
+          "path": "/coreClientTest/test",
           "row": Object {
             "_links": Object {
-              "testSub": "/coreTest/testSub?parentId=1",
+              "testSub": "/coreClientTest/testSub?parentId=1",
             },
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/1",
+            "_type": "coreClientTest/test",
+            "_url": "/coreClientTest/test/1",
             "id": 1,
             "isBoolean": false,
             "numberCount": 0,
@@ -366,13 +370,13 @@ describe("core", () => {
       Array [
         Object {
           "mode": "update",
-          "path": "/coreTest/test",
+          "path": "/coreClientTest/test",
           "row": Object {
             "_links": Object {
-              "testSub": "/coreTest/testSub?parentId=1",
+              "testSub": "/coreClientTest/testSub?parentId=1",
             },
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/1",
+            "_type": "coreClientTest/test",
+            "_url": "/coreClientTest/test/1",
             "id": 1,
             "isBoolean": true,
             "numberCount": 0,
@@ -393,7 +397,7 @@ describe("core", () => {
       Array [
         Object {
           "mode": "update",
-          "path": "/coreTest/test",
+          "path": "/coreClientTest/test",
           "row": Object {
             "id": 1,
             "isBoolean": true,
@@ -409,13 +413,13 @@ describe("core", () => {
       Array [
         Object {
           "mode": "delete",
-          "path": "/coreTest/test",
+          "path": "/coreClientTest/test",
           "row": Object {
             "_links": Object {
-              "testSub": "/coreTest/testSub?parentId=1",
+              "testSub": "/coreClientTest/testSub?parentId=1",
             },
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/1",
+            "_type": "coreClientTest/test",
+            "_url": "/coreClientTest/test/1",
             "id": 1,
             "isBoolean": true,
             "numberCount": 54321,
@@ -430,13 +434,13 @@ describe("core", () => {
       Array [
         Object {
           "mode": "insert",
-          "path": "/coreTest/test",
+          "path": "/coreClientTest/test",
           "row": Object {
             "_links": Object {
-              "testSub": "/coreTest/testSub?parentId=2",
+              "testSub": "/coreClientTest/testSub?parentId=2",
             },
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/2",
+            "_type": "coreClientTest/test",
+            "_url": "/coreClientTest/test/2",
             "id": 2,
             "isBoolean": false,
             "numberCount": 0,
@@ -463,16 +467,16 @@ describe("core", () => {
   });
 
   it("can accept new params through a provider", async () => {
-    await knex("coreTest.test").insert({});
+    await knex("coreClientTest.test").insert({});
     const core = new Core(knex, () => ({}));
 
     core.table({
-      schemaName: "coreTest",
+      schemaName: "coreClientTest",
       tableName: "test",
     });
 
     core.table({
-      schemaName: "coreTest",
+      schemaName: "coreClientTest",
       tableName: "testSub",
     });
 
@@ -500,8 +504,8 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, Test & { include: "testSub" }>("/coreTest/test"),
-      testSub: table<TestSub, any>("/coreTest/testSub"),
+      test: table<Test, Test & { include: "testSub" }>("/coreClientTest/test"),
+      testSub: table<TestSub, any>("/coreClientTest/testSub"),
     });
 
     const { result, waitForNextUpdate } = renderHook(
@@ -526,7 +530,7 @@ describe("core", () => {
     await waitForNextUpdate();
     expect(urls).toMatchInlineSnapshot(`
       Array [
-        "get /coreTest/test/1?include=testSub&orgId=1",
+        "get /coreClientTest/test/1?include=testSub&orgId=1",
       ]
     `);
     expect(result.current).toMatchInlineSnapshot(`
@@ -551,13 +555,13 @@ describe("core", () => {
       Array [
         Object {
           "mode": "insert",
-          "path": "/coreTest/test",
+          "path": "/coreClientTest/test",
           "row": Object {
             "_links": Object {
-              "testSub": "/coreTest/testSub?parentId=2",
+              "testSub": "/coreClientTest/testSub?parentId=2",
             },
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/2",
+            "_type": "coreClientTest/test",
+            "_url": "/coreClientTest/test/2",
             "id": 2,
             "isBoolean": false,
             "numberCount": 0,
@@ -569,23 +573,23 @@ describe("core", () => {
 
     expect(urls).toMatchInlineSnapshot(`
       Array [
-        "post /coreTest/test?orgId=1",
+        "post /coreClientTest/test?orgId=1",
       ]
     `);
   });
 
   it("reads using /first", async () => {
-    await knex("coreTest.test").insert({});
-    await knex("coreTest.testSub").insert({ parentId: 1 });
+    await knex("coreClientTest.test").insert({});
+    await knex("coreClientTest.testSub").insert({ parentId: 1 });
     const core = new Core(knex, () => ({}));
 
     core.table({
-      schemaName: "coreTest",
+      schemaName: "coreClientTest",
       tableName: "test",
     });
 
     core.table({
-      schemaName: "coreTest",
+      schemaName: "coreClientTest",
       tableName: "testSub",
     });
 
@@ -613,8 +617,8 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, Test & { include: "testSub" }>("/coreTest/test"),
-      testSub: table<TestSub, any>("/coreTest/testSub"),
+      test: table<Test, Test & { include: "testSub" }>("/coreClientTest/test"),
+      testSub: table<TestSub, any>("/coreClientTest/testSub"),
     });
 
     const { result, waitForNextUpdate } = renderHook(
@@ -632,7 +636,7 @@ describe("core", () => {
     await waitForNextUpdate();
     expect(urls).toMatchInlineSnapshot(`
       Array [
-        "get /coreTest/test/first?id=1&include=testSub",
+        "get /coreClientTest/test/first?id=1&include=testSub",
       ]
     `);
     expect(result.current).toMatchInlineSnapshot(`
@@ -654,17 +658,17 @@ describe("core", () => {
   });
 
   it("can traverse links", async () => {
-    await knex("coreTest.test").insert({});
-    await knex("coreTest.testSub").insert({ parentId: 1 });
+    await knex("coreClientTest.test").insert({});
+    await knex("coreClientTest.testSub").insert({ parentId: 1 });
     const core = new Core(knex, () => ({}));
 
     core.table({
-      schemaName: "coreTest",
+      schemaName: "coreClientTest",
       tableName: "test",
     });
 
     core.table({
-      schemaName: "coreTest",
+      schemaName: "coreClientTest",
       tableName: "testSub",
     });
 
@@ -692,8 +696,8 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, Test>("/coreTest/test"),
-      testSub: table<TestSub, any>("/coreTest/testSub"),
+      test: table<Test, Test>("/coreClientTest/test"),
+      testSub: table<TestSub, any>("/coreClientTest/testSub"),
     });
 
     const { result, waitForNextUpdate } = renderHook(
@@ -711,8 +715,8 @@ describe("core", () => {
     await waitForNextUpdate();
     expect(urls).toMatchInlineSnapshot(`
       Array [
-        "get /coreTest/test/first?id=1",
-        "get /coreTest/testSub?parentId=1",
+        "get /coreClientTest/test/first?id=1",
+        "get /coreClientTest/testSub?parentId=1",
       ]
     `);
     expect(result.current).toMatchInlineSnapshot(`
@@ -728,12 +732,12 @@ describe("core", () => {
   });
 
   it("reads using /count", async () => {
-    await knex("coreTest.test").insert({});
+    await knex("coreClientTest.test").insert({});
 
     const core = new Core(knex, () => ({}));
 
     core.table({
-      schemaName: "coreTest",
+      schemaName: "coreClientTest",
       tableName: "test",
     });
 
@@ -756,7 +760,7 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, any>("/coreTest/test"),
+      test: table<Test, any>("/coreClientTest/test"),
     });
 
     const { result, waitForNextUpdate } = renderHook(() => {
@@ -769,7 +773,7 @@ describe("core", () => {
     await waitForNextUpdate();
     expect(urls).toMatchInlineSnapshot(`
       Array [
-        "get /coreTest/test/count",
+        "get /coreClientTest/test/count",
       ]
     `);
     expect(result.current).toMatchInlineSnapshot(`
@@ -780,12 +784,12 @@ describe("core", () => {
   });
 
   it("reads using /ids", async () => {
-    await knex("coreTest.test").insert({});
+    await knex("coreClientTest.test").insert({});
 
     const core = new Core(knex, () => ({}));
 
     core.table({
-      schemaName: "coreTest",
+      schemaName: "coreClientTest",
       tableName: "test",
     });
 
@@ -808,7 +812,7 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, any>("/coreTest/test"),
+      test: table<Test, any>("/coreClientTest/test"),
     });
 
     const { result, waitForNextUpdate } = renderHook(() => {
@@ -821,7 +825,7 @@ describe("core", () => {
     await waitForNextUpdate();
     expect(urls).toMatchInlineSnapshot(`
       Array [
-        "get /coreTest/test/ids",
+        "get /coreClientTest/test/ids",
       ]
     `);
     expect(result.current).toMatchInlineSnapshot(`
@@ -834,12 +838,12 @@ describe("core", () => {
   });
 
   it("works with sse", async () => {
-    await knex("coreTest.test").insert({});
+    await knex("coreClientTest.test").insert({});
 
     const core = new Core(knex, () => ({}));
 
     core.table({
-      schemaName: "coreTest",
+      schemaName: "coreClientTest",
       tableName: "test",
     });
 
@@ -863,7 +867,7 @@ describe("core", () => {
     };
 
     const { useCore, sse } = coreClient(axios, {
-      test: table<Test, any>("/coreTest/test"),
+      test: table<Test, any>("/coreClientTest/test"),
     });
 
     const eventSource = sse(`${url}/sse`);
@@ -879,7 +883,7 @@ describe("core", () => {
     await waitForNextUpdate();
     expect(urls).toMatchInlineSnapshot(`
       Array [
-        "get /coreTest/test",
+        "get /coreClientTest/test",
       ]
     `);
     expect(result.current).toMatchInlineSnapshot(`
@@ -899,12 +903,12 @@ describe("core", () => {
     `);
 
     urls = [];
-    await axios.post("/coreTest/test", {});
+    await axios.post("/coreClientTest/test", {});
     await waitForNextUpdate();
     expect(urls).toMatchInlineSnapshot(`
       Array [
-        "post /coreTest/test",
-        "get /coreTest/test",
+        "post /coreClientTest/test",
+        "get /coreClientTest/test",
       ]
     `);
     expect(result.current).toMatchInlineSnapshot(`
@@ -934,11 +938,11 @@ describe("core", () => {
       Array [
         Object {
           "mode": "insert",
-          "path": "/coreTest/test",
+          "path": "/coreClientTest/test",
           "row": Object {
             "_links": Object {},
-            "_type": "coreTest/test",
-            "_url": "/coreTest/test/3",
+            "_type": "coreClientTest/test",
+            "_url": "/coreClientTest/test/3",
             "id": 3,
             "isBoolean": false,
             "numberCount": 0,

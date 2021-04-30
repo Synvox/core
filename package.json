@@ -1,8 +1,45 @@
 {
   "name": "@synvox/core-workspace",
-  "workspaces": [
-    "core",
-    "client",
-    "example"
-  ]
+  "scripts": {
+    "test": "npx lerna run build && npx lerna bootstrap && npx lerna run test"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^11.2.6",
+    "@testing-library/react-hooks": "^5.1.1",
+    "@types/compression": "^1.7.0",
+    "@types/eventsource": "^1.1.5",
+    "@types/express": "^4.17.11",
+    "@types/inflection": "^1.5.28",
+    "@types/jest": "^26.0.21",
+    "@types/node": "^14.14.37",
+    "@types/pg": "^7.14.11",
+    "@types/qs": "^6.9.6",
+    "@types/react": "^17.0.3",
+    "@types/set-value": "^2.0.0",
+    "@types/test-listen": "^1.1.0",
+    "@types/uuid": "^8.3.0",
+    "axios": "^0.21.1",
+    "compression": "^1.7.4",
+    "events": "^3.3.0",
+    "eventsource": "^1.1.0",
+    "express": "^4.17.1",
+    "jest": "^26.6.3",
+    "knex": "^0.95.2",
+    "lerna": "^4.0.0",
+    "microbundle": "^0.13.0",
+    "pg": "8.6.0",
+    "prettier": "^2.2.1",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "test-listen": "^1.1.0",
+    "ts-jest": "^26.5.4",
+    "tslib": "^2.1.0",
+    "typescript": "^4.2.3",
+    "uuid": "^3.3.2",
+    "yup": "^0.32.9"
+  },
+  "dependencies": {
+    "@synvox/core": "file:packages/core",
+    "@synvox/core-client": "file:packages/client"
+  }
 }
