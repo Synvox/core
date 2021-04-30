@@ -69,5 +69,9 @@
     "type": "git",
     "url": "https://github.com/synvox/core.git",
     "directory": "core"
+  },
+  "np": {
+    "yarn": false,
+    "contents": "dist"
   }
 }
