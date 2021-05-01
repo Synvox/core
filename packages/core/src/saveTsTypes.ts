@@ -256,15 +256,32 @@ export async function saveTsTypes(
 
       const includeKeys = [
         ...Object.keys(table.relatedTables.hasMany),
+        ...Object.keys(table.relatedTables.hasMany).map((key) => `${key}Count`),
         ...Object.keys(table.relatedTables.hasOne),
         ...Object.keys(table.getters),
         ...Object.keys(table.eagerGetters),
       ];
 
       if (includeKeys.length) {
-        let includeType = includeKeys.map((v) => `'${v}'`).join(" | ");
-        if (includeKeys.length > 1) includeType = `(${includeType})`;
-        types += `    include: ${includeType}[];\n`;
+        const includeKeysStr = includeKeys.map((v) => `'${v}'`).join(" | ");
+        let includeType = `(${includeKeysStr})[]`;
+
+        const relatedTables = [
+          ...Object.values(table.relatedTables.hasMany),
+          ...Object.values(table.relatedTables.hasOne),
+        ];
+
+        let includeObjStr = includeKeys
+          .map((name) => {
+            const ref = relatedTables.find((ref) => ref.name === name);
+            let type = `${name}: true`;
+            if (ref) type += ` | ${ref.table.className}Params['include']`;
+            return type;
+          })
+          .join("; ");
+        includeObjStr = `{ ${includeObjStr} }`;
+
+        types += `    include: ${includeType} | ${includeObjStr};\n`;
       }
 
       const sortType = Object.keys(table.columns)

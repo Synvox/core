@@ -176,6 +176,7 @@ export type TableDef<T> = { tableName: string } & Partial<{
   ) => Promise<Partial<any>>;
   allowUpserts?: boolean;
   complexityLimit?: number;
+  eagerLoadingComplexityLimit?: number;
   complexityWeight?: number;
   defaultSortColumn: string;
   methods: Methods<T>;

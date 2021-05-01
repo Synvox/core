@@ -566,7 +566,7 @@ describe("saves to files", () => {
 
       export type TestParams = TestFilters &
         CollectionParams & {
-          include: ('testSub' | 'testSubNullable')[];
+          include: ('testSub' | 'testSubNullable' | 'testSubCount' | 'testSubNullableCount')[] | { testSub: true | TestSubParams['include']; testSubNullable: true | TestSubNullableParams['include']; testSubCount: true; testSubNullableCount: true };
           sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId')[];
         };
 
@@ -613,7 +613,7 @@ describe("saves to files", () => {
       export type TestSubParams = TestSubFilters &
         CollectionParams & {
           thing: unknown;
-          include: 'parent'[];
+          include: ('parent')[] | { parent: true | TestParams['include'] };
           sort: 'id' | '-id' | 'parentId' | '-parentId' | 'arr' | '-arr' | ('id' | '-id' | 'parentId' | '-parentId' | 'arr' | '-arr')[];
         };
 
@@ -637,7 +637,7 @@ describe("saves to files", () => {
 
       export type TestSubNullableParams = TestSubNullableFilters &
         CollectionParams & {
-          include: 'parent'[];
+          include: ('parent')[] | { parent: true | TestParams['include'] };
           sort: 'id' | '-id' | 'parentId' | '-parentId' | 'arr' | '-arr' | ('id' | '-id' | 'parentId' | '-parentId' | 'arr' | '-arr')[];
         };
       "
@@ -718,7 +718,7 @@ describe("saves to files", () => {
 
       export type TestParams = TestFilters &
         CollectionParams & {
-          include: ('getThing' | 'getOtherThing')[];
+          include: ('getThing' | 'getOtherThing')[] | { getThing: true; getOtherThing: true };
           sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId')[];
         };
       "
@@ -797,7 +797,7 @@ describe("saves to files", () => {
 
       export type TestParams = TestFilters &
         CollectionParams & {
-          include: 'type'[];
+          include: ('type')[] | { type: true | TypeParams['include'] };
           sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId')[];
         };
 
@@ -816,7 +816,7 @@ describe("saves to files", () => {
 
       export type TypeParams = TypeFilters &
         CollectionParams & {
-          include: 'test'[];
+          include: ('test' | 'testCount')[] | { test: true | TestParams['include']; testCount: true };
           sort: 'id' | '-id' | ('id' | '-id')[];
         };
       "
@@ -897,7 +897,7 @@ describe("saves to files", () => {
 
       export type TestParams = TestFilters &
         CollectionParams & {
-          include: 'type'[];
+          include: ('type')[] | { type: true | TypeParams['include'] };
           sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId')[];
         };
 
@@ -916,7 +916,7 @@ describe("saves to files", () => {
 
       export type TypeParams = TypeFilters &
         CollectionParams & {
-          include: 'test'[];
+          include: ('test' | 'testCount')[] | { test: true | TestParams['include']; testCount: true };
           sort: 'id' | '-id' | ('id' | '-id')[];
         };
       "
@@ -1132,7 +1132,7 @@ describe("saves to files", () => {
 
       export type RecursiveParams = RecursiveFilters &
         CollectionParams & {
-          include: ('recursive' | 'parent')[];
+          include: ('recursive' | 'recursiveCount' | 'parent')[] | { recursive: true | RecursiveParams['include']; recursiveCount: true; parent: true | RecursiveParams['include'] };
           sort: 'id' | '-id' | 'parentId' | '-parentId' | ('id' | '-id' | 'parentId' | '-parentId')[];
         };
       "

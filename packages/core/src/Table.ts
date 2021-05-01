@@ -96,6 +96,7 @@ export class Table<Context, T = any> {
   ) => Promise<Partial<T>>;
   allowUpserts: boolean;
   complexityLimit: number;
+  eagerLoadingComplexityLimit: number;
   complexityWeight: number;
   defaultSortColumn: string;
   methods: Methods<Context>;
@@ -138,6 +139,7 @@ export class Table<Context, T = any> {
     this.enforcedParams = def.enforcedParams ?? (async () => ({}));
     this.allowUpserts = def.allowUpserts ?? false;
     this.complexityLimit = def.complexityLimit ?? 500;
+    this.eagerLoadingComplexityLimit = def.eagerLoadingComplexityLimit ?? 3;
     this.complexityWeight = def.complexityWeight ?? 1;
     this.defaultSortColumn = def.defaultSortColumn ?? this.idColumnName;
     this.methods = def.methods ?? {};
@@ -1563,6 +1565,157 @@ export class Table<Context, T = any> {
     };
   }
 
+  async includeEagers(
+    knex: Knex,
+    stmt: Knex.QueryBuilder,
+    include: any,
+    context: Context,
+    mode: Mode,
+    complexityLimit = this.eagerLoadingComplexityLimit
+  ) {
+    complexityLimit -= this.complexityWeight;
+    if (complexityLimit <= 0) throw new ComplexityError();
+
+    if (typeof include === "string") include = { [include]: true };
+    if (Array.isArray(include))
+      include = Object.fromEntries(include.map((inc) => [inc, true]));
+
+    let notFoundIncludes: string[] = [];
+    let refCount = 0;
+
+    for (let [includeTable, otherIncludes] of Object.entries(include)) {
+      let isOne = true;
+      let isCount = false;
+      let ref: RelatedTable<Context> | undefined = Object.values(
+        this.relatedTables.hasOne
+      ).find((ref) => ref.name === includeTable);
+
+      if (!ref) {
+        isOne = false;
+        ref = Object.values(this.relatedTables.hasMany).find(
+          (ref) => ref.name === includeTable
+        );
+      }
+
+      if (!ref) {
+        isOne = false;
+        isCount = true;
+        ref = Object.values(this.relatedTables.hasMany).find(
+          (ref) => `${ref.name}Count` === includeTable
+        );
+      }
+
+      if (!ref) {
+        notFoundIncludes.push(includeTable);
+        continue;
+      }
+
+      const alias =
+        ref.table.tableName === this.tableName
+          ? `${ref.table.tableName}__self_ref_alias_${refCount++}`
+          : ref.table.tableName;
+      const refTable = ref.table.withAlias(alias);
+
+      let subQuery = refTable.query(knex);
+
+      // make sure tenant ids are forwarded to subQueries where possible
+      if (this.tenantIdColumnName && ref!.table.tenantIdColumnName) {
+        subQuery.where(
+          `${alias}.${ref!.table.tenantIdColumnName}`,
+          knex.ref(`${this.alias}.${this.tenantIdColumnName}`)
+        );
+      }
+
+      if (isOne) {
+        subQuery
+          .where(
+            `${alias}.${ref.table.idColumnName}`,
+            knex.ref(`${this.alias}.${ref.relation.columnName}`)
+          )
+          .limit(1);
+      } else if (isCount) {
+        subQuery
+          .clear("select")
+          .count(`${alias}.*`)
+          .where(
+            `${alias}.${ref.relation.columnName}`,
+            knex.ref(`${this.alias}.${this.idColumnName}`)
+          );
+      } else {
+        subQuery
+          .where(
+            `${alias}.${ref.relation.columnName}`,
+            knex.ref(`${this.alias}.${this.idColumnName}`)
+          )
+          .limit(10);
+      }
+
+      const aliasOuter = `${alias}_sub_query`;
+
+      await refTable.applyPolicy(subQuery, context, mode, knex);
+
+      if (otherIncludes && typeof otherIncludes === "object") {
+        await refTable.includeEagers(
+          knex,
+          subQuery,
+          otherIncludes,
+          context,
+          mode,
+          complexityLimit
+        );
+      }
+
+      const { bindings, sql } = subQuery.toSQL();
+
+      if (isOne) {
+        stmt.select(
+          knex.raw(`(select row_to_json(??) from (${sql}) ??) as ??`, [
+            aliasOuter,
+            ...bindings,
+            aliasOuter,
+            ref.name,
+          ])
+        );
+      } else if (isCount) {
+        stmt.select(
+          knex.raw(`(${sql}) as ??`, [...bindings, `${ref.name}Count`])
+        );
+      } else {
+        stmt.select(
+          knex.raw(`array(select row_to_json(??) from (${sql}) ??) as ??`, [
+            aliasOuter,
+            ...bindings,
+            aliasOuter,
+            ref.name,
+          ])
+        );
+      }
+    }
+
+    for (let eager of notFoundIncludes) {
+      const eagerGetter = Object.entries(this.eagerGetters).find(
+        ([key]) => key === eager
+      );
+
+      if (!eagerGetter) continue;
+      const [key, fn] = eagerGetter;
+
+      let eagerStmt = knex.queryBuilder();
+      await fn.call(this, eagerStmt, context);
+      const { bindings, sql, method } = eagerStmt.toSQL();
+      const isPluck = method === "pluck";
+      const isOne = isPluck || method === "first";
+
+      const rawSql = isPluck ? sql : `select row_to_json(i) from (${sql}) as i`;
+
+      if (isOne) {
+        stmt.select(knex.raw(`(${rawSql}) as ??`, [...bindings, key]));
+      } else {
+        stmt.select(knex.raw(`array(${rawSql}) as ??`, [...bindings, key]));
+      }
+    }
+  }
+
   async read(
     knex: Knex,
     input: Record<string, any>,
@@ -1584,8 +1737,6 @@ export class Table<Context, T = any> {
     const table = this;
     let { include = [] } = queryParams;
 
-    if (typeof include === "string") include = [include];
-
     if (table.tenantIdColumnName) {
       const tenantId = queryParams[table.tenantIdColumnName];
       if (!tenantId)
@@ -1593,135 +1744,6 @@ export class Table<Context, T = any> {
           [table.tenantIdColumnName]: `is required`,
         });
     }
-
-    const includeRelated = async (stmt: Knex.QueryBuilder) => {
-      let notFoundIncludes: string[] = [];
-      let refCount = 0;
-
-      for (let includeTable of include) {
-        let isOne = true;
-        let isCount = false;
-        let ref: RelatedTable<Context> | undefined = Object.values(
-          table.relatedTables.hasOne
-        ).find((ref) => ref.name === includeTable);
-
-        if (!ref) {
-          isOne = false;
-          ref = Object.values(table.relatedTables.hasMany).find(
-            (ref) => ref.name === includeTable
-          );
-        }
-
-        if (!ref) {
-          isOne = false;
-          isCount = true;
-          ref = Object.values(table.relatedTables.hasMany).find(
-            (ref) => `${ref.name}Count` === includeTable
-          );
-        }
-
-        if (!ref) {
-          notFoundIncludes.push(includeTable);
-          continue;
-        }
-
-        const alias =
-          ref.table.tableName === table.tableName
-            ? `${ref.table.tableName}__self_ref_alias_${refCount++}`
-            : ref.table.tableName;
-
-        let subQuery = ref.table.withAlias(alias).query(knex);
-
-        // make sure tenant ids are forwarded to subQueries where possible
-        if (table.tenantIdColumnName && ref!.table.tenantIdColumnName) {
-          subQuery.where(
-            `${alias}.${ref!.table.tenantIdColumnName}`,
-            knex.ref(`${table.alias}.${table.tenantIdColumnName}`)
-          );
-        }
-
-        if (isOne) {
-          subQuery
-            .where(
-              `${alias}.${ref.table.idColumnName}`,
-              knex.ref(`${table.alias}.${ref.relation.columnName}`)
-            )
-            .limit(1);
-        } else if (isCount) {
-          subQuery
-            .clear("select")
-            .count(`${alias}.*`)
-            .where(
-              `${alias}.${ref.relation.columnName}`,
-              knex.ref(`${table.alias}.${table.idColumnName}`)
-            );
-        } else {
-          subQuery
-            .where(
-              `${alias}.${ref.relation.columnName}`,
-              knex.ref(`${table.alias}.${table.idColumnName}`)
-            )
-            .limit(10);
-        }
-
-        const aliasOuter = `${alias}_sub_query`;
-
-        await ref.table
-          .withAlias(alias)
-          .applyPolicy(subQuery, context, mode, knex);
-
-        const { bindings, sql } = subQuery.toSQL();
-
-        if (isOne) {
-          stmt.select(
-            knex.raw(`(select row_to_json(??) from (${sql}) ??) as ??`, [
-              aliasOuter,
-              ...bindings,
-              aliasOuter,
-              ref.name,
-            ])
-          );
-        } else if (isCount) {
-          stmt.select(
-            knex.raw(`(${sql}) as ??`, [...bindings, `${ref.name}Count`])
-          );
-        } else {
-          stmt.select(
-            knex.raw(`array(select row_to_json(??) from (${sql}) ??) as ??`, [
-              aliasOuter,
-              ...bindings,
-              aliasOuter,
-              ref.name,
-            ])
-          );
-        }
-      }
-
-      for (let eager of notFoundIncludes) {
-        const eagerGetter = Object.entries(table.eagerGetters).find(
-          ([key]) => key === eager
-        );
-
-        if (!eagerGetter) continue;
-        const [key, fn] = eagerGetter;
-
-        let eagerStmt = knex.queryBuilder();
-        await fn.call(table, eagerStmt, context);
-        const { bindings, sql, method } = eagerStmt.toSQL();
-        const isPluck = method === "pluck";
-        const isOne = isPluck || method === "first";
-
-        const rawSql = isPluck
-          ? sql
-          : `select row_to_json(i) from (${sql}) as i`;
-
-        if (isOne) {
-          stmt.select(knex.raw(`(${rawSql}) as ??`, [...bindings, key]));
-        } else {
-          stmt.select(knex.raw(`array(${rawSql}) as ??`, [...bindings, key]));
-        }
-      }
-    };
 
     const stmt = table.query(knex);
 
@@ -1733,7 +1755,7 @@ export class Table<Context, T = any> {
       knex
     );
     await table.applyPolicy(stmt, context, mode, knex);
-    await includeRelated(stmt);
+    await this.includeEagers(knex, stmt, include, context, mode);
 
     return { stmt };
   }

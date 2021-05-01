@@ -7970,3 +7970,182 @@ describe("batch updates", () => {
     `);
   });
 });
+
+describe("deep includes", () => {
+  it("allows including hasMany's hasOne relations", async () => {
+    await knex.schema.withSchema("test").createTable("users", (t) => {
+      t.bigIncrements("id").primary();
+    });
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
+    });
+    await knex.schema.withSchema("test").createTable("roles", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("userId")
+        .references("id")
+        .inTable("test.users")
+        .notNullable();
+      t.bigInteger("orgId").references("id").inTable("test.orgs").notNullable();
+    });
+
+    const [user] = await knex("test.users").insert({}, "*");
+    const [org] = await knex("test.orgs").insert({}, "*");
+    await knex("test.roles").insert({ orgId: org.id, userId: user.id }, "*");
+
+    const users = new Table({
+      schemaName: "test",
+      tableName: "users",
+    });
+    const orgs = new Table({
+      schemaName: "test",
+      tableName: "orgs",
+    });
+    const roles = new Table({
+      schemaName: "test",
+      tableName: "roles",
+    });
+
+    await users.init(knex);
+    await roles.init(knex);
+    await orgs.init(knex);
+
+    users.linkTables([users, roles, orgs]);
+    roles.linkTables([users, roles, orgs]);
+    orgs.linkTables([users, roles, orgs]);
+
+    queries = [];
+    expect(
+      await users
+        .readMany(
+          knex,
+          {
+            include: { roles: ["org"] },
+          },
+          {}
+        )
+        .catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/test/users/count?include[roles][]=org",
+          "ids": "/test/users/ids?include[roles][]=org",
+        },
+        "_type": "test/users",
+        "_url": "/test/users?include[roles][]=org",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {
+              "roles": "/test/roles?userId=1",
+              "rolesCount": "/test/users/1/rolesCount",
+            },
+            "_type": "test/users",
+            "_url": "/test/users/1",
+            "id": 1,
+            "roles": Array [
+              Object {
+                "_links": Object {
+                  "org": "/test/orgs/1",
+                  "user": "/test/users/1",
+                },
+                "_type": "test/roles",
+                "_url": "/test/roles/1",
+                "id": 1,
+                "org": Object {
+                  "_links": Object {
+                    "roles": "/test/roles?orgId=1",
+                    "rolesCount": "/test/orgs/1/rolesCount",
+                  },
+                  "_type": "test/orgs",
+                  "_url": "/test/orgs/1",
+                  "id": 1,
+                },
+                "orgId": 1,
+                "userId": 1,
+              },
+            ],
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select users.id, array(select row_to_json(roles_sub_query) from (select roles.id, roles.user_id, roles.org_id, (select row_to_json(orgs_sub_query) from (select orgs.id from test.orgs where orgs.id = roles.org_id limit ?) orgs_sub_query) as org from test.roles where roles.user_id = users.id limit ?) roles_sub_query) as roles from test.users order by users.id asc limit ?",
+      ]
+    `);
+  });
+
+  it("stops when complexity limit is reached", async () => {
+    await knex.schema.withSchema("test").createTable("users", (t) => {
+      t.bigIncrements("id").primary();
+    });
+    await knex.schema.withSchema("test").createTable("orgs", (t) => {
+      t.bigIncrements("id").primary();
+    });
+    await knex.schema.withSchema("test").createTable("roles", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("userId")
+        .references("id")
+        .inTable("test.users")
+        .notNullable();
+      t.bigInteger("orgId").references("id").inTable("test.orgs").notNullable();
+    });
+
+    const [user] = await knex("test.users").insert({}, "*");
+    const [org] = await knex("test.orgs").insert({}, "*");
+    await knex("test.roles").insert({ orgId: org.id, userId: user.id }, "*");
+
+    const users = new Table({
+      schemaName: "test",
+      tableName: "users",
+      complexityWeight: 10,
+      complexityLimit: 1,
+    });
+    const orgs = new Table({
+      schemaName: "test",
+      tableName: "orgs",
+      complexityWeight: 10,
+      complexityLimit: 1,
+    });
+    const roles = new Table({
+      schemaName: "test",
+      tableName: "roles",
+      complexityWeight: 10,
+      complexityLimit: 1,
+    });
+
+    await users.init(knex);
+    await roles.init(knex);
+    await orgs.init(knex);
+
+    users.linkTables([users, roles, orgs]);
+    roles.linkTables([users, roles, orgs]);
+    orgs.linkTables([users, roles, orgs]);
+
+    queries = [];
+    expect(
+      await users
+        .readMany(
+          knex,
+          {
+            include: {
+              roles: {
+                org: { roles: { user: { roles: { org: { roles: true } } } } },
+              },
+            },
+          },
+          {}
+        )
+        .catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "base": "Complexity limit reached",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`Array []`);
+  });
+});

@@ -26,6 +26,7 @@ export class Core<Context> {
   initialized: boolean;
   initializationPromise?: Promise<void>;
   complexityLimit: number;
+  eagerLoadingComplexityLimit: number;
   private _router?: Router;
 
   constructor(
@@ -38,6 +39,7 @@ export class Core<Context> {
       baseUrl?: string;
       forwardQueryParams?: string[];
       complexityLimit?: number;
+      eagerLoadingComplexityLimit?: number;
     } = {}
   ) {
     // a real knex object has takes two parameters
@@ -58,6 +60,7 @@ export class Core<Context> {
     this.tables = [];
     this.initialized = false;
     this.complexityLimit = options.complexityLimit ?? 100;
+    this.eagerLoadingComplexityLimit = options.complexityLimit ?? 3;
   }
 
   table(tableDef: TableDef<Context>) {
@@ -66,6 +69,7 @@ export class Core<Context> {
       forwardQueryParams: this.forwardQueryParams,
       eventEmitter: this.eventEmitter,
       complexityLimit: this.complexityLimit,
+      eagerLoadingComplexityLimit: this.eagerLoadingComplexityLimit,
       ...tableDef,
     });
 
