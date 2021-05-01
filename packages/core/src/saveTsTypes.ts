@@ -5,10 +5,19 @@ import { postgresTypesToJSONTsTypes } from "./lookups";
 export async function saveTsTypes(
   tables: Table<any>[],
   path: string,
-  includeLinks: boolean,
-  includeRelations: boolean,
-  includeParams: boolean,
-  includeKnex: boolean
+  {
+    includeLinks = false,
+    includeRelations = false,
+    includeParams = false,
+    includeKnex = false,
+    useJsonTypes = true,
+  }: {
+    includeLinks?: boolean;
+    includeRelations?: boolean;
+    includeParams?: boolean;
+    includeKnex?: boolean;
+    useJsonTypes?: boolean;
+  } = {}
 ) {
   tables = tables.sort((a, b) => a.tablePath.localeCompare(b.tablePath));
 
@@ -100,7 +109,7 @@ export async function saveTsTypes(
           .map((id) => JSON.stringify(id))
           .join(" | ");
       } else {
-        dataType = postgresTypesToJSONTsTypes(type);
+        dataType = postgresTypesToJSONTsTypes(type, useJsonTypes);
         if (array) dataType += "[]";
       }
 

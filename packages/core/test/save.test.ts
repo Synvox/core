@@ -921,6 +921,7 @@ describe("saves to files", () => {
     await knex.raw(`drop table if exists save_test_table`);
     await knex.schema.createTable("save_test_table", (t) => {
       t.bigIncrements("id");
+      t.timestamp("createdAt").notNullable();
     });
 
     await knex.schema
@@ -962,7 +963,11 @@ describe("saves to files", () => {
       tableName: "lookupTable",
     });
 
-    await core.saveTsTypes(path, { includeLinks: false, includeKnex: true });
+    await core.saveTsTypes(path, {
+      includeLinks: false,
+      includeKnex: true,
+      useJsonTypes: false,
+    });
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
@@ -1012,6 +1017,7 @@ describe("saves to files", () => {
 
       export type SaveTestTable = {
         id: number;
+        createdAt: Date;
       };
 
       export type LookupTable = {

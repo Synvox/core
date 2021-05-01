@@ -46,8 +46,15 @@ export function postgresTypesToYupType(type: string): BaseSchema {
 }
 
 /* istanbul ignore next */
-export function postgresTypesToJSONTsTypes(type: string) {
+export function postgresTypesToJSONTsTypes(type: string, useJsonTypes = true) {
   switch (type) {
+    case "timestamp with time zone":
+    case "timestamp without time zone":
+    case "date":
+    case "timestamp":
+    case "timestamptz":
+      if (useJsonTypes) return "string";
+      else return "Date";
     case "bpchar":
     case "char":
     case "varchar":
@@ -61,11 +68,6 @@ export function postgresTypesToJSONTsTypes(type: string) {
     case "interval":
     case "name":
     case "character varying":
-    case "timestamp with time zone":
-    case "timestamp without time zone":
-    case "date":
-    case "timestamp":
-    case "timestamptz":
       return "string";
     case "int2":
     case "int4":

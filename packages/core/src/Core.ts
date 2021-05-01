@@ -508,22 +508,23 @@ export class Core<Context> {
       includeRelations = false,
       includeParams = false,
       includeKnex = false,
+      useJsonTypes = true,
     }: {
       includeLinks?: boolean;
       includeRelations?: boolean;
       includeParams?: boolean;
       includeKnex?: boolean;
+      useJsonTypes?: boolean;
     } = {}
   ) {
     await this.init();
-    await saveTsTypes(
-      this.tables,
-      path,
+    await saveTsTypes(this.tables, path, {
       includeLinks,
       includeRelations,
       includeParams,
-      includeKnex
-    );
+      includeKnex,
+      useJsonTypes,
+    });
   }
 }
 
