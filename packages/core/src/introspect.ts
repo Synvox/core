@@ -43,6 +43,8 @@ export async function getColumnInfo(
       name: toCamelCase(column.name),
       type: column.type.startsWith("character varying")
         ? "character varying"
+        : column.type.startsWith("numeric")
+        ? "numeric"
         : column.type,
     }))
     .reduce(

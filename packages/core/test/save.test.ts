@@ -922,6 +922,7 @@ describe("saves to files", () => {
     await knex.schema.createTable("save_test_table", (t) => {
       t.bigIncrements("id");
       t.timestamp("createdAt").notNullable();
+      t.decimal("number_response").notNullable();
     });
 
     await knex.schema
@@ -1018,6 +1019,7 @@ describe("saves to files", () => {
       export type SaveTestTable = {
         id: number;
         createdAt: Date;
+        numberResponse: number;
       };
 
       export type LookupTable = {
