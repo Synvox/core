@@ -177,6 +177,7 @@ describe("works with views", () => {
             "org": Object {
               "_links": Object {
                 "view": "/viewTest/view?orgId=1",
+                "viewCount": "/viewTest/orgs/1/viewCount",
               },
               "_type": "viewTest/orgs",
               "_url": "/viewTest/orgs/1",
@@ -210,6 +211,7 @@ describe("works with views", () => {
           Object {
             "_links": Object {
               "view": "/viewTest/view?orgId=1",
+              "viewCount": "/viewTest/orgs/1/viewCount",
             },
             "_type": "viewTest/orgs",
             "_url": "/viewTest/orgs/1",
@@ -543,6 +545,7 @@ describe("works with views", () => {
             "org": Object {
               "_links": Object {
                 "view": "/viewTest/view?orgId=1",
+                "viewCount": "/viewTest/orgs/1/viewCount",
               },
               "_type": "viewTest/orgs",
               "_url": "/viewTest/orgs/1",

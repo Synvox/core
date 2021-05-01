@@ -108,6 +108,7 @@ describe("withTimestamps plugin", () => {
             "row": Object {
               "_links": Object {
                 "posts": "/testPlugins/posts?userId=1",
+                "postsCount": "/testPlugins/users/1/postsCount",
               },
               "_type": "testPlugins/users",
               "_url": "/testPlugins/users/1",
@@ -152,6 +153,7 @@ describe("withTimestamps plugin", () => {
         "result": Object {
           "_links": Object {
             "posts": "/testPlugins/posts?userId=1",
+            "postsCount": "/testPlugins/users/1/postsCount",
           },
           "_type": "testPlugins/users",
           "_url": "/testPlugins/users/1",
@@ -221,6 +223,7 @@ describe("withTimestamps plugin", () => {
             "row": Object {
               "_links": Object {
                 "posts": "/testPlugins/posts?userId=1",
+                "postsCount": "/testPlugins/users/1/postsCount",
               },
               "_type": "testPlugins/users",
               "_url": "/testPlugins/users/1",
@@ -233,6 +236,7 @@ describe("withTimestamps plugin", () => {
         "result": Object {
           "_links": Object {
             "posts": "/testPlugins/posts?userId=1",
+            "postsCount": "/testPlugins/users/1/postsCount",
           },
           "_type": "testPlugins/users",
           "_url": "/testPlugins/users/1",

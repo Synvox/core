@@ -448,7 +448,9 @@ describe("saves to files", () => {
         text: string;
         typeId: string;
         testSub: TestSub[];
+        testSubCount: number;
         testSubNullable: TestSubNullable[];
+        testSubNullableCount: number;
       };
 
       export type TestNullable = {
@@ -546,7 +548,9 @@ describe("saves to files", () => {
         text: string;
         typeId: string;
         testSub: TestSub[];
+        testSubCount: number;
         testSubNullable: TestSubNullable[];
+        testSubNullableCount: number;
       };
 
       export type TestFilters = ColumnParam<\\"id\\", number | number[]> &
@@ -800,6 +804,7 @@ describe("saves to files", () => {
       export type Type = {
         id: \\"type1\\" | \\"type2\\" | \\"type3\\";
         test: Test[];
+        testCount: number;
       };
 
       export type TypeFilters = ColumnParam<\\"id\\", (\\"type1\\" | \\"type2\\" | \\"type3\\")> & {
@@ -899,6 +904,7 @@ describe("saves to files", () => {
       export type Type = {
         id: string;
         test: Test[];
+        testCount: number;
       };
 
       export type TypeFilters = ColumnParam<\\"id\\", string | string[]> & {
@@ -1111,6 +1117,7 @@ describe("saves to files", () => {
         parentId: number | null;
         parent?: Recursive;
         recursive: Recursive[];
+        recursiveCount: number;
       };
 
       export type RecursiveFilters = ColumnParam<\\"id\\", number | number[]> &

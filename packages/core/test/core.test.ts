@@ -329,6 +329,7 @@ describe("listens on server", () => {
             "parent": Object {
               "_links": Object {
                 "testSub": "/coreTest/testSub?parentId=1",
+                "testSubCount": "/coreTest/test/1/testSubCount",
               },
               "_type": "coreTest/test",
               "_url": "/coreTest/test/1",
@@ -349,6 +350,7 @@ describe("listens on server", () => {
             "parent": Object {
               "_links": Object {
                 "testSub": "/coreTest/testSub?parentId=1",
+                "testSubCount": "/coreTest/test/1/testSubCount",
               },
               "_type": "coreTest/test",
               "_url": "/coreTest/test/1",
@@ -404,6 +406,7 @@ describe("listens on server", () => {
       Object {
         "_links": Object {
           "testSub": "/coreTest/testSub?parentId=1",
+          "testSubCount": "/coreTest/test/1/testSubCount",
         },
         "_type": "coreTest/test",
         "_url": "/coreTest/test/1",
@@ -437,6 +440,7 @@ describe("listens on server", () => {
             "row": Object {
               "_links": Object {
                 "testSub": "/coreTest/testSub?parentId=1",
+                "testSubCount": "/coreTest/test/1/testSubCount",
               },
               "_type": "coreTest/test",
               "_url": "/coreTest/test/1",
@@ -450,6 +454,7 @@ describe("listens on server", () => {
         "result": Object {
           "_links": Object {
             "testSub": "/coreTest/testSub?parentId=1",
+            "testSubCount": "/coreTest/test/1/testSubCount",
           },
           "_type": "coreTest/test",
           "_url": "/coreTest/test/1",
@@ -478,6 +483,7 @@ describe("listens on server", () => {
       Object {
         "_links": Object {
           "testSub": "/coreTest/testSub?parentId=1",
+          "testSubCount": "/coreTest/test/1/testSubCount",
         },
         "_type": "coreTest/test",
         "_url": "/coreTest/test/1",
@@ -502,6 +508,45 @@ describe("listens on server", () => {
       Array [
         "select test_sub.id, test_sub.parent_id from core_test.test_sub where (test_sub.id = ?) limit ?",
         "select test.id, test.is_boolean, test.number_count, test.text, array(select row_to_json(test_sub_sub_query) from (select test_sub.id, test_sub.parent_id from core_test.test_sub where test_sub.parent_id = test.id limit ?) test_sub_sub_query) as test_sub from core_test.test where (test.id = ?) limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      (
+        await axios.get(
+          `/coreTest/testSub/${sub.id}/parent?include=testSubCount`
+        )
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "testSub": "/coreTest/testSub?parentId=1",
+          "testSubCount": "/coreTest/test/1/testSubCount",
+        },
+        "_type": "coreTest/test",
+        "_url": "/coreTest/test/1",
+        "id": 1,
+        "isBoolean": true,
+        "numberCount": 0,
+        "testSubCount": 1,
+        "text": "text",
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test_sub.id, test_sub.parent_id from core_test.test_sub where (test_sub.id = ?) limit ?",
+        "select test.id, test.is_boolean, test.number_count, test.text, (select count(test_sub.*) from core_test.test_sub where test_sub.parent_id = test.id) as test_sub_count from core_test.test where (test.id = ?) limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      (await axios.get(`/coreTest/test/${row.id}/testSubCount`)).data
+    ).toMatchInlineSnapshot(`1`);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id, test.is_boolean, test.number_count, test.text, (select count(test_sub.*) from core_test.test_sub where test_sub.parent_id = test.id) as test_sub_count from core_test.test where (test.id = ?) limit ?",
       ]
     `);
   });

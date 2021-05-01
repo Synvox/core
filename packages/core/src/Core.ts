@@ -253,6 +253,28 @@ export class Core<Context> {
           })
         );
 
+        for (let { name } of Object.values(table.relatedTables.hasMany)) {
+          const nameCount = `${name}Count`;
+          router.get(
+            `/${table.path}/:${table.idColumnName}/${nameCount}`,
+            wrap(async (req, res) => {
+              const knex = await this.getKnex("read");
+              const context = this.getContext(req, res);
+              const row = await table.readOne(
+                knex,
+                {
+                  ...req.params,
+                  ...req.query,
+                  include: [nameCount],
+                },
+                context
+              );
+
+              return row[nameCount];
+            })
+          );
+        }
+
         for (let getterName of [
           ...Object.keys(table.getters),
           ...Object.keys(table.eagerGetters),

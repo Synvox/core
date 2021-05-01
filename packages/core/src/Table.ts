@@ -623,6 +623,9 @@ export class Table<Context, T = any> {
         params[table.tenantIdColumnName] = tenantId;
 
       result[key] = `${table.baseUrl}/${table.path}?${qsStringify(params)}`;
+      result[`${key}Count`] = `${this.baseUrl}/${this.path}/${
+        row[this.idColumnName]
+      }/${key}Count`;
 
       if (row[key] !== undefined)
         row[key] = await Promise.all(
@@ -1597,6 +1600,7 @@ export class Table<Context, T = any> {
 
       for (let includeTable of include) {
         let isOne = true;
+        let isCount = false;
         let ref: RelatedTable<Context> | undefined = Object.values(
           table.relatedTables.hasOne
         ).find((ref) => ref.name === includeTable);
@@ -1605,6 +1609,14 @@ export class Table<Context, T = any> {
           isOne = false;
           ref = Object.values(table.relatedTables.hasMany).find(
             (ref) => ref.name === includeTable
+          );
+        }
+
+        if (!ref) {
+          isOne = false;
+          isCount = true;
+          ref = Object.values(table.relatedTables.hasMany).find(
+            (ref) => `${ref.name}Count` === includeTable
           );
         }
 
@@ -1635,6 +1647,14 @@ export class Table<Context, T = any> {
               knex.ref(`${table.alias}.${ref.relation.columnName}`)
             )
             .limit(1);
+        } else if (isCount) {
+          subQuery
+            .clear("select")
+            .count(`${alias}.*`)
+            .where(
+              `${alias}.${ref.relation.columnName}`,
+              knex.ref(`${table.alias}.${table.idColumnName}`)
+            );
         } else {
           subQuery
             .where(
@@ -1660,6 +1680,10 @@ export class Table<Context, T = any> {
               aliasOuter,
               ref.name,
             ])
+          );
+        } else if (isCount) {
+          stmt.select(
+            knex.raw(`(${sql}) as ??`, [...bindings, `${ref.name}Count`])
           );
         } else {
           stmt.select(

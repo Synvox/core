@@ -333,6 +333,7 @@ describe("without policies", () => {
           Object {
             "_links": Object {
               "posts": "/test/posts?userId=1",
+              "postsCount": "/test/users/1/postsCount",
             },
             "_type": "test/users",
             "_url": "/test/users/1",
@@ -393,6 +394,7 @@ describe("without policies", () => {
         "user": Object {
           "_links": Object {
             "posts": "/test/posts?userId=1",
+            "postsCount": "/test/users/1/postsCount",
           },
           "_type": "test/users",
           "_url": "/test/users/1",
@@ -413,6 +415,7 @@ describe("without policies", () => {
       Object {
         "_links": Object {
           "posts": "/test/posts?userId=1",
+          "postsCount": "/test/users/1/postsCount",
         },
         "_type": "test/users",
         "_url": "/test/users/1",
@@ -437,6 +440,26 @@ describe("without policies", () => {
     `);
 
     queries = [];
+    expect(await users.readOne(knex, { include: "postsCount", id: 1 }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "posts": "/test/posts?userId=1",
+          "postsCount": "/test/users/1/postsCount",
+        },
+        "_type": "test/users",
+        "_url": "/test/users/1",
+        "id": 1,
+        "postsCount": 1,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select users.id, (select count(posts.*) from test.posts where posts.user_id = users.id) as posts_count from test.users where (users.id = ?) limit ?",
+      ]
+    `);
+
+    queries = [];
     expect(await users.readMany(knex, { include: "bogus" }, {}))
       .toMatchInlineSnapshot(`
       Object {
@@ -451,6 +474,7 @@ describe("without policies", () => {
           Object {
             "_links": Object {
               "posts": "/test/posts?userId=1",
+              "postsCount": "/test/users/1/postsCount",
             },
             "_type": "test/users",
             "_url": "/test/users/1",
@@ -524,6 +548,7 @@ describe("without policies", () => {
             "_links": Object {
               "postCount": "/test/users/1/postCount?token=123",
               "posts": "/test/posts?token=123&userId=1",
+              "postsCount": "/test/users/1/postsCount",
             },
             "_type": "test/users",
             "_url": "/test/users/1?token=123",
@@ -587,6 +612,7 @@ describe("without policies", () => {
           "_links": Object {
             "postCount": "/test/users/1/postCount?token=123",
             "posts": "/test/posts?token=123&userId=1",
+            "postsCount": "/test/users/1/postsCount",
           },
           "_type": "test/users",
           "_url": "/test/users/1?token=123",
@@ -609,6 +635,7 @@ describe("without policies", () => {
         "_links": Object {
           "postCount": "/test/users/1/postCount?token=123",
           "posts": "/test/posts?token=123&userId=1",
+          "postsCount": "/test/users/1/postsCount",
         },
         "_type": "test/users",
         "_url": "/test/users/1?token=123",
@@ -644,6 +671,7 @@ describe("without policies", () => {
         "_links": Object {
           "postCount": "/test/users/1/postCount?token=123",
           "posts": "/test/posts?token=123&userId=1",
+          "postsCount": "/test/users/1/postsCount",
         },
         "_type": "test/users",
         "_url": "/test/users/1?token=123",
@@ -686,6 +714,7 @@ describe("without policies", () => {
             "_links": Object {
               "postCount": "/test/users/1/postCount?token=123",
               "posts": "/test/posts?token=123&userId=1",
+              "postsCount": "/test/users/1/postsCount",
             },
             "_type": "test/users",
             "_url": "/test/users/1?token=123",
@@ -813,7 +842,9 @@ describe("without policies", () => {
             "firstVersion": Object {
               "_links": Object {
                 "firstDocs": "/test/docs?firstVersionId=1",
+                "firstDocsCount": "/test/versions/1/firstDocsCount",
                 "headDocs": "/test/docs?versionId=1",
+                "headDocsCount": "/test/versions/1/headDocsCount",
               },
               "_type": "test/versions",
               "_url": "/test/versions/1",
@@ -824,7 +855,9 @@ describe("without policies", () => {
             "version": Object {
               "_links": Object {
                 "firstDocs": "/test/docs?firstVersionId=1",
+                "firstDocsCount": "/test/versions/1/firstDocsCount",
                 "headDocs": "/test/docs?versionId=1",
+                "headDocsCount": "/test/versions/1/headDocsCount",
               },
               "_type": "test/versions",
               "_url": "/test/versions/1",
@@ -859,7 +892,9 @@ describe("without policies", () => {
           Object {
             "_links": Object {
               "firstDocs": "/test/docs?firstVersionId=1",
+              "firstDocsCount": "/test/versions/1/firstDocsCount",
               "headDocs": "/test/docs?versionId=1",
+              "headDocsCount": "/test/versions/1/headDocsCount",
             },
             "_type": "test/versions",
             "_url": "/test/versions/1",
@@ -1956,6 +1991,7 @@ describe("without policies", () => {
             "row": Object {
               "_links": Object {
                 "posts": "/test/posts?userId=1",
+                "postsCount": "/test/users/1/postsCount",
               },
               "_type": "test/users",
               "_url": "/test/users/1",
@@ -1967,6 +2003,7 @@ describe("without policies", () => {
         "result": Object {
           "_links": Object {
             "posts": "/test/posts?userId=1",
+            "postsCount": "/test/users/1/postsCount",
           },
           "_type": "test/users",
           "_url": "/test/users/1",
@@ -1999,6 +2036,7 @@ describe("without policies", () => {
             "row": Object {
               "_links": Object {
                 "posts": "/test/posts?userId=2",
+                "postsCount": "/test/users/2/postsCount",
               },
               "_type": "test/users",
               "_url": "/test/users/2",
@@ -2038,6 +2076,7 @@ describe("without policies", () => {
         "result": Object {
           "_links": Object {
             "posts": "/test/posts?userId=2",
+            "postsCount": "/test/users/2/postsCount",
           },
           "_type": "test/users",
           "_url": "/test/users/2",
@@ -2124,6 +2163,7 @@ describe("without policies", () => {
             "row": Object {
               "_links": Object {
                 "posts": "/test/posts?userId=3",
+                "postsCount": "/test/users/3/postsCount",
               },
               "_type": "test/users",
               "_url": "/test/users/3",
@@ -2157,6 +2197,7 @@ describe("without policies", () => {
           "user": Object {
             "_links": Object {
               "posts": "/test/posts?userId=3",
+              "postsCount": "/test/users/3/postsCount",
             },
             "_type": "test/users",
             "_url": "/test/users/3",
@@ -2189,6 +2230,7 @@ describe("without policies", () => {
             "row": Object {
               "_links": Object {
                 "posts": "/test/posts?userId=3",
+                "postsCount": "/test/users/3/postsCount",
               },
               "_type": "test/users",
               "_url": "/test/users/3",
@@ -2245,6 +2287,7 @@ describe("without policies", () => {
         "result": Object {
           "_links": Object {
             "posts": "/test/posts?userId=4",
+            "postsCount": "/test/users/4/postsCount",
           },
           "_type": "test/users",
           "_url": "/test/users/4",
@@ -2412,6 +2455,7 @@ describe("without policies", () => {
               "activeJobId": "/test/users/1/activeJobId",
               "activeJobs": "/test/users/1/activeJobs",
               "jobs": "/test/jobs?userId=1",
+              "jobsCount": "/test/users/1/jobsCount",
             },
             "_type": "test/users",
             "_url": "/test/users/1",
@@ -2451,6 +2495,7 @@ describe("without policies", () => {
               "activeJobId": "/test/users/1/activeJobId",
               "activeJobs": "/test/users/1/activeJobs",
               "jobs": "/test/jobs?userId=1",
+              "jobsCount": "/test/users/1/jobsCount",
             },
             "_type": "test/users",
             "_url": "/test/users/1",
@@ -2497,6 +2542,7 @@ describe("without policies", () => {
               "activeJobId": "/test/users/1/activeJobId",
               "activeJobs": "/test/users/1/activeJobs",
               "jobs": "/test/jobs?userId=1",
+              "jobsCount": "/test/users/1/jobsCount",
             },
             "_type": "test/users",
             "_url": "/test/users/1",
@@ -3063,6 +3109,7 @@ describe("with policies", () => {
           Object {
             "_links": Object {
               "posts": "/test/posts?userId=1",
+              "postsCount": "/test/users/1/postsCount",
             },
             "_type": "test/users",
             "_url": "/test/users/1",
@@ -3115,6 +3162,7 @@ describe("with policies", () => {
             "user": Object {
               "_links": Object {
                 "posts": "/test/posts?userId=1",
+                "postsCount": "/test/users/1/postsCount",
               },
               "_type": "test/users",
               "_url": "/test/users/1",
@@ -3664,6 +3712,7 @@ describe("multitenancy", () => {
             "org": Object {
               "_links": Object {
                 "items": "/test/items?orgId=1",
+                "itemsCount": "/test/orgs/1/itemsCount",
               },
               "_type": "test/orgs",
               "_url": "/test/orgs/1",
@@ -4175,6 +4224,7 @@ describe("paranoid", () => {
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1",
+                "subitemsCount": "/test/items/1/subitemsCount",
               },
               "_type": "test/items",
               "_url": "/test/items/1",
@@ -4186,6 +4236,7 @@ describe("paranoid", () => {
         "result": Object {
           "_links": Object {
             "subitems": "/test/subitems?itemId=1",
+            "subitemsCount": "/test/items/1/subitemsCount",
           },
           "_type": "test/items",
           "_url": "/test/items/1",
@@ -4212,6 +4263,7 @@ describe("paranoid", () => {
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1",
+                "subitemsCount": "/test/items/1/subitemsCount",
               },
               "_type": "test/items",
               "_url": "/test/items/1",
@@ -4225,6 +4277,7 @@ describe("paranoid", () => {
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1",
+                "subitemsCount": "/test/items/1/subitemsCount",
               },
               "_type": "test/items",
               "_url": "/test/items/1",
@@ -4239,6 +4292,7 @@ describe("paranoid", () => {
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=2",
+                "subitemsCount": "/test/items/2/subitemsCount",
               },
               "_type": "test/items",
               "_url": "/test/items/2",
@@ -4341,6 +4395,7 @@ describe("paranoid", () => {
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1&orgId=1",
+                "subitemsCount": "/test/items/1/subitemsCount",
               },
               "_type": "test/items",
               "_url": "/test/items/1?orgId=1",
@@ -4355,6 +4410,7 @@ describe("paranoid", () => {
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?itemId=1&orgId=1",
+                "subitemsCount": "/test/items/1/subitemsCount",
               },
               "_type": "test/items",
               "_url": "/test/items/1?orgId=1",
@@ -4689,6 +4745,7 @@ describe("uuid columns", () => {
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?parentId=96435a51-7af8-4d08-94f3-892a99abd8cd",
+                "subitemsCount": "/test/items/96435a51-7af8-4d08-94f3-892a99abd8cd/subitemsCount",
               },
               "_type": "test/items",
               "_url": "/test/items/96435a51-7af8-4d08-94f3-892a99abd8cd",
@@ -4725,6 +4782,7 @@ describe("uuid columns", () => {
         "result": Object {
           "_links": Object {
             "subitems": "/test/subitems?parentId=96435a51-7af8-4d08-94f3-892a99abd8cd",
+            "subitemsCount": "/test/items/96435a51-7af8-4d08-94f3-892a99abd8cd/subitemsCount",
           },
           "_type": "test/items",
           "_url": "/test/items/96435a51-7af8-4d08-94f3-892a99abd8cd",
@@ -4782,6 +4840,7 @@ describe("uuid columns", () => {
             "row": Object {
               "_links": Object {
                 "subitems": "/test/subitems?parentId=cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
+                "subitemsCount": "/test/items/cf688dba-747b-4fbe-8a02-ff8730e2a7c9/subitemsCount",
               },
               "_type": "test/items",
               "_url": "/test/items/cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
@@ -4812,6 +4871,7 @@ describe("uuid columns", () => {
           "parent": Object {
             "_links": Object {
               "subitems": "/test/subitems?parentId=cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
+              "subitemsCount": "/test/items/cf688dba-747b-4fbe-8a02-ff8730e2a7c9/subitemsCount",
             },
             "_type": "test/items",
             "_url": "/test/items/cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
@@ -5009,6 +5069,7 @@ describe("self references", () => {
             "row": Object {
               "_links": Object {
                 "items": "/test/items?parentItemId=1",
+                "itemsCount": "/test/items/1/itemsCount",
               },
               "_type": "test/items",
               "_url": "/test/items/1",
@@ -5020,6 +5081,7 @@ describe("self references", () => {
         "result": Object {
           "_links": Object {
             "items": "/test/items?parentItemId=1",
+            "itemsCount": "/test/items/1/itemsCount",
           },
           "_type": "test/items",
           "_url": "/test/items/1",
@@ -5040,6 +5102,7 @@ describe("self references", () => {
             "row": Object {
               "_links": Object {
                 "items": "/test/items?parentItemId=2",
+                "itemsCount": "/test/items/2/itemsCount",
                 "parentItem": "/test/items/1",
               },
               "_type": "test/items",
@@ -5052,6 +5115,7 @@ describe("self references", () => {
         "result": Object {
           "_links": Object {
             "items": "/test/items?parentItemId=2",
+            "itemsCount": "/test/items/2/itemsCount",
             "parentItem": "/test/items/1",
           },
           "_type": "test/items",
@@ -5101,6 +5165,7 @@ describe("self references", () => {
             "row": Object {
               "_links": Object {
                 "items": "/test/items?parentItemId=3",
+                "itemsCount": "/test/items/3/itemsCount",
                 "parentItem": "/test/items/1",
               },
               "_type": "test/items",
@@ -5113,6 +5178,7 @@ describe("self references", () => {
         "result": Object {
           "_links": Object {
             "items": "/test/items?parentItemId=3",
+            "itemsCount": "/test/items/3/itemsCount",
             "parentItem": "/test/items/1",
           },
           "_type": "test/items",
@@ -5138,6 +5204,7 @@ describe("self references", () => {
           Object {
             "_links": Object {
               "items": "/test/items?parentItemId=1",
+              "itemsCount": "/test/items/1/itemsCount",
             },
             "_type": "test/items",
             "_url": "/test/items/1",
@@ -5148,6 +5215,7 @@ describe("self references", () => {
           Object {
             "_links": Object {
               "items": "/test/items?parentItemId=2",
+              "itemsCount": "/test/items/2/itemsCount",
               "parentItem": "/test/items/1",
             },
             "_type": "test/items",
@@ -5156,6 +5224,7 @@ describe("self references", () => {
             "parentItem": Object {
               "_links": Object {
                 "items": "/test/items?parentItemId=1",
+                "itemsCount": "/test/items/1/itemsCount",
               },
               "_type": "test/items",
               "_url": "/test/items/1",
@@ -5167,6 +5236,7 @@ describe("self references", () => {
           Object {
             "_links": Object {
               "items": "/test/items?parentItemId=3",
+              "itemsCount": "/test/items/3/itemsCount",
               "parentItem": "/test/items/1",
             },
             "_type": "test/items",
@@ -5175,6 +5245,7 @@ describe("self references", () => {
             "parentItem": Object {
               "_links": Object {
                 "items": "/test/items?parentItemId=1",
+                "itemsCount": "/test/items/1/itemsCount",
               },
               "_type": "test/items",
               "_url": "/test/items/1",
@@ -5209,6 +5280,7 @@ describe("self references", () => {
           Object {
             "_links": Object {
               "items": "/test/items?parentItemId=1",
+              "itemsCount": "/test/items/1/itemsCount",
             },
             "_type": "test/items",
             "_url": "/test/items/1",
@@ -5217,6 +5289,7 @@ describe("self references", () => {
               Object {
                 "_links": Object {
                   "items": "/test/items?parentItemId=2",
+                  "itemsCount": "/test/items/2/itemsCount",
                   "parentItem": "/test/items/1",
                 },
                 "_type": "test/items",
@@ -5227,6 +5300,7 @@ describe("self references", () => {
               Object {
                 "_links": Object {
                   "items": "/test/items?parentItemId=3",
+                  "itemsCount": "/test/items/3/itemsCount",
                   "parentItem": "/test/items/1",
                 },
                 "_type": "test/items",
@@ -5240,6 +5314,7 @@ describe("self references", () => {
           Object {
             "_links": Object {
               "items": "/test/items?parentItemId=2",
+              "itemsCount": "/test/items/2/itemsCount",
               "parentItem": "/test/items/1",
             },
             "_type": "test/items",
@@ -5251,6 +5326,7 @@ describe("self references", () => {
           Object {
             "_links": Object {
               "items": "/test/items?parentItemId=3",
+              "itemsCount": "/test/items/3/itemsCount",
               "parentItem": "/test/items/1",
             },
             "_type": "test/items",

@@ -159,6 +159,7 @@ export async function saveTsTypes(
 
       for (let [key, { table }] of Object.entries(hasMany)) {
         types += `  ${key}: ${table.className}[];\n`;
+        types += `  ${key}Count: number;\n`;
       }
 
       for (let key of Object.keys(table.eagerGetters)) {
