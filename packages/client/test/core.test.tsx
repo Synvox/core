@@ -150,6 +150,7 @@ describe("core", () => {
     expect(result.current.result._links).toMatchInlineSnapshot(`
       Object {
         "testSub": "/coreClientTest/testSub?parentId=1",
+        "testSubCount": "/coreClientTest/test/1/testSubCount",
       }
     `);
     //@ts-expect-error
@@ -353,6 +354,7 @@ describe("core", () => {
           "row": Object {
             "_links": Object {
               "testSub": "/coreClientTest/testSub?parentId=1",
+              "testSubCount": "/coreClientTest/test/1/testSubCount",
             },
             "_type": "coreClientTest/test",
             "_url": "/coreClientTest/test/1",
@@ -374,6 +376,7 @@ describe("core", () => {
           "row": Object {
             "_links": Object {
               "testSub": "/coreClientTest/testSub?parentId=1",
+              "testSubCount": "/coreClientTest/test/1/testSubCount",
             },
             "_type": "coreClientTest/test",
             "_url": "/coreClientTest/test/1",
@@ -417,6 +420,7 @@ describe("core", () => {
           "row": Object {
             "_links": Object {
               "testSub": "/coreClientTest/testSub?parentId=1",
+              "testSubCount": "/coreClientTest/test/1/testSubCount",
             },
             "_type": "coreClientTest/test",
             "_url": "/coreClientTest/test/1",
@@ -438,6 +442,7 @@ describe("core", () => {
           "row": Object {
             "_links": Object {
               "testSub": "/coreClientTest/testSub?parentId=2",
+              "testSubCount": "/coreClientTest/test/2/testSubCount",
             },
             "_type": "coreClientTest/test",
             "_url": "/coreClientTest/test/2",
@@ -559,6 +564,7 @@ describe("core", () => {
           "row": Object {
             "_links": Object {
               "testSub": "/coreClientTest/testSub?parentId=2",
+              "testSubCount": "/coreClientTest/test/2/testSubCount",
             },
             "_type": "coreClientTest/test",
             "_url": "/coreClientTest/test/2",
