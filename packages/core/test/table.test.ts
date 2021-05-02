@@ -2411,7 +2411,7 @@ describe("without policies", () => {
             .whereRaw(`jobs.user_id = ${this.alias}.id`)
             .first();
         },
-        async activeJobId(stmt) {
+        async activeJobIds(stmt) {
           stmt
             .from("test.jobs")
             .where("jobs.active", true)
@@ -2452,7 +2452,7 @@ describe("without policies", () => {
           Object {
             "_links": Object {
               "activeJob": "/test/users/1/activeJob",
-              "activeJobId": "/test/users/1/activeJobId",
+              "activeJobIds": "/test/users/1/activeJobIds",
               "activeJobs": "/test/users/1/activeJobs",
               "jobs": "/test/jobs?userId=1",
               "jobsCount": "/test/users/1/jobsCount",
@@ -2492,7 +2492,7 @@ describe("without policies", () => {
           Object {
             "_links": Object {
               "activeJob": "/test/users/1/activeJob",
-              "activeJobId": "/test/users/1/activeJobId",
+              "activeJobIds": "/test/users/1/activeJobIds",
               "activeJobs": "/test/users/1/activeJobs",
               "jobs": "/test/jobs?userId=1",
               "jobsCount": "/test/users/1/jobsCount",
@@ -2523,23 +2523,23 @@ describe("without policies", () => {
     expect(
       await users.readMany(
         knex,
-        { include: ["activeJob", "activeJobs", "activeJobId"] },
+        { include: ["activeJob", "activeJobs", "activeJobIds"] },
         {}
       )
     ).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
-          "count": "/test/users/count?include[]=activeJob&include[]=activeJobs&include[]=activeJobId",
-          "ids": "/test/users/ids?include[]=activeJob&include[]=activeJobs&include[]=activeJobId",
+          "count": "/test/users/count?include[]=activeJob&include[]=activeJobs&include[]=activeJobIds",
+          "ids": "/test/users/ids?include[]=activeJob&include[]=activeJobs&include[]=activeJobIds",
         },
         "_type": "test/users",
-        "_url": "/test/users?include[]=activeJob&include[]=activeJobs&include[]=activeJobId",
+        "_url": "/test/users?include[]=activeJob&include[]=activeJobs&include[]=activeJobIds",
         "hasMore": false,
         "items": Array [
           Object {
             "_links": Object {
               "activeJob": "/test/users/1/activeJob",
-              "activeJobId": "/test/users/1/activeJobId",
+              "activeJobIds": "/test/users/1/activeJobIds",
               "activeJobs": "/test/users/1/activeJobs",
               "jobs": "/test/jobs?userId=1",
               "jobsCount": "/test/users/1/jobsCount",
@@ -2551,7 +2551,9 @@ describe("without policies", () => {
               "id": 1,
               "userId": 1,
             },
-            "activeJobId": 1,
+            "activeJobIds": Array [
+              "1",
+            ],
             "activeJobs": Array [
               Object {
                 "active": true,
@@ -2568,7 +2570,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id, (select row_to_json(i) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users.id limit ?) as i) as active_job, array(select row_to_json(i) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users.id) as i) as active_jobs, (select id from test.jobs where jobs.active = ? and jobs.user_id = users.id) as active_job_id from test.users order by users.id asc limit ?",
+        "select users.id, (select row_to_json(i) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users.id limit ?) as i) as active_job, array(select row_to_json(i) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users.id) as i) as active_jobs, array(select id from test.jobs where jobs.active = ? and jobs.user_id = users.id) as active_job_ids from test.users order by users.id asc limit ?",
       ]
     `);
   });

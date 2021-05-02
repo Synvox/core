@@ -1704,7 +1704,7 @@ export class Table<Context, T = any> {
       await fn.call(this, eagerStmt, context);
       const { bindings, sql, method } = eagerStmt.toSQL();
       const isPluck = method === "pluck";
-      const isOne = isPluck || method === "first";
+      const isOne = method === "first";
 
       const rawSql = isPluck ? sql : `select row_to_json(i) from (${sql}) as i`;
 
