@@ -72,6 +72,7 @@ export default class Cache<Key> {
     const retriesRemaining = this.retryCount - attempt;
     try {
       const promise = this.loader(key);
+
       this.set(key, { promise });
 
       const patches = await promise;
@@ -171,19 +172,12 @@ export default class Cache<Key> {
       promises.push(promise);
     }
 
-    const commitFns = await Promise.all(promises);
+    const saveFns = await Promise.all(promises);
+    const subscriptions: Set<SubscriptionCallback> = new Set();
+    saveFns
+      .map((saveFn) => saveFn())
+      .map((set) => set.forEach((item) => subscriptions.add(item)));
 
-    const subscriberSetArray = commitFns.map((fn) => fn());
-    const subscriptions = new Set<SubscriptionCallback>();
-
-    for (let set of subscriberSetArray) {
-      for (let fn of set) {
-        subscriptions.add(fn);
-      }
-    }
-
-    for (let sub of subscriptions) {
-      sub();
-    }
+    subscriptions.forEach((fn) => fn());
   }
 }

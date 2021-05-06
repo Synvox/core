@@ -12,6 +12,8 @@ import { Touch } from "./types";
 function useForceUpdate() {
   const forceUpdateInner = useState({})[1];
   const mountedStateRef = useRef(true);
+  const didForceUpdateRef = useRef(false);
+  didForceUpdateRef.current = false;
 
   useEffect(() => {
     return () => {
@@ -20,6 +22,8 @@ function useForceUpdate() {
   }, []);
 
   const forceUpdate = useCallback(() => {
+    if (didForceUpdateRef.current) return;
+    didForceUpdateRef.current = true;
     if (mountedStateRef.current) forceUpdateInner({});
   }, []);
 
@@ -41,25 +45,16 @@ export function createLoader<Key>({
       if (cacheEntry.error !== undefined) throw cacheEntry.error;
     }
 
-    throw cache.load(key).then((commit) => commit());
+    throw cache.load(key).then((commit) => commit().forEach((fn) => fn()));
   }
 
   function useKey() {
     type DataMapValue = { keys: Set<Key>; value: unknown };
     const subscription = useForceUpdate();
-    const previouslySubscribedKeysRef = useRef<Set<Key>>(new Set());
-    const subscribedKeysRef = useRef<Set<Key>>(new Set());
     const dataMap = useState<WeakMap<object, DataMapValue>>(
       () => new WeakMap()
     )[0];
-
-    const previouslySubscribedKeys = previouslySubscribedKeysRef.current;
-
-    subscribedKeysRef.current.forEach((key) =>
-      previouslySubscribedKeys.add(key)
-    );
-    subscribedKeysRef.current = new Set<Key>();
-    const subscribedKeys = subscribedKeysRef.current;
+    const subscribedKeys = new Set<Key>();
 
     const hookGet = <Result>(key: Key, subKeys: Set<Key> = subscribedKeys) => {
       subKeys.add(key);
@@ -100,30 +95,13 @@ export function createLoader<Key>({
       subscribedKeys.forEach((key) => {
         cache.subscribe(key, subscription);
       });
-    });
 
-    // unsubscribe from previously used keys
-    useEffect(() => {
-      Array.from(previouslySubscribedKeys)
-        .filter((key) => !subscribedKeys.has(key))
-        .forEach((key) => {
-          previouslySubscribedKeys.delete(key);
+      return () => {
+        subscribedKeys.forEach((key) => {
           cache.unsubscribe(key, subscription);
         });
-
-      subscribedKeys.forEach((key) => {
-        previouslySubscribedKeys.add(key);
-        cache.subscribe(key, subscription);
-      });
-    });
-
-    useEffect(() => {
-      return () => {
-        previouslySubscribedKeys.forEach((key) =>
-          cache.unsubscribe(key, subscription)
-        );
       };
-    }, []);
+    });
 
     return hookGet;
   }
