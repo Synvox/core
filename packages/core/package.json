@@ -1,0 +1,53 @@
+{
+  "version": "2.3.1-alpha.7",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "source": "./src/index.ts",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "test": "jest",
+    "prepublishOnly": "npm run build"
+  },
+  "prettier": {},
+  "name": "@synvox/core",
+  "author": "Ryan Allred",
+  "peerDependencies": {
+    "express": "~4.17.1",
+    "knex": "~0.95.2",
+    "pg": "^8.6.0",
+    "yup": "~0.32.9"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.868.0",
+    "inflection": "^1.12.0",
+    "qs": "^6.5.2",
+    "set-value": "^2.0.1"
+  },
+  "jest": {
+    "setupFilesAfterEnv": [],
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "coverageDirectory": "./coverage/",
+    "collectCoverage": true,
+    "testMatch": [
+      "<rootDir>/test/**/*.(test|spec).ts?(x)"
+    ],
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx"
+    ],
+    "globalSetup": "<rootDir>/test/setup.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/synvox/core.git",
+    "directory": "core"
+  },
+  "np": {
+    "yarn": false,
+    "contents": "dist"
+  }
+}
