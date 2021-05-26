@@ -104,6 +104,8 @@ export class Table<Context, T = any> {
   isLookupTable: boolean;
   lookupTableIds: any[];
   maxBulkUpdates: number;
+  dependsOn: string[];
+  views: Table<Context>[];
 
   constructor(def: TableDef<Context>) {
     this.path =
@@ -147,6 +149,8 @@ export class Table<Context, T = any> {
     this.isLookupTable = def.isLookupTable ?? false;
     this.maxBulkUpdates = def.maxBulkUpdates || 0;
     this.lookupTableIds = [];
+    this.dependsOn = def.dependsOn ?? [];
+    this.views = [];
   }
 
   private withAlias(alias: string) {
@@ -260,6 +264,14 @@ export class Table<Context, T = any> {
         hasMany[name] = { relation, table: otherTable, name };
       }
     }
+
+    this.dependsOn = this.dependsOn.filter((tablePath) =>
+      tables.some((t) => t.tablePath === tablePath)
+    );
+
+    this.views = tables.filter((table) =>
+      table.dependsOn.some((tablePath) => this.tablePath === tablePath)
+    );
 
     this.relatedTables = {
       hasOne,
@@ -1115,6 +1127,9 @@ export class Table<Context, T = any> {
         path: `/${this.path}`,
         mode: mode,
         row: await this.processTableRow({}, context, row),
+        views: this.views.length
+          ? this.views.map((t) => `/${t.path}`)
+          : undefined,
       });
     };
 
@@ -2180,6 +2195,9 @@ export class Table<Context, T = any> {
             mode,
             path: `/${this.path}`,
             row: objValidated,
+            views: this.views.length
+              ? this.views.map((t) => `/${t.path}`)
+              : undefined,
           });
 
           if (!isDelete) {

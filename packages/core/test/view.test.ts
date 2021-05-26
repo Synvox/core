@@ -79,6 +79,11 @@ describe("works with views", () => {
       tableName: "orgs",
     });
 
+    const testTable = new Table({
+      schemaName: "viewTest",
+      tableName: "test",
+    });
+
     const table = new Table({
       schemaName: "viewTest",
       tableName: "view",
@@ -90,12 +95,15 @@ describe("works with views", () => {
         }),
       },
       readOnlyColumns: ["bodyAppended"],
+      dependsOn: ["viewTest.test"],
     });
 
     await table.init(knex);
     await orgs.init(knex);
-    orgs.linkTables([table]);
-    table.linkTables([orgs]);
+    await testTable.init(knex);
+    orgs.linkTables([table, orgs, testTable]);
+    table.linkTables([table, orgs, testTable]);
+    testTable.linkTables([table, orgs, testTable]);
 
     const [org] = await knex("viewTest.orgs").insert({}).returning("*");
     for (let i = 0; i < 2; i++)
@@ -176,6 +184,8 @@ describe("works with views", () => {
             "numberCount": 0,
             "org": Object {
               "_links": Object {
+                "test": "/viewTest/test?orgId=1",
+                "testCount": "/viewTest/orgs/1/testCount",
                 "view": "/viewTest/view?orgId=1",
                 "viewCount": "/viewTest/orgs/1/viewCount",
               },
@@ -210,6 +220,8 @@ describe("works with views", () => {
         "items": Array [
           Object {
             "_links": Object {
+              "test": "/viewTest/test?orgId=1",
+              "testCount": "/viewTest/orgs/1/testCount",
               "view": "/viewTest/view?orgId=1",
               "viewCount": "/viewTest/orgs/1/viewCount",
             },
@@ -308,6 +320,7 @@ describe("works with views", () => {
               "numberCount": 0,
               "orgId": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -360,6 +373,7 @@ describe("works with views", () => {
               "numberCount": 0,
               "orgId": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -383,6 +397,52 @@ describe("works with views", () => {
         "insert into view_test.view (is_boolean, org_id) values (?, ?) returning *",
         "select view.id, view.is_boolean, view.number_count, view.body, view.body_appended, view.org_id from view_test.view where view.id = ? limit ?",
       ]
+    `);
+
+    queries = [];
+    expect(
+      await testTable.write(
+        knex,
+        { isBoolean: true, body: "body text", orgId: org.id },
+        {}
+      )
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "insert",
+            "path": "/viewTest/test",
+            "row": Object {
+              "_links": Object {
+                "org": "/viewTest/orgs/1",
+              },
+              "_type": "viewTest/test",
+              "_url": "/viewTest/test/6",
+              "id": 6,
+              "isBoolean": true,
+              "numberCount": 0,
+              "orgId": 1,
+              "text": "text",
+            },
+            "views": Array [
+              "/viewTest/view",
+            ],
+          },
+        ],
+        "result": Object {
+          "_links": Object {
+            "org": "/viewTest/orgs/1",
+          },
+          "_type": "viewTest/test",
+          "_url": "/viewTest/test/6",
+          "id": 6,
+          "isBoolean": true,
+          "numberCount": 0,
+          "orgId": 1,
+          "text": "text",
+        },
+      }
     `);
   });
 
@@ -467,6 +527,7 @@ describe("works with views", () => {
           isBoolean: true,
         };
       },
+      dependsOn: ["viewTest.test"],
     });
 
     await table.init(knex);
@@ -586,6 +647,7 @@ describe("works with views", () => {
               "orgId": 1,
               "text": "text",
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -631,6 +693,7 @@ describe("works with views", () => {
               "orgId": 1,
               "text": "text",
             },
+            "views": undefined,
           },
         ],
         "result": null,

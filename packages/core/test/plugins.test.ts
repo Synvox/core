@@ -116,6 +116,7 @@ describe("withTimestamps plugin", () => {
               "id": 1,
               "updatedAt": 2021-01-01T01:01:00.000Z,
             },
+            "views": undefined,
           },
           Object {
             "mode": "insert",
@@ -132,6 +133,7 @@ describe("withTimestamps plugin", () => {
               "updatedAt": 2021-01-01T01:01:00.000Z,
               "userId": 1,
             },
+            "views": undefined,
           },
           Object {
             "mode": "insert",
@@ -148,6 +150,7 @@ describe("withTimestamps plugin", () => {
               "updatedAt": 2021-01-01T01:01:00.000Z,
               "userId": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -231,6 +234,7 @@ describe("withTimestamps plugin", () => {
               "id": 1,
               "updatedAt": 2021-01-02T01:01:00.000Z,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -284,6 +288,7 @@ describe("withTimestamps plugin", () => {
               "updatedAt": 2021-01-01T01:01:00.000Z,
               "userId": 1,
             },
+            "views": undefined,
           },
         ],
         "result": null,
@@ -334,6 +339,7 @@ describe("withTimestamps plugin", () => {
               "id": 1,
               "updatedAt": 2021-01-02T01:01:00.000Z,
             },
+            "views": undefined,
           },
         ],
         "result": Object {

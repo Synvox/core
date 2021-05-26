@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useContext } from "react";
 import qs from "qs";
-import { Collection, Change, ChangeTo, Handlers, Touch, ID } from "./types";
+import { Collection, Change, ChangeTo, Handlers, ID } from "./types";
 import { AxiosInstance, AxiosRequestConfig } from "axios";
 import Cache from "./cache";
 import { createLoader } from "./createLoader";
@@ -18,39 +18,38 @@ type Options = {
 
 class Table<Result, Params, IDColumnName> {
   path: string;
-  touch: Touch<string>;
+
   blockUpdatesById: (id: string) => void;
   lock: <T>(fn: () => Promise<T>) => Promise<T>;
   shouldTouch: (change: Change, url: string) => boolean;
   constructor(path: string, options: Options = {}) {
     this.path = path;
-    this.touch = async () => {};
+
     this.blockUpdatesById = () => {};
     this.lock = async (x) => x();
     this.shouldTouch =
       options.shouldTouch ??
-      ((change: Change, url: string) => url.includes(change.path));
-  }
-
-  async handleChanges(changes: Change[]) {
-    await this.touch((url) => {
-      return changes.some((change) => {
-        return this.shouldTouch(change, url);
+      ((change: Change, url: string) => {
+        return (
+          url.includes(change.path) ||
+          (change.views !== undefined &&
+            change.views.some((path) => path === this.path))
+        );
       });
-    });
   }
 
   handlersFor({
     getUrl: realGetUrl,
     axios,
     requestConfig,
+    handleChanges,
   }: {
     getUrl: (url: string) => any;
     axios: AxiosInstance;
     requestConfig: AxiosRequestConfig;
+    handleChanges: (changes: Change[]) => Promise<void>;
   }): Handlers<Result, Params, IDColumnName> {
     const { path, lock, blockUpdatesById } = this;
-    const handleChanges = this.handleChanges.bind(this);
 
     function applyConfigToUrl(url: string) {
       const { params, ...config } = requestConfig;
@@ -332,6 +331,25 @@ export function core<Routes extends Record<string, Table<any, any, any>>>(
   const handledChangeIds: string[] = [];
   let waitForUnlockPromise: Promise<void> | null = null;
 
+  async function handleChanges(changes: Change[]) {
+    await touch((url) => {
+      const tables = Object.values(routes);
+
+      return changes.some((change) => {
+        const foundTables = tables.filter(
+          (table) =>
+            table.path === change.path ||
+            (change.views && change.views.some((path) => path === table.path))
+        );
+        const touched = foundTables.some((table) =>
+          table.shouldTouch(change, url)
+        );
+
+        return touched;
+      });
+    });
+  }
+
   function sse(url: string) {
     const eventSource = new EventSource(url);
 
@@ -351,13 +369,7 @@ export function core<Routes extends Record<string, Table<any, any, any>>>(
         return;
       }
 
-      await touch((url) => {
-        const tables = Object.values(routes);
-        return changes.some((change) => {
-          const table = tables.find((table) => table.path === change.path);
-          return table && table.shouldTouch(change, url);
-        });
-      });
+      await handleChanges(changes);
     });
 
     return eventSource;
@@ -383,7 +395,6 @@ export function core<Routes extends Record<string, Table<any, any, any>>>(
   }
 
   Object.values(routes).map((table) => {
-    table.touch = touch;
     table.blockUpdatesById = blockUpdatesById;
     table.lock = lock;
   });
@@ -414,6 +425,7 @@ export function core<Routes extends Record<string, Table<any, any, any>>>(
               getUrl,
               axios,
               requestConfig,
+              handleChanges,
             }),
           ];
         })

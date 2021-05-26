@@ -43,6 +43,7 @@ export type Change = {
   mode: "string";
   path: string;
   row: unknown;
+  views?: string[];
 };
 
 export type ChangeTo<T> = {
