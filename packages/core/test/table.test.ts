@@ -972,6 +972,7 @@ describe("without policies", () => {
               "numberCount": 0,
               "text": "text",
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -1010,6 +1011,7 @@ describe("without policies", () => {
               "numberCount": 10,
               "text": "text",
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -1083,6 +1085,7 @@ describe("without policies", () => {
               "numberCount": 0,
               "text": "text",
             },
+            "views": undefined,
           },
           Object {
             "mode": "insert",
@@ -1096,6 +1099,7 @@ describe("without policies", () => {
               "numberCount": 0,
               "text": "text",
             },
+            "views": undefined,
           },
         ],
         "result": Array [
@@ -1417,6 +1421,7 @@ describe("without policies", () => {
               "numberCount": 0,
               "text": "text",
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -1465,6 +1470,7 @@ describe("without policies", () => {
               "numberCount": 0,
               "text": "text",
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -1595,6 +1601,7 @@ describe("without policies", () => {
               "email": "test@test.com",
               "id": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -1643,6 +1650,7 @@ describe("without policies", () => {
               "id": 1,
               "username": "abc",
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -1714,6 +1722,7 @@ describe("without policies", () => {
               "org": "a",
               "username": "abc",
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -1753,6 +1762,7 @@ describe("without policies", () => {
               "org": "a",
               "username": "abc",
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -1792,6 +1802,7 @@ describe("without policies", () => {
               "org": "b",
               "username": "abc",
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -1867,6 +1878,7 @@ describe("without policies", () => {
               "org": "org",
               "username": "xyb",
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -1907,6 +1919,7 @@ describe("without policies", () => {
               "org": "org",
               "username": "xyb",
             },
+            "views": undefined,
           },
         ],
         "result": null,
@@ -1998,6 +2011,7 @@ describe("without policies", () => {
               "id": 1,
               "name": "a",
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -2043,6 +2057,7 @@ describe("without policies", () => {
               "id": 2,
               "name": "a",
             },
+            "views": undefined,
           },
           Object {
             "mode": "insert",
@@ -2057,6 +2072,7 @@ describe("without policies", () => {
               "id": 1,
               "userId": 2,
             },
+            "views": undefined,
           },
           Object {
             "mode": "insert",
@@ -2071,6 +2087,7 @@ describe("without policies", () => {
               "id": 2,
               "userId": 2,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -2170,6 +2187,7 @@ describe("without policies", () => {
               "id": 3,
               "name": "a",
             },
+            "views": undefined,
           },
           Object {
             "mode": "insert",
@@ -2184,6 +2202,7 @@ describe("without policies", () => {
               "id": 3,
               "userId": 3,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -2237,6 +2256,7 @@ describe("without policies", () => {
               "id": 3,
               "name": "a",
             },
+            "views": undefined,
           },
         ],
         "result": null,
@@ -2282,6 +2302,7 @@ describe("without policies", () => {
               "id": 4,
               "userId": 4,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -2640,6 +2661,7 @@ describe("without policies", () => {
               "_url": "/test/test/1",
               "id": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -2682,6 +2704,7 @@ describe("without policies", () => {
               "_url": "/test/test/1",
               "id": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -2948,6 +2971,7 @@ describe("without policies", () => {
               "id": 1,
               "version": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -2981,6 +3005,7 @@ describe("without policies", () => {
               "id": 1,
               "version": 2,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -3016,6 +3041,7 @@ describe("without policies", () => {
               "id": 1,
               "version": 2,
             },
+            "views": undefined,
           },
         ],
         "result": null,
@@ -3341,6 +3367,7 @@ describe("with policies", () => {
               "orgId": 1,
               "userId": null,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -3413,6 +3440,7 @@ describe("with policies", () => {
               "orgId": 1,
               "userId": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -3461,6 +3489,7 @@ describe("with policies", () => {
               "orgId": 1,
               "userId": 1,
             },
+            "views": undefined,
           },
         ],
         "result": null,
@@ -3804,6 +3833,7 @@ describe("multitenancy", () => {
               "id": 2,
               "orgId": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -3834,6 +3864,7 @@ describe("multitenancy", () => {
               "id": 1,
               "orgId": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -3864,6 +3895,7 @@ describe("multitenancy", () => {
               "id": 1,
               "orgId": 1,
             },
+            "views": undefined,
           },
         ],
         "result": null,
@@ -3988,6 +4020,7 @@ describe("multitenancy", () => {
               "orgId": 1,
               "username": "abc",
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -4131,6 +4164,7 @@ describe("multitenancy", () => {
               "orgId": 1,
               "parentId": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -4233,6 +4267,7 @@ describe("paranoid", () => {
               "deletedAt": null,
               "id": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -4272,6 +4307,7 @@ describe("paranoid", () => {
               "deletedAt": null,
               "id": 1,
             },
+            "views": undefined,
           },
           Object {
             "mode": "delete",
@@ -4287,6 +4323,7 @@ describe("paranoid", () => {
               "id": 1,
               "itemId": 1,
             },
+            "views": undefined,
           },
           Object {
             "mode": "delete",
@@ -4302,6 +4339,7 @@ describe("paranoid", () => {
               "id": 2,
               "itemId": 1,
             },
+            "views": undefined,
           },
         ],
         "result": null,
@@ -4405,6 +4443,7 @@ describe("paranoid", () => {
               "id": 1,
               "orgId": 1,
             },
+            "views": undefined,
           },
           Object {
             "mode": "delete",
@@ -4421,6 +4460,7 @@ describe("paranoid", () => {
               "itemId": 1,
               "orgId": 1,
             },
+            "views": undefined,
           },
         ],
         "result": null,
@@ -4507,6 +4547,7 @@ describe("hidden columns", () => {
               "_url": "/test/items/1",
               "id": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -4665,6 +4706,7 @@ describe("uuid columns", () => {
               "_url": "/test/items/a8374dd3-0aa0-4ada-8c98-b7ade46900b8",
               "id": "a8374dd3-0aa0-4ada-8c98-b7ade46900b8",
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -4753,6 +4795,7 @@ describe("uuid columns", () => {
               "_url": "/test/items/96435a51-7af8-4d08-94f3-892a99abd8cd",
               "id": "96435a51-7af8-4d08-94f3-892a99abd8cd",
             },
+            "views": undefined,
           },
           Object {
             "mode": "insert",
@@ -4766,6 +4809,7 @@ describe("uuid columns", () => {
               "id": "0ae89559-c579-4d1a-8382-0a44693c78d2",
               "parentId": "96435a51-7af8-4d08-94f3-892a99abd8cd",
             },
+            "views": undefined,
           },
           Object {
             "mode": "insert",
@@ -4779,6 +4823,7 @@ describe("uuid columns", () => {
               "id": "3872e801-bf4c-4eb5-b4ab-c70cd9cd03d3",
               "parentId": "96435a51-7af8-4d08-94f3-892a99abd8cd",
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -4848,6 +4893,7 @@ describe("uuid columns", () => {
               "_url": "/test/items/cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
               "id": "cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
             },
+            "views": undefined,
           },
           Object {
             "mode": "insert",
@@ -4861,6 +4907,7 @@ describe("uuid columns", () => {
               "id": "bedaa8d1-20d2-4f09-adeb-d67ab0523af5",
               "parentId": "cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -4931,6 +4978,7 @@ describe("beforeCommit", () => {
               "body": "",
               "id": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -4974,6 +5022,7 @@ describe("beforeCommit", () => {
               "body": "abc",
               "id": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -5020,6 +5069,7 @@ describe("beforeCommit", () => {
               "body": "abc",
               "id": 1,
             },
+            "views": undefined,
           },
         ],
         "result": null,
@@ -5078,6 +5128,7 @@ describe("self references", () => {
               "id": 1,
               "parentItemId": null,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -5112,6 +5163,7 @@ describe("self references", () => {
               "id": 2,
               "parentItemId": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -5175,6 +5227,7 @@ describe("self references", () => {
               "id": 3,
               "parentItemId": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -5828,6 +5881,7 @@ describe("in public schema", () => {
               "_url": "/testTable/1",
               "id": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -6034,6 +6088,7 @@ describe("upsert", () => {
               "name": "updated",
               "phone": "123",
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -6082,6 +6137,7 @@ describe("upsert", () => {
               "name": "updated2",
               "phone": "123",
             },
+            "views": undefined,
           },
           Object {
             "mode": "update",
@@ -6094,6 +6150,7 @@ describe("upsert", () => {
               "name": "updated3",
               "phone": "456",
             },
+            "views": undefined,
           },
         ],
         "result": Array [
@@ -6267,6 +6324,7 @@ describe("upsert", () => {
               "orgId": 1,
               "phone": "123",
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -6398,6 +6456,7 @@ describe("ref validations", () => {
               "id": 1,
               "startDate": 2000-01-01T07:00:00.000Z,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -6603,6 +6662,7 @@ describe("lookup tables", () => {
               "id": 1,
               "typeId": "type1",
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -6656,6 +6716,7 @@ describe("readonly columns", () => {
               "id": 1,
               "text": null,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -6740,6 +6801,7 @@ describe("readonly columns", () => {
               "id": 1,
               "orgId": null,
             },
+            "views": undefined,
           },
         ],
         "result": Object {
@@ -7218,6 +7280,7 @@ describe("batch updates", () => {
               "field": "abc",
               "id": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Array [
@@ -7277,6 +7340,7 @@ describe("batch updates", () => {
               "field": "abc",
               "id": 1,
             },
+            "views": undefined,
           },
           Object {
             "mode": "update",
@@ -7285,6 +7349,7 @@ describe("batch updates", () => {
               "field": "abc",
               "id": 2,
             },
+            "views": undefined,
           },
         ],
         "result": Array [
@@ -7355,6 +7420,7 @@ describe("batch updates", () => {
               "field": "abc",
               "id": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Array [
@@ -7387,6 +7453,7 @@ describe("batch updates", () => {
                 "field": "abc",
                 "id": 1,
               },
+              "views": undefined,
             },
           ],
           "id": "uuid-test-value",
@@ -7427,6 +7494,7 @@ describe("batch updates", () => {
               "field": null,
               "id": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Array [
@@ -7486,6 +7554,7 @@ describe("batch updates", () => {
               "field": null,
               "id": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Array [
@@ -7548,6 +7617,7 @@ describe("batch updates", () => {
               "id": 1,
               "isVisible": true,
             },
+            "views": undefined,
           },
           Object {
             "mode": "update",
@@ -7557,6 +7627,7 @@ describe("batch updates", () => {
               "id": 2,
               "isVisible": true,
             },
+            "views": undefined,
           },
           Object {
             "mode": "update",
@@ -7566,6 +7637,7 @@ describe("batch updates", () => {
               "id": 3,
               "isVisible": true,
             },
+            "views": undefined,
           },
         ],
         "result": Array [
@@ -7768,6 +7840,7 @@ describe("batch updates", () => {
               "int": 100,
               "version": 1,
             },
+            "views": undefined,
           },
           Object {
             "mode": "update",
@@ -7777,6 +7850,7 @@ describe("batch updates", () => {
               "int": 100,
               "version": 1,
             },
+            "views": undefined,
           },
           Object {
             "mode": "update",
@@ -7786,6 +7860,7 @@ describe("batch updates", () => {
               "int": 100,
               "version": 1,
             },
+            "views": undefined,
           },
         ],
         "result": Array [
@@ -7877,6 +7952,7 @@ describe("batch updates", () => {
               "int": 100,
               "updatedAt": 2021-01-02T01:01:00.000Z,
             },
+            "views": undefined,
           },
           Object {
             "mode": "update",
@@ -7887,6 +7963,7 @@ describe("batch updates", () => {
               "int": 100,
               "updatedAt": 2021-01-02T01:01:00.000Z,
             },
+            "views": undefined,
           },
           Object {
             "mode": "update",
@@ -7897,6 +7974,7 @@ describe("batch updates", () => {
               "int": 100,
               "updatedAt": 2021-01-02T01:01:00.000Z,
             },
+            "views": undefined,
           },
         ],
         "result": Array [

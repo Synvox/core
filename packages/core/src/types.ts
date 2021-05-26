@@ -45,6 +45,7 @@ export type ShouldEventBeSent<Context, T> = (
 export type ChangeSummary<T> = {
   mode: Mode;
   path: string;
+  views?: string[];
   row: T;
 };
 
@@ -183,6 +184,7 @@ export type TableDef<T> = { tableName: string } & Partial<{
   staticMethods: StaticMethods<T>;
   isLookupTable: boolean;
   maxBulkUpdates?: number;
+  dependsOn?: string[];
 }>;
 
 export type KnexGetter = (mode: "read" | "write" | "schema") => Promise<Knex>;

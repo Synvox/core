@@ -87,7 +87,10 @@ describe("core", () => {
         t.specificType("text", "character varying(10)")
           .notNullable()
           .defaultTo("text");
-      });
+      }).raw(`
+        create view core_client_test.view as
+          select * from core_client_test.test
+      `);
     await knex.schema
       .withSchema("core_client_test")
       .createTable("test_sub", (t) => {
@@ -991,5 +994,90 @@ describe("core", () => {
     `);
 
     eventSource.close();
+  });
+
+  it("updates with deps", async () => {
+    const core = new Core(knex, () => ({}));
+
+    core.table({
+      schemaName: "coreClientTest",
+      tableName: "test",
+      dependsOn: [],
+    });
+
+    core.table({
+      schemaName: "coreClientTest",
+      tableName: "view",
+      dependsOn: ["coreClientTest.test"],
+    });
+
+    const app = express();
+    app.use(core.router);
+    const url = await listen(app);
+    const axios = Axios.create({ baseURL: url });
+
+    type Test = {
+      id: number;
+      isBoolean: boolean;
+      numberCount: number;
+      text: string;
+    };
+
+    const { useCore } = coreClient(axios, {
+      test: table<Test, Test>("/coreClientTest/test"),
+      view: table<Test, Test>("/coreClientTest/view"),
+    });
+
+    const { result, waitForNextUpdate } = renderHook(() => {
+      const core = useCore();
+      return {
+        view: core.view(),
+        core,
+      };
+    });
+
+    expect(result.current).toMatchInlineSnapshot(`undefined`);
+    await waitForNextUpdate();
+    try {
+      const postAction = await result.current.core.test.post({});
+      expect(postAction.changes).toMatchInlineSnapshot(`
+        Array [
+          Object {
+            "mode": "insert",
+            "path": "/coreClientTest/test",
+            "row": Object {
+              "_links": Object {},
+              "_type": "coreClientTest/test",
+              "_url": "/coreClientTest/test/1",
+              "id": 1,
+              "isBoolean": false,
+              "numberCount": 0,
+              "text": "text",
+            },
+            "views": Array [
+              "/coreClientTest/view",
+            ],
+          },
+        ]
+      `);
+
+      await act(async () => {
+        await postAction.update();
+      });
+
+      expect([...result.current.view]).toMatchInlineSnapshot(`
+        Array [
+          Object {
+            "id": 1,
+            "isBoolean": false,
+            "numberCount": 0,
+            "text": "text",
+          },
+        ]
+      `);
+    } catch (e) {
+      console.log(e.response);
+      throw e;
+    }
   });
 });
