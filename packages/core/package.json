@@ -49,5 +49,8 @@
   "np": {
     "yarn": false,
     "contents": "dist"
+  },
+  "devDependencies": {
+    "openapi-types": "^9.0.0"
   }
 }

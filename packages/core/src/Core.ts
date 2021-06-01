@@ -13,6 +13,7 @@ import { Table, SavedTable } from "./Table";
 import { wrap } from "./wrap";
 import { qsStringify } from "./qsStringify";
 import { saveTsTypes } from "./saveTsTypes";
+import { saveOpenApi } from "./openapi";
 
 export class Core<Context> {
   getContext: ContextFactory<Context>;
@@ -551,6 +552,11 @@ export class Core<Context> {
       includeKnex,
       useJsonTypes,
     });
+  }
+
+  async saveOpenApi(path: string) {
+    await this.init();
+    await saveOpenApi(this.tables, path);
   }
 }
 

@@ -1,0 +1,2077 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`saves to files saves openapi json 1`] = `
+"{
+  \\"openapi\\": \\"3.0.3\\",
+  \\"info\\": {
+    \\"title\\": \\"\\",
+    \\"version\\": \\"\\"
+  },
+  \\"paths\\": {
+    \\"/saveTestTable\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"SaveTestTable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.createdAt\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.numberResponse\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/cursor\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/page\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/limit\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.sorts\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.includes\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/SaveTestTable\\"
+                }
+              }
+            }
+          }
+        }
+      },
+      \\"post\\": {
+        \\"tags\\": [
+          \\"SaveTestTable\\"
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/SaveTestTable\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTestTable/first\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"SaveTestTable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.createdAt\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.numberResponse\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/SaveTestTable\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTestTable/ids\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"SaveTestTable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.createdAt\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.numberResponse\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"type\\": \\"array\\",
+                  \\"items\\": {
+                    \\"type\\": \\"number\\"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTestTable/count\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"SaveTestTable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.createdAt\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.numberResponse\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"type\\": \\"integer\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTestTable/{id}\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"SaveTestTable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.id.path\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.createdAt\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.numberResponse\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/SaveTestTable\\"
+                }
+              }
+            }
+          }
+        }
+      },
+      \\"put\\": {
+        \\"tags\\": [
+          \\"SaveTestTable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.id.path\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/SaveTestTable\\"
+                }
+              }
+            }
+          }
+        }
+      },
+      \\"delete\\": {
+        \\"tags\\": [
+          \\"SaveTestTable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/SaveTestTable.id.path\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/SaveTestTable\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/test\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"Test\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.isBoolean\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.numberCount\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.text\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.typeId\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/cursor\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/page\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/limit\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.sorts\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.includes\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/Test\\"
+                }
+              }
+            }
+          }
+        }
+      },
+      \\"post\\": {
+        \\"tags\\": [
+          \\"Test\\"
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/Test\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/test/first\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"Test\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.isBoolean\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.numberCount\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.text\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.typeId\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/Test\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/test/ids\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"Test\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.isBoolean\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.numberCount\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.text\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.typeId\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"type\\": \\"array\\",
+                  \\"items\\": {
+                    \\"type\\": \\"number\\"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/test/count\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"Test\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.isBoolean\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.numberCount\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.text\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.typeId\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"type\\": \\"integer\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/test/{id}\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"Test\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.id.path\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.isBoolean\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.numberCount\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.text\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.typeId\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/Test\\"
+                }
+              }
+            }
+          }
+        }
+      },
+      \\"put\\": {
+        \\"tags\\": [
+          \\"Test\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.id.path\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/Test\\"
+                }
+              }
+            }
+          }
+        }
+      },
+      \\"delete\\": {
+        \\"tags\\": [
+          \\"Test\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/Test.id.path\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/Test\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/testSub\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"TestSub\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.parentId\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.arr\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/cursor\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/page\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/limit\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.sorts\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.includes\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/TestSub\\"
+                }
+              }
+            }
+          }
+        }
+      },
+      \\"post\\": {
+        \\"tags\\": [
+          \\"TestSub\\"
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/TestSub\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/testSub/first\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"TestSub\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.parentId\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.arr\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/TestSub\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/testSub/ids\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"TestSub\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.parentId\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.arr\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"type\\": \\"array\\",
+                  \\"items\\": {
+                    \\"type\\": \\"number\\"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/testSub/count\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"TestSub\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.parentId\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.arr\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"type\\": \\"integer\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/testSub/{id}\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"TestSub\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.id.path\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.parentId\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.arr\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/TestSub\\"
+                }
+              }
+            }
+          }
+        }
+      },
+      \\"put\\": {
+        \\"tags\\": [
+          \\"TestSub\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.id.path\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/TestSub\\"
+                }
+              }
+            }
+          }
+        }
+      },
+      \\"delete\\": {
+        \\"tags\\": [
+          \\"TestSub\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSub.id.path\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/TestSub\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/testNullable\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"TestNullable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.isBoolean\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.numberCount\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.text\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/cursor\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/page\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/limit\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.sorts\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.includes\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/TestNullable\\"
+                }
+              }
+            }
+          }
+        }
+      },
+      \\"post\\": {
+        \\"tags\\": [
+          \\"TestNullable\\"
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/TestNullable\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/testNullable/first\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"TestNullable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.isBoolean\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.numberCount\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.text\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/TestNullable\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/testNullable/me\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"TestNullable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.isBoolean\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.numberCount\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.text\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/TestNullable\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/testNullable/ids\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"TestNullable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.isBoolean\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.numberCount\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.text\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"type\\": \\"array\\",
+                  \\"items\\": {
+                    \\"type\\": \\"number\\"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/testNullable/count\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"TestNullable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.isBoolean\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.numberCount\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.text\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"type\\": \\"integer\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/testNullable/{id}\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"TestNullable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.id.path\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.isBoolean\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.numberCount\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.text\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/TestNullable\\"
+                }
+              }
+            }
+          }
+        }
+      },
+      \\"put\\": {
+        \\"tags\\": [
+          \\"TestNullable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.id.path\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/TestNullable\\"
+                }
+              }
+            }
+          }
+        }
+      },
+      \\"delete\\": {
+        \\"tags\\": [
+          \\"TestNullable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestNullable.id.path\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/TestNullable\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/testSubNullable\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"TestSubNullable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.parentId\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.arr\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/cursor\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/page\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/limit\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.sorts\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.includes\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/TestSubNullable\\"
+                }
+              }
+            }
+          }
+        }
+      },
+      \\"post\\": {
+        \\"tags\\": [
+          \\"TestSubNullable\\"
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/TestSubNullable\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/testSubNullable/first\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"TestSubNullable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.parentId\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.arr\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/TestSubNullable\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/testSubNullable/ids\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"TestSubNullable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.parentId\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.arr\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"type\\": \\"array\\",
+                  \\"items\\": {
+                    \\"type\\": \\"number\\"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/testSubNullable/count\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"TestSubNullable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.parentId\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.arr\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"type\\": \\"integer\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/testSubNullable/{id}\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"TestSubNullable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.id.path\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.parentId\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.arr\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/TestSubNullable\\"
+                }
+              }
+            }
+          }
+        }
+      },
+      \\"put\\": {
+        \\"tags\\": [
+          \\"TestSubNullable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.id.path\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/TestSubNullable\\"
+                }
+              }
+            }
+          }
+        }
+      },
+      \\"delete\\": {
+        \\"tags\\": [
+          \\"TestSubNullable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/TestSubNullable.id.path\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/TestSubNullable\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/lookupTable\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"LookupTable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/LookupTable.id\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/cursor\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/page\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/limit\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/LookupTable.sorts\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/LookupTable.includes\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/LookupTable\\"
+                }
+              }
+            }
+          }
+        }
+      },
+      \\"post\\": {
+        \\"tags\\": [
+          \\"LookupTable\\"
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/LookupTable\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/lookupTable/first\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"LookupTable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/LookupTable.id\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/LookupTable\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/lookupTable/ids\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"LookupTable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/LookupTable.id\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"type\\": \\"array\\",
+                  \\"items\\": {
+                    \\"type\\": \\"string\\"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/lookupTable/count\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"LookupTable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/LookupTable.id\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"type\\": \\"integer\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    \\"/saveTest/lookupTable/{id}\\": {
+      \\"get\\": {
+        \\"tags\\": [
+          \\"LookupTable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/LookupTable.id.path\\"
+          },
+          {
+            \\"$ref\\": \\"#/components/parameters/LookupTable.id\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/LookupTable\\"
+                }
+              }
+            }
+          }
+        }
+      },
+      \\"put\\": {
+        \\"tags\\": [
+          \\"LookupTable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/LookupTable.id.path\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/LookupTable\\"
+                }
+              }
+            }
+          }
+        }
+      },
+      \\"delete\\": {
+        \\"tags\\": [
+          \\"LookupTable\\"
+        ],
+        \\"parameters\\": [
+          {
+            \\"$ref\\": \\"#/components/parameters/LookupTable.id.path\\"
+          }
+        ],
+        \\"responses\\": {
+          \\"200\\": {
+            \\"description\\": \\"Success\\",
+            \\"content\\": {
+              \\"text/json\\": {
+                \\"schema\\": {
+                  \\"$ref\\": \\"#/components/schemas/LookupTable\\"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  \\"components\\": {
+    \\"schemas\\": {
+      \\"SaveTestTable\\": {
+        \\"type\\": \\"object\\",
+        \\"properties\\": {
+          \\"id\\": {
+            \\"$ref\\": \\"#/components/schemas/SaveTestTable.id\\"
+          },
+          \\"createdAt\\": {
+            \\"$ref\\": \\"#/components/schemas/SaveTestTable.createdAt\\"
+          },
+          \\"numberResponse\\": {
+            \\"$ref\\": \\"#/components/schemas/SaveTestTable.numberResponse\\"
+          }
+        }
+      },
+      \\"Test\\": {
+        \\"type\\": \\"object\\",
+        \\"properties\\": {
+          \\"id\\": {
+            \\"$ref\\": \\"#/components/schemas/Test.id\\"
+          },
+          \\"isBoolean\\": {
+            \\"$ref\\": \\"#/components/schemas/Test.isBoolean\\"
+          },
+          \\"numberCount\\": {
+            \\"$ref\\": \\"#/components/schemas/Test.numberCount\\"
+          },
+          \\"text\\": {
+            \\"$ref\\": \\"#/components/schemas/Test.text\\"
+          },
+          \\"typeId\\": {
+            \\"$ref\\": \\"#/components/schemas/Test.typeId\\"
+          }
+        }
+      },
+      \\"TestSub\\": {
+        \\"type\\": \\"object\\",
+        \\"properties\\": {
+          \\"id\\": {
+            \\"$ref\\": \\"#/components/schemas/TestSub.id\\"
+          },
+          \\"parentId\\": {
+            \\"$ref\\": \\"#/components/schemas/TestSub.parentId\\"
+          },
+          \\"arr\\": {
+            \\"$ref\\": \\"#/components/schemas/TestSub.arr\\"
+          }
+        }
+      },
+      \\"TestNullable\\": {
+        \\"type\\": \\"object\\",
+        \\"properties\\": {
+          \\"id\\": {
+            \\"$ref\\": \\"#/components/schemas/TestNullable.id\\"
+          },
+          \\"isBoolean\\": {
+            \\"$ref\\": \\"#/components/schemas/TestNullable.isBoolean\\"
+          },
+          \\"numberCount\\": {
+            \\"$ref\\": \\"#/components/schemas/TestNullable.numberCount\\"
+          },
+          \\"text\\": {
+            \\"$ref\\": \\"#/components/schemas/TestNullable.text\\"
+          }
+        }
+      },
+      \\"TestSubNullable\\": {
+        \\"type\\": \\"object\\",
+        \\"properties\\": {
+          \\"id\\": {
+            \\"$ref\\": \\"#/components/schemas/TestSubNullable.id\\"
+          },
+          \\"parentId\\": {
+            \\"$ref\\": \\"#/components/schemas/TestSubNullable.parentId\\"
+          },
+          \\"arr\\": {
+            \\"$ref\\": \\"#/components/schemas/TestSubNullable.arr\\"
+          }
+        }
+      },
+      \\"LookupTable\\": {
+        \\"type\\": \\"object\\",
+        \\"properties\\": {
+          \\"id\\": {
+            \\"$ref\\": \\"#/components/schemas/LookupTable.id\\"
+          }
+        }
+      },
+      \\"SaveTestTable.id\\": {
+        \\"type\\": \\"number\\",
+        \\"nullable\\": false
+      },
+      \\"SaveTestTable.createdAt\\": {
+        \\"type\\": \\"string\\",
+        \\"nullable\\": false
+      },
+      \\"SaveTestTable.numberResponse\\": {
+        \\"type\\": \\"integer\\",
+        \\"nullable\\": false
+      },
+      \\"Test.id\\": {
+        \\"type\\": \\"number\\",
+        \\"nullable\\": false
+      },
+      \\"Test.isBoolean\\": {
+        \\"type\\": \\"boolean\\",
+        \\"nullable\\": false
+      },
+      \\"Test.numberCount\\": {
+        \\"type\\": \\"number\\",
+        \\"nullable\\": false
+      },
+      \\"Test.text\\": {
+        \\"type\\": \\"string\\",
+        \\"nullable\\": false
+      },
+      \\"Test.typeId\\": {
+        \\"type\\": \\"string\\",
+        \\"nullable\\": false
+      },
+      \\"TestSub.id\\": {
+        \\"type\\": \\"number\\",
+        \\"nullable\\": false
+      },
+      \\"TestSub.parentId\\": {
+        \\"type\\": \\"number\\",
+        \\"nullable\\": false
+      },
+      \\"TestSub.arr\\": {
+        \\"type\\": \\"string\\",
+        \\"nullable\\": true
+      },
+      \\"TestNullable.id\\": {
+        \\"type\\": \\"number\\",
+        \\"nullable\\": false
+      },
+      \\"TestNullable.isBoolean\\": {
+        \\"type\\": \\"boolean\\",
+        \\"nullable\\": false
+      },
+      \\"TestNullable.numberCount\\": {
+        \\"type\\": \\"number\\",
+        \\"nullable\\": false
+      },
+      \\"TestNullable.text\\": {
+        \\"type\\": \\"string\\",
+        \\"nullable\\": false
+      },
+      \\"TestSubNullable.id\\": {
+        \\"type\\": \\"number\\",
+        \\"nullable\\": false
+      },
+      \\"TestSubNullable.parentId\\": {
+        \\"type\\": \\"number\\",
+        \\"nullable\\": true
+      },
+      \\"TestSubNullable.arr\\": {
+        \\"type\\": \\"string\\",
+        \\"nullable\\": true
+      },
+      \\"LookupTable.id\\": {
+        \\"type\\": \\"string\\",
+        \\"nullable\\": false
+      },
+      \\"SaveTestTable.includes\\": {
+        \\"type\\": \\"string\\"
+      },
+      \\"Test.includes\\": {
+        \\"description\\": \\"Extra properties to eager load. Options include \\\\\\"testSub\\\\\\", \\\\\\"testSubNullable\\\\\\", \\\\\\"testSubCount\\\\\\", \\\\\\"testSubNullableCount\\\\\\"\\",
+        \\"type\\": \\"array\\",
+        \\"items\\": {
+          \\"type\\": \\"string\\",
+          \\"enum\\": [
+            \\"testSub\\",
+            \\"testSubNullable\\",
+            \\"testSubCount\\",
+            \\"testSubNullableCount\\"
+          ]
+        }
+      },
+      \\"TestSub.includes\\": {
+        \\"description\\": \\"Extra properties to eager load. Options include \\\\\\"parent\\\\\\"\\",
+        \\"type\\": \\"array\\",
+        \\"items\\": {
+          \\"type\\": \\"string\\",
+          \\"enum\\": [
+            \\"parent\\"
+          ]
+        }
+      },
+      \\"TestNullable.includes\\": {
+        \\"type\\": \\"string\\"
+      },
+      \\"TestSubNullable.includes\\": {
+        \\"description\\": \\"Extra properties to eager load. Options include \\\\\\"parent\\\\\\"\\",
+        \\"type\\": \\"array\\",
+        \\"items\\": {
+          \\"type\\": \\"string\\",
+          \\"enum\\": [
+            \\"parent\\"
+          ]
+        }
+      },
+      \\"LookupTable.includes\\": {
+        \\"type\\": \\"string\\"
+      },
+      \\"SaveTestTable.sorts\\": {
+        \\"description\\": \\"The property or properties to sort items by. Options include \\\\\\"id\\\\\\", \\\\\\"-id\\\\\\", \\\\\\"createdAt\\\\\\", \\\\\\"-createdAt\\\\\\", \\\\\\"numberResponse\\\\\\", \\\\\\"-numberResponse\\\\\\"\\",
+        \\"type\\": \\"array\\",
+        \\"items\\": {
+          \\"type\\": \\"string\\",
+          \\"enum\\": [
+            \\"id\\",
+            \\"-id\\",
+            \\"createdAt\\",
+            \\"-createdAt\\",
+            \\"numberResponse\\",
+            \\"-numberResponse\\"
+          ]
+        }
+      },
+      \\"Test.sorts\\": {
+        \\"description\\": \\"The property or properties to sort items by. Options include \\\\\\"id\\\\\\", \\\\\\"-id\\\\\\", \\\\\\"isBoolean\\\\\\", \\\\\\"-isBoolean\\\\\\", \\\\\\"numberCount\\\\\\", \\\\\\"-numberCount\\\\\\", \\\\\\"text\\\\\\", \\\\\\"-text\\\\\\", \\\\\\"typeId\\\\\\", \\\\\\"-typeId\\\\\\"\\",
+        \\"type\\": \\"array\\",
+        \\"items\\": {
+          \\"type\\": \\"string\\",
+          \\"enum\\": [
+            \\"id\\",
+            \\"-id\\",
+            \\"isBoolean\\",
+            \\"-isBoolean\\",
+            \\"numberCount\\",
+            \\"-numberCount\\",
+            \\"text\\",
+            \\"-text\\",
+            \\"typeId\\",
+            \\"-typeId\\"
+          ]
+        }
+      },
+      \\"TestSub.sorts\\": {
+        \\"description\\": \\"The property or properties to sort items by. Options include \\\\\\"id\\\\\\", \\\\\\"-id\\\\\\", \\\\\\"parentId\\\\\\", \\\\\\"-parentId\\\\\\", \\\\\\"arr\\\\\\", \\\\\\"-arr\\\\\\"\\",
+        \\"type\\": \\"array\\",
+        \\"items\\": {
+          \\"type\\": \\"string\\",
+          \\"enum\\": [
+            \\"id\\",
+            \\"-id\\",
+            \\"parentId\\",
+            \\"-parentId\\",
+            \\"arr\\",
+            \\"-arr\\"
+          ]
+        }
+      },
+      \\"TestNullable.sorts\\": {
+        \\"description\\": \\"The property or properties to sort items by. Options include \\\\\\"id\\\\\\", \\\\\\"-id\\\\\\", \\\\\\"isBoolean\\\\\\", \\\\\\"-isBoolean\\\\\\", \\\\\\"numberCount\\\\\\", \\\\\\"-numberCount\\\\\\", \\\\\\"text\\\\\\", \\\\\\"-text\\\\\\"\\",
+        \\"type\\": \\"array\\",
+        \\"items\\": {
+          \\"type\\": \\"string\\",
+          \\"enum\\": [
+            \\"id\\",
+            \\"-id\\",
+            \\"isBoolean\\",
+            \\"-isBoolean\\",
+            \\"numberCount\\",
+            \\"-numberCount\\",
+            \\"text\\",
+            \\"-text\\"
+          ]
+        }
+      },
+      \\"TestSubNullable.sorts\\": {
+        \\"description\\": \\"The property or properties to sort items by. Options include \\\\\\"id\\\\\\", \\\\\\"-id\\\\\\", \\\\\\"parentId\\\\\\", \\\\\\"-parentId\\\\\\", \\\\\\"arr\\\\\\", \\\\\\"-arr\\\\\\"\\",
+        \\"type\\": \\"array\\",
+        \\"items\\": {
+          \\"type\\": \\"string\\",
+          \\"enum\\": [
+            \\"id\\",
+            \\"-id\\",
+            \\"parentId\\",
+            \\"-parentId\\",
+            \\"arr\\",
+            \\"-arr\\"
+          ]
+        }
+      },
+      \\"LookupTable.sorts\\": {
+        \\"description\\": \\"The property or properties to sort items by. Options include \\\\\\"id\\\\\\", \\\\\\"-id\\\\\\"\\",
+        \\"type\\": \\"array\\",
+        \\"items\\": {
+          \\"type\\": \\"string\\",
+          \\"enum\\": [
+            \\"id\\",
+            \\"-id\\"
+          ]
+        }
+      }
+    },
+    \\"parameters\\": {
+      \\"cursor\\": {
+        \\"name\\": \\"cursor\\",
+        \\"in\\": \\"query\\",
+        \\"required\\": false,
+        \\"schema\\": {
+          \\"type\\": \\"string\\"
+        }
+      },
+      \\"page\\": {
+        \\"name\\": \\"page\\",
+        \\"in\\": \\"query\\",
+        \\"required\\": false,
+        \\"schema\\": {
+          \\"type\\": \\"integer\\"
+        }
+      },
+      \\"limit\\": {
+        \\"name\\": \\"limit\\",
+        \\"in\\": \\"query\\",
+        \\"required\\": false,
+        \\"schema\\": {
+          \\"type\\": \\"integer\\"
+        }
+      },
+      \\"SaveTestTable.id\\": {
+        \\"name\\": \\"id\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/SaveTestTable.id\\"
+        }
+      },
+      \\"SaveTestTable.createdAt\\": {
+        \\"name\\": \\"createdAt\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/SaveTestTable.createdAt\\"
+        }
+      },
+      \\"SaveTestTable.numberResponse\\": {
+        \\"name\\": \\"numberResponse\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/SaveTestTable.numberResponse\\"
+        }
+      },
+      \\"Test.id\\": {
+        \\"name\\": \\"id\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/Test.id\\"
+        }
+      },
+      \\"Test.isBoolean\\": {
+        \\"name\\": \\"isBoolean\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/Test.isBoolean\\"
+        }
+      },
+      \\"Test.numberCount\\": {
+        \\"name\\": \\"numberCount\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/Test.numberCount\\"
+        }
+      },
+      \\"Test.text\\": {
+        \\"name\\": \\"text\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/Test.text\\"
+        }
+      },
+      \\"Test.typeId\\": {
+        \\"name\\": \\"typeId\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/Test.typeId\\"
+        }
+      },
+      \\"TestSub.id\\": {
+        \\"name\\": \\"id\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/TestSub.id\\"
+        }
+      },
+      \\"TestSub.parentId\\": {
+        \\"name\\": \\"parentId\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/TestSub.parentId\\"
+        }
+      },
+      \\"TestSub.arr\\": {
+        \\"name\\": \\"arr\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/TestSub.arr\\"
+        }
+      },
+      \\"TestNullable.id\\": {
+        \\"name\\": \\"id\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/TestNullable.id\\"
+        }
+      },
+      \\"TestNullable.isBoolean\\": {
+        \\"name\\": \\"isBoolean\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/TestNullable.isBoolean\\"
+        }
+      },
+      \\"TestNullable.numberCount\\": {
+        \\"name\\": \\"numberCount\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/TestNullable.numberCount\\"
+        }
+      },
+      \\"TestNullable.text\\": {
+        \\"name\\": \\"text\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/TestNullable.text\\"
+        }
+      },
+      \\"TestSubNullable.id\\": {
+        \\"name\\": \\"id\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/TestSubNullable.id\\"
+        }
+      },
+      \\"TestSubNullable.parentId\\": {
+        \\"name\\": \\"parentId\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/TestSubNullable.parentId\\"
+        }
+      },
+      \\"TestSubNullable.arr\\": {
+        \\"name\\": \\"arr\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/TestSubNullable.arr\\"
+        }
+      },
+      \\"LookupTable.id\\": {
+        \\"name\\": \\"id\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/LookupTable.id\\"
+        }
+      },
+      \\"SaveTestTable.id.path\\": {
+        \\"name\\": \\"id\\",
+        \\"in\\": \\"path\\",
+        \\"required\\": true,
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/SaveTestTable.id\\"
+        }
+      },
+      \\"Test.id.path\\": {
+        \\"name\\": \\"id\\",
+        \\"in\\": \\"path\\",
+        \\"required\\": true,
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/Test.id\\"
+        }
+      },
+      \\"TestSub.id.path\\": {
+        \\"name\\": \\"id\\",
+        \\"in\\": \\"path\\",
+        \\"required\\": true,
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/TestSub.id\\"
+        }
+      },
+      \\"TestNullable.id.path\\": {
+        \\"name\\": \\"id\\",
+        \\"in\\": \\"path\\",
+        \\"required\\": true,
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/TestNullable.id\\"
+        }
+      },
+      \\"TestSubNullable.id.path\\": {
+        \\"name\\": \\"id\\",
+        \\"in\\": \\"path\\",
+        \\"required\\": true,
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/TestSubNullable.id\\"
+        }
+      },
+      \\"LookupTable.id.path\\": {
+        \\"name\\": \\"id\\",
+        \\"in\\": \\"path\\",
+        \\"required\\": true,
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/LookupTable.id\\"
+        }
+      },
+      \\"SaveTestTable.includes\\": {
+        \\"name\\": \\"include\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/SaveTestTable.includes\\"
+        }
+      },
+      \\"Test.includes\\": {
+        \\"name\\": \\"include\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/Test.includes\\"
+        }
+      },
+      \\"TestSub.includes\\": {
+        \\"name\\": \\"include\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/TestSub.includes\\"
+        }
+      },
+      \\"TestNullable.includes\\": {
+        \\"name\\": \\"include\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/TestNullable.includes\\"
+        }
+      },
+      \\"TestSubNullable.includes\\": {
+        \\"name\\": \\"include\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/TestSubNullable.includes\\"
+        }
+      },
+      \\"LookupTable.includes\\": {
+        \\"name\\": \\"include\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/LookupTable.includes\\"
+        }
+      },
+      \\"SaveTestTable.sorts\\": {
+        \\"name\\": \\"sort\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/SaveTestTable.sorts\\"
+        }
+      },
+      \\"Test.sorts\\": {
+        \\"name\\": \\"sort\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/Test.sorts\\"
+        }
+      },
+      \\"TestSub.sorts\\": {
+        \\"name\\": \\"sort\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/TestSub.sorts\\"
+        }
+      },
+      \\"TestNullable.sorts\\": {
+        \\"name\\": \\"sort\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/TestNullable.sorts\\"
+        }
+      },
+      \\"TestSubNullable.sorts\\": {
+        \\"name\\": \\"sort\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/TestSubNullable.sorts\\"
+        }
+      },
+      \\"LookupTable.sorts\\": {
+        \\"name\\": \\"sort\\",
+        \\"in\\": \\"query\\",
+        \\"style\\": \\"deepObject\\",
+        \\"schema\\": {
+          \\"$ref\\": \\"#/components/schemas/LookupTable.sorts\\"
+        }
+      }
+    }
+  }
+}
+"
+`;
