@@ -82,6 +82,15 @@ export type Handlers<
   ) => Promise<ChangeTo<Result>>;
   count: (params?: DeepPartial<Params>) => number;
   ids: (params?: DeepPartial<Params>) => Collection<ID<Result, IDColumnName>>;
+  getAsync: ((
+    idOrParams: ID<Params, IDColumnName>,
+    params?: Params
+  ) => Promise<Result>) &
+    ((idOrParams?: Params) => Promise<Collection<Result>>);
+  countAsync: (params?: DeepPartial<Params>) => Promise<number>;
+  idsAsync: (
+    params?: DeepPartial<Params>
+  ) => Promise<Collection<ID<Result, IDColumnName>>>;
 };
 
 export type RouteFactory<Result, Params, ID> = (p: {

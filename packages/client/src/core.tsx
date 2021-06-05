@@ -186,6 +186,51 @@ class Table<Result, Params, IDColumnName> {
           }
           return getUrl(fullPath) as Collection<ID<Result, IDColumnName>>;
         },
+        async getAsync(
+          idOrParams?: ID<Params, IDColumnName> | Params,
+          params?: Params
+        ) {
+          let fullPath = path;
+
+          if (idOrParams) fullPath += `/${idOrParams}`;
+
+          if (params && Object.keys(params).length > 0) {
+            fullPath += `?${qsStringify(params)}`;
+          }
+
+          const { data: result } = await axios.get(applyConfigToUrl(fullPath), {
+            ...requestConfig,
+            params: undefined,
+          });
+
+          return result;
+        },
+        async countAsync(params?: Params) {
+          let fullPath = `${path}/count`;
+          if (params && Object.keys(params).length > 0) {
+            fullPath += `?${qsStringify(params)}`;
+          }
+
+          const { data: result } = await axios.get(applyConfigToUrl(fullPath), {
+            ...requestConfig,
+            params: undefined,
+          });
+
+          return result;
+        },
+        async idsAsync(params?: Params) {
+          let fullPath = `${path}/ids`;
+          if (params && Object.keys(params).length > 0) {
+            fullPath += `?${qsStringify(params)}`;
+          }
+
+          const { data: result } = await axios.get(applyConfigToUrl(fullPath), {
+            ...requestConfig,
+            params: undefined,
+          });
+
+          return result;
+        },
       }
     ) as Handlers<Result, Params, IDColumnName>;
   }
