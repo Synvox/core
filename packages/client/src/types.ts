@@ -28,7 +28,10 @@ export type CacheEntry<Key, Result> = {
 
 export type CacheStorage<Key> = Map<Key, CacheEntry<Key, unknown>>;
 
-export type Loader<Key> = (key: Key) => Promise<[Key, unknown][]>;
+export type Loader<Key, Options = unknown> = (
+  key: Key,
+  options?: Options
+) => Promise<[Key, unknown][]>;
 
 export type Collection<T> = T[] & {
   hasMore: boolean;
