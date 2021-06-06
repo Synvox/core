@@ -113,6 +113,7 @@ it("suspends and loads", async () => {
       "data": undefined,
       "error": undefined,
       "loadedThroughKey": 4,
+      "loaderOptions": undefined,
       "promise": undefined,
       "subscribers": Set {},
     }
@@ -126,6 +127,7 @@ it("suspends and loads", async () => {
       },
       "error": undefined,
       "loadedThroughKey": 64,
+      "loaderOptions": undefined,
       "promise": undefined,
       "refreshTimeout": undefined,
       "subscribers": Set {
@@ -143,6 +145,7 @@ it("suspends and loads", async () => {
       "data": undefined,
       "error": undefined,
       "loadedThroughKey": 4,
+      "loaderOptions": undefined,
       "promise": undefined,
       "subscribers": Set {},
     }
@@ -243,6 +246,7 @@ it("preloads", async () => {
       },
       "error": undefined,
       "loadedThroughKey": 2,
+      "loaderOptions": undefined,
       "promise": undefined,
       "refreshTimeout": undefined,
       "subscribers": Set {},
@@ -261,6 +265,7 @@ it("preloads", async () => {
       "data": undefined,
       "error": [Error: I throw on zero],
       "loadedThroughKey": 0,
+      "loaderOptions": undefined,
       "promise": undefined,
       "refreshTimeout": undefined,
       "subscribers": Set {},

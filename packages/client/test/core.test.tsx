@@ -3,11 +3,11 @@ import { createServer } from "http";
 import testListen from "test-listen";
 import express, { Application } from "express";
 import Axios from "axios";
-import { Core, knexHelpers } from "@synvox/core";
+import { Core, knexHelpers, UnauthorizedError } from "@synvox/core";
 import { renderHook } from "@testing-library/react-hooks";
 import { act } from "react-dom/test-utils";
 import pg from "pg";
-import { core as coreClient, table, AxiosConfigProvider } from "../src";
+import { core as coreClient, table, AxiosProvider } from "../src";
 import EventSource from "eventsource";
 import uuid from "uuid";
 
@@ -572,11 +572,22 @@ describe("core", () => {
 
   it("can accept new params through a provider", async () => {
     await knex("coreClientTest.test").insert({});
-    const core = new Core(knex, () => ({}));
+    let seenAuthHeader = "";
+    const core = new Core(knex, (req) => {
+      return {
+        isAuthenticated() {
+          seenAuthHeader = req.headers.authorization!;
+          return req.headers.authorization === "Bearer token";
+        },
+      };
+    });
 
     core.table({
       schemaName: "coreClientTest",
       tableName: "test",
+      async policy(_stmt, context) {
+        if (!context.isAuthenticated()) throw new UnauthorizedError();
+      },
     });
 
     core.table({
@@ -590,10 +601,6 @@ describe("core", () => {
     const axios = Axios.create({ baseURL: url });
 
     let urls: string[] = [];
-    axios.interceptors.request.use((config) => {
-      urls.push(`${config.method} ${config.url!}`);
-      return config;
-    });
 
     type Test = {
       id: number;
@@ -616,16 +623,24 @@ describe("core", () => {
       ({ id }: { id: number }) => {
         const core = useCore();
         const result = core.test(id, { include: "testSub" });
-        return { result, core };
+        return { result, others: core.test(), core };
       },
       {
         initialProps: { id: 1 },
         wrapper: (p) => {
-          return (
-            <AxiosConfigProvider config={{ params: { orgId: 1 } }}>
-              {p.children}
-            </AxiosConfigProvider>
-          );
+          const newAxios = Axios.create({
+            ...axios.defaults,
+            params: { orgId: 1 },
+            headers: {
+              authorization: "Bearer token",
+            },
+          });
+          newAxios.interceptors.request.use((config) => {
+            urls.push(`${config.method} ${Axios.getUri(config)}`);
+            return config;
+          });
+
+          return <AxiosProvider axios={newAxios}>{p.children}</AxiosProvider>;
         },
       }
     );
@@ -635,6 +650,7 @@ describe("core", () => {
     expect(urls).toMatchInlineSnapshot(`
       Array [
         "get /coreClientTest/test/1?include=testSub&orgId=1",
+        "get /coreClientTest/test?orgId=1",
       ]
     `);
     expect(result.current).toMatchInlineSnapshot(`
@@ -643,6 +659,14 @@ describe("core", () => {
           "test": [Function],
           "testSub": [Function],
         },
+        "others": Array [
+          Object {
+            "id": 1,
+            "isBoolean": false,
+            "numberCount": 0,
+            "text": "text",
+          },
+        ],
         "result": Object {
           "id": 1,
           "isBoolean": false,
@@ -654,8 +678,8 @@ describe("core", () => {
     `);
 
     urls = [];
-    expect((await result.current.core.test.post({})).changes)
-      .toMatchInlineSnapshot(`
+    const postRes = await result.current.core.test.post({});
+    expect(postRes.changes).toMatchInlineSnapshot(`
       Array [
         Object {
           "mode": "insert",
@@ -676,11 +700,36 @@ describe("core", () => {
       ]
     `);
 
+    await act(async () => {
+      await postRes.update();
+    });
+
+    expect(result.current.others).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "id": 1,
+          "isBoolean": false,
+          "numberCount": 0,
+          "text": "text",
+        },
+        Object {
+          "id": 2,
+          "isBoolean": false,
+          "numberCount": 0,
+          "text": "text",
+        },
+      ]
+    `);
+
     expect(urls).toMatchInlineSnapshot(`
       Array [
         "post /coreClientTest/test?orgId=1",
+        "get /coreClientTest/test/1?include=testSub&orgId=1",
+        "get /coreClientTest/test?orgId=1",
       ]
     `);
+
+    expect(seenAuthHeader).toMatchInlineSnapshot(`"Bearer token"`);
   });
 
   it("reads using /first", async () => {

@@ -16,7 +16,7 @@ export type ID<T, IDColumnName = "id"> = NotArray<
 
 export type SubscriptionCallback = () => void;
 
-export type CacheEntry<Key, Result> = {
+export type CacheEntry<Key, Result, LoaderOptions> = {
   loadedThroughKey: Key;
   subscribers: Set<SubscriptionCallback>;
   data?: Result;
@@ -24,9 +24,10 @@ export type CacheEntry<Key, Result> = {
   error?: Error;
   destroyTimeout?: number;
   refreshTimeout?: number;
+  loaderOptions: LoaderOptions;
 };
 
-export type CacheStorage<Key> = Map<Key, CacheEntry<Key, unknown>>;
+export type CacheStorage<Key> = Map<Key, CacheEntry<Key, unknown, unknown>>;
 
 export type Loader<Key, Options = unknown> = (
   key: Key,
