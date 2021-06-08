@@ -16,7 +16,7 @@ export type ID<T, IDColumnName = "id"> = NotArray<
 
 export type SubscriptionCallback = () => void;
 
-export type CacheEntry<Key, Result> = {
+export type CacheEntry<Key, Result, LoaderOptions> = {
   loadedThroughKey: Key;
   subscribers: Set<SubscriptionCallback>;
   data?: Result;
@@ -24,11 +24,15 @@ export type CacheEntry<Key, Result> = {
   error?: Error;
   destroyTimeout?: number;
   refreshTimeout?: number;
+  loaderOptions: LoaderOptions;
 };
 
-export type CacheStorage<Key> = Map<Key, CacheEntry<Key, unknown>>;
+export type CacheStorage<Key> = Map<Key, CacheEntry<Key, unknown, unknown>>;
 
-export type Loader<Key> = (key: Key) => Promise<[Key, unknown][]>;
+export type Loader<Key, Options = unknown> = (
+  key: Key,
+  options?: Options
+) => Promise<[Key, unknown][]>;
 
 export type Collection<T> = T[] & {
   hasMore: boolean;
@@ -71,17 +75,26 @@ export type Handlers<
     payload: any,
     params?: DeepPartial<Params>
   ) => Promise<ChangeTo<Result>>;
-  post: (
+  post: <R = ChangeTo<Result>>(
     pathOrData: string | Record<string, any>,
     dataOrParams?: any | DeepPartial<Params>,
     params?: DeepPartial<Params>
-  ) => Promise<ChangeTo<Result>>;
+  ) => Promise<R>;
   delete: (
     id: ID<Result, IDColumnName>,
     params?: DeepPartial<Params>
   ) => Promise<ChangeTo<Result>>;
   count: (params?: DeepPartial<Params>) => number;
   ids: (params?: DeepPartial<Params>) => Collection<ID<Result, IDColumnName>>;
+  getAsync: ((
+    idOrParams: ID<Params, IDColumnName>,
+    params?: Params
+  ) => Promise<Result>) &
+    ((idOrParams?: Params) => Promise<Collection<Result>>);
+  countAsync: (params?: DeepPartial<Params>) => Promise<number>;
+  idsAsync: (
+    params?: DeepPartial<Params>
+  ) => Promise<Collection<ID<Result, IDColumnName>>>;
 };
 
 export type RouteFactory<Result, Params, ID> = (p: {

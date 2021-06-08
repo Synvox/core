@@ -97,6 +97,7 @@ export class Table<Context, T = any> {
   allowUpserts: boolean;
   complexityLimit: number;
   eagerLoadingComplexityLimit: number;
+  eagerLoadLimit: number;
   complexityWeight: number;
   defaultSortColumn: string;
   methods: Methods<Context>;
@@ -141,6 +142,7 @@ export class Table<Context, T = any> {
     this.enforcedParams = def.enforcedParams ?? (async () => ({}));
     this.allowUpserts = def.allowUpserts ?? false;
     this.complexityLimit = def.complexityLimit ?? 500;
+    this.eagerLoadLimit = def.eagerLoadLimit ?? 10;
     this.eagerLoadingComplexityLimit = def.eagerLoadingComplexityLimit ?? 3;
     this.complexityWeight = def.complexityWeight ?? 1;
     this.defaultSortColumn = def.defaultSortColumn ?? this.idColumnName;
@@ -835,6 +837,7 @@ export class Table<Context, T = any> {
 
       schema[relation.columnName] = mixed()
         .test("is not null", "${path} is required", async function test(value) {
+          if (table.columns[relation.columnName].nullable) return true;
           return value !== null;
         })
         .test(
@@ -1662,7 +1665,7 @@ export class Table<Context, T = any> {
             `${alias}.${ref.relation.columnName}`,
             knex.ref(`${this.alias}.${this.idColumnName}`)
           )
-          .limit(10);
+          .limit(ref.table.eagerLoadLimit);
       }
 
       const aliasOuter = `${alias}_sub_query`;

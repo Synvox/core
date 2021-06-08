@@ -1942,6 +1942,7 @@ describe("without policies", () => {
     await knex.schema.withSchema("test").createTable("posts", (t) => {
       t.bigIncrements("id").primary();
       t.bigInteger("user_id")
+        .notNullable()
         .references("id")
         .inTable("test.users")
         .onDelete("cascade");
@@ -2159,7 +2160,7 @@ describe("without policies", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "errors": Object {
-          "userId": "is required",
+          "userId": "is a required field",
         },
       }
     `);
@@ -5185,12 +5186,42 @@ describe("self references", () => {
       await items.write(knex, { parentItemId: null }, {}).catch((e) => e.body)
     ).toMatchInlineSnapshot(`
       Object {
-        "errors": Object {
-          "parentItemId": "is required",
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "insert",
+            "path": "/test/items",
+            "row": Object {
+              "_links": Object {
+                "items": "/test/items?parentItemId=3",
+                "itemsCount": "/test/items/3/itemsCount",
+              },
+              "_type": "test/items",
+              "_url": "/test/items/3",
+              "id": 3,
+              "parentItemId": null,
+            },
+            "views": undefined,
+          },
+        ],
+        "result": Object {
+          "_links": Object {
+            "items": "/test/items?parentItemId=3",
+            "itemsCount": "/test/items/3/itemsCount",
+          },
+          "_type": "test/items",
+          "_url": "/test/items/3",
+          "id": 3,
+          "parentItemId": null,
         },
       }
     `);
-    expect(queries).toMatchInlineSnapshot(`Array []`);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "insert into test.items (parent_item_id) values (?) returning *",
+        "select items.id, items.parent_item_id from test.items where items.id = ? limit ?",
+      ]
+    `);
 
     queries = [];
     expect(
@@ -5218,13 +5249,13 @@ describe("self references", () => {
             "path": "/test/items",
             "row": Object {
               "_links": Object {
-                "items": "/test/items?parentItemId=3",
-                "itemsCount": "/test/items/3/itemsCount",
+                "items": "/test/items?parentItemId=4",
+                "itemsCount": "/test/items/4/itemsCount",
                 "parentItem": "/test/items/1",
               },
               "_type": "test/items",
-              "_url": "/test/items/3",
-              "id": 3,
+              "_url": "/test/items/4",
+              "id": 4,
               "parentItemId": 1,
             },
             "views": undefined,
@@ -5232,13 +5263,13 @@ describe("self references", () => {
         ],
         "result": Object {
           "_links": Object {
-            "items": "/test/items?parentItemId=3",
-            "itemsCount": "/test/items/3/itemsCount",
+            "items": "/test/items?parentItemId=4",
+            "itemsCount": "/test/items/4/itemsCount",
             "parentItem": "/test/items/1",
           },
           "_type": "test/items",
-          "_url": "/test/items/3",
-          "id": 3,
+          "_url": "/test/items/4",
+          "id": 4,
           "parentItemId": 1,
         },
       }
@@ -5292,11 +5323,22 @@ describe("self references", () => {
             "_links": Object {
               "items": "/test/items?parentItemId=3",
               "itemsCount": "/test/items/3/itemsCount",
-              "parentItem": "/test/items/1",
             },
             "_type": "test/items",
             "_url": "/test/items/3",
             "id": 3,
+            "parentItem": null,
+            "parentItemId": null,
+          },
+          Object {
+            "_links": Object {
+              "items": "/test/items?parentItemId=4",
+              "itemsCount": "/test/items/4/itemsCount",
+              "parentItem": "/test/items/1",
+            },
+            "_type": "test/items",
+            "_url": "/test/items/4",
+            "id": 4,
             "parentItem": Object {
               "_links": Object {
                 "items": "/test/items?parentItemId=1",
@@ -5354,13 +5396,13 @@ describe("self references", () => {
               },
               Object {
                 "_links": Object {
-                  "items": "/test/items?parentItemId=3",
-                  "itemsCount": "/test/items/3/itemsCount",
+                  "items": "/test/items?parentItemId=4",
+                  "itemsCount": "/test/items/4/itemsCount",
                   "parentItem": "/test/items/1",
                 },
                 "_type": "test/items",
-                "_url": "/test/items/3",
-                "id": 3,
+                "_url": "/test/items/4",
+                "id": 4,
                 "parentItemId": 1,
               },
             ],
@@ -5382,11 +5424,22 @@ describe("self references", () => {
             "_links": Object {
               "items": "/test/items?parentItemId=3",
               "itemsCount": "/test/items/3/itemsCount",
-              "parentItem": "/test/items/1",
             },
             "_type": "test/items",
             "_url": "/test/items/3",
             "id": 3,
+            "items": Array [],
+            "parentItemId": null,
+          },
+          Object {
+            "_links": Object {
+              "items": "/test/items?parentItemId=4",
+              "itemsCount": "/test/items/4/itemsCount",
+              "parentItem": "/test/items/1",
+            },
+            "_type": "test/items",
+            "_url": "/test/items/4",
+            "id": 4,
             "items": Array [],
             "parentItemId": 1,
           },
@@ -6673,6 +6726,75 @@ describe("lookup tables", () => {
           "_url": "/test/items/1",
           "id": 1,
           "typeId": "type1",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "insert into test.items (type_id) values (?) returning *",
+        "select items.id, items.type_id from test.items where items.id = ? limit ?",
+      ]
+    `);
+  });
+
+  it("does not fail when column is null", async () => {
+    await knex.schema.withSchema("test").createTable("types", (t) => {
+      t.text("id").primary();
+    });
+
+    await knex("test.types").insert([
+      { id: "type1" },
+      { id: "type2" },
+      { id: "type3" },
+    ]);
+
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("typeId").references("id").inTable("test.types");
+    });
+
+    const types = new Table({
+      schemaName: "test",
+      tableName: "types",
+      isLookupTable: true,
+    });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+    });
+
+    await types.init(knex);
+    await items.init(knex);
+
+    types.linkTables([items]);
+    items.linkTables([types]);
+
+    queries = [];
+    expect(await items.write(knex, { typeId: null }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "insert",
+            "path": "/test/items",
+            "row": Object {
+              "_links": Object {},
+              "_type": "test/items",
+              "_url": "/test/items/1",
+              "id": 1,
+              "typeId": null,
+            },
+            "views": undefined,
+          },
+        ],
+        "result": Object {
+          "_links": Object {},
+          "_type": "test/items",
+          "_url": "/test/items/1",
+          "id": 1,
+          "typeId": null,
         },
       }
     `);

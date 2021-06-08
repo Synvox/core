@@ -30,22 +30,24 @@ function useForceUpdate() {
   return forceUpdate;
 }
 
-export function createLoader<Key>({
+export function createLoader<Key, LoaderOptions>({
   cache,
   modifier = (x: any) => x,
 }: {
-  cache: Cache<Key>;
+  cache: Cache<Key, LoaderOptions>;
   modifier?: <In, Out>(obj: In, get: <T>(key: Key) => T) => Out;
 }) {
-  function get<Result>(key: Key) {
-    const cacheEntry = cache.get<Result>(key);
+  function get<Result>(key: Key, loaderOptions?: LoaderOptions) {
+    const cacheEntry = cache.get<Result>(key, loaderOptions);
     if (cacheEntry) {
       if (cacheEntry.data !== undefined) return cacheEntry.data;
       if (cacheEntry.promise !== undefined) throw cacheEntry.promise;
       if (cacheEntry.error !== undefined) throw cacheEntry.error;
     }
 
-    throw cache.load(key).then((commit) => commit().forEach((fn) => fn()));
+    throw cache
+      .load(key, 0, loaderOptions)
+      .then((commit) => commit().forEach((fn) => fn()));
   }
 
   function useKey() {
@@ -56,10 +58,14 @@ export function createLoader<Key>({
     )[0];
     const subscribedKeys = new Set<Key>();
 
-    const hookGet = <Result>(key: Key, subKeys: Set<Key> = subscribedKeys) => {
+    const hookGet = <Result>(
+      key: Key,
+      loaderOptions?: LoaderOptions,
+      subKeys: Set<Key> = subscribedKeys
+    ) => {
       subKeys.add(key);
       try {
-        const result = get<any>(key);
+        const result = get<any>(key, loaderOptions);
 
         if (result === null || typeof result !== "object") return result;
 
@@ -72,7 +78,7 @@ export function createLoader<Key>({
         const modifierKeys = new Set<Key>();
         const modifiedResult: Result = modifier<any, Result>(
           result,
-          (key: Key) => hookGet(key, modifierKeys)
+          (key: Key) => hookGet(key, loaderOptions, modifierKeys)
         );
 
         dataMap.set(result, { keys: modifierKeys, value: modifiedResult });

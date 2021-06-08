@@ -1,7 +1,7 @@
-import { createContext, ReactNode, useContext } from "react";
+import { useContext, createContext, ReactNode } from "react";
 import qs from "qs";
 import { Collection, Change, ChangeTo, Handlers, ID } from "./types";
-import { AxiosInstance, AxiosRequestConfig } from "axios";
+import { AxiosInstance } from "axios";
 import Cache from "./cache";
 import { createLoader } from "./createLoader";
 
@@ -41,37 +41,16 @@ class Table<Result, Params, IDColumnName> {
   handlersFor({
     getUrl: realGetUrl,
     axios,
-    requestConfig,
     handleChanges,
   }: {
     getUrl: (url: string) => any;
     axios: AxiosInstance;
-    requestConfig: AxiosRequestConfig;
     handleChanges: (changes: Change[]) => Promise<void>;
   }): Handlers<Result, Params, IDColumnName> {
     const { path, lock, blockUpdatesById } = this;
 
-    function applyConfigToUrl(url: string) {
-      const { params, ...config } = requestConfig;
-
-      if (
-        params &&
-        typeof params === "object" &&
-        !Array.isArray(params) &&
-        Object.keys(params ?? {}).length
-      ) {
-        const paramString = qsStringify(params);
-        url += (url.includes("?") ? "&" : "?") + paramString;
-      }
-
-      return axios.getUri({
-        ...config,
-        url,
-      });
-    }
-
     function getUrl(url: string) {
-      return realGetUrl(applyConfigToUrl(url));
+      return realGetUrl(url);
     }
 
     function get(
@@ -99,7 +78,12 @@ class Table<Result, Params, IDColumnName> {
       {
         get: get,
         first(params?: Params) {
-          return getUrl(`${path}/first?${qsStringify(params)}`) as Result;
+          let fullPath = `${path}/first`;
+          if (params) {
+            fullPath += `?${qsStringify(params)}`;
+          }
+
+          return getUrl(fullPath) as Result;
         },
         async put(
           idOrQuery: ID<Result, IDColumnName> | Params,
@@ -115,11 +99,7 @@ class Table<Result, Params, IDColumnName> {
             fullPath += `?${qsStringify(params)}`;
 
           return await lock!(async () => {
-            const { data: result } = await axios.put(
-              applyConfigToUrl(fullPath),
-              data,
-              { ...requestConfig, params: undefined }
-            );
+            const { data: result } = await axios.put(fullPath, data);
             if (result.changeId) blockUpdatesById(result.changeId);
             result.update = () => handleChanges(result.changes);
             return result as ChangeTo<Result>;
@@ -145,11 +125,9 @@ class Table<Result, Params, IDColumnName> {
             fullPath += `?${qsStringify(realParams)}`;
 
           return await lock(async () => {
-            const { data: result } = await axios.post(
-              applyConfigToUrl(fullPath),
-              data,
-              { ...requestConfig, params: undefined }
-            );
+            const { data: result } = await axios.post(fullPath, data, {
+              params: undefined,
+            });
             if (!result.changeId) return result;
 
             blockUpdatesById(result.changeId);
@@ -163,10 +141,9 @@ class Table<Result, Params, IDColumnName> {
             fullPath += `?${qsStringify(params)}`;
           }
           return await lock(async () => {
-            const { data: result } = await axios.delete(
-              applyConfigToUrl(fullPath),
-              { ...requestConfig, params: undefined }
-            );
+            const { data: result } = await axios.delete(fullPath, {
+              params: undefined,
+            });
             if (result.changeId) blockUpdatesById(result.changeId);
             result.update = () => handleChanges(result.changes);
             return result as ChangeTo<Result>;
@@ -186,6 +163,50 @@ class Table<Result, Params, IDColumnName> {
           }
           return getUrl(fullPath) as Collection<ID<Result, IDColumnName>>;
         },
+        async getAsync(
+          idOrParams?: ID<Params, IDColumnName> | Params,
+          params?: Params
+        ) {
+          let fullPath = path;
+
+          if (idOrParams && typeof idOrParams !== "object")
+            fullPath += `/${idOrParams}`;
+          else params = idOrParams as Params;
+
+          if (params && Object.keys(params).length > 0) {
+            fullPath += `?${qsStringify(params)}`;
+          }
+
+          const { data: result } = await axios.get(fullPath, {
+            params: undefined,
+          });
+
+          return result;
+        },
+        async countAsync(params?: Params) {
+          let fullPath = `${path}/count`;
+          if (params && Object.keys(params).length > 0) {
+            fullPath += `?${qsStringify(params)}`;
+          }
+
+          const { data: result } = await axios.get(fullPath, {
+            params: undefined,
+          });
+
+          return result;
+        },
+        async idsAsync(params?: Params) {
+          let fullPath = `${path}/ids`;
+          if (params && Object.keys(params).length > 0) {
+            fullPath += `?${qsStringify(params)}`;
+          }
+
+          const { data: result } = await axios.get(fullPath, {
+            params: undefined,
+          });
+
+          return result;
+        },
       }
     ) as Handlers<Result, Params, IDColumnName>;
   }
@@ -198,19 +219,17 @@ export function table<T, P, IDColumnName extends string | number = "id">(
   return new Table<T, P, IDColumnName>(path, options);
 }
 
-const axiosRequestConfigContext = createContext<AxiosRequestConfig>({});
+const axiosContext = createContext<AxiosInstance | null>(null);
 
-export function AxiosConfigProvider({
-  config,
+export function AxiosProvider({
+  axios,
   children,
 }: {
-  config: AxiosRequestConfig;
+  axios: AxiosInstance;
   children: ReactNode;
 }) {
   return (
-    <axiosRequestConfigContext.Provider value={config}>
-      {children}
-    </axiosRequestConfigContext.Provider>
+    <axiosContext.Provider value={axios}>{children}</axiosContext.Provider>
   );
 }
 
@@ -218,8 +237,8 @@ export function core<Routes extends Record<string, Table<any, any, any>>>(
   axios: AxiosInstance,
   routes: Routes
 ) {
-  const cache = new Cache<string>(async (url) => {
-    let { data } = await axios.get(url);
+  const cache = new Cache<string, AxiosInstance>(async (url, axios) => {
+    let { data } = await axios!.get(url);
     const result: [string, any][] = [];
     function walk(obj: any): any {
       if (!obj || typeof obj !== "object") return obj;
@@ -411,9 +430,9 @@ export function core<Routes extends Record<string, Table<any, any, any>>>(
         infer ID
       >
         ? Handlers<Result, Partial<Params>, ID>
-        : Handlers<unknown, any, string | number>;
+        : never;
     } {
-      const requestConfig = useContext(axiosRequestConfigContext);
+      const givenAxios = useContext(axiosContext);
       const getUrl = useGetUrl();
 
       //@ts-expect-error
@@ -422,9 +441,10 @@ export function core<Routes extends Record<string, Table<any, any, any>>>(
           return [
             key,
             table.handlersFor({
-              getUrl,
-              axios,
-              requestConfig,
+              getUrl(url) {
+                return getUrl(url, givenAxios ?? axios);
+              },
+              axios: givenAxios ?? axios,
               handleChanges,
             }),
           ];

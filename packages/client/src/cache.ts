@@ -8,14 +8,14 @@ type Options = {
   retryDelay?: (attempt: number, err: Error) => number;
 };
 
-export default class Cache<Key> {
-  private loader: Loader<Key>;
+export default class Cache<Key, LoaderOptions = unknown> {
+  private loader: Loader<Key, LoaderOptions>;
   private cacheStorage: CacheStorage<Key>;
   private removalTimeout: number = 1000 * 60 * 3;
   private retryCount: number = 1;
   private cacheLife?: number;
   private retryDelay?: (attempt: number, err: Error) => number;
-  constructor(loader: Loader<Key>, opts: Options = {}) {
+  constructor(loader: Loader<Key, LoaderOptions>, opts: Options = {}) {
     this.loader = loader;
     this.cacheStorage = new Map();
     this.removalTimeout = opts.removalTimeout ?? 1000 * 60 * 3;
@@ -24,7 +24,7 @@ export default class Cache<Key> {
     this.retryDelay = opts.retryDelay ?? undefined;
   }
 
-  get<Result>(key: Key) {
+  get<Result>(key: Key, loaderOptions?: LoaderOptions) {
     let cacheEntry = this.cacheStorage.get(key);
 
     if (!cacheEntry) {
@@ -34,16 +34,31 @@ export default class Cache<Key> {
         promise: undefined,
         error: undefined,
         subscribers: new Set(),
+        loaderOptions,
       };
 
       this.cacheStorage.set(key, cacheEntry);
     }
 
-    return cacheEntry as CacheEntry<Key, Result>;
+    return cacheEntry as CacheEntry<Key, Result, LoaderOptions>;
   }
 
-  set<Result>(key: Key, patch: Partial<CacheEntry<Key, Result>>) {
-    const cacheEntry = this.get(key);
+  getUnsafe<Result>(key: Key) {
+    let cacheEntry = this.cacheStorage.get(key);
+
+    if (!cacheEntry) {
+      throw new Error(`${key} does not exist in cache`);
+    }
+
+    return cacheEntry as CacheEntry<Key, Result, LoaderOptions>;
+  }
+
+  set<Result>(
+    key: Key,
+    patch: Partial<CacheEntry<Key, Result, LoaderOptions>>,
+    loaderOptions?: LoaderOptions
+  ) {
+    const cacheEntry = this.get(key, loaderOptions);
 
     let refreshTimeout: number | undefined = undefined;
     if (this.cacheLife && typeof window !== "undefined") {
@@ -53,7 +68,7 @@ export default class Cache<Key> {
       // only schedule reload if this entry was the top level entry
       if (cacheEntry.loadedThroughKey === key) {
         refreshTimeout = window.setTimeout(async () => {
-          const commitFn = await this.load(key);
+          const commitFn = await this.load(key, 0, loaderOptions);
           commitFn();
         }, this.cacheLife);
       }
@@ -68,24 +83,32 @@ export default class Cache<Key> {
     return cacheEntry.subscribers;
   }
 
-  async load(key: Key, attempt = 0): Promise<() => Set<SubscriptionCallback>> {
+  async load(
+    key: Key,
+    attempt = 0,
+    loaderOptions?: LoaderOptions
+  ): Promise<() => Set<SubscriptionCallback>> {
     const retriesRemaining = this.retryCount - attempt;
     try {
-      const promise = this.loader(key);
+      const promise = this.loader(key, loaderOptions);
 
-      this.set(key, { promise });
+      this.set(key, { promise }, loaderOptions);
 
       const patches = await promise;
 
       return () => {
         let subscribers = new Set<SubscriptionCallback>();
         for (let [subKey, data] of patches) {
-          const subs = this.set(subKey, {
-            loadedThroughKey: key,
-            data: data ?? null,
-            promise: undefined,
-            error: undefined,
-          });
+          const subs = this.set(
+            subKey,
+            {
+              loadedThroughKey: key,
+              data: data ?? null,
+              promise: undefined,
+              error: undefined,
+            },
+            loaderOptions
+          );
           subs.forEach((sub) => subscribers.add(sub));
         }
         return subscribers;
@@ -97,16 +120,25 @@ export default class Cache<Key> {
           await new Promise((r) => window.setTimeout(r, waitTime));
         }
 
-        return this.load(key, attempt + 1);
+        return this.load(key, attempt + 1, loaderOptions);
       }
 
       return () =>
-        this.set(key, { error, promise: undefined, data: undefined });
+        this.set(
+          key,
+          {
+            error,
+            promise: undefined,
+            data: undefined,
+          },
+          loaderOptions
+        );
     }
   }
 
   subscribe(key: Key, callback: () => void) {
-    let cacheEntry = this.get(key);
+    if (!this.cacheStorage.has(key)) return;
+    let cacheEntry = this.getUnsafe(key);
 
     if (cacheEntry.subscribers.has(callback)) return;
 
@@ -117,7 +149,8 @@ export default class Cache<Key> {
   }
 
   unsubscribe(key: Key, callback: () => void) {
-    const cacheEntry = this.get(key)!;
+    if (!this.cacheStorage.has(key)) return;
+    let cacheEntry = this.getUnsafe(key);
 
     cacheEntry.subscribers.delete(callback);
 
@@ -126,7 +159,8 @@ export default class Cache<Key> {
 
   scheduleRemoval(key: Key) {
     if (typeof window !== "undefined") {
-      const cacheEntry = this.get(key);
+      if (!this.cacheStorage.has(key)) return;
+      let cacheEntry = this.getUnsafe(key);
 
       window.clearTimeout(cacheEntry.destroyTimeout);
       cacheEntry.destroyTimeout = window.setTimeout(() => {
@@ -137,7 +171,8 @@ export default class Cache<Key> {
 
   delete(key: Key) {
     if (typeof window !== "undefined") {
-      const entry = this.get(key)!;
+      if (!this.cacheStorage.has(key)) return;
+      const entry = this.getUnsafe(key);
       window.clearTimeout(entry.destroyTimeout);
       window.clearTimeout(entry.refreshTimeout);
     }
@@ -147,17 +182,18 @@ export default class Cache<Key> {
 
   async touch(filter: (key: Key) => boolean) {
     const keys = this.cacheStorage.keys();
-    const touchedKeys: Key[] = [];
+    const touchedKeys: Set<Key> = new Set();
     for (let key of keys) {
       if (filter(key)) {
         const realKey = this.cacheStorage.get(key)!.loadedThroughKey;
-        if (!touchedKeys.includes(realKey)) touchedKeys.push(realKey);
+        touchedKeys.add(realKey);
       }
     }
 
     const promises: Promise<() => Set<SubscriptionCallback>>[] = [];
     for (let key of touchedKeys) {
-      const entry = this.get(key);
+      if (!this.cacheStorage.has(key)) continue;
+      let entry = this.getUnsafe(key);
 
       if (entry.subscribers.size === 0) {
         if (typeof window !== "undefined") {
@@ -168,7 +204,7 @@ export default class Cache<Key> {
         continue;
       }
 
-      const promise = this.load(key);
+      const promise = this.load(key, 0, entry.loaderOptions as LoaderOptions);
       promises.push(promise);
     }
 
