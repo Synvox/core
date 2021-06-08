@@ -75,11 +75,11 @@ export type Handlers<
     payload: any,
     params?: DeepPartial<Params>
   ) => Promise<ChangeTo<Result>>;
-  post: (
+  post: <R = ChangeTo<Result>>(
     pathOrData: string | Record<string, any>,
     dataOrParams?: any | DeepPartial<Params>,
     params?: DeepPartial<Params>
-  ) => Promise<ChangeTo<Result>>;
+  ) => Promise<R>;
   delete: (
     id: ID<Result, IDColumnName>,
     params?: DeepPartial<Params>
