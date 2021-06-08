@@ -837,6 +837,7 @@ export class Table<Context, T = any> {
 
       schema[relation.columnName] = mixed()
         .test("is not null", "${path} is required", async function test(value) {
+          if (table.columns[relation.columnName].nullable) return true;
           return value !== null;
         })
         .test(
