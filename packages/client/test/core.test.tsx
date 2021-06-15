@@ -3,13 +3,15 @@ import { createServer } from "http";
 import testListen from "test-listen";
 import express, { Application } from "express";
 import Axios from "axios";
-import { Core, knexHelpers, UnauthorizedError } from "@synvox/core";
+import { Core, knexHelpers } from "@synvox/core";
 import { renderHook } from "@testing-library/react-hooks";
 import { act } from "react-dom/test-utils";
 import pg from "pg";
-import { core as coreClient, table, AxiosProvider } from "../src";
+import { core as coreClient, table, preload } from "../src";
 import EventSource from "eventsource";
 import uuid from "uuid";
+import { defer } from "../src/defer";
+import { useState } from "react";
 
 //@ts-expect-error
 global.EventSource = EventSource;
@@ -570,168 +572,6 @@ describe("core", () => {
     `);
   });
 
-  it("can accept new params through a provider", async () => {
-    await knex("coreClientTest.test").insert({});
-    let seenAuthHeader = "";
-    const core = new Core(knex, (req) => {
-      return {
-        isAuthenticated() {
-          seenAuthHeader = req.headers.authorization!;
-          return req.headers.authorization === "Bearer token";
-        },
-      };
-    });
-
-    core.table({
-      schemaName: "coreClientTest",
-      tableName: "test",
-      async policy(_stmt, context) {
-        if (!context.isAuthenticated()) throw new UnauthorizedError();
-      },
-    });
-
-    core.table({
-      schemaName: "coreClientTest",
-      tableName: "testSub",
-    });
-
-    const app = express();
-    app.use(core.router);
-    const url = await listen(app);
-    const axios = Axios.create({ baseURL: url });
-
-    let urls: string[] = [];
-
-    type Test = {
-      id: number;
-      isBoolean: boolean;
-      numberCount: number;
-      text: string;
-      testSub: TestSub[];
-    };
-    type TestSub = {
-      id: number;
-      parentId: number;
-    };
-
-    const { useCore } = coreClient(axios, {
-      test: table<Test, Test & { include: "testSub" }>("/coreClientTest/test"),
-      testSub: table<TestSub, any>("/coreClientTest/testSub"),
-    });
-
-    const { result, waitForNextUpdate } = renderHook(
-      ({ id }: { id: number }) => {
-        const core = useCore();
-        const result = core.test(id, { include: "testSub" });
-        return { result, others: core.test(), core };
-      },
-      {
-        initialProps: { id: 1 },
-        wrapper: (p) => {
-          const newAxios = Axios.create({
-            ...axios.defaults,
-            params: { orgId: 1 },
-            headers: {
-              authorization: "Bearer token",
-            },
-          });
-          newAxios.interceptors.request.use((config) => {
-            urls.push(`${config.method} ${Axios.getUri(config)}`);
-            return config;
-          });
-
-          return <AxiosProvider axios={newAxios}>{p.children}</AxiosProvider>;
-        },
-      }
-    );
-
-    expect(result.current).toMatchInlineSnapshot(`undefined`);
-    await waitForNextUpdate();
-    expect(urls).toMatchInlineSnapshot(`
-      Array [
-        "get /coreClientTest/test/1?include=testSub&orgId=1",
-        "get /coreClientTest/test?orgId=1",
-      ]
-    `);
-    expect(result.current).toMatchInlineSnapshot(`
-      Object {
-        "core": Object {
-          "test": [Function],
-          "testSub": [Function],
-        },
-        "others": Array [
-          Object {
-            "id": 1,
-            "isBoolean": false,
-            "numberCount": 0,
-            "text": "text",
-          },
-        ],
-        "result": Object {
-          "id": 1,
-          "isBoolean": false,
-          "numberCount": 0,
-          "testSub": Array [],
-          "text": "text",
-        },
-      }
-    `);
-
-    urls = [];
-    const postRes = await result.current.core.test.post({});
-    expect(postRes.changes).toMatchInlineSnapshot(`
-      Array [
-        Object {
-          "mode": "insert",
-          "path": "/coreClientTest/test",
-          "row": Object {
-            "_links": Object {
-              "testSub": "/coreClientTest/testSub?parentId=2",
-              "testSubCount": "/coreClientTest/test/2/testSubCount",
-            },
-            "_type": "coreClientTest/test",
-            "_url": "/coreClientTest/test/2",
-            "id": 2,
-            "isBoolean": false,
-            "numberCount": 0,
-            "text": "text",
-          },
-        },
-      ]
-    `);
-
-    await act(async () => {
-      await postRes.update();
-    });
-
-    expect(result.current.others).toMatchInlineSnapshot(`
-      Array [
-        Object {
-          "id": 1,
-          "isBoolean": false,
-          "numberCount": 0,
-          "text": "text",
-        },
-        Object {
-          "id": 2,
-          "isBoolean": false,
-          "numberCount": 0,
-          "text": "text",
-        },
-      ]
-    `);
-
-    expect(urls).toMatchInlineSnapshot(`
-      Array [
-        "post /coreClientTest/test?orgId=1",
-        "get /coreClientTest/test/1?include=testSub&orgId=1",
-        "get /coreClientTest/test?orgId=1",
-      ]
-    `);
-
-    expect(seenAuthHeader).toMatchInlineSnapshot(`"Bearer token"`);
-  });
-
   it("reads using /first", async () => {
     await knex("coreClientTest.test").insert({});
     await knex("coreClientTest.testSub").insert({ parentId: 1 });
@@ -951,6 +791,68 @@ describe("core", () => {
         "r2": 1,
       }
     `);
+  });
+
+  it("can defer", async () => {
+    let val = false;
+    let resolve: (() => void) | null = null;
+    const promise = new Promise<void>((r) => {
+      resolve = () => {
+        val = true;
+        r();
+      };
+    });
+
+    const { result, waitForNextUpdate } = renderHook(() => {
+      // defer doesn't update
+      const [_v, setV] = useState(0);
+      const { data = "waiting" } = defer(() => {
+        if (val) return val;
+        else {
+          promise.then(() => setV((v) => v + 1));
+          throw promise;
+        }
+      });
+
+      return {
+        val: data,
+      };
+    });
+
+    expect(result.current).toMatchInlineSnapshot(`
+      Object {
+        "val": "waiting",
+      }
+    `);
+
+    resolve!();
+    await waitForNextUpdate();
+    expect(result.current).toMatchInlineSnapshot(`
+      Object {
+        "val": true,
+      }
+    `);
+  });
+
+  it("can preload", async () => {
+    let val = false;
+    const promise = new Promise<void>(async (r) => {
+      await new Promise((r) => setTimeout(r, 1));
+      val = true;
+      r();
+    });
+
+    const withVal = () => {
+      if (!val) throw promise;
+      return val;
+    };
+
+    expect(val).toBe(false);
+    await preload(() => {
+      withVal();
+    });
+
+    expect(val).toBe(true);
   });
 
   it("reads using /ids", async () => {
