@@ -1123,7 +1123,8 @@ export class Table<Context, T = any> {
     obj: any,
     context: Context,
     beforeCommitCallbacks: (() => Promise<void>)[],
-    changes: ChangeSummary<any>[]
+    changes: ChangeSummary<any>[],
+    verificationSteps: (() => Promise<void>)[]
   ) {
     const recordChange = async (mode: Mode, row: any) => {
       changes.push({
@@ -1206,11 +1207,9 @@ export class Table<Context, T = any> {
             })
             .update(filteredByChanged);
 
-        // in case an update now makes this row inaccessible
         const readStmt = table.query(trx);
-        await table.applyPolicy(readStmt, context, "update", trx);
 
-        const updatedRow = await readStmt
+        readStmt
           .where(
             `${table.alias}.${table.idColumnName}`,
             row[table.idColumnName]
@@ -1222,8 +1221,16 @@ export class Table<Context, T = any> {
                 graph[table.tenantIdColumnName]
               );
             }
-          })
-          .first();
+          });
+
+        verificationSteps.push(async () => {
+          const verifyStmt = readStmt.clone();
+          await table.applyPolicy(verifyStmt, context, "update", trx);
+          const row = await verifyStmt.first();
+          if (!row) throw new UnauthorizedError();
+        });
+
+        const updatedRow = await readStmt.clone().first();
 
         if (!updatedRow) throw new UnauthorizedError();
 
@@ -1287,9 +1294,8 @@ export class Table<Context, T = any> {
       await recordChange("insert", row);
 
       const stmt = table.query(trx);
-      await table.applyPolicy(stmt, context, "insert", trx);
 
-      let updatedRow = await stmt
+      stmt
         .where(`${table.alias}.${table.idColumnName}`, row[table.idColumnName])
         .modify((builder) => {
           if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
@@ -1298,8 +1304,16 @@ export class Table<Context, T = any> {
               graph[table.tenantIdColumnName]
             );
           }
-        })
-        .first();
+        });
+
+      verificationSteps.push(async () => {
+        const verifyStmt = stmt.clone();
+        await table.applyPolicy(verifyStmt, context, "insert", trx);
+        const row = await verifyStmt.first();
+        if (!row) throw new UnauthorizedError();
+      });
+
+      let updatedRow = await stmt.clone().first();
 
       if (!updatedRow) throw new UnauthorizedError();
 
@@ -1459,7 +1473,8 @@ export class Table<Context, T = any> {
         otherGraph,
         context,
         beforeCommitCallbacks,
-        changes
+        changes,
+        verificationSteps
       );
 
       if (otherRow && otherRow[otherTable.idColumnName]) {
@@ -1508,7 +1523,8 @@ export class Table<Context, T = any> {
           },
           context,
           beforeCommitCallbacks,
-          changes
+          changes,
+          verificationSteps
         );
 
         if (otherRow) row[key].push(otherRow);
@@ -2072,10 +2088,19 @@ export class Table<Context, T = any> {
       // Needs to emit commit after this function finishes
       trxRef = trx;
 
+      const verificationSteps: (() => Promise<void>)[] = [];
+
       const result = Array.isArray(obj)
         ? await Promise.all(
             obj.map((obj) =>
-              this.updateDeep(trx, obj, context, beforeCommitCallbacks, changes)
+              this.updateDeep(
+                trx,
+                obj,
+                context,
+                beforeCommitCallbacks,
+                changes,
+                verificationSteps
+              )
             )
           )
         : await this.updateDeep(
@@ -2083,10 +2108,13 @@ export class Table<Context, T = any> {
             obj,
             context,
             beforeCommitCallbacks,
-            changes
+            changes,
+            verificationSteps
           );
 
       for (let cb of beforeCommitCallbacks) await cb();
+
+      await Promise.all(verificationSteps.map((fn) => fn()));
 
       return result;
     });

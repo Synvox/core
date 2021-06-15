@@ -8350,4 +8350,186 @@ describe("deep includes", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`Array []`);
   });
+
+  it("waits until the end of a transaction before checking integrity", async () => {
+    await knex.schema.withSchema("test").createTable("a", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("text").defaultTo("");
+    });
+    await knex.schema.withSchema("test").createTable("b", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("text").defaultTo("");
+    });
+    await knex.schema.withSchema("test").createTable("mapper", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("aId").references("id").inTable("test.a").notNullable();
+      t.bigInteger("bId").references("id").inTable("test.b").notNullable();
+    });
+
+    const [rowA] = await knex("test.a").insert({ text: "derp" }).returning("*");
+
+    const a = new Table<{ row: any }>({
+      schemaName: "test",
+      tableName: "a",
+    });
+
+    const b = new Table<{ row: any }>({
+      schemaName: "test",
+      tableName: "b",
+      async policy(stmt, { row }) {
+        stmt.whereIn(`${this.alias}.id`, (builder) => {
+          builder.select("bId").from("test.mapper").where("aId", row.id);
+        });
+      },
+    });
+
+    const mapper = new Table<{ row: any }>({
+      schemaName: "test",
+      tableName: "mapper",
+    });
+
+    await a.init(knex);
+    await b.init(knex);
+    await mapper.init(knex);
+
+    a.linkTables([a, b, mapper]);
+    b.linkTables([a, b, mapper]);
+    mapper.linkTables([a, b, mapper]);
+
+    queries = [];
+    expect(
+      await mapper.write(
+        knex,
+        {
+          a: { id: rowA.id, text: "updated" },
+          b: {},
+        },
+        { row: rowA }
+      )
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "path": "/test/a",
+            "row": Object {
+              "_links": Object {
+                "mapper": "/test/mapper?aId=1",
+                "mapperCount": "/test/a/1/mapperCount",
+              },
+              "_type": "test/a",
+              "_url": "/test/a/1",
+              "id": 1,
+              "text": "updated",
+            },
+            "views": undefined,
+          },
+          Object {
+            "mode": "insert",
+            "path": "/test/b",
+            "row": Object {
+              "_links": Object {
+                "mapper": "/test/mapper?bId=1",
+                "mapperCount": "/test/b/1/mapperCount",
+              },
+              "_type": "test/b",
+              "_url": "/test/b/1",
+              "id": 1,
+              "text": "",
+            },
+            "views": undefined,
+          },
+          Object {
+            "mode": "insert",
+            "path": "/test/mapper",
+            "row": Object {
+              "_links": Object {
+                "a": "/test/a/1",
+                "b": "/test/b/1",
+              },
+              "_type": "test/mapper",
+              "_url": "/test/mapper/1",
+              "aId": 1,
+              "bId": 1,
+              "id": 1,
+            },
+            "views": undefined,
+          },
+        ],
+        "result": Object {
+          "_links": Object {
+            "a": "/test/a/1",
+            "b": "/test/b/1",
+          },
+          "_type": "test/mapper",
+          "_url": "/test/mapper/1",
+          "a": Object {
+            "_links": Object {
+              "mapper": "/test/mapper?aId=1",
+              "mapperCount": "/test/a/1/mapperCount",
+            },
+            "_type": "test/a",
+            "_url": "/test/a/1",
+            "id": 1,
+            "text": "updated",
+          },
+          "aId": 1,
+          "b": Object {
+            "_links": Object {
+              "mapper": "/test/mapper?bId=1",
+              "mapperCount": "/test/b/1/mapperCount",
+            },
+            "_type": "test/b",
+            "_url": "/test/b/1",
+            "id": 1,
+            "text": "",
+          },
+          "bId": 1,
+          "id": 1,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select a.id, a.text from test.a where (a.id = ?) limit ?",
+        "select a.id from test.a where a.id = ? limit ?",
+        "select a.id, a.text from test.a where a.id = ? limit ?",
+        "update test.a set text = ? where a.id = ?",
+        "select a.id, a.text from test.a where a.id = ? limit ?",
+        "insert into test.b default values returning *",
+        "select b.id, b.text from test.b where b.id = ? limit ?",
+        "insert into test.mapper (a_id, b_id) values (?, ?) returning *",
+        "select mapper.id, mapper.a_id, mapper.b_id from test.mapper where mapper.id = ? limit ?",
+        "select a.id, a.text from test.a where a.id = ? limit ?",
+        "select b.id, b.text from test.b where b.id = ? and b.id in (select b_id from test.mapper where a_id = ?) limit ?",
+        "select mapper.id, mapper.a_id, mapper.b_id from test.mapper where mapper.id = ? limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      await mapper
+        .write(
+          knex,
+          {
+            a: { id: 10, text: "updated" },
+            b: {},
+          },
+          { row: rowA }
+        )
+        .catch((e) => e.body)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "errors": Object {
+          "base": "Unauthorized",
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select a.id, a.text from test.a where (a.id = ?) limit ?",
+      ]
+    `);
+  });
 });
