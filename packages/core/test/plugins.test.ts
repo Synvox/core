@@ -200,6 +200,9 @@ describe("withTimestamps plugin", () => {
         "select posts.id, posts.user_id, posts.body, posts.updated_at, posts.created_at from test_plugins.posts where posts.id = ? limit ?",
         "insert into test_plugins.posts (created_at, updated_at, user_id) values (?, ?, ?) returning *",
         "select posts.id, posts.user_id, posts.body, posts.updated_at, posts.created_at from test_plugins.posts where posts.id = ? limit ?",
+        "select users.id, users.updated_at, users.created_at from test_plugins.users where users.id = ? limit ?",
+        "select posts.id, posts.user_id, posts.body, posts.updated_at, posts.created_at from test_plugins.posts where posts.id = ? limit ?",
+        "select posts.id, posts.user_id, posts.body, posts.updated_at, posts.created_at from test_plugins.posts where posts.id = ? limit ?",
       ]
     `);
 
@@ -255,6 +258,7 @@ describe("withTimestamps plugin", () => {
         "select users.id, users.updated_at, users.created_at from test_plugins.users where (users.id = ?) limit ?",
         "select users.id, users.updated_at, users.created_at from test_plugins.users where users.id = ? limit ?",
         "update test_plugins.users set updated_at = ? where users.id = ?",
+        "select users.id, users.updated_at, users.created_at from test_plugins.users where users.id = ? limit ?",
         "select users.id, users.updated_at, users.created_at from test_plugins.users where users.id = ? limit ?",
       ]
     `);
@@ -355,6 +359,7 @@ describe("withTimestamps plugin", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test_plugins.items (created_at, updated_at) values (?, ?) returning *",
+        "select items.id, items.updated_at, items.created_at from test_plugins.items where items.id = ? limit ?",
         "select items.id, items.updated_at, items.created_at from test_plugins.items where items.id = ? limit ?",
       ]
     `);

@@ -990,6 +990,7 @@ describe("without policies", () => {
       Array [
         "insert into test.test default values returning *",
         "select test.id, test.is_boolean, test.number_count, test.text from test.test where test.id = ? limit ?",
+        "select test.id, test.is_boolean, test.number_count, test.text from test.test where test.id = ? limit ?",
       ]
     `);
 
@@ -1028,6 +1029,7 @@ describe("without policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.test (is_boolean, number_count) values (?, ?) returning *",
+        "select test.id, test.is_boolean, test.number_count, test.text from test.test where test.id = ? limit ?",
         "select test.id, test.is_boolean, test.number_count, test.text from test.test where test.id = ? limit ?",
       ]
     `);
@@ -1128,6 +1130,8 @@ describe("without policies", () => {
       Array [
         "insert into test.test (is_boolean) values (?) returning *",
         "insert into test.test (is_boolean) values (?) returning *",
+        "select test.id, test.is_boolean, test.number_count, test.text from test.test where test.id = ? limit ?",
+        "select test.id, test.is_boolean, test.number_count, test.text from test.test where test.id = ? limit ?",
         "select test.id, test.is_boolean, test.number_count, test.text from test.test where test.id = ? limit ?",
         "select test.id, test.is_boolean, test.number_count, test.text from test.test where test.id = ? limit ?",
       ]
@@ -1441,6 +1445,7 @@ describe("without policies", () => {
       Array [
         "insert into test.test (is_boolean) values (?) returning *",
         "select test.id, test.is_boolean, test.date, test.number_count, test.text, test.arr from test.test where test.id = ? limit ?",
+        "select test.id, test.is_boolean, test.date, test.number_count, test.text, test.arr from test.test where test.id = ? limit ?",
       ]
     `);
 
@@ -1489,6 +1494,7 @@ describe("without policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.test (date) values (?) returning *",
+        "select test.id, test.is_boolean, test.date, test.number_count, test.text, test.arr from test.test where test.id = ? limit ?",
         "select test.id, test.is_boolean, test.date, test.number_count, test.text, test.arr from test.test where test.id = ? limit ?",
       ]
     `);
@@ -1617,6 +1623,7 @@ describe("without policies", () => {
       Array [
         "insert into test.test (email) values (?) returning *",
         "select test.id, test.email from test.test where test.id = ? limit ?",
+        "select test.id, test.email from test.test where test.id = ? limit ?",
       ]
     `);
   });
@@ -1666,6 +1673,7 @@ describe("without policies", () => {
       Array [
         "select test.id, test.username from test.test where test.username = ? limit ?",
         "insert into test.test (username) values (?) returning *",
+        "select test.id, test.username from test.test where test.id = ? limit ?",
         "select test.id, test.username from test.test where test.id = ? limit ?",
       ]
     `);
@@ -1741,6 +1749,7 @@ describe("without policies", () => {
         "select test.id, test.org, test.username from test.test where test.org = ? and test.username = ? limit ?",
         "insert into test.test (org, username) values (?, ?) returning *",
         "select test.id, test.org, test.username from test.test where test.id = ? limit ?",
+        "select test.id, test.org, test.username from test.test where test.id = ? limit ?",
       ]
     `);
 
@@ -1781,6 +1790,7 @@ describe("without policies", () => {
         "select test.id, test.org, test.username from test.test where test.org = ? and test.username = ? limit ?",
         "insert into test.test (org, username) values (?, ?) returning *",
         "select test.id, test.org, test.username from test.test where test.id = ? limit ?",
+        "select test.id, test.org, test.username from test.test where test.id = ? limit ?",
       ]
     `);
 
@@ -1820,6 +1830,7 @@ describe("without policies", () => {
         "select test.id, test.org, test.username from test.test where test.org = ? and test.username = ? limit ?",
         "select test.id, test.org, test.username from test.test where test.org = ? and test.username = ? limit ?",
         "insert into test.test (org, username) values (?, ?) returning *",
+        "select test.id, test.org, test.username from test.test where test.id = ? limit ?",
         "select test.id, test.org, test.username from test.test where test.id = ? limit ?",
       ]
     `);
@@ -1898,6 +1909,7 @@ describe("without policies", () => {
         "select test.id, test.org, test.username from test.test where not (test.id = ?) and test.org = ? and test.username = ? limit ?",
         "select test.id, test.org, test.username from test.test where test.id = ? limit ?",
         "update test.test set username = ? where test.id = ?",
+        "select test.id, test.org, test.username from test.test where test.id = ? limit ?",
         "select test.id, test.org, test.username from test.test where test.id = ? limit ?",
       ]
     `);
@@ -2031,6 +2043,7 @@ describe("without policies", () => {
       Array [
         "insert into test.users (name) values (?) returning *",
         "select users.id, users.name from test.users where users.id = ? limit ?",
+        "select users.id, users.name from test.users where users.id = ? limit ?",
       ]
     `);
 
@@ -2133,6 +2146,9 @@ describe("without policies", () => {
         "select posts.id, posts.user_id, posts.body from test.posts where posts.id = ? limit ?",
         "insert into test.posts (body, user_id) values (?, ?) returning *",
         "select posts.id, posts.user_id, posts.body from test.posts where posts.id = ? limit ?",
+        "select users.id, users.name from test.users where users.id = ? limit ?",
+        "select posts.id, posts.user_id, posts.body from test.posts where posts.id = ? limit ?",
+        "select posts.id, posts.user_id, posts.body from test.posts where posts.id = ? limit ?",
       ]
     `);
 
@@ -2233,6 +2249,8 @@ describe("without policies", () => {
         "insert into test.users (name) values (?) returning *",
         "select users.id, users.name from test.users where users.id = ? limit ?",
         "insert into test.posts (body, user_id) values (?, ?) returning *",
+        "select posts.id, posts.user_id, posts.body from test.posts where posts.id = ? limit ?",
+        "select users.id, users.name from test.users where users.id = ? limit ?",
         "select posts.id, posts.user_id, posts.body from test.posts where posts.id = ? limit ?",
       ]
     `);
@@ -2666,10 +2684,13 @@ describe("without policies", () => {
           },
         ],
         "result": Object {
+          "0": Object {
+            "id": 1,
+          },
           "_links": Object {},
           "_type": "test/test",
-          "_url": "/test/test/1",
-          "id": 1,
+          "_url": "/test/test/null",
+          "id": null,
         },
       }
     `);
@@ -2988,6 +3009,7 @@ describe("without policies", () => {
       Array [
         "insert into test.test (version) values (?) returning *",
         "select test.id, test.version from test.test where test.id = ? limit ?",
+        "select test.id, test.version from test.test where test.id = ? limit ?",
       ]
     `);
     queries = [];
@@ -3023,6 +3045,7 @@ describe("without policies", () => {
         "select test.id, test.version from test.test where (test.id = ?) limit ?",
         "select test.id, test.version from test.test where test.id = ? limit ?",
         "update test.test set version = ? where test.id = ?",
+        "select test.id, test.version from test.test where test.id = ? limit ?",
         "select test.id, test.version from test.test where test.id = ? limit ?",
       ]
     `);
@@ -3291,7 +3314,8 @@ describe("with policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.posts (org_id) values (?) returning *",
-        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.org_id = ? and posts.id = ? limit ?",
+        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.id = ? limit ?",
+        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.id = ? and posts.org_id = ? limit ?",
       ]
     `);
 
@@ -3346,7 +3370,8 @@ describe("with policies", () => {
         "select users.id from test.users where users.id = ? and users.org_id = ? limit ?",
         "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.org_id = ? and posts.id = ? limit ?",
         "update test.posts set org_id = ? where posts.org_id = ? and posts.id = ?",
-        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.org_id = ? and posts.id = ? limit ?",
+        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.id = ? limit ?",
+        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.id = ? and posts.org_id = ? limit ?",
       ]
     `);
 
@@ -3385,7 +3410,8 @@ describe("with policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.posts (org_id) values (?) returning *",
-        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.org_id = ? and posts.id = ? limit ?",
+        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.id = ? limit ?",
+        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.id = ? and posts.org_id = ? limit ?",
       ]
     `);
 
@@ -3463,7 +3489,8 @@ describe("with policies", () => {
         "select users.id from test.users where users.id = ? and users.org_id = ? limit ?",
         "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.org_id = ? and posts.id = ? limit ?",
         "update test.posts set body = ? where posts.org_id = ? and posts.id = ?",
-        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.org_id = ? and posts.id = ? limit ?",
+        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.id = ? limit ?",
+        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.id = ? and posts.org_id = ? limit ?",
       ]
     `);
 
@@ -4043,6 +4070,7 @@ describe("multitenancy", () => {
         "select orgs.id from test.orgs where orgs.id = ? limit ?",
         "insert into test.test (org_id, username) values (?, ?) returning *",
         "select test.id, test.org_id, test.username from test.test where test.id = ? and test.org_id = ? limit ?",
+        "select test.id, test.org_id, test.username from test.test where test.id = ? and test.org_id = ? limit ?",
       ]
     `);
 
@@ -4186,6 +4214,7 @@ describe("multitenancy", () => {
         "select test.id from test.test where test.id = ? and test.org_id = ? limit ?",
         "select orgs.id from test.orgs where orgs.id = ? limit ?",
         "insert into test.sub (org_id, parent_id) values (?, ?) returning *",
+        "select sub.id, sub.org_id, sub.parent_id from test.sub where sub.id = ? and sub.org_id = ? limit ?",
         "select sub.id, sub.org_id, sub.parent_id from test.sub where sub.id = ? and sub.org_id = ? limit ?",
       ]
     `);
@@ -4866,6 +4895,9 @@ describe("uuid columns", () => {
         "select subitems.id, subitems.parent_id from test.subitems where subitems.id = ? limit ?",
         "insert into test.subitems (id, parent_id) values (?, ?) returning *",
         "select subitems.id, subitems.parent_id from test.subitems where subitems.id = ? limit ?",
+        "select items.id from test.items where items.id = ? limit ?",
+        "select subitems.id, subitems.parent_id from test.subitems where subitems.id = ? limit ?",
+        "select subitems.id, subitems.parent_id from test.subitems where subitems.id = ? limit ?",
       ]
     `);
 
@@ -4936,6 +4968,8 @@ describe("uuid columns", () => {
         "insert into test.items (id) values (?) returning *",
         "select items.id from test.items where items.id = ? limit ?",
         "insert into test.subitems (id, parent_id) values (?, ?) returning *",
+        "select subitems.id, subitems.parent_id from test.subitems where subitems.id = ? limit ?",
+        "select items.id from test.items where items.id = ? limit ?",
         "select subitems.id, subitems.parent_id from test.subitems where subitems.id = ? limit ?",
       ]
     `);
@@ -5219,6 +5253,7 @@ describe("self references", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.items (parent_item_id) values (?) returning *",
+        "select items.id, items.parent_item_id from test.items where items.id = ? limit ?",
         "select items.id, items.parent_item_id from test.items where items.id = ? limit ?",
       ]
     `);
@@ -5949,6 +5984,7 @@ describe("in public schema", () => {
       Array [
         "insert into public.test_table default values returning *",
         "select test_table.id from public.test_table where test_table.id = ? limit ?",
+        "select test_table.id from public.test_table where test_table.id = ? limit ?",
       ]
     `);
 
@@ -6052,6 +6088,7 @@ describe("defaultParams", () => {
       Array [
         "insert into test.items (user_id) values (?) returning *",
         "select items.id, items.user_id from test.items where items.id = ? limit ?",
+        "select items.id, items.user_id from test.items where items.id = ? limit ?",
       ]
     `);
   });
@@ -6092,6 +6129,7 @@ describe("defaultParams", () => {
         "select items.id, items.user_id from test.items where (items.id = ?) limit ?",
         "select items.id, items.user_id from test.items where items.id = ? limit ?",
         "update test.items set user_id = ? where items.id = ?",
+        "select items.id, items.user_id from test.items where items.id = ? limit ?",
         "select items.id, items.user_id from test.items where items.id = ? limit ?",
       ]
     `);
@@ -6161,6 +6199,7 @@ describe("upsert", () => {
         "select contacts.id, contacts.name, contacts.phone from test.contacts where not (contacts.id = ?) and contacts.phone = ? limit ?",
         "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
         "update test.contacts set name = ? where contacts.id = ?",
+        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
         "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
       ]
     `);
@@ -6238,6 +6277,8 @@ describe("upsert", () => {
         "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
         "update test.contacts set name = ? where contacts.id = ?",
         "update test.contacts set name = ? where contacts.id = ?",
+        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
+        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
         "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
         "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
       ]
@@ -6400,6 +6441,7 @@ describe("upsert", () => {
         "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where contacts.id = ? and contacts.org_id = ? limit ?",
         "update test.contacts set name = ? where contacts.id = ? and contacts.org_id = ?",
         "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where contacts.id = ? and contacts.org_id = ? limit ?",
+        "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where contacts.id = ? and contacts.org_id = ? limit ?",
       ]
     `);
   });
@@ -6525,6 +6567,7 @@ describe("ref validations", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.items (end_date, start_date) values (?, ?) returning *",
+        "select items.id, items.start_date, items.end_date from test.items where items.id = ? limit ?",
         "select items.id, items.start_date, items.end_date from test.items where items.id = ? limit ?",
       ]
     `);
@@ -6733,6 +6776,7 @@ describe("lookup tables", () => {
       Array [
         "insert into test.items (type_id) values (?) returning *",
         "select items.id, items.type_id from test.items where items.id = ? limit ?",
+        "select items.id, items.type_id from test.items where items.id = ? limit ?",
       ]
     `);
   });
@@ -6802,6 +6846,7 @@ describe("lookup tables", () => {
       Array [
         "insert into test.items (type_id) values (?) returning *",
         "select items.id, items.type_id from test.items where items.id = ? limit ?",
+        "select items.id, items.type_id from test.items where items.id = ? limit ?",
       ]
     `);
   });
@@ -6853,6 +6898,7 @@ describe("readonly columns", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.items default values returning *",
+        "select items.id, items.text from test.items where items.id = ? limit ?",
         "select items.id, items.text from test.items where items.id = ? limit ?",
       ]
     `);
@@ -6938,6 +6984,7 @@ describe("readonly columns", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.items default values returning *",
+        "select items.id, items.org_id from test.items where items.id = ? limit ?",
         "select items.id, items.org_id from test.items where items.id = ? limit ?",
       ]
     `);
