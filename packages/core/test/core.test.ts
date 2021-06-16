@@ -303,7 +303,6 @@ describe("listens on server", () => {
         "select test.id from core_test.test where test.id = ? limit ?",
         "insert into core_test.test_sub (parent_id) values (?) returning *",
         "select test_sub.id, test_sub.parent_id from core_test.test_sub where test_sub.id = ? limit ?",
-        "select test_sub.id, test_sub.parent_id from core_test.test_sub where test_sub.id = ? limit ?",
       ]
     `);
 
@@ -471,8 +470,7 @@ describe("listens on server", () => {
         "select test_sub.id, test_sub.parent_id from core_test.test_sub where (test_sub.id = ?) limit ?",
         "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.id = ?) limit ?",
         "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
-        "update core_test.test set is_boolean = ? where test.id = ?",
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
+        "update core_test.test set is_boolean = ? where test.id = ? returning *",
         "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
       ]
     `);
@@ -613,7 +611,6 @@ describe("listens on server", () => {
       Array [
         "insert into core_test.test (is_boolean, number_count, text) values (?, ?, ?) returning *",
         "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
       ]
     `);
   });
@@ -709,8 +706,6 @@ describe("listens on server", () => {
       Array [
         "insert into core_test.test (is_boolean, number_count, text) values (?, ?, ?) returning *",
         "insert into core_test.test (is_boolean, number_count, text) values (?, ?, ?) returning *",
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
         "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
         "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
       ]

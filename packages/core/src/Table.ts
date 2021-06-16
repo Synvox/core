@@ -1191,11 +1191,34 @@ export class Table<Context, T = any> {
         Object.keys(filteredByChanged).length ||
         Object.keys(table.setters).some((key) => key in initialGraph)
       ) {
-        if (Object.keys(filteredByChanged).length)
-          await stmt
+        const [updatedRow] = Object.keys(filteredByChanged).length
+          ? await stmt
+              .where(
+                `${table.alias}.${[table.idColumnName]}`,
+                graph[table.idColumnName]
+              )
+              .modify((builder) => {
+                if (
+                  table.tenantIdColumnName &&
+                  graph[table.tenantIdColumnName]
+                ) {
+                  builder.where(
+                    `${table.alias}.${table.tenantIdColumnName}`,
+                    graph[table.tenantIdColumnName]
+                  );
+                }
+              })
+              .update(filteredByChanged)
+              .returning("*")
+          : [row];
+
+        verificationSteps.push(async () => {
+          const readStmt = table.query(trx);
+
+          readStmt
             .where(
-              `${table.alias}.${[table.idColumnName]}`,
-              graph[table.idColumnName]
+              `${table.alias}.${table.idColumnName}`,
+              updatedRow[table.idColumnName]
             )
             .modify((builder) => {
               if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
@@ -1204,35 +1227,12 @@ export class Table<Context, T = any> {
                   graph[table.tenantIdColumnName]
                 );
               }
-            })
-            .update(filteredByChanged);
-
-        const readStmt = table.query(trx);
-
-        readStmt
-          .where(
-            `${table.alias}.${table.idColumnName}`,
-            row[table.idColumnName]
-          )
-          .modify((builder) => {
-            if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
-              builder.where(
-                `${table.alias}.${table.tenantIdColumnName}`,
-                graph[table.tenantIdColumnName]
-              );
-            }
-          });
-
-        verificationSteps.push(async () => {
+            });
           const verifyStmt = readStmt.clone();
           await table.applyPolicy(verifyStmt, context, "update", trx);
           const row = await verifyStmt.first();
           if (!row) throw new UnauthorizedError();
         });
-
-        const updatedRow = await readStmt.clone().first();
-
-        if (!updatedRow) throw new UnauthorizedError();
 
         await recordChange("update", updatedRow);
 
@@ -1285,37 +1285,31 @@ export class Table<Context, T = any> {
         graph = table.filterWritable(graph);
       }
 
-      const row = await table
-        .query(trx)
-        .insert(graph)
-        .returning("*")
-        .then(([row]) => row);
+      let [updatedRow] = await table.query(trx).insert(graph).returning("*");
 
-      await recordChange("insert", row);
-
-      const stmt = table.query(trx);
-
-      stmt
-        .where(`${table.alias}.${table.idColumnName}`, row[table.idColumnName])
-        .modify((builder) => {
-          if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
-            builder.where(
-              `${table.alias}.${table.tenantIdColumnName}`,
-              graph[table.tenantIdColumnName]
-            );
-          }
-        });
+      await recordChange("insert", updatedRow);
 
       verificationSteps.push(async () => {
+        const stmt = table.query(trx);
+
+        stmt
+          .where(
+            `${table.alias}.${table.idColumnName}`,
+            updatedRow[table.idColumnName]
+          )
+          .modify((builder) => {
+            if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
+              builder.where(
+                `${table.alias}.${table.tenantIdColumnName}`,
+                graph[table.tenantIdColumnName]
+              );
+            }
+          });
         const verifyStmt = stmt.clone();
         await table.applyPolicy(verifyStmt, context, "insert", trx);
         const row = await verifyStmt.first();
         if (!row) throw new UnauthorizedError();
       });
-
-      let updatedRow = await stmt.clone().first();
-
-      if (!updatedRow) throw new UnauthorizedError();
 
       let didUseSetter = false;
       for (let key in initialGraph) {
@@ -1326,7 +1320,21 @@ export class Table<Context, T = any> {
       }
 
       if (didUseSetter) {
-        updatedRow = await stmt.clone();
+        updatedRow = await table
+          .query(trx)
+          .where(
+            `${table.alias}.${table.idColumnName}`,
+            updatedRow[table.idColumnName]
+          )
+          .modify((builder) => {
+            if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
+              builder.where(
+                `${table.alias}.${table.tenantIdColumnName}`,
+                graph[table.tenantIdColumnName]
+              );
+            }
+          })
+          .first();
       }
 
       if (table.afterUpdate) {

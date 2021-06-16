@@ -343,7 +343,6 @@ describe("works with views", () => {
         "select orgs.id from view_test.orgs where orgs.id = ? limit ?",
         "insert into view_test.view (body, is_boolean, org_id) values (?, ?, ?) returning *",
         "select view.id, view.is_boolean, view.number_count, view.body, view.body_appended, view.org_id from view_test.view where view.id = ? limit ?",
-        "select view.id, view.is_boolean, view.number_count, view.body, view.body_appended, view.org_id from view_test.view where view.id = ? limit ?",
       ]
     `);
 
@@ -396,7 +395,6 @@ describe("works with views", () => {
       Array [
         "select orgs.id from view_test.orgs where orgs.id = ? limit ?",
         "insert into view_test.view (is_boolean, org_id) values (?, ?) returning *",
-        "select view.id, view.is_boolean, view.number_count, view.body, view.body_appended, view.org_id from view_test.view where view.id = ? limit ?",
         "select view.id, view.is_boolean, view.number_count, view.body, view.body_appended, view.org_id from view_test.view where view.id = ? limit ?",
       ]
     `);
@@ -670,7 +668,6 @@ describe("works with views", () => {
       Array [
         "select orgs.id from view_test.orgs where orgs.id = ? limit ?",
         "insert into view_test.view (is_boolean, number_count, org_id) values (?, ?, ?) returning *",
-        "select view.id, view.is_boolean, view.number_count, view.text, view.org_id from view_test.view where view.id = ? limit ?",
         "select view.id, view.is_boolean, view.number_count, view.text, view.org_id from view_test.view where view.id = ? limit ?",
       ]
     `);
