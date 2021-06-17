@@ -265,7 +265,7 @@ describe("saves to files", () => {
       await axios.get("/saveTest/test");
       expect(queries).toMatchInlineSnapshot(`
         Array [
-          "select test.id, test.is_boolean, test.number_count, test.text, test.type_id from save_test.test order by test.id asc limit ?",
+          "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text, test__base_table.type_id from save_test.test test__base_table order by test__base_table.id asc limit ?",
         ]
       `);
     }

@@ -197,7 +197,7 @@ describe("withTimestamps plugin", () => {
         "insert into test_plugins.users (created_at, updated_at) values (?, ?) returning *",
         "insert into test_plugins.posts (created_at, updated_at, user_id) values (?, ?, ?) returning *",
         "insert into test_plugins.posts (created_at, updated_at, user_id) values (?, ?, ?) returning *",
-        "select users.id, users.updated_at, users.created_at from test_plugins.users where users.id = ? limit ?",
+        "select users__base_table.id, users__base_table.updated_at, users__base_table.created_at from test_plugins.users users__base_table where users__base_table.id = ? limit ?",
         "select posts.id, posts.user_id, posts.body, posts.updated_at, posts.created_at from test_plugins.posts where posts.id = ? limit ?",
         "select posts.id, posts.user_id, posts.body, posts.updated_at, posts.created_at from test_plugins.posts where posts.id = ? limit ?",
       ]
@@ -253,9 +253,9 @@ describe("withTimestamps plugin", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select users.id, users.updated_at, users.created_at from test_plugins.users where (users.id = ?) limit ?",
-        "select users.id, users.updated_at, users.created_at from test_plugins.users where users.id = ? limit ?",
-        "update test_plugins.users set updated_at = ? where users.id = ? returning *",
-        "select users.id, users.updated_at, users.created_at from test_plugins.users where users.id = ? limit ?",
+        "select users__base_table.id, users__base_table.updated_at, users__base_table.created_at from test_plugins.users users__base_table where users__base_table.id = ? limit ?",
+        "update test_plugins.users users__base_table set updated_at = ? where users__base_table.id = ? returning *",
+        "select users__base_table.id, users__base_table.updated_at, users__base_table.created_at from test_plugins.users users__base_table where users__base_table.id = ? limit ?",
       ]
     `);
 
@@ -296,8 +296,8 @@ describe("withTimestamps plugin", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select posts.id, posts.user_id, posts.body, posts.updated_at, posts.created_at from test_plugins.posts where posts.id = ? limit ?",
-        "delete from test_plugins.posts where posts.id = ?",
+        "select posts__base_table.id, posts__base_table.user_id, posts__base_table.body, posts__base_table.updated_at, posts__base_table.created_at from test_plugins.posts posts__base_table where posts__base_table.id = ? limit ?",
+        "delete from test_plugins.posts posts__base_table where posts__base_table.id = ?",
       ]
     `);
   });
@@ -355,7 +355,7 @@ describe("withTimestamps plugin", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test_plugins.items (created_at, updated_at) values (?, ?) returning *",
-        "select items.id, items.updated_at, items.created_at from test_plugins.items where items.id = ? limit ?",
+        "select items__base_table.id, items__base_table.updated_at, items__base_table.created_at from test_plugins.items items__base_table where items__base_table.id = ? limit ?",
       ]
     `);
     expect(result).toMatchInlineSnapshot(`
@@ -432,7 +432,7 @@ describe("withTimestamps plugin", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.updated_at, items.created_at from test_plugins.items where items.updated_at > ? order by items.id asc limit ?",
+        "select items__base_table.id, items__base_table.updated_at, items__base_table.created_at from test_plugins.items items__base_table where items__base_table.updated_at > ? order by items__base_table.id asc limit ?",
       ]
     `);
 
@@ -463,7 +463,7 @@ describe("withTimestamps plugin", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.updated_at, items.created_at from test_plugins.items where items.updated_at > ? order by items.id asc limit ?",
+        "select items__base_table.id, items__base_table.updated_at, items__base_table.created_at from test_plugins.items items__base_table where items__base_table.updated_at > ? order by items__base_table.id asc limit ?",
       ]
     `);
 
@@ -502,7 +502,7 @@ describe("withTimestamps plugin", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.updated_at, items.created_at from test_plugins.items order by items.id asc limit ?",
+        "select items__base_table.id, items__base_table.updated_at, items__base_table.created_at from test_plugins.items items__base_table order by items__base_table.id asc limit ?",
       ]
     `);
   });

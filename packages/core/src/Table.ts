@@ -1285,7 +1285,9 @@ export class Table<Context, T = any> {
         graph = table.filterWritable(graph);
       }
 
-      let [updatedRow] = await table.query(trx).insert(graph).returning("*");
+      let [updatedRow] = await trx(`${table.schemaName}.${table.tableName}`)
+        .insert(graph)
+        .returning("*");
 
       await recordChange("insert", updatedRow);
 
@@ -1764,7 +1766,7 @@ export class Table<Context, T = any> {
       withDeleted = input.withDeleted ?? false,
       mode = "read",
     }: { withDeleted?: boolean; mode?: Mode } = {}
-  ) {
+  ): Promise<Knex.QueryBuilder<any>> {
     let [queryParams, errors] = await this.validateWhere(input, context);
 
     if (Object.keys(errors).length) throw new BadRequestError(errors);
@@ -1805,8 +1807,10 @@ export class Table<Context, T = any> {
     queryParams: Record<string, any>,
     context: Context
   ) {
+    const table = this.withAlias(`${this.tableName}__base_table`);
+
     queryParams = {
-      ...(await this.defaultParams(context, "read")),
+      ...(await table.defaultParams(context, "read")),
       ...queryParams,
     };
 
@@ -1814,14 +1818,14 @@ export class Table<Context, T = any> {
 
     if (typeof include === "string") include = [include];
 
-    const { stmt } = await this.read(knex, queryParams, context, {
+    const { stmt } = await table.read(knex, queryParams, context, {
       withDeleted: true,
     });
     const data = await stmt.first();
 
     if (!data) throw new NotFoundError();
 
-    return await this.processTableRow(queryParams, context, data, include);
+    return await table.processTableRow(queryParams, context, data, include);
   }
 
   async readMany(
@@ -1829,8 +1833,9 @@ export class Table<Context, T = any> {
     queryParams: Record<string, any>,
     context: Context
   ) {
+    const table = this.withAlias(`${this.tableName}__base_table`);
     queryParams = {
-      ...(await this.defaultParams(context, "read")),
+      ...(await table.defaultParams(context, "read")),
       ...queryParams,
     };
 
@@ -1838,10 +1843,9 @@ export class Table<Context, T = any> {
 
     if (typeof include === "string") include = [include];
 
-    const { stmt } = await this.read(knex, queryParams, context);
+    const { stmt } = await table.read(knex, queryParams, context);
 
     const paginate = async (statement: Knex.QueryBuilder) => {
-      const table = this;
       const path = table.path;
       let { sort } = queryParams;
       const page = Number(queryParams.page || 0);
@@ -1877,13 +1881,13 @@ export class Table<Context, T = any> {
                 .slice(0, index)
                 .map(({ columnName }) =>
                   builder.where(
-                    `${table.tableName}.${columnName}`,
+                    `${table.alias}.${columnName}`,
                     "=",
                     cursor[columnName]
                   )
                 );
               builder.where(
-                `${table.tableName}.${sort.columnName}`,
+                `${table.alias}.${sort.columnName}`,
                 sort.order === "asc" ? ">" : "<",
                 cursor[sort.columnName]
               );
@@ -1897,7 +1901,7 @@ export class Table<Context, T = any> {
       statement.limit(limit);
 
       if (sorts.length === 0) {
-        let columnName = this.defaultSortColumn;
+        let columnName = table.defaultSortColumn;
         let order: "asc" | "desc" = "asc";
 
         if (columnName.startsWith("-")) {
@@ -1910,9 +1914,9 @@ export class Table<Context, T = any> {
           order,
         });
 
-        if (this.defaultSortColumn !== this.idColumnName) {
+        if (table.defaultSortColumn !== table.idColumnName) {
           sorts.push({
-            columnName: this.idColumnName,
+            columnName: table.idColumnName,
             order: "asc",
           });
         }
@@ -1962,7 +1966,7 @@ export class Table<Context, T = any> {
       const processedResults: any[] = await Promise.all(
         results.map(
           async (item: any) =>
-            await this.processTableRow(queryParams, context, item, include)
+            await table.processTableRow(queryParams, context, item, include)
         )
       );
       return new CollectionResult(processedResults, {
@@ -2076,7 +2080,9 @@ export class Table<Context, T = any> {
   }
 
   async write(knex: Knex, obj: T | T[], context: Context) {
-    obj = await this.fixUpserts(knex, obj, context);
+    const table = this.withAlias(`${this.tableName}__base_table`);
+
+    obj = await table.fixUpserts(knex, obj, context);
     const [objValidated, errors] = await this.validateDeep(knex, obj, context);
     obj = objValidated;
 
@@ -2099,7 +2105,7 @@ export class Table<Context, T = any> {
       const result = Array.isArray(obj)
         ? await Promise.all(
             obj.map((obj) =>
-              this.updateDeep(
+              table.updateDeep(
                 trx,
                 obj,
                 context,
@@ -2109,7 +2115,7 @@ export class Table<Context, T = any> {
               )
             )
           )
-        : await this.updateDeep(
+        : await table.updateDeep(
             trx,
             obj,
             context,
@@ -2139,8 +2145,10 @@ export class Table<Context, T = any> {
     patch: any,
     context: Context
   ) {
+    const table = this.withAlias(`${this.tableName}__base_table`);
+
     let isDelete = patch._delete;
-    if (isDelete && this.paranoid) {
+    if (isDelete && table.paranoid) {
       isDelete = false;
       patch.deletedAt = Date.now();
       delete patch._delete;
@@ -2149,18 +2157,18 @@ export class Table<Context, T = any> {
     const mode = isDelete ? "delete" : "update";
 
     const [patchValidated, errors] = await validateAgainst(
-      object(this.getYupSchema()),
+      object(table.getYupSchema()),
       isDelete
         ? patch
         : {
-            ...(await this.defaultParams(context, mode)),
+            ...(await table.defaultParams(context, mode)),
             ...patch,
-            ...(await this.enforcedParams(context, mode)),
+            ...(await table.enforcedParams(context, mode)),
           },
       context
     );
     patch = patchValidated;
-    patch = this.filterWritable(patch);
+    patch = table.filterWritable(patch);
 
     if (errors && Object.keys(errors).length) {
       throw new BadRequestError(errors);
@@ -2172,7 +2180,7 @@ export class Table<Context, T = any> {
 
     let trxRef: null | Knex.Transaction = null;
     const validatedRows = await knex.transaction(async (trx) => {
-      const { stmt } = await this.read(trx, queryParams, context, {
+      const { stmt } = await table.read(trx, queryParams, context, {
         mode,
       });
 
@@ -2181,24 +2189,25 @@ export class Table<Context, T = any> {
         .clear("select")
         .count();
 
-      if (initialRowCount > this.maxBulkUpdates) throw new ComplexityError();
+      if (initialRowCount > table.maxBulkUpdates) throw new ComplexityError();
 
       const previousRows = await stmt;
       trxRef = trx;
 
-      stmt.clear("select").select(`${this.alias}.${this.idColumnName}`);
+      stmt.clear("select").select(`${table.alias}.${table.idColumnName}`);
 
-      const updateStmt = this.query(trx)
-        .whereIn(`${this.alias}.${this.idColumnName}`, stmt)
+      const updateStmt = table
+        .query(trx)
+        .whereIn(`${table.alias}.${table.idColumnName}`, stmt)
         .returning("*");
 
-      if (this.beforeUpdate) {
+      if (table.beforeUpdate) {
         await Promise.all(
-          previousRows.map(async (row) => {
+          previousRows.map(async (row: any) => {
             const expected = { ...row, ...patch };
             const draft = { ...expected };
 
-            await this.beforeUpdate!(trx, context, mode, draft, row);
+            await table.beforeUpdate!(trx, context, mode, draft, row);
 
             const delta = Object.fromEntries(
               Object.entries(draft).filter(([key, value]) => {
@@ -2207,9 +2216,10 @@ export class Table<Context, T = any> {
             );
 
             if (Object.keys(delta).length) {
-              await this.query(trx)
+              await table
+                .query(trx)
                 .update(delta)
-                .where(this.idColumnName, row[this.idColumnName]);
+                .where(table.idColumnName, row[table.idColumnName]);
             }
           })
         );
@@ -2223,29 +2233,29 @@ export class Table<Context, T = any> {
       const results = await Promise.all(
         rows.map(async (row) => {
           const [objValidated, errors] = await validateAgainst(
-            object(this.getYupSchema()),
+            object(table.getYupSchema()),
             row,
             context
           );
 
           changes.push({
             mode,
-            path: `/${this.path}`,
+            path: `/${table.path}`,
             row: objValidated,
-            views: this.views.length
-              ? this.views.map((t) => `/${t.path}`)
+            views: table.views.length
+              ? table.views.map((t) => `/${t.path}`)
               : undefined,
           });
 
           if (!isDelete) {
             const previousRow = previousRows.find(
-              (r) => r[this.idColumnName] === row[this.idColumnName]
+              (r: any) => r[table.idColumnName] === row[table.idColumnName]
             );
 
-            if (this.afterUpdate) {
+            if (table.afterUpdate) {
               beforeCommitCallbacks.push(() => {
-                return this.afterUpdate!.call(
-                  this,
+                return table.afterUpdate!.call(
+                  table,
                   trx,
                   context,
                   mode,
@@ -2261,7 +2271,7 @@ export class Table<Context, T = any> {
       );
 
       const errors = results.reduce((acc, [row, errors]) => {
-        const key = row[this.idColumnName];
+        const key = row[table.idColumnName];
         if (errors && Object.keys(errors).length) acc[key] = errors;
         return acc;
       }, {} as Record<string, any>);
@@ -2271,15 +2281,16 @@ export class Table<Context, T = any> {
       }
 
       if (!isDelete) {
-        const rowCountStmt = this.query(trx)
+        const rowCountStmt = table
+          .query(trx)
           .clear("select")
           .whereIn(
-            `${this.alias}.${this.idColumnName}`,
-            rows.map((r) => r[this.idColumnName])
+            `${table.alias}.${table.idColumnName}`,
+            rows.map((r) => r[table.idColumnName])
           )
           .count();
 
-        this.applyPolicy(rowCountStmt, context, mode, knex);
+        table.applyPolicy(rowCountStmt, context, mode, knex);
 
         const [{ count: rowCount }] = await rowCountStmt;
         if (rowCount !== rows.length) throw new UnauthorizedError();
@@ -2293,7 +2304,7 @@ export class Table<Context, T = any> {
 
     const rows = await Promise.all(
       validatedRows.map(async (row) => {
-        return await this.processTableRow(
+        return await table.processTableRow(
           { ...queryParams, include: undefined },
           context,
           row
@@ -2303,8 +2314,8 @@ export class Table<Context, T = any> {
 
     trxRef!.emit("commit");
 
-    if (this.eventEmitter)
-      this.eventEmitter.emit("change", { id: uuid, changes });
+    if (table.eventEmitter)
+      table.eventEmitter.emit("change", { id: uuid, changes });
 
     return new ChangeResult(uuid, rows, changes);
   }

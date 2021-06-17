@@ -112,7 +112,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from test.test order by test.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from test.test test__base_table order by test__base_table.id asc limit ?",
       ]
     `);
 
@@ -130,7 +130,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from test.test where (test.id = ?) limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from test.test test__base_table where (test__base_table.id = ?) limit ?",
       ]
     `);
 
@@ -161,7 +161,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from test.test where (test.id in (?)) order by test.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from test.test test__base_table where (test__base_table.id in (?)) order by test__base_table.id asc limit ?",
       ]
     `);
 
@@ -194,7 +194,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from test.test where (test.is_boolean = ?) order by test.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from test.test test__base_table where (test__base_table.is_boolean = ?) order by test__base_table.id asc limit ?",
       ]
     `);
 
@@ -229,7 +229,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from test.test where (test.number_count = ?) order by test.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from test.test test__base_table where (test__base_table.number_count = ?) order by test__base_table.id asc limit ?",
       ]
     `);
 
@@ -254,7 +254,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from test.test where (test.id = ?) order by test.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from test.test test__base_table where (test__base_table.id = ?) order by test__base_table.id asc limit ?",
       ]
     `);
 
@@ -271,7 +271,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from test.test where (test.id = ?) limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from test.test test__base_table where (test__base_table.id = ?) limit ?",
       ]
     `);
 
@@ -346,7 +346,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id from test.users order by users.id asc limit ?",
+        "select users__base_table.id from test.users users__base_table order by users__base_table.id asc limit ?",
       ]
     `);
 
@@ -377,7 +377,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select posts.id, posts.user_id from test.posts order by posts.id asc limit ?",
+        "select posts__base_table.id, posts__base_table.user_id from test.posts posts__base_table order by posts__base_table.id asc limit ?",
       ]
     `);
 
@@ -405,7 +405,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select posts.id, posts.user_id, (select row_to_json(users__alias_0_sub_query) from (select users__alias_0.id from test.users users__alias_0 where users__alias_0.id = posts.user_id limit ?) users__alias_0_sub_query) as user from test.posts where (posts.id = ?) limit ?",
+        "select posts__base_table.id, posts__base_table.user_id, (select row_to_json(users__alias_0_sub_query) from (select users__alias_0.id from test.users users__alias_0 where users__alias_0.id = posts__base_table.user_id limit ?) users__alias_0_sub_query) as user from test.posts posts__base_table where (posts__base_table.id = ?) limit ?",
       ]
     `);
 
@@ -435,7 +435,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id, array(select row_to_json(posts__alias_0_sub_query) from (select posts__alias_0.id, posts__alias_0.user_id from test.posts posts__alias_0 where posts__alias_0.user_id = users.id limit ?) posts__alias_0_sub_query) as posts from test.users where (users.id = ?) limit ?",
+        "select users__base_table.id, array(select row_to_json(posts__alias_0_sub_query) from (select posts__alias_0.id, posts__alias_0.user_id from test.posts posts__alias_0 where posts__alias_0.user_id = users__base_table.id limit ?) posts__alias_0_sub_query) as posts from test.users users__base_table where (users__base_table.id = ?) limit ?",
       ]
     `);
 
@@ -455,7 +455,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id, (select count(posts__alias_0.*) from test.posts posts__alias_0 where posts__alias_0.user_id = users.id) as posts_count from test.users where (users.id = ?) limit ?",
+        "select users__base_table.id, (select count(posts__alias_0.*) from test.posts posts__alias_0 where posts__alias_0.user_id = users__base_table.id) as posts_count from test.users users__base_table where (users__base_table.id = ?) limit ?",
       ]
     `);
 
@@ -487,7 +487,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id from test.users order by users.id asc limit ?",
+        "select users__base_table.id from test.users users__base_table order by users__base_table.id asc limit ?",
       ]
     `);
   });
@@ -561,7 +561,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id from test.users order by users.id asc limit ?",
+        "select users__base_table.id from test.users users__base_table order by users__base_table.id asc limit ?",
       ]
     `);
 
@@ -593,7 +593,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select posts.id, posts.user_id from test.posts order by posts.id asc limit ?",
+        "select posts__base_table.id, posts__base_table.user_id from test.posts posts__base_table order by posts__base_table.id asc limit ?",
       ]
     `);
 
@@ -623,7 +623,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select posts.id, posts.user_id, (select row_to_json(users__alias_0_sub_query) from (select users__alias_0.id from test.users users__alias_0 where users__alias_0.id = posts.user_id limit ?) users__alias_0_sub_query) as user from test.posts where (posts.id = ?) limit ?",
+        "select posts__base_table.id, posts__base_table.user_id, (select row_to_json(users__alias_0_sub_query) from (select users__alias_0.id from test.users users__alias_0 where users__alias_0.id = posts__base_table.user_id limit ?) users__alias_0_sub_query) as user from test.posts posts__base_table where (posts__base_table.id = ?) limit ?",
       ]
     `);
 
@@ -655,7 +655,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id, array(select row_to_json(posts__alias_0_sub_query) from (select posts__alias_0.id, posts__alias_0.user_id from test.posts posts__alias_0 where posts__alias_0.user_id = users.id limit ?) posts__alias_0_sub_query) as posts from test.users where (users.id = ?) limit ?",
+        "select users__base_table.id, array(select row_to_json(posts__alias_0_sub_query) from (select posts__alias_0.id, posts__alias_0.user_id from test.posts posts__alias_0 where posts__alias_0.user_id = users__base_table.id limit ?) posts__alias_0_sub_query) as posts from test.users users__base_table where (users__base_table.id = ?) limit ?",
       ]
     `);
 
@@ -694,7 +694,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id, array(select row_to_json(posts__alias_0_sub_query) from (select posts__alias_0.id, posts__alias_0.user_id from test.posts posts__alias_0 where posts__alias_0.user_id = users.id limit ?) posts__alias_0_sub_query) as posts, (select row_to_json(i) from (select count(*) from test.posts where user_id=users.id limit ?) as i) as post_count from test.users where (users.id = ?) limit ?",
+        "select users__base_table.id, array(select row_to_json(posts__alias_0_sub_query) from (select posts__alias_0.id, posts__alias_0.user_id from test.posts posts__alias_0 where posts__alias_0.user_id = users__base_table.id limit ?) posts__alias_0_sub_query) as posts, (select row_to_json(i) from (select count(*) from test.posts where user_id=users__base_table.id limit ?) as i) as post_count from test.users users__base_table where (users__base_table.id = ?) limit ?",
       ]
     `);
 
@@ -727,7 +727,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id from test.users order by users.id asc limit ?",
+        "select users__base_table.id from test.users users__base_table order by users__base_table.id asc limit ?",
       ]
     `);
   });
@@ -872,7 +872,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select docs.id, docs.version_id, docs.first_version_id, (select row_to_json(versions__alias_0_sub_query) from (select versions__alias_0.id from test.versions versions__alias_0 where versions__alias_0.id = docs.version_id limit ?) versions__alias_0_sub_query) as version, (select row_to_json(versions__alias_1_sub_query) from (select versions__alias_1.id from test.versions versions__alias_1 where versions__alias_1.id = docs.first_version_id limit ?) versions__alias_1_sub_query) as first_version from test.docs order by docs.id asc limit ?",
+        "select docs__base_table.id, docs__base_table.version_id, docs__base_table.first_version_id, (select row_to_json(versions__alias_0_sub_query) from (select versions__alias_0.id from test.versions versions__alias_0 where versions__alias_0.id = docs__base_table.version_id limit ?) versions__alias_0_sub_query) as version, (select row_to_json(versions__alias_1_sub_query) from (select versions__alias_1.id from test.versions versions__alias_1 where versions__alias_1.id = docs__base_table.first_version_id limit ?) versions__alias_1_sub_query) as first_version from test.docs docs__base_table order by docs__base_table.id asc limit ?",
       ]
     `);
 
@@ -933,7 +933,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select versions.id, array(select row_to_json(docs__alias_0_sub_query) from (select docs__alias_0.id, docs__alias_0.version_id, docs__alias_0.first_version_id from test.docs docs__alias_0 where docs__alias_0.version_id = versions.id limit ?) docs__alias_0_sub_query) as head_docs, array(select row_to_json(docs__alias_1_sub_query) from (select docs__alias_1.id, docs__alias_1.version_id, docs__alias_1.first_version_id from test.docs docs__alias_1 where docs__alias_1.first_version_id = versions.id limit ?) docs__alias_1_sub_query) as first_docs from test.versions order by versions.id asc limit ?",
+        "select versions__base_table.id, array(select row_to_json(docs__alias_0_sub_query) from (select docs__alias_0.id, docs__alias_0.version_id, docs__alias_0.first_version_id from test.docs docs__alias_0 where docs__alias_0.version_id = versions__base_table.id limit ?) docs__alias_0_sub_query) as head_docs, array(select row_to_json(docs__alias_1_sub_query) from (select docs__alias_1.id, docs__alias_1.version_id, docs__alias_1.first_version_id from test.docs docs__alias_1 where docs__alias_1.first_version_id = versions__base_table.id limit ?) docs__alias_1_sub_query) as first_docs from test.versions versions__base_table order by versions__base_table.id asc limit ?",
       ]
     `);
   });
@@ -989,7 +989,7 @@ describe("without policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.test default values returning *",
-        "select test.id, test.is_boolean, test.number_count, test.text from test.test where test.id = ? limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from test.test test__base_table where test__base_table.id = ? limit ?",
       ]
     `);
 
@@ -1028,7 +1028,7 @@ describe("without policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.test (is_boolean, number_count) values (?, ?) returning *",
-        "select test.id, test.is_boolean, test.number_count, test.text from test.test where test.id = ? limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from test.test test__base_table where test__base_table.id = ? limit ?",
       ]
     `);
   });
@@ -1128,8 +1128,8 @@ describe("without policies", () => {
       Array [
         "insert into test.test (is_boolean) values (?) returning *",
         "insert into test.test (is_boolean) values (?) returning *",
-        "select test.id, test.is_boolean, test.number_count, test.text from test.test where test.id = ? limit ?",
-        "select test.id, test.is_boolean, test.number_count, test.text from test.test where test.id = ? limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from test.test test__base_table where test__base_table.id = ? limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from test.test test__base_table where test__base_table.id = ? limit ?",
       ]
     `);
   });
@@ -1183,7 +1183,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id from test.items where ((items.id = ?) or (items.id = ?)) order by items.id asc limit ?",
+        "select items__base_table.id from test.items items__base_table where ((items__base_table.id = ?) or (items__base_table.id = ?)) order by items__base_table.id asc limit ?",
       ]
     `);
   });
@@ -1242,7 +1242,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.label, items.int from test.items where ((items.int > ?) and (items.int < ?)) order by items.id asc limit ?",
+        "select items__base_table.id, items__base_table.label, items__base_table.int from test.items items__base_table where ((items__base_table.int > ?) and (items__base_table.int < ?)) order by items__base_table.id asc limit ?",
       ]
     `);
   });
@@ -1296,7 +1296,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.label, items.int from test.items where (items.label is null) order by items.id asc limit ?",
+        "select items__base_table.id, items__base_table.label, items__base_table.int from test.items items__base_table where (items__base_table.label is null) order by items__base_table.id asc limit ?",
       ]
     `);
 
@@ -1335,7 +1335,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.label, items.int from test.items where (items.label is not null) order by items.id asc limit ?",
+        "select items__base_table.id, items__base_table.label, items__base_table.int from test.items items__base_table where (items__base_table.label is not null) order by items__base_table.id asc limit ?",
       ]
     `);
   });
@@ -1440,7 +1440,7 @@ describe("without policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.test (is_boolean) values (?) returning *",
-        "select test.id, test.is_boolean, test.date, test.number_count, test.text, test.arr from test.test where test.id = ? limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.date, test__base_table.number_count, test__base_table.text, test__base_table.arr from test.test test__base_table where test__base_table.id = ? limit ?",
       ]
     `);
 
@@ -1489,7 +1489,7 @@ describe("without policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.test (date) values (?) returning *",
-        "select test.id, test.is_boolean, test.date, test.number_count, test.text, test.arr from test.test where test.id = ? limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.date, test__base_table.number_count, test__base_table.text, test__base_table.arr from test.test test__base_table where test__base_table.id = ? limit ?",
       ]
     `);
 
@@ -1616,7 +1616,7 @@ describe("without policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.test (email) values (?) returning *",
-        "select test.id, test.email from test.test where test.id = ? limit ?",
+        "select test__base_table.id, test__base_table.email from test.test test__base_table where test__base_table.id = ? limit ?",
       ]
     `);
   });
@@ -1666,7 +1666,7 @@ describe("without policies", () => {
       Array [
         "select test.id, test.username from test.test where test.username = ? limit ?",
         "insert into test.test (username) values (?) returning *",
-        "select test.id, test.username from test.test where test.id = ? limit ?",
+        "select test__base_table.id, test__base_table.username from test.test test__base_table where test__base_table.id = ? limit ?",
       ]
     `);
 
@@ -1740,7 +1740,7 @@ describe("without policies", () => {
         "select test.id, test.org, test.username from test.test where test.org = ? and test.username = ? limit ?",
         "select test.id, test.org, test.username from test.test where test.org = ? and test.username = ? limit ?",
         "insert into test.test (org, username) values (?, ?) returning *",
-        "select test.id, test.org, test.username from test.test where test.id = ? limit ?",
+        "select test__base_table.id, test__base_table.org, test__base_table.username from test.test test__base_table where test__base_table.id = ? limit ?",
       ]
     `);
 
@@ -1780,7 +1780,7 @@ describe("without policies", () => {
         "select test.id, test.org, test.username from test.test where test.org = ? and test.username = ? limit ?",
         "select test.id, test.org, test.username from test.test where test.org = ? and test.username = ? limit ?",
         "insert into test.test (org, username) values (?, ?) returning *",
-        "select test.id, test.org, test.username from test.test where test.id = ? limit ?",
+        "select test__base_table.id, test__base_table.org, test__base_table.username from test.test test__base_table where test__base_table.id = ? limit ?",
       ]
     `);
 
@@ -1820,7 +1820,7 @@ describe("without policies", () => {
         "select test.id, test.org, test.username from test.test where test.org = ? and test.username = ? limit ?",
         "select test.id, test.org, test.username from test.test where test.org = ? and test.username = ? limit ?",
         "insert into test.test (org, username) values (?, ?) returning *",
-        "select test.id, test.org, test.username from test.test where test.id = ? limit ?",
+        "select test__base_table.id, test__base_table.org, test__base_table.username from test.test test__base_table where test__base_table.id = ? limit ?",
       ]
     `);
 
@@ -1896,9 +1896,9 @@ describe("without policies", () => {
         "select test.id, test.org, test.username from test.test where (test.id = ?) limit ?",
         "select test.id, test.org, test.username from test.test where not (test.id = ?) and test.org = ? and test.username = ? limit ?",
         "select test.id, test.org, test.username from test.test where not (test.id = ?) and test.org = ? and test.username = ? limit ?",
-        "select test.id, test.org, test.username from test.test where test.id = ? limit ?",
-        "update test.test set username = ? where test.id = ? returning *",
-        "select test.id, test.org, test.username from test.test where test.id = ? limit ?",
+        "select test__base_table.id, test__base_table.org, test__base_table.username from test.test test__base_table where test__base_table.id = ? limit ?",
+        "update test.test test__base_table set username = ? where test__base_table.id = ? returning *",
+        "select test__base_table.id, test__base_table.org, test__base_table.username from test.test test__base_table where test__base_table.id = ? limit ?",
       ]
     `);
 
@@ -1927,8 +1927,8 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.org, test.username from test.test where test.id = ? limit ?",
-        "delete from test.test where test.id = ?",
+        "select test__base_table.id, test__base_table.org, test__base_table.username from test.test test__base_table where test__base_table.id = ? limit ?",
+        "delete from test.test test__base_table where test__base_table.id = ?",
       ]
     `);
   });
@@ -2030,7 +2030,7 @@ describe("without policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.users (name) values (?) returning *",
-        "select users.id, users.name from test.users where users.id = ? limit ?",
+        "select users__base_table.id, users__base_table.name from test.users users__base_table where users__base_table.id = ? limit ?",
       ]
     `);
 
@@ -2130,7 +2130,7 @@ describe("without policies", () => {
         "insert into test.users (name) values (?) returning *",
         "insert into test.posts (body, user_id) values (?, ?) returning *",
         "insert into test.posts (body, user_id) values (?, ?) returning *",
-        "select users.id, users.name from test.users where users.id = ? limit ?",
+        "select users__base_table.id, users__base_table.name from test.users users__base_table where users__base_table.id = ? limit ?",
         "select posts.id, posts.user_id, posts.body from test.posts where posts.id = ? limit ?",
         "select posts.id, posts.user_id, posts.body from test.posts where posts.id = ? limit ?",
       ]
@@ -2233,7 +2233,7 @@ describe("without policies", () => {
         "insert into test.users (name) values (?) returning *",
         "insert into test.posts (body, user_id) values (?, ?) returning *",
         "select users.id, users.name from test.users where users.id = ? limit ?",
-        "select posts.id, posts.user_id, posts.body from test.posts where posts.id = ? limit ?",
+        "select posts__base_table.id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.id = ? limit ?",
       ]
     `);
 
@@ -2269,7 +2269,7 @@ describe("without policies", () => {
         "select users.id from test.users where users.id = ? limit ?",
         "select users.id, users.name from test.users where users.id = ? limit ?",
         "delete from test.users where users.id = ?",
-        "select posts.id, posts.user_id, posts.body from test.posts where posts.id = ? limit ?",
+        "select posts__base_table.id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.id = ? limit ?",
       ]
     `);
 
@@ -2322,7 +2322,7 @@ describe("without policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select users.id, users.name from test.users where (users.id = ?) limit ?",
-        "select users.id, users.name from test.users where users.id = ? limit ?",
+        "select users__base_table.id, users__base_table.name from test.users users__base_table where users__base_table.id = ? limit ?",
         "select posts.id, posts.user_id, posts.body from test.posts where posts.id = ? limit ?",
         "delete from test.posts where posts.id = ?",
       ]
@@ -2495,7 +2495,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id, (select row_to_json(i) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users.id limit ?) as i) as active_job from test.users order by users.id asc limit ?",
+        "select users__base_table.id, (select row_to_json(i) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users__base_table.id limit ?) as i) as active_job from test.users users__base_table order by users__base_table.id asc limit ?",
       ]
     `);
 
@@ -2537,7 +2537,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id, array(select row_to_json(i) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users.id) as i) as active_jobs from test.users order by users.id asc limit ?",
+        "select users__base_table.id, array(select row_to_json(i) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users__base_table.id) as i) as active_jobs from test.users users__base_table order by users__base_table.id asc limit ?",
       ]
     `);
 
@@ -2592,7 +2592,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id, (select row_to_json(i) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users.id limit ?) as i) as active_job, array(select row_to_json(i) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users.id) as i) as active_jobs, array(select id from test.jobs where jobs.active = ? and jobs.user_id = users.id) as active_job_ids from test.users order by users.id asc limit ?",
+        "select users__base_table.id, (select row_to_json(i) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users__base_table.id limit ?) as i) as active_job, array(select row_to_json(i) from (select * from test.jobs where jobs.active = ? and jobs.user_id = users__base_table.id) as i) as active_jobs, array(select id from test.jobs where jobs.active = ? and jobs.user_id = users__base_table.id) as active_job_ids from test.users users__base_table order by users__base_table.id asc limit ?",
       ]
     `);
   });
@@ -2763,7 +2763,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id from test.users where id = ? limit ?",
+        "select users__base_table.id from test.users users__base_table where id = ? limit ?",
       ]
     `);
   });
@@ -2802,7 +2802,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select jobs.id, jobs.is_active from test.jobs where is_active = ? limit ?",
+        "select jobs__base_table.id, jobs__base_table.is_active from test.jobs jobs__base_table where is_active = ? limit ?",
       ]
     `);
 
@@ -2819,7 +2819,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select jobs.id, jobs.is_active from test.jobs where is_active = ? limit ?",
+        "select jobs__base_table.id, jobs__base_table.is_active from test.jobs jobs__base_table where is_active = ? limit ?",
       ]
     `);
   });
@@ -2875,7 +2875,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select jobs.id, jobs.is_active from test.jobs order by jobs.id asc limit ?",
+        "select jobs__base_table.id, jobs__base_table.is_active from test.jobs jobs__base_table order by jobs__base_table.id asc limit ?",
       ]
     `);
 
@@ -2913,7 +2913,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select jobs.id, jobs.is_active from test.jobs order by jobs.id asc limit ? offset ?",
+        "select jobs__base_table.id, jobs__base_table.is_active from test.jobs jobs__base_table order by jobs__base_table.id asc limit ? offset ?",
       ]
     `);
 
@@ -2935,7 +2935,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select jobs.id, jobs.is_active from test.jobs order by jobs.id asc limit ? offset ?",
+        "select jobs__base_table.id, jobs__base_table.is_active from test.jobs jobs__base_table order by jobs__base_table.id asc limit ? offset ?",
       ]
     `);
   });
@@ -2987,7 +2987,7 @@ describe("without policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.test (version) values (?) returning *",
-        "select test.id, test.version from test.test where test.id = ? limit ?",
+        "select test__base_table.id, test__base_table.version from test.test test__base_table where test__base_table.id = ? limit ?",
       ]
     `);
     queries = [];
@@ -3021,9 +3021,9 @@ describe("without policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select test.id, test.version from test.test where (test.id = ?) limit ?",
-        "select test.id, test.version from test.test where test.id = ? limit ?",
-        "update test.test set version = ? where test.id = ? returning *",
-        "select test.id, test.version from test.test where test.id = ? limit ?",
+        "select test__base_table.id, test__base_table.version from test.test test__base_table where test__base_table.id = ? limit ?",
+        "update test.test test__base_table set version = ? where test__base_table.id = ? returning *",
+        "select test__base_table.id, test__base_table.version from test.test test__base_table where test__base_table.id = ? limit ?",
       ]
     `);
     queries = [];
@@ -3050,8 +3050,8 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.version from test.test where test.id = ? limit ?",
-        "delete from test.test where test.id = ?",
+        "select test__base_table.id, test__base_table.version from test.test test__base_table where test__base_table.id = ? limit ?",
+        "delete from test.test test__base_table where test__base_table.id = ?",
       ]
     `);
   });
@@ -3164,7 +3164,7 @@ describe("with policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id, users.org_id, array(select row_to_json(posts__alias_0_sub_query) from (select posts__alias_0.id, posts__alias_0.org_id, posts__alias_0.user_id from test.posts posts__alias_0 where posts__alias_0.user_id = users.id and posts__alias_0.org_id = ? limit ?) posts__alias_0_sub_query) as posts from test.users where users.org_id = ? order by users.id asc limit ?",
+        "select users__base_table.id, users__base_table.org_id, array(select row_to_json(posts__alias_0_sub_query) from (select posts__alias_0.id, posts__alias_0.org_id, posts__alias_0.user_id from test.posts posts__alias_0 where posts__alias_0.user_id = users__base_table.id and posts__alias_0.org_id = ? limit ?) posts__alias_0_sub_query) as posts from test.users users__base_table where users__base_table.org_id = ? order by users__base_table.id asc limit ?",
       ]
     `);
 
@@ -3207,7 +3207,7 @@ describe("with policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select posts.id, posts.org_id, posts.user_id, (select row_to_json(users__alias_0_sub_query) from (select users__alias_0.id, users__alias_0.org_id from test.users users__alias_0 where users__alias_0.id = posts.user_id and users__alias_0.org_id = ? limit ?) users__alias_0_sub_query) as user from test.posts where posts.org_id = ? order by posts.id asc limit ?",
+        "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, (select row_to_json(users__alias_0_sub_query) from (select users__alias_0.id, users__alias_0.org_id from test.users users__alias_0 where users__alias_0.id = posts__base_table.user_id and users__alias_0.org_id = ? limit ?) users__alias_0_sub_query) as user from test.posts posts__base_table where posts__base_table.org_id = ? order by posts__base_table.id asc limit ?",
       ]
     `);
   });
@@ -3291,7 +3291,7 @@ describe("with policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.posts (org_id) values (?) returning *",
-        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.id = ? and posts.org_id = ? limit ?",
+        "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.id = ? and posts__base_table.org_id = ? limit ?",
       ]
     `);
 
@@ -3325,7 +3325,7 @@ describe("with policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.org_id = ? and posts.id = ? limit ?",
+        "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.org_id = ? and posts__base_table.id = ? limit ?",
       ]
     `);
 
@@ -3344,9 +3344,9 @@ describe("with policies", () => {
       Array [
         "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where (posts.id = ?) and posts.org_id = ? limit ?",
         "select users.id from test.users where users.id = ? and users.org_id = ? limit ?",
-        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.org_id = ? and posts.id = ? limit ?",
-        "update test.posts set org_id = ? where posts.org_id = ? and posts.id = ? returning *",
-        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.id = ? and posts.org_id = ? limit ?",
+        "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.org_id = ? and posts__base_table.id = ? limit ?",
+        "update test.posts posts__base_table set org_id = ? where posts__base_table.org_id = ? and posts__base_table.id = ? returning *",
+        "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.id = ? and posts__base_table.org_id = ? limit ?",
       ]
     `);
 
@@ -3385,7 +3385,7 @@ describe("with policies", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.posts (org_id) values (?) returning *",
-        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.id = ? and posts.org_id = ? limit ?",
+        "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.id = ? and posts__base_table.org_id = ? limit ?",
       ]
     `);
 
@@ -3412,7 +3412,7 @@ describe("with policies", () => {
       Array [
         "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where (posts.id = ?) and posts.org_id = ? limit ?",
         "select users.id from test.users where users.id = ? and users.org_id = ? limit ?",
-        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.org_id = ? and posts.id = ? limit ?",
+        "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.org_id = ? and posts__base_table.id = ? limit ?",
       ]
     `);
 
@@ -3461,9 +3461,9 @@ describe("with policies", () => {
       Array [
         "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where (posts.id = ?) and posts.org_id = ? limit ?",
         "select users.id from test.users where users.id = ? and users.org_id = ? limit ?",
-        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.org_id = ? and posts.id = ? limit ?",
-        "update test.posts set body = ? where posts.org_id = ? and posts.id = ? returning *",
-        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.id = ? and posts.org_id = ? limit ?",
+        "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.org_id = ? and posts__base_table.id = ? limit ?",
+        "update test.posts posts__base_table set body = ? where posts__base_table.org_id = ? and posts__base_table.id = ? returning *",
+        "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.id = ? and posts__base_table.org_id = ? limit ?",
       ]
     `);
 
@@ -3498,8 +3498,8 @@ describe("with policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where posts.org_id = ? and posts.id = ? limit ?",
-        "delete from test.posts where posts.id = ?",
+        "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.org_id = ? and posts__base_table.id = ? limit ?",
+        "delete from test.posts posts__base_table where posts__base_table.id = ?",
       ]
     `);
   });
@@ -4042,7 +4042,7 @@ describe("multitenancy", () => {
         "select test.id, test.org_id, test.username from test.test where test.org_id = ? and test.username = ? limit ?",
         "select orgs.id from test.orgs where orgs.id = ? limit ?",
         "insert into test.test (org_id, username) values (?, ?) returning *",
-        "select test.id, test.org_id, test.username from test.test where test.id = ? and test.org_id = ? limit ?",
+        "select test__base_table.id, test__base_table.org_id, test__base_table.username from test.test test__base_table where test__base_table.id = ? and test__base_table.org_id = ? limit ?",
       ]
     `);
 
@@ -4073,7 +4073,7 @@ describe("multitenancy", () => {
         "select test.id, test.org_id, test.username from test.test where not (test.id = ? and test.org_id = ?) and test.org_id = ? and test.username = ? limit ?",
         "select test.id, test.org_id, test.username from test.test where not (test.id = ? and test.org_id = ?) and test.org_id = ? and test.username = ? limit ?",
         "select orgs.id from test.orgs where orgs.id = ? limit ?",
-        "select test.id, test.org_id, test.username from test.test where test.id = ? and test.org_id = ? limit ?",
+        "select test__base_table.id, test__base_table.org_id, test__base_table.username from test.test test__base_table where test__base_table.id = ? and test__base_table.org_id = ? limit ?",
       ]
     `);
   });
@@ -4186,7 +4186,7 @@ describe("multitenancy", () => {
         "select test.id from test.test where test.id = ? and test.org_id = ? limit ?",
         "select orgs.id from test.orgs where orgs.id = ? limit ?",
         "insert into test.sub (org_id, parent_id) values (?, ?) returning *",
-        "select sub.id, sub.org_id, sub.parent_id from test.sub where sub.id = ? and sub.org_id = ? limit ?",
+        "select sub__base_table.id, sub__base_table.org_id, sub__base_table.parent_id from test.sub sub__base_table where sub__base_table.id = ? and sub__base_table.org_id = ? limit ?",
       ]
     `);
   });
@@ -4469,8 +4469,8 @@ describe("paranoid", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.org_id, items.deleted_at from test.items where items.org_id = ? and items.id = ? limit ?",
-        "update test.items set deleted_at = ? where items.id = ? and items.org_id = ?",
+        "select items__base_table.id, items__base_table.org_id, items__base_table.deleted_at from test.items items__base_table where items__base_table.org_id = ? and items__base_table.id = ? limit ?",
+        "update test.items items__base_table set deleted_at = ? where items__base_table.id = ? and items__base_table.org_id = ?",
         "select subitems.id from test.subitems where subitems.item_id = ? and subitems.org_id = ?",
         "select subitems.id, subitems.org_id, subitems.item_id, subitems.deleted_at from test.subitems where subitems.org_id = ? and subitems.id = ? limit ?",
         "update test.subitems set deleted_at = ? where subitems.id = ? and subitems.org_id = ?",
@@ -4863,7 +4863,7 @@ describe("uuid columns", () => {
         "insert into test.items (id) values (?) returning *",
         "insert into test.subitems (id, parent_id) values (?, ?) returning *",
         "insert into test.subitems (id, parent_id) values (?, ?) returning *",
-        "select items.id from test.items where items.id = ? limit ?",
+        "select items__base_table.id from test.items items__base_table where items__base_table.id = ? limit ?",
         "select subitems.id, subitems.parent_id from test.subitems where subitems.id = ? limit ?",
         "select subitems.id, subitems.parent_id from test.subitems where subitems.id = ? limit ?",
       ]
@@ -4936,7 +4936,7 @@ describe("uuid columns", () => {
         "insert into test.items (id) values (?) returning *",
         "insert into test.subitems (id, parent_id) values (?, ?) returning *",
         "select items.id from test.items where items.id = ? limit ?",
-        "select subitems.id, subitems.parent_id from test.subitems where subitems.id = ? limit ?",
+        "select subitems__base_table.id, subitems__base_table.parent_id from test.subitems subitems__base_table where subitems__base_table.id = ? limit ?",
       ]
     `);
   });
@@ -5219,7 +5219,7 @@ describe("self references", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.items (parent_item_id) values (?) returning *",
-        "select items.id, items.parent_item_id from test.items where items.id = ? limit ?",
+        "select items__base_table.id, items__base_table.parent_item_id from test.items items__base_table where items__base_table.id = ? limit ?",
       ]
     `);
 
@@ -5358,7 +5358,7 @@ describe("self references", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.parent_item_id, (select row_to_json(items__alias_0_sub_query) from (select items__alias_0.id, items__alias_0.parent_item_id from test.items items__alias_0 where items__alias_0.id = items.parent_item_id limit ?) items__alias_0_sub_query) as parent_item from test.items order by items.id asc limit ?",
+        "select items__base_table.id, items__base_table.parent_item_id, (select row_to_json(items__alias_0_sub_query) from (select items__alias_0.id, items__alias_0.parent_item_id from test.items items__alias_0 where items__alias_0.id = items__base_table.parent_item_id limit ?) items__alias_0_sub_query) as parent_item from test.items items__base_table order by items__base_table.id asc limit ?",
       ]
     `);
 
@@ -5450,7 +5450,7 @@ describe("self references", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.parent_item_id, array(select row_to_json(items__alias_0_sub_query) from (select items__alias_0.id, items__alias_0.parent_item_id from test.items items__alias_0 where items__alias_0.parent_item_id = items.id limit ?) items__alias_0_sub_query) as items from test.items order by items.id asc limit ?",
+        "select items__base_table.id, items__base_table.parent_item_id, array(select row_to_json(items__alias_0_sub_query) from (select items__alias_0.id, items__alias_0.parent_item_id from test.items items__alias_0 where items__alias_0.parent_item_id = items__base_table.id limit ?) items__alias_0_sub_query) as items from test.items items__base_table order by items__base_table.id asc limit ?",
       ]
     `);
   });
@@ -5518,7 +5518,7 @@ describe("sorts", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.key1, items.key2 from test.items order by items.key1 desc limit ?",
+        "select items__base_table.id, items__base_table.key1, items__base_table.key2 from test.items items__base_table order by items__base_table.key1 desc limit ?",
       ]
     `);
 
@@ -5565,7 +5565,7 @@ describe("sorts", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.key1, items.key2 from test.items order by items.key2 asc, items.key1 desc limit ?",
+        "select items__base_table.id, items__base_table.key1, items__base_table.key2 from test.items items__base_table order by items__base_table.key2 asc, items__base_table.key1 desc limit ?",
       ]
     `);
 
@@ -5612,7 +5612,7 @@ describe("sorts", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.key1, items.key2 from test.items order by items.id asc limit ?",
+        "select items__base_table.id, items__base_table.key1, items__base_table.key2 from test.items items__base_table order by items__base_table.id asc limit ?",
       ]
     `);
   });
@@ -5678,7 +5678,7 @@ describe("sorts", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.key1, items.key2 from test.items order by items.key1 asc, items.id asc limit ?",
+        "select items__base_table.id, items__base_table.key1, items__base_table.key2 from test.items items__base_table order by items__base_table.key1 asc, items__base_table.id asc limit ?",
       ]
     `);
   });
@@ -5744,7 +5744,7 @@ describe("sorts", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.key1, items.key2 from test.items order by items.key1 desc, items.id asc limit ?",
+        "select items__base_table.id, items__base_table.key1, items__base_table.key2 from test.items items__base_table order by items__base_table.key1 desc, items__base_table.id asc limit ?",
       ]
     `);
   });
@@ -5810,7 +5810,7 @@ describe("sorts", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.key1, items.key2 from test.items order by items.id desc, items.id asc limit ?",
+        "select items__base_table.id, items__base_table.key1, items__base_table.key2 from test.items items__base_table order by items__base_table.id desc, items__base_table.id asc limit ?",
       ]
     `);
   });
@@ -5859,7 +5859,7 @@ describe("pagination", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.key1, items.key2 from test.items order by items.key1 desc, items.key2 asc limit ?",
+        "select items__base_table.id, items__base_table.key1, items__base_table.key2 from test.items items__base_table order by items__base_table.key1 desc, items__base_table.key2 asc limit ?",
       ]
     `);
     expect(item1).toMatchInlineSnapshot(`
@@ -5892,7 +5892,7 @@ describe("pagination", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.key1, items.key2 from test.items where ((items.key1 < ?) or (items.key1 = ? and items.key2 > ?)) order by items.key1 desc, items.key2 asc limit ?",
+        "select items__base_table.id, items__base_table.key1, items__base_table.key2 from test.items items__base_table where ((items__base_table.key1 < ?) or (items__base_table.key1 = ? and items__base_table.key2 > ?)) order by items__base_table.key1 desc, items__base_table.key2 asc limit ?",
       ]
     `);
     expect(item2).toMatchInlineSnapshot(`
@@ -5948,7 +5948,7 @@ describe("in public schema", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into public.test_table default values returning *",
-        "select test_table.id from public.test_table where test_table.id = ? limit ?",
+        "select test_table__base_table.id from public.test_table test_table__base_table where test_table__base_table.id = ? limit ?",
       ]
     `);
 
@@ -5976,7 +5976,7 @@ describe("in public schema", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test_table.id from public.test_table order by test_table.id asc limit ?",
+        "select test_table__base_table.id from public.test_table test_table__base_table order by test_table__base_table.id asc limit ?",
       ]
     `);
   });
@@ -6016,7 +6016,7 @@ describe("defaultParams", () => {
     await items.readMany(knex, {}, { token: "user1" });
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.user_id from test.items where (items.user_id = ?) order by items.id asc limit ?",
+        "select items__base_table.id, items__base_table.user_id from test.items items__base_table where (items__base_table.user_id = ?) order by items__base_table.id asc limit ?",
       ]
     `);
   });
@@ -6051,7 +6051,7 @@ describe("defaultParams", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.items (user_id) values (?) returning *",
-        "select items.id, items.user_id from test.items where items.id = ? limit ?",
+        "select items__base_table.id, items__base_table.user_id from test.items items__base_table where items__base_table.id = ? limit ?",
       ]
     `);
   });
@@ -6090,9 +6090,9 @@ describe("defaultParams", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select items.id, items.user_id from test.items where (items.id = ?) limit ?",
-        "select items.id, items.user_id from test.items where items.id = ? limit ?",
-        "update test.items set user_id = ? where items.id = ? returning *",
-        "select items.id, items.user_id from test.items where items.id = ? limit ?",
+        "select items__base_table.id, items__base_table.user_id from test.items items__base_table where items__base_table.id = ? limit ?",
+        "update test.items items__base_table set user_id = ? where items__base_table.id = ? returning *",
+        "select items__base_table.id, items__base_table.user_id from test.items items__base_table where items__base_table.id = ? limit ?",
       ]
     `);
     expect(await knex("test.items").first()).toMatchInlineSnapshot(`
@@ -6156,12 +6156,12 @@ describe("upsert", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.phone = ? limit ?",
+        "select contacts__base_table.id, contacts__base_table.name, contacts__base_table.phone from test.contacts contacts__base_table where contacts__base_table.phone = ? limit ?",
         "select contacts.id, contacts.name, contacts.phone from test.contacts where (contacts.id = ?) limit ?",
         "select contacts.id, contacts.name, contacts.phone from test.contacts where not (contacts.id = ?) and contacts.phone = ? limit ?",
-        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
-        "update test.contacts set name = ? where contacts.id = ? returning *",
-        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
+        "select contacts__base_table.id, contacts__base_table.name, contacts__base_table.phone from test.contacts contacts__base_table where contacts__base_table.id = ? limit ?",
+        "update test.contacts contacts__base_table set name = ? where contacts__base_table.id = ? returning *",
+        "select contacts__base_table.id, contacts__base_table.name, contacts__base_table.phone from test.contacts contacts__base_table where contacts__base_table.id = ? limit ?",
       ]
     `);
 
@@ -6228,18 +6228,18 @@ describe("upsert", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.phone = ? limit ?",
-        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.phone = ? limit ?",
+        "select contacts__base_table.id, contacts__base_table.name, contacts__base_table.phone from test.contacts contacts__base_table where contacts__base_table.phone = ? limit ?",
+        "select contacts__base_table.id, contacts__base_table.name, contacts__base_table.phone from test.contacts contacts__base_table where contacts__base_table.phone = ? limit ?",
         "select contacts.id, contacts.name, contacts.phone from test.contacts where (contacts.id = ?) limit ?",
         "select contacts.id, contacts.name, contacts.phone from test.contacts where (contacts.id = ?) limit ?",
         "select contacts.id, contacts.name, contacts.phone from test.contacts where not (contacts.id = ?) and contacts.phone = ? limit ?",
         "select contacts.id, contacts.name, contacts.phone from test.contacts where not (contacts.id = ?) and contacts.phone = ? limit ?",
-        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
-        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
-        "update test.contacts set name = ? where contacts.id = ? returning *",
-        "update test.contacts set name = ? where contacts.id = ? returning *",
-        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
-        "select contacts.id, contacts.name, contacts.phone from test.contacts where contacts.id = ? limit ?",
+        "select contacts__base_table.id, contacts__base_table.name, contacts__base_table.phone from test.contacts contacts__base_table where contacts__base_table.id = ? limit ?",
+        "select contacts__base_table.id, contacts__base_table.name, contacts__base_table.phone from test.contacts contacts__base_table where contacts__base_table.id = ? limit ?",
+        "update test.contacts contacts__base_table set name = ? where contacts__base_table.id = ? returning *",
+        "update test.contacts contacts__base_table set name = ? where contacts__base_table.id = ? returning *",
+        "select contacts__base_table.id, contacts__base_table.name, contacts__base_table.phone from test.contacts contacts__base_table where contacts__base_table.id = ? limit ?",
+        "select contacts__base_table.id, contacts__base_table.name, contacts__base_table.phone from test.contacts contacts__base_table where contacts__base_table.id = ? limit ?",
       ]
     `);
   });
@@ -6300,17 +6300,10 @@ describe("upsert", () => {
       await contacts
         .write(knex, { name: "updated again", phone: "123" }, { orgId: org.id })
         .catch((e: BadRequestError) => e.body)
-    ).toMatchInlineSnapshot(`
-      Object {
-        "errors": Object {
-          "phone": "is already in use",
-        },
-      }
-    `);
+    ).toMatchInlineSnapshot(`undefined`);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where contacts.phone = ? and contacts.org_id = ? limit ?",
-        "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where contacts.phone = ? limit ?",
+        "select contacts__base_table.id, contacts__base_table.org_id, contacts__base_table.name, contacts__base_table.phone from test.contacts contacts__base_table where contacts__base_table.phone = ? and contacts.org_id = ? limit ?",
       ]
     `);
   });
@@ -6393,13 +6386,13 @@ describe("upsert", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where contacts.org_id = ? and contacts.org_id = ? and contacts.phone = ? limit ?",
+        "select contacts__base_table.id, contacts__base_table.org_id, contacts__base_table.name, contacts__base_table.phone from test.contacts contacts__base_table where contacts__base_table.org_id = ? and contacts__base_table.org_id = ? and contacts__base_table.phone = ? limit ?",
         "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where (contacts.id = ? and contacts.org_id = ?) limit ?",
         "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where not (contacts.id = ? and contacts.org_id = ?) and contacts.org_id = ? and contacts.phone = ? limit ?",
         "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where not (contacts.id = ? and contacts.org_id = ?) and contacts.org_id = ? and contacts.phone = ? limit ?",
-        "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where contacts.id = ? and contacts.org_id = ? limit ?",
-        "update test.contacts set name = ? where contacts.id = ? and contacts.org_id = ? returning *",
-        "select contacts.id, contacts.org_id, contacts.name, contacts.phone from test.contacts where contacts.id = ? and contacts.org_id = ? limit ?",
+        "select contacts__base_table.id, contacts__base_table.org_id, contacts__base_table.name, contacts__base_table.phone from test.contacts contacts__base_table where contacts__base_table.id = ? and contacts__base_table.org_id = ? limit ?",
+        "update test.contacts contacts__base_table set name = ? where contacts__base_table.id = ? and contacts__base_table.org_id = ? returning *",
+        "select contacts__base_table.id, contacts__base_table.org_id, contacts__base_table.name, contacts__base_table.phone from test.contacts contacts__base_table where contacts__base_table.id = ? and contacts__base_table.org_id = ? limit ?",
       ]
     `);
   });
@@ -6525,7 +6518,7 @@ describe("ref validations", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.items (end_date, start_date) values (?, ?) returning *",
-        "select items.id, items.start_date, items.end_date from test.items where items.id = ? limit ?",
+        "select items__base_table.id, items__base_table.start_date, items__base_table.end_date from test.items items__base_table where items__base_table.id = ? limit ?",
       ]
     `);
 
@@ -6580,7 +6573,7 @@ describe("ref validations", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.start_date, items.end_date from test.items where (items.start_date >= ? and items.end_date <= ?) order by items.id asc limit ?",
+        "select items__base_table.id, items__base_table.start_date, items__base_table.end_date from test.items items__base_table where (items__base_table.start_date >= ? and items__base_table.end_date <= ?) order by items__base_table.id asc limit ?",
       ]
     `);
 
@@ -6621,7 +6614,7 @@ describe("ref validations", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.start_date, items.end_date from test.items where (items.start_date >= ? and items.end_date <= ?) order by items.id asc limit ?",
+        "select items__base_table.id, items__base_table.start_date, items__base_table.end_date from test.items items__base_table where (items__base_table.start_date >= ? and items__base_table.end_date <= ?) order by items__base_table.id asc limit ?",
       ]
     `);
   });
@@ -6732,7 +6725,7 @@ describe("lookup tables", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.items (type_id) values (?) returning *",
-        "select items.id, items.type_id from test.items where items.id = ? limit ?",
+        "select items__base_table.id, items__base_table.type_id from test.items items__base_table where items__base_table.id = ? limit ?",
       ]
     `);
   });
@@ -6801,7 +6794,7 @@ describe("lookup tables", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.items (type_id) values (?) returning *",
-        "select items.id, items.type_id from test.items where items.id = ? limit ?",
+        "select items__base_table.id, items__base_table.type_id from test.items items__base_table where items__base_table.id = ? limit ?",
       ]
     `);
   });
@@ -6853,7 +6846,7 @@ describe("readonly columns", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.items default values returning *",
-        "select items.id, items.text from test.items where items.id = ? limit ?",
+        "select items__base_table.id, items__base_table.text from test.items items__base_table where items__base_table.id = ? limit ?",
       ]
     `);
 
@@ -6875,7 +6868,7 @@ describe("readonly columns", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select items.id, items.text from test.items where (items.id = ?) limit ?",
-        "select items.id, items.text from test.items where items.id = ? limit ?",
+        "select items__base_table.id, items__base_table.text from test.items items__base_table where items__base_table.id = ? limit ?",
       ]
     `);
   });
@@ -6938,7 +6931,7 @@ describe("readonly columns", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test.items default values returning *",
-        "select items.id, items.org_id from test.items where items.id = ? limit ?",
+        "select items__base_table.id, items__base_table.org_id from test.items items__base_table where items__base_table.id = ? limit ?",
       ]
     `);
 
@@ -6960,7 +6953,7 @@ describe("readonly columns", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select items.id, items.org_id from test.items where (items.id = ?) limit ?",
-        "select items.id, items.org_id from test.items where items.id = ? limit ?",
+        "select items__base_table.id, items__base_table.org_id from test.items items__base_table where items__base_table.id = ? limit ?",
       ]
     `);
   });
@@ -7015,7 +7008,7 @@ describe("filters involving foreign keys", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.org_id from test.items where (items.org_id in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items.org_id)) limit ?",
+        "select items__base_table.id, items__base_table.org_id from test.items items__base_table where (items__base_table.org_id in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items__base_table.org_id)) limit ?",
       ]
     `);
 
@@ -7034,7 +7027,7 @@ describe("filters involving foreign keys", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.org_id from test.items where (items.org_id not in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items.org_id)) limit ?",
+        "select items__base_table.id, items__base_table.org_id from test.items items__base_table where (items__base_table.org_id not in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items__base_table.org_id)) limit ?",
       ]
     `);
 
@@ -7053,7 +7046,7 @@ describe("filters involving foreign keys", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.org_id from test.items where (items.org_id in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items.org_id)) limit ?",
+        "select items__base_table.id, items__base_table.org_id from test.items items__base_table where (items__base_table.org_id in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items__base_table.org_id)) limit ?",
       ]
     `);
 
@@ -7095,7 +7088,7 @@ describe("filters involving foreign keys", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.org_id from test.items where (items.org_id in (select orgs.id from test.orgs where orgs.is_boolean in (?, ?) and orgs.id = items.org_id)) order by items.id asc limit ?",
+        "select items__base_table.id, items__base_table.org_id from test.items items__base_table where (items__base_table.org_id in (select orgs.id from test.orgs where orgs.is_boolean in (?, ?) and orgs.id = items__base_table.org_id)) order by items__base_table.id asc limit ?",
       ]
     `);
 
@@ -7143,7 +7136,7 @@ describe("filters involving foreign keys", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.org_id from test.items where ((items.org_id in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items.org_id)) or (items.org_id in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items.org_id))) order by items.id asc limit ?",
+        "select items__base_table.id, items__base_table.org_id from test.items items__base_table where ((items__base_table.org_id in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items__base_table.org_id)) or (items__base_table.org_id in (select orgs.id from test.orgs where orgs.is_boolean = ? and orgs.id = items__base_table.org_id))) order by items__base_table.id asc limit ?",
       ]
     `);
   });
@@ -7269,7 +7262,7 @@ describe("filters involving foreign keys", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.org_id, items.team_id from test.items where (items.org_id = ? and items.team_id in (select teams.id from test.teams where teams.is_boolean = ? and teams.id = items.team_id and teams.org_id = items.org_id)) limit ?",
+        "select items__base_table.id, items__base_table.org_id, items__base_table.team_id from test.items items__base_table where (items__base_table.org_id = ? and items__base_table.team_id in (select teams.id from test.teams where teams.is_boolean = ? and teams.id = items__base_table.team_id and teams.org_id = items__base_table.org_id)) limit ?",
       ]
     `);
 
@@ -7291,7 +7284,7 @@ describe("filters involving foreign keys", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.org_id, items.team_id from test.items where (items.org_id = ? and items.team_id in (select teams.id from test.teams where teams.is_boolean = ? and teams.id = items.team_id and teams.org_id = items.org_id)) limit ?",
+        "select items__base_table.id, items__base_table.org_id, items__base_table.team_id from test.items items__base_table where (items__base_table.org_id = ? and items__base_table.team_id in (select teams.id from test.teams where teams.is_boolean = ? and teams.id = items__base_table.team_id and teams.org_id = items__base_table.org_id)) limit ?",
       ]
     `);
   });
@@ -7363,7 +7356,7 @@ describe("filters involving foreign keys", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.org_id, items.team_id from test.items where (items.team_id in (select teams.id from test.teams where teams.org_id in (select orgs.id from test.orgs where orgs.id = ? and orgs.id = teams.org_id) and teams.id = items.team_id)) limit ?",
+        "select items__base_table.id, items__base_table.org_id, items__base_table.team_id from test.items items__base_table where (items__base_table.team_id in (select teams.id from test.teams where teams.org_id in (select orgs.id from test.orgs where orgs.id = ? and orgs.id = teams.org_id) and teams.id = items__base_table.team_id)) limit ?",
       ]
     `);
   });
@@ -7418,10 +7411,10 @@ describe("batch updates", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select count(*) from test.items where (items.id in (?))",
-        "select items.id, items.field from test.items where (items.id in (?))",
-        "update test.items set field = ? where items.id in (select items.id from test.items where (items.id in (?))) returning *",
-        "select count(*) from test.items where items.id in (?)",
+        "select count(*) from test.items items__base_table where (items__base_table.id in (?))",
+        "select items__base_table.id, items__base_table.field from test.items items__base_table where (items__base_table.id in (?))",
+        "update test.items items__base_table set field = ? where items__base_table.id in (select items__base_table.id from test.items items__base_table where (items__base_table.id in (?))) returning *",
+        "select count(*) from test.items items__base_table where items__base_table.id in (?)",
       ]
     `);
   });
@@ -7494,10 +7487,10 @@ describe("batch updates", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select count(*) from test.items where (items.id in (?, ?))",
-        "select items.id, items.field from test.items where (items.id in (?, ?))",
-        "update test.items set field = ? where items.id in (select items.id from test.items where (items.id in (?, ?))) returning *",
-        "select count(*) from test.items where items.id in (?, ?)",
+        "select count(*) from test.items items__base_table where (items__base_table.id in (?, ?))",
+        "select items__base_table.id, items__base_table.field from test.items items__base_table where (items__base_table.id in (?, ?))",
+        "update test.items items__base_table set field = ? where items__base_table.id in (select items__base_table.id from test.items items__base_table where (items__base_table.id in (?, ?))) returning *",
+        "select count(*) from test.items items__base_table where items__base_table.id in (?, ?)",
       ]
     `);
     expect(calls).toBe(2);
@@ -7558,10 +7551,10 @@ describe("batch updates", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select count(*) from test.items where (items.id in (?))",
-        "select items.id, items.field from test.items where (items.id in (?))",
-        "update test.items set field = ? where items.id in (select items.id from test.items where (items.id in (?))) returning *",
-        "select count(*) from test.items where items.id in (?)",
+        "select count(*) from test.items items__base_table where (items__base_table.id in (?))",
+        "select items__base_table.id, items__base_table.field from test.items items__base_table where (items__base_table.id in (?))",
+        "update test.items items__base_table set field = ? where items__base_table.id in (select items__base_table.id from test.items items__base_table where (items__base_table.id in (?))) returning *",
+        "select count(*) from test.items items__base_table where items__base_table.id in (?)",
       ]
     `);
     expect(changes).toMatchInlineSnapshot(`
@@ -7632,9 +7625,9 @@ describe("batch updates", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select count(*) from test.items where (items.id in (?))",
-        "select items.id, items.field from test.items where (items.id in (?))",
-        "delete from test.items where items.id in (select items.id from test.items where (items.id in (?))) returning *",
+        "select count(*) from test.items items__base_table where (items__base_table.id in (?))",
+        "select items__base_table.id, items__base_table.field from test.items items__base_table where (items__base_table.id in (?))",
+        "delete from test.items items__base_table where items__base_table.id in (select items__base_table.id from test.items items__base_table where (items__base_table.id in (?))) returning *",
       ]
     `);
   });
@@ -7693,10 +7686,10 @@ describe("batch updates", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select count(*) from test.items where (items.id in (?)) and items.deleted_at is null",
-        "select items.id, items.field, items.deleted_at from test.items where (items.id in (?)) and items.deleted_at is null",
-        "update test.items set deleted_at = ? where items.id in (select items.id from test.items where (items.id in (?)) and items.deleted_at is null) returning *",
-        "select count(*) from test.items where items.id in (?)",
+        "select count(*) from test.items items__base_table where (items__base_table.id in (?)) and items__base_table.deleted_at is null",
+        "select items__base_table.id, items__base_table.field, items__base_table.deleted_at from test.items items__base_table where (items__base_table.id in (?)) and items__base_table.deleted_at is null",
+        "update test.items items__base_table set deleted_at = ? where items__base_table.id in (select items__base_table.id from test.items items__base_table where (items__base_table.id in (?)) and items__base_table.deleted_at is null) returning *",
+        "select count(*) from test.items items__base_table where items__base_table.id in (?)",
       ]
     `);
   });
@@ -7792,10 +7785,10 @@ describe("batch updates", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select count(*) from test.items where is_visible = ?",
-        "select items.id, items.field, items.is_visible from test.items where is_visible = ?",
-        "update test.items set field = ? where items.id in (select items.id from test.items where is_visible = ?) returning *",
-        "select count(*) from test.items where items.id in (?, ?, ?) and is_visible = ?",
+        "select count(*) from test.items items__base_table where is_visible = ?",
+        "select items__base_table.id, items__base_table.field, items__base_table.is_visible from test.items items__base_table where is_visible = ?",
+        "update test.items items__base_table set field = ? where items__base_table.id in (select items__base_table.id from test.items items__base_table where is_visible = ?) returning *",
+        "select count(*) from test.items items__base_table where items__base_table.id in (?, ?, ?) and is_visible = ?",
       ]
     `);
   });
@@ -7837,10 +7830,10 @@ describe("batch updates", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select count(*) from test.items where is_visible = ?",
-        "select items.id, items.field, items.is_visible from test.items where is_visible = ?",
-        "update test.items set is_visible = ? where items.id in (select items.id from test.items where is_visible = ?) returning *",
-        "select count(*) from test.items where items.id in (?, ?, ?) and is_visible = ?",
+        "select count(*) from test.items items__base_table where is_visible = ?",
+        "select items__base_table.id, items__base_table.field, items__base_table.is_visible from test.items items__base_table where is_visible = ?",
+        "update test.items items__base_table set is_visible = ? where items__base_table.id in (select items__base_table.id from test.items items__base_table where is_visible = ?) returning *",
+        "select count(*) from test.items items__base_table where items__base_table.id in (?, ?, ?) and is_visible = ?",
       ]
     `);
   });
@@ -7920,9 +7913,9 @@ describe("batch updates", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select count(*) from test.items",
-        "select items.id, items.int from test.items",
-        "update test.items set int = ? where items.id in (select items.id from test.items) returning *",
+        "select count(*) from test.items items__base_table",
+        "select items__base_table.id, items__base_table.int from test.items items__base_table",
+        "update test.items items__base_table set int = ? where items__base_table.id in (select items__base_table.id from test.items items__base_table) returning *",
       ]
     `);
   });
@@ -8015,13 +8008,13 @@ describe("batch updates", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select count(*) from test.items",
-        "select items.id, items.int, items.version from test.items",
-        "update test.items set version = ? where id = ?",
-        "update test.items set version = ? where id = ?",
-        "update test.items set version = ? where id = ?",
-        "update test.items set int = ? where items.id in (select items.id from test.items) returning *",
-        "select count(*) from test.items where items.id in (?, ?, ?)",
+        "select count(*) from test.items items__base_table",
+        "select items__base_table.id, items__base_table.int, items__base_table.version from test.items items__base_table",
+        "update test.items items__base_table set version = ? where id = ?",
+        "update test.items items__base_table set version = ? where id = ?",
+        "update test.items items__base_table set version = ? where id = ?",
+        "update test.items items__base_table set int = ? where items__base_table.id in (select items__base_table.id from test.items items__base_table) returning *",
+        "select count(*) from test.items items__base_table where items__base_table.id in (?, ?, ?)",
       ]
     `);
   });
@@ -8132,10 +8125,10 @@ describe("batch updates", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select count(*) from test.items",
-        "select items.id, items.int, items.created_at, items.updated_at from test.items",
-        "update test.items set int = ?, updated_at = ? where items.id in (select items.id from test.items) returning *",
-        "select count(*) from test.items where items.id in (?, ?, ?)",
+        "select count(*) from test.items items__base_table",
+        "select items__base_table.id, items__base_table.int, items__base_table.created_at, items__base_table.updated_at from test.items items__base_table",
+        "update test.items items__base_table set int = ?, updated_at = ? where items__base_table.id in (select items__base_table.id from test.items items__base_table) returning *",
+        "select count(*) from test.items items__base_table where items__base_table.id in (?, ?, ?)",
       ]
     `);
   });
@@ -8167,7 +8160,7 @@ describe("batch updates", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select count(*) from test.items",
+        "select count(*) from test.items items__base_table",
       ]
     `);
   });
@@ -8274,7 +8267,7 @@ describe("deep includes", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id, array(select row_to_json(roles__alias_0_sub_query) from (select roles__alias_0.id, roles__alias_0.user_id, roles__alias_0.org_id, (select row_to_json(orgs__alias_1_sub_query) from (select orgs__alias_1.id from test.orgs orgs__alias_1 where orgs__alias_1.id = roles__alias_0.org_id limit ?) orgs__alias_1_sub_query) as org from test.roles roles__alias_0 where roles__alias_0.user_id = users.id limit ?) roles__alias_0_sub_query) as roles from test.users order by users.id asc limit ?",
+        "select users__base_table.id, array(select row_to_json(roles__alias_0_sub_query) from (select roles__alias_0.id, roles__alias_0.user_id, roles__alias_0.org_id, (select row_to_json(orgs__alias_1_sub_query) from (select orgs__alias_1.id from test.orgs orgs__alias_1 where orgs__alias_1.id = roles__alias_0.org_id limit ?) orgs__alias_1_sub_query) as org from test.roles roles__alias_0 where roles__alias_0.user_id = users__base_table.id limit ?) roles__alias_0_sub_query) as roles from test.users users__base_table order by users__base_table.id asc limit ?",
       ]
     `);
   });
@@ -8502,7 +8495,7 @@ describe("deep writes and integrity checks", () => {
         "insert into test.mapper (a_id, b_id) values (?, ?) returning *",
         "select a.id, a.text from test.a where a.id = ? limit ?",
         "select b.id, b.text from test.b where b.id = ? and b.id in (select b_id from test.mapper where a_id = ?) limit ?",
-        "select mapper.id, mapper.a_id, mapper.b_id from test.mapper where mapper.id = ? limit ?",
+        "select mapper__base_table.id, mapper__base_table.a_id, mapper__base_table.b_id from test.mapper mapper__base_table where mapper__base_table.id = ? limit ?",
       ]
     `);
 

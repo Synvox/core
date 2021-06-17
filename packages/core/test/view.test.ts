@@ -202,7 +202,7 @@ describe("works with views", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select view.id, view.is_boolean, view.number_count, view.body, view.body_appended, view.org_id, (select row_to_json(orgs__alias_0_sub_query) from (select orgs__alias_0.id from view_test.orgs orgs__alias_0 where orgs__alias_0.id = view.org_id limit ?) orgs__alias_0_sub_query) as org from view_test.view order by view.id asc limit ?",
+        "select view__base_table.id, view__base_table.is_boolean, view__base_table.number_count, view__base_table.body, view__base_table.body_appended, view__base_table.org_id, (select row_to_json(orgs__alias_0_sub_query) from (select orgs__alias_0.id from view_test.orgs orgs__alias_0 where orgs__alias_0.id = view__base_table.org_id limit ?) orgs__alias_0_sub_query) as org from view_test.view view__base_table order by view__base_table.id asc limit ?",
       ]
     `);
 
@@ -251,7 +251,7 @@ describe("works with views", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select orgs.id, array(select row_to_json(view__alias_0_sub_query) from (select view__alias_0.id, view__alias_0.is_boolean, view__alias_0.number_count, view__alias_0.body, view__alias_0.body_appended, view__alias_0.org_id from view_test.view view__alias_0 where view__alias_0.org_id = orgs.id limit ?) view__alias_0_sub_query) as view from view_test.orgs order by orgs.id asc limit ?",
+        "select orgs__base_table.id, array(select row_to_json(view__alias_0_sub_query) from (select view__alias_0.id, view__alias_0.is_boolean, view__alias_0.number_count, view__alias_0.body, view__alias_0.body_appended, view__alias_0.org_id from view_test.view view__alias_0 where view__alias_0.org_id = orgs__base_table.id limit ?) view__alias_0_sub_query) as view from view_test.orgs orgs__base_table order by orgs__base_table.id asc limit ?",
       ]
     `);
 
@@ -271,7 +271,7 @@ describe("works with views", () => {
       Array [
         "select orgs.id from view_test.orgs where orgs.id = ? limit ?",
         "insert into view_test.view (is_boolean, org_id) values (?, ?) returning *",
-        "select view.id, view.is_boolean, view.number_count, view.body, view.body_appended, view.org_id from view_test.view where view.id = ? limit ?",
+        "select view__base_table.id, view__base_table.is_boolean, view__base_table.number_count, view__base_table.body, view__base_table.body_appended, view__base_table.org_id from view_test.view view__base_table where view__base_table.id = ? limit ?",
       ]
     `);
 
@@ -342,7 +342,7 @@ describe("works with views", () => {
       Array [
         "select orgs.id from view_test.orgs where orgs.id = ? limit ?",
         "insert into view_test.view (body, is_boolean, org_id) values (?, ?, ?) returning *",
-        "select view.id, view.is_boolean, view.number_count, view.body, view.body_appended, view.org_id from view_test.view where view.id = ? limit ?",
+        "select view__base_table.id, view__base_table.is_boolean, view__base_table.number_count, view__base_table.body, view__base_table.body_appended, view__base_table.org_id from view_test.view view__base_table where view__base_table.id = ? limit ?",
       ]
     `);
 
@@ -395,7 +395,7 @@ describe("works with views", () => {
       Array [
         "select orgs.id from view_test.orgs where orgs.id = ? limit ?",
         "insert into view_test.view (is_boolean, org_id) values (?, ?) returning *",
-        "select view.id, view.is_boolean, view.number_count, view.body, view.body_appended, view.org_id from view_test.view where view.id = ? limit ?",
+        "select view__base_table.id, view__base_table.is_boolean, view__base_table.number_count, view__base_table.body, view__base_table.body_appended, view__base_table.org_id from view_test.view view__base_table where view__base_table.id = ? limit ?",
       ]
     `);
 
@@ -622,7 +622,7 @@ describe("works with views", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select view.id, view.is_boolean, view.number_count, view.text, view.org_id, (select row_to_json(orgs__alias_0_sub_query) from (select orgs__alias_0.id from view_test.orgs orgs__alias_0 where orgs__alias_0.id = view.org_id limit ?) orgs__alias_0_sub_query) as org from view_test.view where (view.is_boolean = ?) order by view.id asc limit ?",
+        "select view__base_table.id, view__base_table.is_boolean, view__base_table.number_count, view__base_table.text, view__base_table.org_id, (select row_to_json(orgs__alias_0_sub_query) from (select orgs__alias_0.id from view_test.orgs orgs__alias_0 where orgs__alias_0.id = view__base_table.org_id limit ?) orgs__alias_0_sub_query) as org from view_test.view view__base_table where (view__base_table.is_boolean = ?) order by view__base_table.id asc limit ?",
       ]
     `);
 
@@ -668,7 +668,7 @@ describe("works with views", () => {
       Array [
         "select orgs.id from view_test.orgs where orgs.id = ? limit ?",
         "insert into view_test.view (is_boolean, number_count, org_id) values (?, ?, ?) returning *",
-        "select view.id, view.is_boolean, view.number_count, view.text, view.org_id from view_test.view where view.id = ? limit ?",
+        "select view__base_table.id, view__base_table.is_boolean, view__base_table.number_count, view__base_table.text, view__base_table.org_id from view_test.view view__base_table where view__base_table.id = ? limit ?",
       ]
     `);
 
@@ -701,8 +701,8 @@ describe("works with views", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select view.id, view.is_boolean, view.number_count, view.text, view.org_id from view_test.view where view.id = ? limit ?",
-        "delete from view_test.view where view.id = ?",
+        "select view__base_table.id, view__base_table.is_boolean, view__base_table.number_count, view__base_table.text, view__base_table.org_id from view_test.view view__base_table where view__base_table.id = ? limit ?",
+        "delete from view_test.view view__base_table where view__base_table.id = ?",
       ]
     `);
   });
