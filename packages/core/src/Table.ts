@@ -1613,7 +1613,8 @@ export class Table<Context, T = any> {
     include: any,
     context: Context,
     mode: Mode,
-    complexityLimit = this.eagerLoadingComplexityLimit
+    complexityLimit = this.eagerLoadingComplexityLimit,
+    refCount = 0
   ) {
     complexityLimit -= this.complexityWeight;
     if (complexityLimit <= 0) throw new ComplexityError();
@@ -1623,7 +1624,6 @@ export class Table<Context, T = any> {
       include = Object.fromEntries(include.map((inc) => [inc, true]));
 
     let notFoundIncludes: string[] = [];
-    let refCount = 0;
 
     for (let [includeTable, otherIncludes] of Object.entries(include)) {
       let isOne = true;
@@ -1652,10 +1652,7 @@ export class Table<Context, T = any> {
         continue;
       }
 
-      const alias =
-        ref.table.tableName === this.tableName
-          ? `${ref.table.tableName}__self_ref_alias_${refCount++}`
-          : ref.table.tableName;
+      const alias = `${ref.table.tableName}__alias_${refCount++}`;
       const refTable = ref.table.withAlias(alias);
 
       let subQuery = refTable.query(knex);
@@ -1703,7 +1700,8 @@ export class Table<Context, T = any> {
           otherIncludes,
           context,
           mode,
-          complexityLimit
+          complexityLimit,
+          refCount
         );
       }
 

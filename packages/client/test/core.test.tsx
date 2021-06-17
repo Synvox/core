@@ -303,6 +303,82 @@ describe("core", () => {
     }
   });
 
+  it("doesn't keep a promise for a sub resource that does not match", async () => {
+    const [parent] = await knex("coreClientTest.test").insert({}, "*");
+    await knex("coreClientTest.testSub").insert({ parentId: parent.id });
+    const core = new Core(knex, () => ({}));
+
+    core.table({
+      schemaName: "coreClientTest",
+      tableName: "test",
+    });
+
+    core.table({
+      schemaName: "coreClientTest",
+      tableName: "testSub",
+    });
+
+    const app = express();
+    app.use(core.router);
+    const url = await listen(app);
+    const axios = Axios.create({ baseURL: url });
+
+    type Test = {
+      id: number;
+      isBoolean: boolean;
+      numberCount: number;
+      text: string;
+      testSub: TestSub[];
+    };
+    type TestSub = {
+      id: number;
+      parentId: number;
+    };
+
+    const { useCore, touch } = coreClient(axios, {
+      test: table<Test, Test & { include: "testSub" }>("/coreClientTest/test"),
+      testSub: table<TestSub, TestSub>("/coreClientTest/testSub"),
+    });
+
+    const { result, waitForNextUpdate } = renderHook(() => {
+      const core = useCore();
+
+      function tryOr<T>(fn: () => T): T | null {
+        try {
+          return fn();
+        } catch (e) {
+          if (e.then) throw e;
+          return null;
+        }
+      }
+
+      return tryOr(() => {
+        const [result] = core.test({ include: "testSub" });
+        return { result: result.testSub[0] };
+      });
+    });
+
+    expect(result.current).toMatchInlineSnapshot(`undefined`);
+    await waitForNextUpdate();
+
+    expect(result.current).toMatchInlineSnapshot(`
+      Object {
+        "result": Object {
+          "id": 1,
+          "parentId": 1,
+        },
+      }
+    `);
+
+    await knex("coreClientTest.testSub").del();
+
+    await act(async () => {
+      await touch((url: string) => url.startsWith("/coreClientTest/testSub"));
+    });
+
+    expect(result.current).toMatchInlineSnapshot(`null`);
+  });
+
   it("writes", async () => {
     const core = new Core(knex, () => ({}));
 

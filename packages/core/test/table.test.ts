@@ -405,7 +405,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select posts.id, posts.user_id, (select row_to_json(users_sub_query) from (select users.id from test.users where users.id = posts.user_id limit ?) users_sub_query) as user from test.posts where (posts.id = ?) limit ?",
+        "select posts.id, posts.user_id, (select row_to_json(users__alias_0_sub_query) from (select users__alias_0.id from test.users users__alias_0 where users__alias_0.id = posts.user_id limit ?) users__alias_0_sub_query) as user from test.posts where (posts.id = ?) limit ?",
       ]
     `);
 
@@ -435,7 +435,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id, array(select row_to_json(posts_sub_query) from (select posts.id, posts.user_id from test.posts where posts.user_id = users.id limit ?) posts_sub_query) as posts from test.users where (users.id = ?) limit ?",
+        "select users.id, array(select row_to_json(posts__alias_0_sub_query) from (select posts__alias_0.id, posts__alias_0.user_id from test.posts posts__alias_0 where posts__alias_0.user_id = users.id limit ?) posts__alias_0_sub_query) as posts from test.users where (users.id = ?) limit ?",
       ]
     `);
 
@@ -455,7 +455,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id, (select count(posts.*) from test.posts where posts.user_id = users.id) as posts_count from test.users where (users.id = ?) limit ?",
+        "select users.id, (select count(posts__alias_0.*) from test.posts posts__alias_0 where posts__alias_0.user_id = users.id) as posts_count from test.users where (users.id = ?) limit ?",
       ]
     `);
 
@@ -623,7 +623,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select posts.id, posts.user_id, (select row_to_json(users_sub_query) from (select users.id from test.users where users.id = posts.user_id limit ?) users_sub_query) as user from test.posts where (posts.id = ?) limit ?",
+        "select posts.id, posts.user_id, (select row_to_json(users__alias_0_sub_query) from (select users__alias_0.id from test.users users__alias_0 where users__alias_0.id = posts.user_id limit ?) users__alias_0_sub_query) as user from test.posts where (posts.id = ?) limit ?",
       ]
     `);
 
@@ -655,7 +655,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id, array(select row_to_json(posts_sub_query) from (select posts.id, posts.user_id from test.posts where posts.user_id = users.id limit ?) posts_sub_query) as posts from test.users where (users.id = ?) limit ?",
+        "select users.id, array(select row_to_json(posts__alias_0_sub_query) from (select posts__alias_0.id, posts__alias_0.user_id from test.posts posts__alias_0 where posts__alias_0.user_id = users.id limit ?) posts__alias_0_sub_query) as posts from test.users where (users.id = ?) limit ?",
       ]
     `);
 
@@ -694,7 +694,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id, array(select row_to_json(posts_sub_query) from (select posts.id, posts.user_id from test.posts where posts.user_id = users.id limit ?) posts_sub_query) as posts, (select row_to_json(i) from (select count(*) from test.posts where user_id=users.id limit ?) as i) as post_count from test.users where (users.id = ?) limit ?",
+        "select users.id, array(select row_to_json(posts__alias_0_sub_query) from (select posts__alias_0.id, posts__alias_0.user_id from test.posts posts__alias_0 where posts__alias_0.user_id = users.id limit ?) posts__alias_0_sub_query) as posts, (select row_to_json(i) from (select count(*) from test.posts where user_id=users.id limit ?) as i) as post_count from test.users where (users.id = ?) limit ?",
       ]
     `);
 
@@ -872,7 +872,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select docs.id, docs.version_id, docs.first_version_id, (select row_to_json(versions_sub_query) from (select versions.id from test.versions where versions.id = docs.version_id limit ?) versions_sub_query) as version, (select row_to_json(versions_sub_query) from (select versions.id from test.versions where versions.id = docs.first_version_id limit ?) versions_sub_query) as first_version from test.docs order by docs.id asc limit ?",
+        "select docs.id, docs.version_id, docs.first_version_id, (select row_to_json(versions__alias_0_sub_query) from (select versions__alias_0.id from test.versions versions__alias_0 where versions__alias_0.id = docs.version_id limit ?) versions__alias_0_sub_query) as version, (select row_to_json(versions__alias_1_sub_query) from (select versions__alias_1.id from test.versions versions__alias_1 where versions__alias_1.id = docs.first_version_id limit ?) versions__alias_1_sub_query) as first_version from test.docs order by docs.id asc limit ?",
       ]
     `);
 
@@ -933,7 +933,7 @@ describe("without policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select versions.id, array(select row_to_json(docs_sub_query) from (select docs.id, docs.version_id, docs.first_version_id from test.docs where docs.version_id = versions.id limit ?) docs_sub_query) as head_docs, array(select row_to_json(docs_sub_query) from (select docs.id, docs.version_id, docs.first_version_id from test.docs where docs.first_version_id = versions.id limit ?) docs_sub_query) as first_docs from test.versions order by versions.id asc limit ?",
+        "select versions.id, array(select row_to_json(docs__alias_0_sub_query) from (select docs__alias_0.id, docs__alias_0.version_id, docs__alias_0.first_version_id from test.docs docs__alias_0 where docs__alias_0.version_id = versions.id limit ?) docs__alias_0_sub_query) as head_docs, array(select row_to_json(docs__alias_1_sub_query) from (select docs__alias_1.id, docs__alias_1.version_id, docs__alias_1.first_version_id from test.docs docs__alias_1 where docs__alias_1.first_version_id = versions.id limit ?) docs__alias_1_sub_query) as first_docs from test.versions order by versions.id asc limit ?",
       ]
     `);
   });
@@ -3164,7 +3164,7 @@ describe("with policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id, users.org_id, array(select row_to_json(posts_sub_query) from (select posts.id, posts.org_id, posts.user_id from test.posts where posts.user_id = users.id and posts.org_id = ? limit ?) posts_sub_query) as posts from test.users where users.org_id = ? order by users.id asc limit ?",
+        "select users.id, users.org_id, array(select row_to_json(posts__alias_0_sub_query) from (select posts__alias_0.id, posts__alias_0.org_id, posts__alias_0.user_id from test.posts posts__alias_0 where posts__alias_0.user_id = users.id and posts__alias_0.org_id = ? limit ?) posts__alias_0_sub_query) as posts from test.users where users.org_id = ? order by users.id asc limit ?",
       ]
     `);
 
@@ -3207,7 +3207,7 @@ describe("with policies", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select posts.id, posts.org_id, posts.user_id, (select row_to_json(users_sub_query) from (select users.id, users.org_id from test.users where users.id = posts.user_id and users.org_id = ? limit ?) users_sub_query) as user from test.posts where posts.org_id = ? order by posts.id asc limit ?",
+        "select posts.id, posts.org_id, posts.user_id, (select row_to_json(users__alias_0_sub_query) from (select users__alias_0.id, users__alias_0.org_id from test.users users__alias_0 where users__alias_0.id = posts.user_id and users__alias_0.org_id = ? limit ?) users__alias_0_sub_query) as user from test.posts where posts.org_id = ? order by posts.id asc limit ?",
       ]
     `);
   });
@@ -5358,7 +5358,7 @@ describe("self references", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.parent_item_id, (select row_to_json(items__self_ref_alias_0_sub_query) from (select items__self_ref_alias_0.id, items__self_ref_alias_0.parent_item_id from test.items items__self_ref_alias_0 where items__self_ref_alias_0.id = items.parent_item_id limit ?) items__self_ref_alias_0_sub_query) as parent_item from test.items order by items.id asc limit ?",
+        "select items.id, items.parent_item_id, (select row_to_json(items__alias_0_sub_query) from (select items__alias_0.id, items__alias_0.parent_item_id from test.items items__alias_0 where items__alias_0.id = items.parent_item_id limit ?) items__alias_0_sub_query) as parent_item from test.items order by items.id asc limit ?",
       ]
     `);
 
@@ -5450,7 +5450,7 @@ describe("self references", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select items.id, items.parent_item_id, array(select row_to_json(items__self_ref_alias_0_sub_query) from (select items__self_ref_alias_0.id, items__self_ref_alias_0.parent_item_id from test.items items__self_ref_alias_0 where items__self_ref_alias_0.parent_item_id = items.id limit ?) items__self_ref_alias_0_sub_query) as items from test.items order by items.id asc limit ?",
+        "select items.id, items.parent_item_id, array(select row_to_json(items__alias_0_sub_query) from (select items__alias_0.id, items__alias_0.parent_item_id from test.items items__alias_0 where items__alias_0.parent_item_id = items.id limit ?) items__alias_0_sub_query) as items from test.items order by items.id asc limit ?",
       ]
     `);
   });
@@ -8274,7 +8274,7 @@ describe("deep includes", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select users.id, array(select row_to_json(roles_sub_query) from (select roles.id, roles.user_id, roles.org_id, (select row_to_json(orgs_sub_query) from (select orgs.id from test.orgs where orgs.id = roles.org_id limit ?) orgs_sub_query) as org from test.roles where roles.user_id = users.id limit ?) roles_sub_query) as roles from test.users order by users.id asc limit ?",
+        "select users.id, array(select row_to_json(roles__alias_0_sub_query) from (select roles__alias_0.id, roles__alias_0.user_id, roles__alias_0.org_id, (select row_to_json(orgs__alias_1_sub_query) from (select orgs__alias_1.id from test.orgs orgs__alias_1 where orgs__alias_1.id = roles__alias_0.org_id limit ?) orgs__alias_1_sub_query) as org from test.roles roles__alias_0 where roles__alias_0.user_id = users.id limit ?) roles__alias_0_sub_query) as roles from test.users order by users.id asc limit ?",
       ]
     `);
   });
@@ -8350,7 +8350,9 @@ describe("deep includes", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`Array []`);
   });
+});
 
+describe("deep writes and integrity checks", () => {
   it("waits until the end of a transaction before checking integrity", async () => {
     await knex.schema.withSchema("test").createTable("a", (t) => {
       t.bigIncrements("id").primary();

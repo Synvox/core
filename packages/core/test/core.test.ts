@@ -368,7 +368,7 @@ describe("listens on server", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test_sub.id, test_sub.parent_id, (select row_to_json(test_sub_query) from (select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = test_sub.parent_id limit ?) test_sub_query) as parent from core_test.test_sub where (test_sub.parent_id = ?) order by test_sub.id asc limit ?",
+        "select test_sub.id, test_sub.parent_id, (select row_to_json(test__alias_0_sub_query) from (select test__alias_0.id, test__alias_0.is_boolean, test__alias_0.number_count, test__alias_0.text from core_test.test test__alias_0 where test__alias_0.id = test_sub.parent_id limit ?) test__alias_0_sub_query) as parent from core_test.test_sub where (test_sub.parent_id = ?) order by test_sub.id asc limit ?",
       ]
     `);
   });
@@ -507,7 +507,7 @@ describe("listens on server", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select test_sub.id, test_sub.parent_id from core_test.test_sub where (test_sub.id = ?) limit ?",
-        "select test.id, test.is_boolean, test.number_count, test.text, array(select row_to_json(test_sub_sub_query) from (select test_sub.id, test_sub.parent_id from core_test.test_sub where test_sub.parent_id = test.id limit ?) test_sub_sub_query) as test_sub from core_test.test where (test.id = ?) limit ?",
+        "select test.id, test.is_boolean, test.number_count, test.text, array(select row_to_json(test_sub__alias_0_sub_query) from (select test_sub__alias_0.id, test_sub__alias_0.parent_id from core_test.test_sub test_sub__alias_0 where test_sub__alias_0.parent_id = test.id limit ?) test_sub__alias_0_sub_query) as test_sub from core_test.test where (test.id = ?) limit ?",
       ]
     `);
 
@@ -536,7 +536,7 @@ describe("listens on server", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select test_sub.id, test_sub.parent_id from core_test.test_sub where (test_sub.id = ?) limit ?",
-        "select test.id, test.is_boolean, test.number_count, test.text, (select count(test_sub.*) from core_test.test_sub where test_sub.parent_id = test.id) as test_sub_count from core_test.test where (test.id = ?) limit ?",
+        "select test.id, test.is_boolean, test.number_count, test.text, (select count(test_sub__alias_0.*) from core_test.test_sub test_sub__alias_0 where test_sub__alias_0.parent_id = test.id) as test_sub_count from core_test.test where (test.id = ?) limit ?",
       ]
     `);
 
@@ -546,7 +546,7 @@ describe("listens on server", () => {
     ).toMatchInlineSnapshot(`1`);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text, (select count(test_sub.*) from core_test.test_sub where test_sub.parent_id = test.id) as test_sub_count from core_test.test where (test.id = ?) limit ?",
+        "select test.id, test.is_boolean, test.number_count, test.text, (select count(test_sub__alias_0.*) from core_test.test_sub test_sub__alias_0 where test_sub__alias_0.parent_id = test.id) as test_sub_count from core_test.test where (test.id = ?) limit ?",
       ]
     `);
   });

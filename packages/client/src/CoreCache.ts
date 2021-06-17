@@ -281,10 +281,13 @@ export class CoreCache {
         continue;
       }
 
-      let promise = pendingPromises[entry.loadedThrough];
+      let promise =
+        pendingPromises[entry.loadedThrough] || pendingPromises[url];
+
       if (!promise) {
-        promise = this.load(url);
+        promise = this.load(entry.loadedThrough);
         pendingPromises[url] = promise;
+        pendingPromises[entry.loadedThrough] = promise;
       }
 
       this.cache[url] = {
@@ -295,6 +298,14 @@ export class CoreCache {
 
     const commitFunctions = await Promise.all(Object.values(pendingPromises));
     const updateFunctions = commitFunctions.map((commit) => commit());
+
+    for (let url in pendingPromises) {
+      if (this.cache[url]?.promise) {
+        // a resource has left a url but still contains a promise
+        this.cache[url].promise = undefined;
+      }
+    }
+
     const num = nextUpdateNumber();
     for (let update of updateFunctions) update(num);
   }
