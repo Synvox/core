@@ -56,18 +56,16 @@ export type ChangeTo<T> = {
   update: () => Promise<void>;
 };
 
-export type Getter<
-  Result,
-  Params extends Record<string, any>,
-  IDColumnName
-> = ((idOrParams: ID<Params, IDColumnName>, params?: Params) => Result) &
-  ((idOrParams?: Params) => Collection<Result>);
+export type Getter<Result, Params extends Record<string, any>, IDColumnName> = {
+  (idOrParams?: Params): Collection<Result>;
+  (idOrParams: ID<Params, IDColumnName>, params?: Params): Result;
+};
 
 export type Handlers<
   Result,
   Params extends Record<string, any>,
   IDColumnName
-> = Getter<Result, DeepPartial<Params>, IDColumnName> & {
+> = Getter<Result, DeepPartial<Params>, ID<Params, IDColumnName>> & {
   get: Getter<Result, DeepPartial<Params>, ID<Params, IDColumnName>>;
   first: (params?: DeepPartial<Params>) => Result;
   put: (
