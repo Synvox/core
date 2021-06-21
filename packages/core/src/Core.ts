@@ -555,8 +555,6 @@ export class Core<Context> {
 }
 
 export async function saveSchemaToFile(tables: Table<any>[], path: string) {
-  tables = tables.sort((a, b) => a.tablePath.localeCompare(b.tablePath));
-
   const json = tables.reduce((acc, table) => {
     acc[table.tablePath] = {
       columns: table.columns,
@@ -567,5 +565,17 @@ export async function saveSchemaToFile(tables: Table<any>[], path: string) {
     return acc;
   }, {} as Record<string, SavedTable>);
 
-  await fs.writeFile(path, JSON.stringify(json, null, 2));
+  await fs.writeFile(path, JSON.stringify(deepSort(json), null, 2));
+}
+
+function deepSort(obj: any): any {
+  if (typeof obj !== "object" || obj === null || obj instanceof Date)
+    return obj;
+  if (Array.isArray(obj)) return obj.map((item) => deepSort(item));
+
+  return Object.fromEntries(
+    Object.entries(obj)
+      .sort((a, b) => String(a).localeCompare(String(b)))
+      .map(([key, value]) => [key, deepSort(value)])
+  );
 }
