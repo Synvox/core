@@ -7,11 +7,13 @@ import { Core, knexHelpers } from "@synvox/core";
 import { renderHook } from "@testing-library/react-hooks";
 import { act } from "react-dom/test-utils";
 import pg from "pg";
-import { core as coreClient, table, preload } from "../src";
+import { core as coreClient, table, preload, ChangeTo } from "../src";
 import EventSource from "eventsource";
 import uuid from "uuid";
 import { defer } from "../src/defer";
 import { useState } from "react";
+
+function expectType<Type>(_: Type) {}
 
 //@ts-expect-error
 global.EventSource = EventSource;
@@ -1363,6 +1365,126 @@ describe("core", () => {
         ],
         "limit": 1000,
         "page": 0,
+      }
+    `);
+  });
+
+  it("handles typing extensions", async () => {
+    const core = new Core(knex, () => ({}));
+
+    type Test = {
+      id: number;
+      isBoolean: boolean;
+      numberCount: number;
+      text: string;
+    };
+
+    type Result = {
+      ok: true;
+      body: {
+        num: number;
+      };
+      row: Test;
+    };
+
+    core.table({
+      schemaName: "coreClientTest",
+      tableName: "test",
+      methods: {
+        async do(row: Test, body: Result["body"]): Promise<Result> {
+          return {
+            ok: true,
+            body,
+            row,
+          };
+        },
+      },
+    });
+
+    const app = express();
+    app.use(core.router);
+    const url = await listen(app);
+    const axios = Axios.create({ baseURL: url });
+
+    const { useCore } = coreClient(axios, {
+      test: table<
+        Test,
+        Test,
+        {
+          post(url: `/${number}/do`, body: Result["body"]): Promise<Result>;
+        }
+      >("/coreClientTest/test"),
+    });
+
+    const { result, waitForNextUpdate } = renderHook(() => {
+      const core = useCore();
+      return {
+        test: core.test(),
+        core,
+      };
+    });
+
+    expect(result.current).toMatchInlineSnapshot(`undefined`);
+    await waitForNextUpdate();
+
+    let urls: string[] = [];
+    axios.interceptors.request.use((config) => {
+      urls.push(`${config.method} ${config.url!}`);
+      return config;
+    });
+
+    const handle = result.current.core.test;
+    const r1 = await handle.post({});
+    const r2 = await handle.post(`/${1}/do`, { num: 1 });
+
+    expectType<ChangeTo<Test>>(r1);
+    expectType<Result>(r2);
+
+    expect(r1).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "insert",
+            "path": "/coreClientTest/test",
+            "row": Object {
+              "_links": Object {},
+              "_type": "coreClientTest/test",
+              "_url": "/coreClientTest/test/1",
+              "id": 1,
+              "isBoolean": false,
+              "numberCount": 0,
+              "text": "text",
+            },
+          },
+        ],
+        "result": Object {
+          "_links": Object {},
+          "_type": "coreClientTest/test",
+          "_url": "/coreClientTest/test/1",
+          "id": 1,
+          "isBoolean": false,
+          "numberCount": 0,
+          "text": "text",
+        },
+        "update": [Function],
+      }
+    `);
+    expect(r2).toMatchInlineSnapshot(`
+      Object {
+        "body": Object {
+          "num": 1,
+        },
+        "ok": true,
+        "row": Object {
+          "_links": Object {},
+          "_type": "coreClientTest/test",
+          "_url": "/coreClientTest/test/1",
+          "id": 1,
+          "isBoolean": false,
+          "numberCount": 0,
+          "text": "text",
+        },
       }
     `);
   });

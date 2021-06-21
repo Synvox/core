@@ -14,7 +14,7 @@ type Options = {
   shouldTouch?: (change: Change, url: string) => boolean;
 };
 
-class Table<Result, Params, IDColumnName> {
+class Table<Result, Params, Extension, IDColumnName> {
   path: string;
 
   blockUpdatesById: (id: string) => void;
@@ -44,7 +44,7 @@ class Table<Result, Params, IDColumnName> {
     getUrl: (url: string) => any;
     axios: AxiosInstance;
     handleChanges: (changes: Change[]) => Promise<void>;
-  }): Handlers<Result, Params, IDColumnName> {
+  }): Handlers<Result, Params, Extension, IDColumnName> {
     const { path, lock, blockUpdatesById } = this;
 
     function getUrl(url: string) {
@@ -70,6 +70,7 @@ class Table<Result, Params, IDColumnName> {
       }
     }
 
+    //@ts-expect-error
     return Object.assign(
       (idOrParams?: ID<Params, IDColumnName> | Params, params?: Params) =>
         get(idOrParams, params),
@@ -206,18 +207,20 @@ class Table<Result, Params, IDColumnName> {
           return result;
         },
       }
-    ) as Handlers<Result, Params, IDColumnName>;
+    );
   }
 }
 
-export function table<T, P, IDColumnName extends string | number = "id">(
-  path: string,
-  options: Options = {}
-) {
-  return new Table<T, P, IDColumnName>(path, options);
+export function table<
+  T,
+  P,
+  E = {},
+  IDColumnName extends string | number = "id"
+>(path: string, options: Options = {}) {
+  return new Table<T, P, E, IDColumnName>(path, options);
 }
 
-export function core<Routes extends Record<string, Table<any, any, any>>>(
+export function core<Routes extends Record<string, Table<any, any, {}, any>>>(
   axios: AxiosInstance,
   routes: Routes
 ) {
@@ -227,7 +230,7 @@ export function core<Routes extends Record<string, Table<any, any, any>>>(
   let waitForUnlockPromise: Promise<void> | null = null;
 
   async function handleChanges(changes: Change[]) {
-    await cache.touch((url) => {
+    await cache.touch((url: string) => {
       const tables = Object.values(routes);
 
       return changes.some((change) => {
@@ -303,9 +306,10 @@ export function core<Routes extends Record<string, Table<any, any, any>>>(
       [name in keyof Routes]: Routes[name] extends Table<
         infer Result,
         infer Params,
+        infer Extension,
         infer ID
       >
-        ? Handlers<Result, Partial<Params>, ID>
+        ? Handlers<Result, Partial<Params>, Extension, ID>
         : never;
     } {
       const getUrl = cache.useGet();
