@@ -263,7 +263,7 @@ describe("listens on server", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test_sub.id, test_sub.parent_id from core_test.test_sub where (test_sub.parent_id = ?) order by test_sub.id asc limit ?",
+        "select test_sub__base_table.id, test_sub__base_table.parent_id from core_test.test_sub test_sub__base_table where (test_sub__base_table.parent_id = ?) order by test_sub__base_table.id asc limit ?",
       ]
     `);
 
@@ -302,7 +302,7 @@ describe("listens on server", () => {
       Array [
         "select test.id from core_test.test where test.id = ? limit ?",
         "insert into core_test.test_sub (parent_id) values (?) returning *",
-        "select test_sub.id, test_sub.parent_id from core_test.test_sub where test_sub.id = ? limit ?",
+        "select test_sub__base_table.id, test_sub__base_table.parent_id from core_test.test_sub test_sub__base_table where test_sub__base_table.id = ? limit ?",
       ]
     `);
 
@@ -368,7 +368,7 @@ describe("listens on server", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test_sub.id, test_sub.parent_id, (select row_to_json(test_sub_query) from (select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = test_sub.parent_id limit ?) test_sub_query) as parent from core_test.test_sub where (test_sub.parent_id = ?) order by test_sub.id asc limit ?",
+        "select test_sub__base_table.id, test_sub__base_table.parent_id, (select row_to_json(test__alias_0_sub_query) from (select test__alias_0.id, test__alias_0.is_boolean, test__alias_0.number_count, test__alias_0.text from core_test.test test__alias_0 where test__alias_0.id = test_sub__base_table.parent_id limit ?) test__alias_0_sub_query) as parent from core_test.test_sub test_sub__base_table where (test_sub__base_table.parent_id = ?) order by test_sub__base_table.id asc limit ?",
       ]
     `);
   });
@@ -418,8 +418,8 @@ describe("listens on server", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test_sub.id, test_sub.parent_id from core_test.test_sub where (test_sub.id = ?) limit ?",
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.id = ?) limit ?",
+        "select test_sub__base_table.id, test_sub__base_table.parent_id from core_test.test_sub test_sub__base_table where (test_sub__base_table.id = ?) limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (test__base_table.id = ?) limit ?",
       ]
     `);
 
@@ -467,11 +467,11 @@ describe("listens on server", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test_sub.id, test_sub.parent_id from core_test.test_sub where (test_sub.id = ?) limit ?",
+        "select test_sub__base_table.id, test_sub__base_table.parent_id from core_test.test_sub test_sub__base_table where (test_sub__base_table.id = ?) limit ?",
         "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.id = ?) limit ?",
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
-        "update core_test.test set is_boolean = ? where test.id = ?",
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where test__base_table.id = ? limit ?",
+        "update core_test.test test__base_table set is_boolean = ? where test__base_table.id = ? returning *",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where test__base_table.id = ? limit ?",
       ]
     `);
 
@@ -506,8 +506,8 @@ describe("listens on server", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test_sub.id, test_sub.parent_id from core_test.test_sub where (test_sub.id = ?) limit ?",
-        "select test.id, test.is_boolean, test.number_count, test.text, array(select row_to_json(test_sub_sub_query) from (select test_sub.id, test_sub.parent_id from core_test.test_sub where test_sub.parent_id = test.id limit ?) test_sub_sub_query) as test_sub from core_test.test where (test.id = ?) limit ?",
+        "select test_sub__base_table.id, test_sub__base_table.parent_id from core_test.test_sub test_sub__base_table where (test_sub__base_table.id = ?) limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text, array(select row_to_json(test_sub__alias_0_sub_query) from (select test_sub__alias_0.id, test_sub__alias_0.parent_id from core_test.test_sub test_sub__alias_0 where test_sub__alias_0.parent_id = test__base_table.id limit ?) test_sub__alias_0_sub_query) as test_sub from core_test.test test__base_table where (test__base_table.id = ?) limit ?",
       ]
     `);
 
@@ -535,8 +535,8 @@ describe("listens on server", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test_sub.id, test_sub.parent_id from core_test.test_sub where (test_sub.id = ?) limit ?",
-        "select test.id, test.is_boolean, test.number_count, test.text, (select count(test_sub.*) from core_test.test_sub where test_sub.parent_id = test.id) as test_sub_count from core_test.test where (test.id = ?) limit ?",
+        "select test_sub__base_table.id, test_sub__base_table.parent_id from core_test.test_sub test_sub__base_table where (test_sub__base_table.id = ?) limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text, (select count(test_sub__alias_0.*) from core_test.test_sub test_sub__alias_0 where test_sub__alias_0.parent_id = test__base_table.id) as test_sub_count from core_test.test test__base_table where (test__base_table.id = ?) limit ?",
       ]
     `);
 
@@ -546,7 +546,7 @@ describe("listens on server", () => {
     ).toMatchInlineSnapshot(`1`);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text, (select count(test_sub.*) from core_test.test_sub where test_sub.parent_id = test.id) as test_sub_count from core_test.test where (test.id = ?) limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text, (select count(test_sub__alias_0.*) from core_test.test_sub test_sub__alias_0 where test_sub__alias_0.parent_id = test__base_table.id) as test_sub_count from core_test.test test__base_table where (test__base_table.id = ?) limit ?",
       ]
     `);
   });
@@ -610,7 +610,7 @@ describe("listens on server", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into core_test.test (is_boolean, number_count, text) values (?, ?, ?) returning *",
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where test__base_table.id = ? limit ?",
       ]
     `);
   });
@@ -706,8 +706,8 @@ describe("listens on server", () => {
       Array [
         "insert into core_test.test (is_boolean, number_count, text) values (?, ?, ?) returning *",
         "insert into core_test.test (is_boolean, number_count, text) values (?, ?, ?) returning *",
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where test.id = ? limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where test__base_table.id = ? limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where test__base_table.id = ? limit ?",
       ]
     `);
   });
@@ -829,10 +829,10 @@ describe("listens on server", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select count(*) from core_test.test where (test.id in (?))",
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.id in (?))",
-        "update core_test.test set number_count = ?, is_boolean = ?, text = ? where test.id in (select test.id from core_test.test where (test.id in (?))) returning *",
-        "select count(*) from core_test.test where test.id in (?)",
+        "select count(*) from core_test.test test__base_table where (test__base_table.id in (?))",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (test__base_table.id in (?))",
+        "update core_test.test test__base_table set number_count = ?, is_boolean = ?, text = ? where test__base_table.id in (select test__base_table.id from core_test.test test__base_table where (test__base_table.id in (?))) returning *",
+        "select count(*) from core_test.test test__base_table where test__base_table.id in (?)",
       ]
     `);
   });
@@ -1131,7 +1131,7 @@ describe("listens on server", () => {
     await axios.get(`/coreTest/test`);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test order by test.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table order by test__base_table.id asc limit ?",
       ]
     `);
   });
@@ -1592,7 +1592,7 @@ describe("handles advanced queries", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.number_count <= ?) order by test.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (test__base_table.number_count <= ?) order by test__base_table.id asc limit ?",
       ]
     `);
 
@@ -1629,7 +1629,7 @@ describe("handles advanced queries", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.number_count < ?) order by test.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (test__base_table.number_count < ?) order by test__base_table.id asc limit ?",
       ]
     `);
 
@@ -1675,7 +1675,7 @@ describe("handles advanced queries", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.number_count >= ?) order by test.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (test__base_table.number_count >= ?) order by test__base_table.id asc limit ?",
       ]
     `);
 
@@ -1712,7 +1712,7 @@ describe("handles advanced queries", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.number_count > ?) order by test.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (test__base_table.number_count > ?) order by test__base_table.id asc limit ?",
       ]
     `);
 
@@ -1758,7 +1758,7 @@ describe("handles advanced queries", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.number_count <> ?) order by test.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (test__base_table.number_count <> ?) order by test__base_table.id asc limit ?",
       ]
     `);
 
@@ -1804,7 +1804,7 @@ describe("handles advanced queries", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (not test.number_count = ?) order by test.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (not test__base_table.number_count = ?) order by test__base_table.id asc limit ?",
       ]
     `);
 
@@ -1841,7 +1841,7 @@ describe("handles advanced queries", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (to_tsvector(test.text) @@ plainto_tsquery(?)) order by test.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (to_tsvector(test__base_table.text) @@ plainto_tsquery(?)) order by test__base_table.id asc limit ?",
       ]
     `);
 
@@ -1887,7 +1887,7 @@ describe("handles advanced queries", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (not to_tsvector(test.text) @@ plainto_tsquery(?)) order by test.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (not to_tsvector(test__base_table.text) @@ plainto_tsquery(?)) order by test__base_table.id asc limit ?",
       ]
     `);
 
@@ -1919,7 +1919,7 @@ describe("handles advanced queries", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (to_tsvector(test.text) @@ plainto_tsquery(?)) order by test.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (to_tsvector(test__base_table.text) @@ plainto_tsquery(?)) order by test__base_table.id asc limit ?",
       ]
     `);
   });
@@ -1963,7 +1963,7 @@ describe("handles advanced queries", () => {
     );
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (to_tsvector(test.text) @@ plainto_tsquery(?) or (test.number_count = ?) or (test.number_count < ?)) order by test.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (to_tsvector(test__base_table.text) @@ plainto_tsquery(?) or (test__base_table.number_count = ?) or (test__base_table.number_count < ?)) order by test__base_table.id asc limit ?",
       ]
     `);
 
@@ -1971,7 +1971,7 @@ describe("handles advanced queries", () => {
     await axios.get(`/coreTest/test?id[]=1&or[id][]=2&and[id.not][]=3`);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id, test.is_boolean, test.number_count, test.text from core_test.test where (test.id in (?) or (test.id in (?)) and (test.id not in (?))) order by test.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (test__base_table.id in (?) or (test__base_table.id in (?)) and (test__base_table.id not in (?))) order by test__base_table.id asc limit ?",
       ]
     `);
   });
@@ -2202,7 +2202,7 @@ describe("methods", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id from core_test.test where (test.id = ?) limit ?",
+        "select test__base_table.id from core_test.test test__base_table where (test__base_table.id = ?) limit ?",
       ]
     `);
   });
@@ -2301,7 +2301,7 @@ describe("other errors to be thrown", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test.id from core_test.test order by test.id asc limit ?",
+        "select test__base_table.id from core_test.test test__base_table order by test__base_table.id asc limit ?",
       ]
     `);
 

@@ -7,9 +7,11 @@ import { Core, knexHelpers } from "@synvox/core";
 import { renderHook } from "@testing-library/react-hooks";
 import { act } from "react-dom/test-utils";
 import pg from "pg";
-import { core as coreClient, table, AxiosConfigProvider } from "../src";
+import { core as coreClient, table, preload } from "../src";
 import EventSource from "eventsource";
 import uuid from "uuid";
+import { defer } from "../src/defer";
+import { useState } from "react";
 
 //@ts-expect-error
 global.EventSource = EventSource;
@@ -301,6 +303,82 @@ describe("core", () => {
     }
   });
 
+  it("doesn't keep a promise for a sub resource that does not match", async () => {
+    const [parent] = await knex("coreClientTest.test").insert({}, "*");
+    await knex("coreClientTest.testSub").insert({ parentId: parent.id });
+    const core = new Core(knex, () => ({}));
+
+    core.table({
+      schemaName: "coreClientTest",
+      tableName: "test",
+    });
+
+    core.table({
+      schemaName: "coreClientTest",
+      tableName: "testSub",
+    });
+
+    const app = express();
+    app.use(core.router);
+    const url = await listen(app);
+    const axios = Axios.create({ baseURL: url });
+
+    type Test = {
+      id: number;
+      isBoolean: boolean;
+      numberCount: number;
+      text: string;
+      testSub: TestSub[];
+    };
+    type TestSub = {
+      id: number;
+      parentId: number;
+    };
+
+    const { useCore, touch } = coreClient(axios, {
+      test: table<Test, Test & { include: "testSub" }>("/coreClientTest/test"),
+      testSub: table<TestSub, TestSub>("/coreClientTest/testSub"),
+    });
+
+    const { result, waitForNextUpdate } = renderHook(() => {
+      const core = useCore();
+
+      function tryOr<T>(fn: () => T): T | null {
+        try {
+          return fn();
+        } catch (e) {
+          if (e.then) throw e;
+          return null;
+        }
+      }
+
+      return tryOr(() => {
+        const [result] = core.test({ include: "testSub" });
+        return { result: result.testSub[0] };
+      });
+    });
+
+    expect(result.current).toMatchInlineSnapshot(`undefined`);
+    await waitForNextUpdate();
+
+    expect(result.current).toMatchInlineSnapshot(`
+      Object {
+        "result": Object {
+          "id": 1,
+          "parentId": 1,
+        },
+      }
+    `);
+
+    await knex("coreClientTest.testSub").del();
+
+    await act(async () => {
+      await touch((url: string) => url.startsWith("/coreClientTest/testSub"));
+    });
+
+    expect(result.current).toMatchInlineSnapshot(`null`);
+  });
+
   it("writes", async () => {
     const core = new Core(knex, () => ({}));
 
@@ -370,8 +448,8 @@ describe("core", () => {
       ]
     `);
 
-    expect((await result.current.core.test.put(1, { isBoolean: true })).changes)
-      .toMatchInlineSnapshot(`
+    const putById = await result.current.core.test.put(1, { isBoolean: true });
+    expect(putById.changes).toMatchInlineSnapshot(`
       Array [
         Object {
           "mode": "update",
@@ -392,14 +470,27 @@ describe("core", () => {
       ]
     `);
 
-    expect(
-      (
-        await result.current.core.test.put(
-          { isBoolean: true },
-          { numberCount: 54321 }
-        )
-      ).changes
-    ).toMatchInlineSnapshot(`
+    await act(async () => {
+      await putById.update();
+    });
+
+    expect([...result.current.test]).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "id": 1,
+          "isBoolean": true,
+          "numberCount": 0,
+          "text": "text",
+        },
+      ]
+    `);
+
+    const batchUpdate = await result.current.core.test.put(
+      { isBoolean: true },
+      { numberCount: 54321 }
+    );
+
+    expect(batchUpdate.changes).toMatchInlineSnapshot(`
       Array [
         Object {
           "mode": "update",
@@ -414,8 +505,23 @@ describe("core", () => {
       ]
     `);
 
-    expect((await result.current.core.test.delete(1)).changes)
-      .toMatchInlineSnapshot(`
+    await act(async () => {
+      await batchUpdate.update();
+    });
+
+    expect([...result.current.test]).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "id": 1,
+          "isBoolean": true,
+          "numberCount": 54321,
+          "text": "text",
+        },
+      ]
+    `);
+
+    const deleteItem = await result.current.core.test.delete(1);
+    expect(deleteItem.changes).toMatchInlineSnapshot(`
       Array [
         Object {
           "mode": "delete",
@@ -435,6 +541,12 @@ describe("core", () => {
         },
       ]
     `);
+
+    await act(async () => {
+      await deleteItem.update();
+    });
+
+    expect([...result.current.test]).toMatchInlineSnapshot(`Array []`);
 
     const postAction = await result.current.core.test.post({});
     expect(postAction.changes).toMatchInlineSnapshot(`
@@ -474,18 +586,21 @@ describe("core", () => {
     `);
   });
 
-  it("can accept new params through a provider", async () => {
-    await knex("coreClientTest.test").insert({});
+  it("posts to custom routes", async () => {
     const core = new Core(knex, () => ({}));
 
-    core.table({
-      schemaName: "coreClientTest",
-      tableName: "test",
+    const router = express.Router();
+    router.post("/action", (req, res) => {
+      res.send({
+        body: req.body,
+        query: req.query,
+      });
     });
 
     core.table({
       schemaName: "coreClientTest",
-      tableName: "testSub",
+      tableName: "test",
+      router,
     });
 
     const app = express();
@@ -493,97 +608,43 @@ describe("core", () => {
     const url = await listen(app);
     const axios = Axios.create({ baseURL: url });
 
-    let urls: string[] = [];
-    axios.interceptors.request.use((config) => {
-      urls.push(`${config.method} ${config.url!}`);
-      return config;
-    });
-
     type Test = {
       id: number;
       isBoolean: boolean;
       numberCount: number;
       text: string;
-      testSub: TestSub[];
-    };
-    type TestSub = {
-      id: number;
-      parentId: number;
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, Test & { include: "testSub" }>("/coreClientTest/test"),
-      testSub: table<TestSub, any>("/coreClientTest/testSub"),
+      test: table<Test, Test>("/coreClientTest/test"),
     });
 
-    const { result, waitForNextUpdate } = renderHook(
-      ({ id }: { id: number }) => {
-        const core = useCore();
-        const result = core.test(id, { include: "testSub" });
-        return { result, core };
-      },
-      {
-        initialProps: { id: 1 },
-        wrapper: (p) => {
-          return (
-            <AxiosConfigProvider config={{ params: { orgId: 1 } }}>
-              {p.children}
-            </AxiosConfigProvider>
-          );
-        },
-      }
-    );
+    const { result, waitForNextUpdate } = renderHook(() => {
+      const core = useCore();
+      return {
+        test: core.test(),
+        core,
+      };
+    });
 
     expect(result.current).toMatchInlineSnapshot(`undefined`);
     await waitForNextUpdate();
-    expect(urls).toMatchInlineSnapshot(`
-      Array [
-        "get /coreClientTest/test/1?include=testSub&orgId=1",
-      ]
-    `);
-    expect(result.current).toMatchInlineSnapshot(`
+
+    expect(
+      await result.current.core.test.post(
+        "/action",
+        { thing: "value" },
+        { isBoolean: false }
+      )
+    ).toMatchInlineSnapshot(`
       Object {
-        "core": Object {
-          "test": [Function],
-          "testSub": [Function],
+        "body": Object {
+          "thing": "value",
         },
-        "result": Object {
-          "id": 1,
-          "isBoolean": false,
-          "numberCount": 0,
-          "testSub": Array [],
-          "text": "text",
+        "query": Object {
+          "isBoolean": "false",
         },
       }
-    `);
-
-    urls = [];
-    expect((await result.current.core.test.post({})).changes)
-      .toMatchInlineSnapshot(`
-      Array [
-        Object {
-          "mode": "insert",
-          "path": "/coreClientTest/test",
-          "row": Object {
-            "_links": Object {
-              "testSub": "/coreClientTest/testSub?parentId=2",
-              "testSubCount": "/coreClientTest/test/2/testSubCount",
-            },
-            "_type": "coreClientTest/test",
-            "_url": "/coreClientTest/test/2",
-            "id": 2,
-            "isBoolean": false,
-            "numberCount": 0,
-            "text": "text",
-          },
-        },
-      ]
-    `);
-
-    expect(urls).toMatchInlineSnapshot(`
-      Array [
-        "post /coreClientTest/test?orgId=1",
-      ]
     `);
   });
 
@@ -633,8 +694,10 @@ describe("core", () => {
     const { result, waitForNextUpdate } = renderHook(
       ({ id }: { id: number }) => {
         const core = useCore();
-        const result = core.test.first({ id, include: "testSub" });
-        return { result };
+        return {
+          r1: core.test.first({ id, include: "testSub" }),
+          h2: core.test.first(),
+        };
       },
       {
         initialProps: { id: 1 },
@@ -646,11 +709,18 @@ describe("core", () => {
     expect(urls).toMatchInlineSnapshot(`
       Array [
         "get /coreClientTest/test/first?id=1&include=testSub",
+        "get /coreClientTest/test/first",
       ]
     `);
     expect(result.current).toMatchInlineSnapshot(`
       Object {
-        "result": Object {
+        "h2": Object {
+          "id": 1,
+          "isBoolean": false,
+          "numberCount": 0,
+          "text": "text",
+        },
+        "r1": Object {
           "id": 1,
           "isBoolean": false,
           "numberCount": 0,
@@ -741,7 +811,10 @@ describe("core", () => {
   });
 
   it("reads using /count", async () => {
-    await knex("coreClientTest.test").insert({});
+    await knex("coreClientTest.test").insert([
+      { isBoolean: true },
+      { isBoolean: false },
+    ]);
 
     const core = new Core(knex, () => ({}));
 
@@ -769,13 +842,15 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, any>("/coreClientTest/test"),
+      test: table<Test, Test>("/coreClientTest/test"),
     });
 
     const { result, waitForNextUpdate } = renderHook(() => {
       const core = useCore();
-      const result = core.test.count();
-      return { result };
+      return {
+        r1: core.test.count(),
+        r2: core.test.count({ isBoolean: false }),
+      };
     });
 
     expect(result.current).toMatchInlineSnapshot(`undefined`);
@@ -783,17 +858,84 @@ describe("core", () => {
     expect(urls).toMatchInlineSnapshot(`
       Array [
         "get /coreClientTest/test/count",
+        "get /coreClientTest/test/count?isBoolean=false",
       ]
     `);
     expect(result.current).toMatchInlineSnapshot(`
       Object {
-        "result": 1,
+        "r1": 2,
+        "r2": 1,
       }
     `);
   });
 
+  it("can defer", async () => {
+    let val = false;
+    let resolve: (() => void) | null = null;
+    const promise = new Promise<void>((r) => {
+      resolve = () => {
+        val = true;
+        r();
+      };
+    });
+
+    const { result, waitForNextUpdate } = renderHook(() => {
+      // defer doesn't update
+      const [_v, setV] = useState(0);
+      const { data = "waiting" } = defer(() => {
+        if (val) return val;
+        else {
+          promise.then(() => setV((v) => v + 1));
+          throw promise;
+        }
+      });
+
+      return {
+        val: data,
+      };
+    });
+
+    expect(result.current).toMatchInlineSnapshot(`
+      Object {
+        "val": "waiting",
+      }
+    `);
+
+    resolve!();
+    await waitForNextUpdate();
+    expect(result.current).toMatchInlineSnapshot(`
+      Object {
+        "val": true,
+      }
+    `);
+  });
+
+  it("can preload", async () => {
+    let val = false;
+    const promise = new Promise<void>(async (r) => {
+      await new Promise((r) => setTimeout(r, 1));
+      val = true;
+      r();
+    });
+
+    const withVal = () => {
+      if (!val) throw promise;
+      return val;
+    };
+
+    expect(val).toBe(false);
+    await preload(() => {
+      withVal();
+    });
+
+    expect(val).toBe(true);
+  });
+
   it("reads using /ids", async () => {
-    await knex("coreClientTest.test").insert({});
+    await knex("coreClientTest.test").insert([
+      { isBoolean: true },
+      { isBoolean: false },
+    ]);
 
     const core = new Core(knex, () => ({}));
 
@@ -821,13 +963,15 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, any>("/coreClientTest/test"),
+      test: table<Test, Test>("/coreClientTest/test"),
     });
 
     const { result, waitForNextUpdate } = renderHook(() => {
       const core = useCore();
-      const result = core.test.ids();
-      return { result };
+      return {
+        r1: core.test.ids(),
+        r2: core.test.ids({ isBoolean: false }),
+      };
     });
 
     expect(result.current).toMatchInlineSnapshot(`undefined`);
@@ -835,12 +979,17 @@ describe("core", () => {
     expect(urls).toMatchInlineSnapshot(`
       Array [
         "get /coreClientTest/test/ids",
+        "get /coreClientTest/test/ids?isBoolean=false",
       ]
     `);
     expect(result.current).toMatchInlineSnapshot(`
       Object {
-        "result": Array [
+        "r1": Array [
           1,
+          2,
+        ],
+        "r2": Array [
+          2,
         ],
       }
     `);
@@ -1038,9 +1187,8 @@ describe("core", () => {
 
     expect(result.current).toMatchInlineSnapshot(`undefined`);
     await waitForNextUpdate();
-    try {
-      const postAction = await result.current.core.test.post({});
-      expect(postAction.changes).toMatchInlineSnapshot(`
+    const postAction = await result.current.core.test.post({});
+    expect(postAction.changes).toMatchInlineSnapshot(`
         Array [
           Object {
             "mode": "insert",
@@ -1061,23 +1209,161 @@ describe("core", () => {
         ]
       `);
 
-      await act(async () => {
-        await postAction.update();
-      });
+    await act(async () => {
+      await postAction.update();
+    });
 
-      expect([...result.current.view]).toMatchInlineSnapshot(`
-        Array [
+    expect([...result.current.view]).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "id": 1,
+          "isBoolean": false,
+          "numberCount": 0,
+          "text": "text",
+        },
+      ]
+    `);
+  });
+
+  it("works with async getters", async () => {
+    const core = new Core(knex, () => ({}));
+
+    core.table({
+      schemaName: "coreClientTest",
+      tableName: "test",
+    });
+
+    const app = express();
+    app.use(core.router);
+    const url = await listen(app);
+    const axios = Axios.create({ baseURL: url });
+
+    type Test = {
+      id: number;
+      isBoolean: boolean;
+      numberCount: number;
+      text: string;
+    };
+
+    const { useCore } = coreClient(axios, {
+      test: table<Test, Test>("/coreClientTest/test"),
+    });
+
+    const { result, waitForNextUpdate } = renderHook(() => {
+      const core = useCore();
+      return {
+        test: core.test(),
+        core,
+      };
+    });
+
+    await knex("coreClientTest.test").insert([
+      { isBoolean: true },
+      { isBoolean: false },
+    ]);
+
+    expect(result.current).toMatchInlineSnapshot(`undefined`);
+    await waitForNextUpdate();
+    expect(await result.current.core.test.getAsync()).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/coreClientTest/test/count",
+          "ids": "/coreClientTest/test/ids",
+        },
+        "_type": "coreClientTest/test",
+        "_url": "/coreClientTest/test",
+        "hasMore": false,
+        "items": Array [
           Object {
+            "_links": Object {},
+            "_type": "coreClientTest/test",
+            "_url": "/coreClientTest/test/1",
             "id": 1,
+            "isBoolean": true,
+            "numberCount": 0,
+            "text": "text",
+          },
+          Object {
+            "_links": Object {},
+            "_type": "coreClientTest/test",
+            "_url": "/coreClientTest/test/2",
+            "id": 2,
             "isBoolean": false,
             "numberCount": 0,
             "text": "text",
           },
-        ]
-      `);
-    } catch (e) {
-      console.log(e.response);
-      throw e;
-    }
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(await result.current.core.test.getAsync({ isBoolean: true }))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/coreClientTest/test/count?isBoolean=true",
+          "ids": "/coreClientTest/test/ids?isBoolean=true",
+        },
+        "_type": "coreClientTest/test",
+        "_url": "/coreClientTest/test?isBoolean=true",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {},
+            "_type": "coreClientTest/test",
+            "_url": "/coreClientTest/test/1",
+            "id": 1,
+            "isBoolean": true,
+            "numberCount": 0,
+            "text": "text",
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(await result.current.core.test.getAsync(1)).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {},
+        "_type": "coreClientTest/test",
+        "_url": "/coreClientTest/test/1",
+        "id": 1,
+        "isBoolean": true,
+        "numberCount": 0,
+        "text": "text",
+      }
+    `);
+    expect(await result.current.core.test.countAsync()).toMatchInlineSnapshot(
+      `2`
+    );
+    expect(
+      await result.current.core.test.countAsync({ isBoolean: true })
+    ).toMatchInlineSnapshot(`1`);
+    expect(await result.current.core.test.idsAsync()).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {},
+        "_url": "/coreClientTest/test/ids",
+        "hasMore": false,
+        "items": Array [
+          1,
+          2,
+        ],
+        "limit": 1000,
+        "page": 0,
+      }
+    `);
+    expect(await result.current.core.test.idsAsync({ isBoolean: true }))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {},
+        "_url": "/coreClientTest/test/ids?isBoolean=true",
+        "hasMore": false,
+        "items": Array [
+          1,
+        ],
+        "limit": 1000,
+        "page": 0,
+      }
+    `);
   });
 });

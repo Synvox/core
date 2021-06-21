@@ -72,6 +72,9 @@ export async function saveTsTypes(
     types += `> &\n`;
     types += `  (Type extends string ? Record<\`\${Name}.fts\`, Type> : {}) &\n`;
     types += `  (Type extends null ? Record<\`\${Name}.null\` | \`\${Name}.not.null\`, any> : {});\n\n`;
+
+    types +=
+      "type SortParam<T> = Extract<keyof T, string> | `-${Extract<keyof T, string>}`\n\n";
   }
 
   for (let table of tables) {
@@ -201,10 +204,8 @@ export async function saveTsTypes(
           columnName === table.idColumnName &&
           table.lookupTableIds.length
         ) {
-          baseType = table.lookupTableIds
-            .map((id) => JSON.stringify(id))
-            .join(" | ");
-          baseType = `(${baseType})`;
+          baseType = `${table.className}['${table.idColumnName}']`;
+          baseType = `${baseType} | ${baseType}[]`;
         } else if (hasOne && hasOne.table !== table) {
           baseType = hasOne.table.lookupTableIds
             .map((id) => JSON.stringify(id))
@@ -264,7 +265,7 @@ export async function saveTsTypes(
 
       if (includeKeys.length) {
         const includeKeysStr = includeKeys.map((v) => `'${v}'`).join(" | ");
-        let includeType = `(${includeKeysStr})[]`;
+        let includeArrayType = `(${includeKeysStr})[]`;
 
         const relatedTables = [
           ...Object.values(table.relatedTables.hasMany),
@@ -281,16 +282,10 @@ export async function saveTsTypes(
           .join("; ");
         includeObjStr = `{ ${includeObjStr} }`;
 
-        types += `    include: ${includeType} | ${includeObjStr};\n`;
+        types += `    include: ${includeKeysStr} | ${includeArrayType} | ${includeObjStr};\n`;
       }
 
-      const sortType = Object.keys(table.columns)
-        .map((name) => [name, `-${name}`])
-        .reduce((acc, c) => acc.concat(c), [])
-        .map((v) => `'${v}'`)
-        .join(" | ");
-
-      types += `    sort: ${sortType} | (${sortType})[];\n`;
+      types += `    sort: SortParam<${table.className}> | SortParam<${table.className}>[];\n`;
       types += `  };\n\n`;
     }
   }

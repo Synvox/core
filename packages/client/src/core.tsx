@@ -1,9 +1,7 @@
-import { createContext, ReactNode, useContext } from "react";
 import qs from "qs";
 import { Collection, Change, ChangeTo, Handlers, ID } from "./types";
-import { AxiosInstance, AxiosRequestConfig } from "axios";
-import Cache from "./cache";
-import { createLoader } from "./createLoader";
+import { AxiosInstance } from "axios";
+import { CoreCache } from "./CoreCache";
 
 function qsStringify(val: any) {
   return qs.stringify(val, {
@@ -41,37 +39,16 @@ class Table<Result, Params, IDColumnName> {
   handlersFor({
     getUrl: realGetUrl,
     axios,
-    requestConfig,
     handleChanges,
   }: {
     getUrl: (url: string) => any;
     axios: AxiosInstance;
-    requestConfig: AxiosRequestConfig;
     handleChanges: (changes: Change[]) => Promise<void>;
   }): Handlers<Result, Params, IDColumnName> {
     const { path, lock, blockUpdatesById } = this;
 
-    function applyConfigToUrl(url: string) {
-      const { params, ...config } = requestConfig;
-
-      if (
-        params &&
-        typeof params === "object" &&
-        !Array.isArray(params) &&
-        Object.keys(params ?? {}).length
-      ) {
-        const paramString = qsStringify(params);
-        url += (url.includes("?") ? "&" : "?") + paramString;
-      }
-
-      return axios.getUri({
-        ...config,
-        url,
-      });
-    }
-
     function getUrl(url: string) {
-      return realGetUrl(applyConfigToUrl(url));
+      return realGetUrl(url);
     }
 
     function get(
@@ -99,7 +76,12 @@ class Table<Result, Params, IDColumnName> {
       {
         get: get,
         first(params?: Params) {
-          return getUrl(`${path}/first?${qsStringify(params)}`) as Result;
+          let fullPath = `${path}/first`;
+          if (params) {
+            fullPath += `?${qsStringify(params)}`;
+          }
+
+          return getUrl(fullPath) as Result;
         },
         async put(
           idOrQuery: ID<Result, IDColumnName> | Params,
@@ -115,11 +97,7 @@ class Table<Result, Params, IDColumnName> {
             fullPath += `?${qsStringify(params)}`;
 
           return await lock!(async () => {
-            const { data: result } = await axios.put(
-              applyConfigToUrl(fullPath),
-              data,
-              { ...requestConfig, params: undefined }
-            );
+            const { data: result } = await axios.put(fullPath, data);
             if (result.changeId) blockUpdatesById(result.changeId);
             result.update = () => handleChanges(result.changes);
             return result as ChangeTo<Result>;
@@ -145,11 +123,9 @@ class Table<Result, Params, IDColumnName> {
             fullPath += `?${qsStringify(realParams)}`;
 
           return await lock(async () => {
-            const { data: result } = await axios.post(
-              applyConfigToUrl(fullPath),
-              data,
-              { ...requestConfig, params: undefined }
-            );
+            const { data: result } = await axios.post(fullPath, data, {
+              params: undefined,
+            });
             if (!result.changeId) return result;
 
             blockUpdatesById(result.changeId);
@@ -163,10 +139,9 @@ class Table<Result, Params, IDColumnName> {
             fullPath += `?${qsStringify(params)}`;
           }
           return await lock(async () => {
-            const { data: result } = await axios.delete(
-              applyConfigToUrl(fullPath),
-              { ...requestConfig, params: undefined }
-            );
+            const { data: result } = await axios.delete(fullPath, {
+              params: undefined,
+            });
             if (result.changeId) blockUpdatesById(result.changeId);
             result.update = () => handleChanges(result.changes);
             return result as ChangeTo<Result>;
@@ -186,6 +161,50 @@ class Table<Result, Params, IDColumnName> {
           }
           return getUrl(fullPath) as Collection<ID<Result, IDColumnName>>;
         },
+        async getAsync(
+          idOrParams?: ID<Params, IDColumnName> | Params,
+          params?: Params
+        ) {
+          let fullPath = path;
+
+          if (idOrParams && typeof idOrParams !== "object")
+            fullPath += `/${idOrParams}`;
+          else params = idOrParams as Params;
+
+          if (params && Object.keys(params).length > 0) {
+            fullPath += `?${qsStringify(params)}`;
+          }
+
+          const { data: result } = await axios.get(fullPath, {
+            params: undefined,
+          });
+
+          return result;
+        },
+        async countAsync(params?: Params) {
+          let fullPath = `${path}/count`;
+          if (params && Object.keys(params).length > 0) {
+            fullPath += `?${qsStringify(params)}`;
+          }
+
+          const { data: result } = await axios.get(fullPath, {
+            params: undefined,
+          });
+
+          return result;
+        },
+        async idsAsync(params?: Params) {
+          let fullPath = `${path}/ids`;
+          if (params && Object.keys(params).length > 0) {
+            fullPath += `?${qsStringify(params)}`;
+          }
+
+          const { data: result } = await axios.get(fullPath, {
+            params: undefined,
+          });
+
+          return result;
+        },
       }
     ) as Handlers<Result, Params, IDColumnName>;
   }
@@ -198,141 +217,17 @@ export function table<T, P, IDColumnName extends string | number = "id">(
   return new Table<T, P, IDColumnName>(path, options);
 }
 
-const axiosRequestConfigContext = createContext<AxiosRequestConfig>({});
-
-export function AxiosConfigProvider({
-  config,
-  children,
-}: {
-  config: AxiosRequestConfig;
-  children: ReactNode;
-}) {
-  return (
-    <axiosRequestConfigContext.Provider value={config}>
-      {children}
-    </axiosRequestConfigContext.Provider>
-  );
-}
-
 export function core<Routes extends Record<string, Table<any, any, any>>>(
   axios: AxiosInstance,
   routes: Routes
 ) {
-  const cache = new Cache<string>(async (url) => {
-    let { data } = await axios.get(url);
-    const result: [string, any][] = [];
-    function walk(obj: any): any {
-      if (!obj || typeof obj !== "object") return obj;
-      if (Array.isArray(obj)) return obj.map((o) => walk(o));
-
-      const walkedChild = Object.fromEntries(
-        Object.entries(obj).map(([key, obj]: [string, any]) => [key, walk(obj)])
-      );
-
-      if (obj._url) {
-        const url = obj._url;
-        result.push([url, obj]);
-      }
-
-      if (typeof obj._links === "object") {
-        for (let [key, value] of Object.entries(obj._links)) {
-          if (obj[key] !== undefined) {
-            result.push([value as string, obj[key]]);
-          }
-        }
-      }
-
-      return walkedChild;
-    }
-
-    data = walk(data);
-
-    if (!result.some((r) => r[0] === url)) result.push([url, data]);
-
-    return result;
-  });
-
-  const { useKey: useGetUrl, touch } = createLoader({
-    cache,
-    modifier(obj: any, get) {
-      let result = Array.isArray(obj) ? [...obj] : { ...obj };
-
-      function walk(obj: any): any {
-        if (!obj || typeof obj !== "object") return obj;
-        const isArray = Array.isArray(obj);
-        const returned: any = isArray ? [] : {};
-
-        const properties = Object.getOwnPropertyDescriptors(obj);
-
-        for (let [key, prop] of Object.entries<any>(properties)) {
-          if (prop.value?._url) {
-            Object.defineProperty(returned, key, {
-              get() {
-                return get(prop.value._url as string);
-              },
-              enumerable: isArray,
-              configurable: true,
-            });
-          } else if ("value" in prop && prop.configurable) {
-            const walkedValue = walk(prop.value);
-            Object.defineProperty(returned, key, {
-              ...prop,
-              value: walkedValue,
-              enumerable: !key.startsWith("_") && prop.enumerable !== false,
-              configurable: true,
-            });
-          } else if (prop.configurable) {
-            Object.defineProperty(returned, key, prop);
-          }
-        }
-
-        const { _links: links = {} } = obj;
-
-        for (let [key, url] of Object.entries(links)) {
-          // including arrays has a special case
-          // because it doesn't load pagination data.
-          if (!Array.isArray(returned[key])) {
-            Object.defineProperty(returned, key, {
-              get() {
-                return get(url as string);
-              },
-              enumerable: false,
-              configurable: true,
-            });
-          }
-        }
-
-        return returned;
-      }
-
-      if (result && result.items && Array.isArray(result.items)) {
-        const { items: itemsDirect, ...others } = result;
-        result = (itemsDirect as any[]).slice();
-        const properties = Object.fromEntries(
-          Object.entries(others).map(([key, value]) => [
-            key,
-            {
-              value,
-              enumerable: false,
-              configurable: true,
-            },
-          ])
-        );
-
-        Object.defineProperties(result, properties);
-      }
-
-      const returned = walk(result);
-
-      return returned;
-    },
-  });
+  const cache = new CoreCache(axios);
 
   const handledChangeIds: string[] = [];
   let waitForUnlockPromise: Promise<void> | null = null;
 
   async function handleChanges(changes: Change[]) {
-    await touch((url) => {
+    await cache.touch((url) => {
       const tables = Object.values(routes);
 
       return changes.some((change) => {
@@ -401,8 +296,8 @@ export function core<Routes extends Record<string, Table<any, any, any>>>(
 
   return {
     cache,
-    touch,
-    useGetUrl,
+    touch: cache.touch.bind(cache),
+    useGetUrl: cache.useGet.bind(cache),
     sse,
     useCore(): {
       [name in keyof Routes]: Routes[name] extends Table<
@@ -411,10 +306,9 @@ export function core<Routes extends Record<string, Table<any, any, any>>>(
         infer ID
       >
         ? Handlers<Result, Partial<Params>, ID>
-        : Handlers<unknown, any, string | number>;
+        : never;
     } {
-      const requestConfig = useContext(axiosRequestConfigContext);
-      const getUrl = useGetUrl();
+      const getUrl = cache.useGet();
 
       //@ts-expect-error
       return Object.fromEntries(
@@ -422,9 +316,10 @@ export function core<Routes extends Record<string, Table<any, any, any>>>(
           return [
             key,
             table.handlersFor({
-              getUrl,
+              getUrl(url) {
+                return getUrl(url);
+              },
               axios,
-              requestConfig,
               handleChanges,
             }),
           ];

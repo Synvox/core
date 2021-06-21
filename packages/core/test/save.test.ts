@@ -265,7 +265,7 @@ describe("saves to files", () => {
       await axios.get("/saveTest/test");
       expect(queries).toMatchInlineSnapshot(`
         Array [
-          "select test.id, test.is_boolean, test.number_count, test.text, test.type_id from save_test.test order by test.id asc limit ?",
+          "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text, test__base_table.type_id from save_test.test test__base_table order by test__base_table.id asc limit ?",
         ]
       `);
     }
@@ -541,6 +541,8 @@ describe("saves to files", () => {
         (Type extends string ? Record<\`\${Name}.fts\`, Type> : {}) &
         (Type extends null ? Record<\`\${Name}.null\` | \`\${Name}.not.null\`, any> : {});
 
+      type SortParam<T> = Extract<keyof T, string> | \`-\${Extract<keyof T, string>}\`
+
       export type Test = {
         id: number;
         isBoolean: boolean;
@@ -566,8 +568,8 @@ describe("saves to files", () => {
 
       export type TestParams = TestFilters &
         CollectionParams & {
-          include: ('testSub' | 'testSubNullable' | 'testSubCount' | 'testSubNullableCount')[] | { testSub: true | TestSubParams['include']; testSubNullable: true | TestSubNullableParams['include']; testSubCount: true; testSubNullableCount: true };
-          sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId')[];
+          include: 'testSub' | 'testSubNullable' | 'testSubCount' | 'testSubNullableCount' | ('testSub' | 'testSubNullable' | 'testSubCount' | 'testSubNullableCount')[] | { testSub: true | TestSubParams['include']; testSubNullable: true | TestSubNullableParams['include']; testSubCount: true; testSubNullableCount: true };
+          sort: SortParam<Test> | SortParam<Test>[];
         };
 
       export type TestNullable = {
@@ -589,7 +591,7 @@ describe("saves to files", () => {
 
       export type TestNullableParams = (TestNullableFilters | { id: \\"me\\" }) &
         CollectionParams & {
-          sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text')[];
+          sort: SortParam<TestNullable> | SortParam<TestNullable>[];
         };
 
       export type TestSub = {
@@ -613,8 +615,8 @@ describe("saves to files", () => {
       export type TestSubParams = TestSubFilters &
         CollectionParams & {
           thing: unknown;
-          include: ('parent')[] | { parent: true | TestParams['include'] };
-          sort: 'id' | '-id' | 'parentId' | '-parentId' | 'arr' | '-arr' | ('id' | '-id' | 'parentId' | '-parentId' | 'arr' | '-arr')[];
+          include: 'parent' | ('parent')[] | { parent: true | TestParams['include'] };
+          sort: SortParam<TestSub> | SortParam<TestSub>[];
         };
 
       export type TestSubNullable = {
@@ -637,8 +639,8 @@ describe("saves to files", () => {
 
       export type TestSubNullableParams = TestSubNullableFilters &
         CollectionParams & {
-          include: ('parent')[] | { parent: true | TestParams['include'] };
-          sort: 'id' | '-id' | 'parentId' | '-parentId' | 'arr' | '-arr' | ('id' | '-id' | 'parentId' | '-parentId' | 'arr' | '-arr')[];
+          include: 'parent' | ('parent')[] | { parent: true | TestParams['include'] };
+          sort: SortParam<TestSubNullable> | SortParam<TestSubNullable>[];
         };
       "
     `);
@@ -695,6 +697,8 @@ describe("saves to files", () => {
         (Type extends string ? Record<\`\${Name}.fts\`, Type> : {}) &
         (Type extends null ? Record<\`\${Name}.null\` | \`\${Name}.not.null\`, any> : {});
 
+      type SortParam<T> = Extract<keyof T, string> | \`-\${Extract<keyof T, string>}\`
+
       export type Test = {
         id: number;
         isBoolean: boolean;
@@ -718,8 +722,8 @@ describe("saves to files", () => {
 
       export type TestParams = TestFilters &
         CollectionParams & {
-          include: ('getThing' | 'getOtherThing')[] | { getThing: true; getOtherThing: true };
-          sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId')[];
+          include: 'getThing' | 'getOtherThing' | ('getThing' | 'getOtherThing')[] | { getThing: true; getOtherThing: true };
+          sort: SortParam<Test> | SortParam<Test>[];
         };
       "
     `);
@@ -773,6 +777,8 @@ describe("saves to files", () => {
         (Type extends string ? Record<\`\${Name}.fts\`, Type> : {}) &
         (Type extends null ? Record<\`\${Name}.null\` | \`\${Name}.not.null\`, any> : {});
 
+      type SortParam<T> = Extract<keyof T, string> | \`-\${Extract<keyof T, string>}\`
+
       export type Test = {
         id: number;
         isBoolean: boolean;
@@ -797,8 +803,8 @@ describe("saves to files", () => {
 
       export type TestParams = TestFilters &
         CollectionParams & {
-          include: ('type')[] | { type: true | TypeParams['include'] };
-          sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId')[];
+          include: 'type' | ('type')[] | { type: true | TypeParams['include'] };
+          sort: SortParam<Test> | SortParam<Test>[];
         };
 
       export type Type = {
@@ -807,7 +813,7 @@ describe("saves to files", () => {
         testCount: number;
       };
 
-      export type TypeFilters = ColumnParam<\\"id\\", (\\"type1\\" | \\"type2\\" | \\"type3\\")> & {
+      export type TypeFilters = ColumnParam<\\"id\\", Type['id'] | Type['id'][]> & {
           and: TypeFilters | TypeFilters[];
           \\"not.and\\": TypeFilters | TypeFilters[];
           or: TypeFilters | TypeFilters[];
@@ -816,8 +822,8 @@ describe("saves to files", () => {
 
       export type TypeParams = TypeFilters &
         CollectionParams & {
-          include: ('test' | 'testCount')[] | { test: true | TestParams['include']; testCount: true };
-          sort: 'id' | '-id' | ('id' | '-id')[];
+          include: 'test' | 'testCount' | ('test' | 'testCount')[] | { test: true | TestParams['include']; testCount: true };
+          sort: SortParam<Type> | SortParam<Type>[];
         };
       "
     `);
@@ -873,6 +879,8 @@ describe("saves to files", () => {
         (Type extends string ? Record<\`\${Name}.fts\`, Type> : {}) &
         (Type extends null ? Record<\`\${Name}.null\` | \`\${Name}.not.null\`, any> : {});
 
+      type SortParam<T> = Extract<keyof T, string> | \`-\${Extract<keyof T, string>}\`
+
       export type Test = {
         id: number;
         isBoolean: boolean;
@@ -897,8 +905,8 @@ describe("saves to files", () => {
 
       export type TestParams = TestFilters &
         CollectionParams & {
-          include: ('type')[] | { type: true | TypeParams['include'] };
-          sort: 'id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId' | ('id' | '-id' | 'isBoolean' | '-isBoolean' | 'numberCount' | '-numberCount' | 'text' | '-text' | 'typeId' | '-typeId')[];
+          include: 'type' | ('type')[] | { type: true | TypeParams['include'] };
+          sort: SortParam<Test> | SortParam<Test>[];
         };
 
       export type Type = {
@@ -916,8 +924,8 @@ describe("saves to files", () => {
 
       export type TypeParams = TypeFilters &
         CollectionParams & {
-          include: ('test' | 'testCount')[] | { test: true | TestParams['include']; testCount: true };
-          sort: 'id' | '-id' | ('id' | '-id')[];
+          include: 'test' | 'testCount' | ('test' | 'testCount')[] | { test: true | TestParams['include']; testCount: true };
+          sort: SortParam<Type> | SortParam<Type>[];
         };
       "
     `);
@@ -1112,6 +1120,8 @@ describe("saves to files", () => {
         (Type extends string ? Record<\`\${Name}.fts\`, Type> : {}) &
         (Type extends null ? Record<\`\${Name}.null\` | \`\${Name}.not.null\`, any> : {});
 
+      type SortParam<T> = Extract<keyof T, string> | \`-\${Extract<keyof T, string>}\`
+
       export type Recursive = {
         id: number;
         parentId: number | null;
@@ -1132,8 +1142,8 @@ describe("saves to files", () => {
 
       export type RecursiveParams = RecursiveFilters &
         CollectionParams & {
-          include: ('recursive' | 'recursiveCount' | 'parent')[] | { recursive: true | RecursiveParams['include']; recursiveCount: true; parent: true | RecursiveParams['include'] };
-          sort: 'id' | '-id' | 'parentId' | '-parentId' | ('id' | '-id' | 'parentId' | '-parentId')[];
+          include: 'recursive' | 'recursiveCount' | 'parent' | ('recursive' | 'recursiveCount' | 'parent')[] | { recursive: true | RecursiveParams['include']; recursiveCount: true; parent: true | RecursiveParams['include'] };
+          sort: SortParam<Recursive> | SortParam<Recursive>[];
         };
       "
     `);
