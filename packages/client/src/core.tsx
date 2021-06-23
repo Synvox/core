@@ -76,6 +76,7 @@ class Table<Result, Params, Extension, IDColumnName> {
         get(idOrParams, params),
       {
         get: get,
+        getUrl: getUrl,
         first(params?: Params) {
           let fullPath = `${path}/first`;
           if (params) {
@@ -206,6 +207,13 @@ class Table<Result, Params, Extension, IDColumnName> {
 
           return result;
         },
+        rebind: (getUrl: (url: string) => any) => {
+          return this.handlersFor({
+            getUrl,
+            axios,
+            handleChanges,
+          });
+        },
       }
     );
   }
@@ -320,9 +328,7 @@ export function core<Routes extends Record<string, Table<any, any, {}, any>>>(
           return [
             key,
             table.handlersFor({
-              getUrl(url) {
-                return getUrl(url);
-              },
+              getUrl,
               axios,
               handleChanges,
             }),

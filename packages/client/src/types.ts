@@ -69,6 +69,7 @@ export type Handlers<
 > = Extension &
   Getter<Result, DeepPartial<Params>, ID<Params, IDColumnName>> & {
     get: Getter<Result, DeepPartial<Params>, ID<Params, IDColumnName>>;
+    getUrl: (url: string) => any;
     first: (params?: DeepPartial<Params>) => Result;
     put: (
       idOrQuery: ID<Result, IDColumnName> | DeepPartial<Params>,
@@ -95,6 +96,9 @@ export type Handlers<
     idsAsync: (
       params?: DeepPartial<Params>
     ) => Promise<Collection<ID<Result, IDColumnName>>>;
+    rebind(
+      getUrl: (url: string) => any
+    ): Handlers<Result, Params, Extension, IDColumnName>;
   };
 
 export type RouteFactory<Result, Params, Extension, ID> = (p: {
