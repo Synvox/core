@@ -912,6 +912,72 @@ describe("core", () => {
     `);
   });
 
+  it("can defer with core api", async () => {
+    await knex("coreClientTest.test").insert([
+      { isBoolean: true },
+      { isBoolean: false },
+    ]);
+
+    const core = new Core(knex, () => ({}));
+
+    core.table({
+      schemaName: "coreClientTest",
+      tableName: "test",
+    });
+
+    const app = express();
+    app.use(core.router);
+    const url = await listen(app);
+    const axios = Axios.create({ baseURL: url });
+
+    let urls: string[] = [];
+    axios.interceptors.request.use((config) => {
+      urls.push(`${config.method} ${config.url!}`);
+      return config;
+    });
+
+    type Test = {
+      id: number;
+      isBoolean: boolean;
+      numberCount: number;
+      text: string;
+    };
+
+    const { useCore } = coreClient(axios, {
+      test: table<Test, Test>("/coreClientTest/test"),
+    });
+
+    const { result, waitForNextUpdate } = renderHook(() => {
+      const core = useCore();
+      const { data = null } = defer(() => core.test());
+      return data;
+    });
+
+    expect(result.current).toMatchInlineSnapshot(`null`);
+    await waitForNextUpdate();
+    expect(urls).toMatchInlineSnapshot(`
+      Array [
+        "get /coreClientTest/test",
+      ]
+    `);
+    expect(result.current).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "id": 1,
+          "isBoolean": true,
+          "numberCount": 0,
+          "text": "text",
+        },
+        Object {
+          "id": 2,
+          "isBoolean": false,
+          "numberCount": 0,
+          "text": "text",
+        },
+      ]
+    `);
+  });
+
   it("can preload", async () => {
     let val = false;
     const promise = new Promise<void>(async (r) => {

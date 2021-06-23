@@ -16,7 +16,7 @@ let updateNumber = 0;
 
 function nextUpdateNumber() {
   if (updateNumber >= Number.MAX_SAFE_INTEGER) updateNumber = 0;
-  return updateNumber++;
+  return ++updateNumber;
 }
 
 function useUpdate() {
