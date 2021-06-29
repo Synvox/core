@@ -2320,3 +2320,220 @@ describe("other errors to be thrown", () => {
     expect(queries).toMatchInlineSnapshot(`Array []`);
   });
 });
+
+describe("paranoid", () => {
+  it("can restore paranoid rows", async () => {
+    await knex.schema.withSchema("core_test").createTable("test", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("body");
+      t.timestamp("deleted_at");
+    });
+
+    const core = new Core(knex, () => {
+      return {};
+    });
+
+    core.table({
+      schemaName: "coreTest",
+      tableName: "test",
+      paranoid: true,
+    });
+
+    await core.init();
+
+    const app = express();
+    app.use(core.router);
+
+    const url = await listen(app);
+    const axios = Axios.create({ baseURL: url });
+
+    queries = [];
+    expect((await axios.get("/coreTest/test").catch((e) => e.response)).data)
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/coreTest/test/count",
+          "ids": "/coreTest/test/ids",
+        },
+        "_type": "coreTest/test",
+        "_url": "/coreTest/test",
+        "hasMore": false,
+        "items": Array [],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test__base_table.id, test__base_table.body, test__base_table.deleted_at from core_test.test test__base_table where test__base_table.deleted_at is null order by test__base_table.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      (
+        await axios
+          .post("/coreTest/test", { body: "abc" })
+          .catch((e) => e.response)
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "insert",
+            "path": "/coreTest/test",
+            "row": Object {
+              "_links": Object {},
+              "_type": "coreTest/test",
+              "_url": "/coreTest/test/1",
+              "body": "abc",
+              "deletedAt": null,
+              "id": 1,
+            },
+          },
+        ],
+        "result": Object {
+          "_links": Object {},
+          "_type": "coreTest/test",
+          "_url": "/coreTest/test/1",
+          "body": "abc",
+          "deletedAt": null,
+          "id": 1,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "insert into core_test.test (body) values (?) returning *",
+        "select test__base_table.id, test__base_table.body, test__base_table.deleted_at from core_test.test test__base_table where test__base_table.id = ? limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      (await axios.delete("/coreTest/test/1").catch((e) => e.response)).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "delete",
+            "path": "/coreTest/test",
+            "row": Object {
+              "_links": Object {},
+              "_type": "coreTest/test",
+              "_url": "/coreTest/test/1",
+              "body": "abc",
+              "deletedAt": null,
+              "id": 1,
+            },
+          },
+        ],
+        "result": null,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test__base_table.id, test__base_table.body, test__base_table.deleted_at from core_test.test test__base_table where test__base_table.id = ? limit ?",
+        "update core_test.test test__base_table set deleted_at = ? where test__base_table.id = ?",
+      ]
+    `);
+
+    queries = [];
+    expect((await axios.get("/coreTest/test").catch((e) => e.response)).data)
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/coreTest/test/count",
+          "ids": "/coreTest/test/ids",
+        },
+        "_type": "coreTest/test",
+        "_url": "/coreTest/test",
+        "hasMore": false,
+        "items": Array [],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test__base_table.id, test__base_table.body, test__base_table.deleted_at from core_test.test test__base_table where test__base_table.deleted_at is null order by test__base_table.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      (
+        await axios
+          .put("/coreTest/test/1", { deletedAt: null })
+          .catch((e) => e.response)
+      ).data
+    ).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "path": "/coreTest/test",
+            "row": Object {
+              "_links": Object {},
+              "_type": "coreTest/test",
+              "_url": "/coreTest/test/1",
+              "body": "abc",
+              "deletedAt": null,
+              "id": 1,
+            },
+          },
+        ],
+        "result": Object {
+          "_links": Object {},
+          "_type": "coreTest/test",
+          "_url": "/coreTest/test/1",
+          "body": "abc",
+          "deletedAt": null,
+          "id": 1,
+        },
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test.id, test.body, test.deleted_at from core_test.test where (test.id = ?) limit ?",
+        "select test__base_table.id, test__base_table.body, test__base_table.deleted_at from core_test.test test__base_table where test__base_table.id = ? limit ?",
+        "update core_test.test test__base_table set deleted_at = ? where test__base_table.id = ? returning *",
+        "select test__base_table.id, test__base_table.body, test__base_table.deleted_at from core_test.test test__base_table where test__base_table.id = ? limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect((await axios.get("/coreTest/test").catch((e) => e.response)).data)
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/coreTest/test/count",
+          "ids": "/coreTest/test/ids",
+        },
+        "_type": "coreTest/test",
+        "_url": "/coreTest/test",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {},
+            "_type": "coreTest/test",
+            "_url": "/coreTest/test/1",
+            "body": "abc",
+            "deletedAt": null,
+            "id": 1,
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select test__base_table.id, test__base_table.body, test__base_table.deleted_at from core_test.test test__base_table where test__base_table.deleted_at is null order by test__base_table.id asc limit ?",
+      ]
+    `);
+  });
+});

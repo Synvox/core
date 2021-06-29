@@ -943,6 +943,7 @@ export class Table<Context, T = any> {
 
       const stmt = this.query(knex);
       const params: Record<string, any> = {
+        withDeleted: true,
         [this.idColumnName]: obj[this.idColumnName],
       };
 
