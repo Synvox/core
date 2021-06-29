@@ -28,7 +28,7 @@ export default function withTimestamps<T>(table: TableDef<T>): TableDef<T> {
       const date = new Date(Date.now());
       params.updatedAt = date;
       if (mode === "insert") params.createdAt = date;
-      else params.createdAt = undefined;
+      delete params.createdAt;
 
       return params;
     },
