@@ -1186,7 +1186,6 @@ export class Table<Context, T = any> {
       );
 
       const stmt = table.query(trx);
-      await table.applyPolicy(stmt, context, "update", trx);
 
       if (
         Object.keys(filteredByChanged).length ||

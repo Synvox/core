@@ -3345,7 +3345,7 @@ describe("with policies", () => {
         "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where (posts.id = ?) and posts.org_id = ? limit ?",
         "select users.id from test.users where users.id = ? and users.org_id = ? limit ?",
         "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.org_id = ? and posts__base_table.id = ? limit ?",
-        "update test.posts posts__base_table set org_id = ? where posts__base_table.org_id = ? and posts__base_table.id = ? returning *",
+        "update test.posts posts__base_table set org_id = ? where posts__base_table.id = ? returning *",
         "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.id = ? and posts__base_table.org_id = ? limit ?",
       ]
     `);
@@ -3462,7 +3462,7 @@ describe("with policies", () => {
         "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where (posts.id = ?) and posts.org_id = ? limit ?",
         "select users.id from test.users where users.id = ? and users.org_id = ? limit ?",
         "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.org_id = ? and posts__base_table.id = ? limit ?",
-        "update test.posts posts__base_table set body = ? where posts__base_table.org_id = ? and posts__base_table.id = ? returning *",
+        "update test.posts posts__base_table set body = ? where posts__base_table.id = ? returning *",
         "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.id = ? and posts__base_table.org_id = ? limit ?",
       ]
     `);
