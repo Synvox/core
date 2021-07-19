@@ -212,6 +212,7 @@ export class Core<Context> {
   get router() {
     if (this._router) return this._router;
 
+    let routesAdded = false;
     const router = Router({ mergeParams: true });
     this._router = router;
 
@@ -219,8 +220,12 @@ export class Core<Context> {
 
     router.use(
       wrap(async (_req, _res, next) => {
-        await this.init();
-        addRoutes();
+        if (!routesAdded) {
+          await this.init();
+          addRoutes();
+          routesAdded = true;
+        }
+
         next();
       })
     );
