@@ -21,7 +21,15 @@ type Options = {
   shouldTouch?: (change: Change, url: string) => boolean;
 };
 
-class Table<Result, Params, InsertType, UpdateType, Extension, IDColumnName> {
+class Table<
+  Item,
+  Row,
+  Params,
+  InsertType,
+  UpdateType,
+  Extension,
+  IDColumnName
+> {
   path: string;
 
   blockUpdatesById: (id: string) => void;
@@ -52,7 +60,8 @@ class Table<Result, Params, InsertType, UpdateType, Extension, IDColumnName> {
     axios: AxiosInstance;
     handleChanges: (changes: Change[]) => Promise<void>;
   }): Handlers<
-    Result,
+    Item,
+    Row,
     Params,
     InsertType,
     UpdateType,
@@ -70,7 +79,7 @@ class Table<Result, Params, InsertType, UpdateType, Extension, IDColumnName> {
       params?: Params
     ) {
       if (typeof idOrParams === "object") {
-        return getUrl(`${path}?${qsStringify(idOrParams)}`) as Result;
+        return getUrl(`${path}?${qsStringify(idOrParams)}`) as Item;
       } else {
         let fullPath = path;
 
@@ -80,7 +89,7 @@ class Table<Result, Params, InsertType, UpdateType, Extension, IDColumnName> {
           fullPath += `?${qsStringify(params)}`;
         }
 
-        return getUrl(fullPath) as Collection<Result>;
+        return getUrl(fullPath) as Collection<Item>;
       }
     }
 
@@ -97,10 +106,10 @@ class Table<Result, Params, InsertType, UpdateType, Extension, IDColumnName> {
             fullPath += `?${qsStringify(params)}`;
           }
 
-          return getUrl(fullPath) as Result;
+          return getUrl(fullPath) as Item;
         },
         async put(
-          idOrQuery: ID<Result, IDColumnName> | Params,
+          idOrQuery: ID<Row, IDColumnName> | Params,
           data: Record<string, any>,
           params?: Params
         ) {
@@ -116,10 +125,10 @@ class Table<Result, Params, InsertType, UpdateType, Extension, IDColumnName> {
             const { data: result } = await axios.put(fullPath, data);
             if (result.changeId) blockUpdatesById(result.changeId);
             result.update = () => handleChanges(result.changes);
-            return result as ChangeTo<Result>;
+            return result as ChangeTo<Row>;
           });
         },
-        async post<ReturnValue = ChangeTo<Result>>(
+        async post<ReturnValue = ChangeTo<Row>>(
           pathOrData: string | Record<string, any>,
           dataOrParams?: Record<string, any> | Params,
           params?: Params
@@ -160,7 +169,7 @@ class Table<Result, Params, InsertType, UpdateType, Extension, IDColumnName> {
             });
             if (result.changeId) blockUpdatesById(result.changeId);
             result.update = () => handleChanges(result.changes);
-            return result as ChangeTo<Result>;
+            return result as ChangeTo<Row>;
           });
         },
         count(params?: Params) {
@@ -175,7 +184,7 @@ class Table<Result, Params, InsertType, UpdateType, Extension, IDColumnName> {
           if (params && Object.keys(params).length > 0) {
             fullPath += `?${qsStringify(params)}`;
           }
-          return getUrl(fullPath) as Collection<ID<Result, IDColumnName>>;
+          return getUrl(fullPath) as Collection<ID<Row, IDColumnName>>;
         },
         async getAsync(
           idOrParams?: ID<Params, IDColumnName> | Params,
@@ -234,19 +243,25 @@ class Table<Result, Params, InsertType, UpdateType, Extension, IDColumnName> {
 }
 
 export function table<
-  Config extends TableConfig<{}, unknown, unknown, unknown, string>,
+  Config extends TableConfig<{}, {}, unknown, unknown, unknown, string>,
   Extension = {},
-  Row = Config extends TableConfig<infer Row, any, any, any, any> ? Row : never,
-  Params = Config extends TableConfig<any, infer Params, any, any, any>
+  Item = Config extends TableConfig<infer Item, any, any, any, any, any>
+    ? Item
+    : never,
+  Row = Config extends TableConfig<any, infer Row, any, any, any, any>
+    ? Row
+    : never,
+  Params = Config extends TableConfig<any, any, infer Params, any, any, any>
     ? Params
     : never,
-  Insert = Config extends TableConfig<any, any, infer Insert, any, any>
+  Insert = Config extends TableConfig<any, any, any, infer Insert, any, any>
     ? Insert
     : never,
-  Update = Config extends TableConfig<any, any, any, infer Update, any>
+  Update = Config extends TableConfig<any, any, any, any, infer Update, any>
     ? Update
     : never,
   IDColumnName = Config extends TableConfig<
+    any,
     any,
     any,
     any,
@@ -256,14 +271,14 @@ export function table<
     ? IDColumnName
     : never
 >(path: string, options: Options = {}) {
-  return new Table<Row, Params, Insert, Update, Extension, IDColumnName>(
+  return new Table<Item, Row, Params, Insert, Update, Extension, IDColumnName>(
     path,
     options
   );
 }
 
 export function core<
-  Routes extends Record<string, Table<any, any, any, any, {}, any>>
+  Routes extends Record<string, Table<any, any, any, any, any, {}, any>>
 >(axios: AxiosInstance, routes: Routes) {
   const cache = new CoreCache(axios);
 
@@ -345,7 +360,8 @@ export function core<
     sse,
     useCore(): {
       [name in keyof Routes]: Routes[name] extends Table<
-        infer Result,
+        infer Item,
+        infer Row,
         infer Params,
         infer InsertType,
         infer UpdateType,
@@ -353,7 +369,8 @@ export function core<
         infer ID
       >
         ? Handlers<
-            Result,
+            Item,
+            Row,
             Partial<Params>,
             InsertType,
             UpdateType,

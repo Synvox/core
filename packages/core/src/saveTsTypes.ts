@@ -351,6 +351,7 @@ export async function saveTsTypes(
     types += `export type ${table.className}Update = ${updateType};\n`;
     types += `export type ${table.className}Write = ${table.className}Insert | (${table.className}Update & { ${table.idColumnName}: ${table.className}Id });\n\n`;
     types += `export type ${table.className}Config = {\n`;
+    types += `  item: ${table.className};\n`;
     types += `  row: ${table.className}Row;\n`;
     if (includeParams) types += `  params: ${table.className}Params;\n`;
     types += `  insert: ${table.className}Insert;\n`;

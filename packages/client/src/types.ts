@@ -1,13 +1,15 @@
 import { AxiosInstance } from "axios";
 
 export type TableConfig<
-  Result extends Record<string, any>,
-  Params = DeepPartial<Result>,
-  InsertType = DeepPartial<Result>,
-  UpdateType = DeepPartial<Result>,
+  Item,
+  Row extends Record<string, any>,
+  Params = DeepPartial<Row>,
+  InsertType = DeepPartial<Row>,
+  UpdateType = DeepPartial<Row>,
   IDColumnName = number
 > = {
-  row: Result;
+  item: Item;
+  row: Row;
   params?: Params;
   insert?: InsertType;
   update?: UpdateType;
@@ -76,46 +78,48 @@ export type Getter<Result, Params extends Record<string, any>, IDColumnName> = {
 };
 
 export type Handlers<
-  Result,
+  Item,
+  Row,
   Params extends Record<string, any>,
   InsertType,
   UpdateType,
   Extension,
   IDColumnName
 > = Extension &
-  Getter<Result, DeepPartial<Params>, ID<Params, IDColumnName>> & {
-    get: Getter<Result, DeepPartial<Params>, ID<Params, IDColumnName>>;
+  Getter<Item, DeepPartial<Params>, ID<Params, IDColumnName>> & {
+    get: Getter<Item, DeepPartial<Params>, ID<Params, IDColumnName>>;
     getUrl: (url: string) => any;
-    first: (params?: DeepPartial<Params>) => Result;
+    first: (params?: DeepPartial<Params>) => Item;
     put: (
-      idOrQuery: ID<Result, IDColumnName> | DeepPartial<Params>,
+      idOrQuery: ID<Row, IDColumnName> | DeepPartial<Params>,
       payload: UpdateType,
       params?: DeepPartial<Params>
-    ) => Promise<ChangeTo<Result>>;
-    post: <R = ChangeTo<Result>>(
+    ) => Promise<ChangeTo<Row>>;
+    post: <R = ChangeTo<Row>>(
       pathOrData: string | InsertType,
       dataOrParams?: InsertType | DeepPartial<Params>,
       params?: DeepPartial<Params>
     ) => Promise<R>;
     delete: (
-      id: ID<Result, IDColumnName>,
+      id: ID<Row, IDColumnName>,
       params?: DeepPartial<Params>
-    ) => Promise<ChangeTo<Result>>;
+    ) => Promise<ChangeTo<Row>>;
     count: (params?: DeepPartial<Params>) => number;
-    ids: (params?: DeepPartial<Params>) => Collection<ID<Result, IDColumnName>>;
+    ids: (params?: DeepPartial<Params>) => Collection<ID<Row, IDColumnName>>;
     getAsync: ((
       idOrParams: ID<Params, IDColumnName>,
       params?: Params
-    ) => Promise<Result>) &
-      ((idOrParams?: Params) => Promise<Collection<Result>>);
+    ) => Promise<Row>) &
+      ((idOrParams?: Params) => Promise<Collection<Row>>);
     countAsync: (params?: DeepPartial<Params>) => Promise<number>;
     idsAsync: (
       params?: DeepPartial<Params>
-    ) => Promise<Collection<ID<Result, IDColumnName>>>;
+    ) => Promise<Collection<ID<Row, IDColumnName>>>;
     rebind(
       getUrl: (url: string) => any
     ): Handlers<
-      Result,
+      Item,
+      Row,
       Params,
       InsertType,
       UpdateType,
@@ -125,7 +129,8 @@ export type Handlers<
   };
 
 export type RouteFactory<
-  Result,
+  Item,
+  Row,
   Params,
   InsertType,
   UpdateType,
@@ -138,7 +143,7 @@ export type RouteFactory<
   blockUpdatesById: (id: string) => void;
   lock<T>(fn: () => Promise<T>): Promise<T>;
 }) => {
-  handlers: Handlers<Result, Params, InsertType, UpdateType, Extension, ID>;
+  handlers: Handlers<Item, Row, Params, InsertType, UpdateType, Extension, ID>;
 };
 
 export type Touch<Key> = (filter: (key: Key) => boolean) => Promise<void>;

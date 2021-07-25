@@ -326,6 +326,7 @@ describe("saves to files", () => {
       export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
 
       export type TestConfig = {
+        item: Test;
         row: TestRow;
         insert: TestInsert;
         update: TestUpdate;
@@ -354,6 +355,7 @@ describe("saves to files", () => {
       export type TestNullableWrite = TestNullableInsert | (TestNullableUpdate & { id: TestNullableId });
 
       export type TestNullableConfig = {
+        item: TestNullable;
         row: TestNullableRow;
         insert: TestNullableInsert;
         update: TestNullableUpdate;
@@ -382,6 +384,7 @@ describe("saves to files", () => {
       export type TestSubWrite = TestSubInsert | (TestSubUpdate & { id: TestSubId });
 
       export type TestSubConfig = {
+        item: TestSub;
         row: TestSubRow;
         insert: TestSubInsert;
         update: TestSubUpdate;
@@ -410,6 +413,7 @@ describe("saves to files", () => {
       export type TestSubNullableWrite = TestSubNullableInsert | (TestSubNullableUpdate & { id: TestSubNullableId });
 
       export type TestSubNullableConfig = {
+        item: TestSubNullable;
         row: TestSubNullableRow;
         insert: TestSubNullableInsert;
         update: TestSubNullableUpdate;
@@ -466,6 +470,7 @@ describe("saves to files", () => {
       export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
 
       export type TestConfig = {
+        item: Test;
         row: TestRow;
         insert: TestInsert;
         update: TestUpdate;
@@ -487,6 +492,7 @@ describe("saves to files", () => {
       export type TestNullableWrite = TestNullableInsert | (TestNullableUpdate & { id: TestNullableId });
 
       export type TestNullableConfig = {
+        item: TestNullable;
         row: TestNullableRow;
         insert: TestNullableInsert;
         update: TestNullableUpdate;
@@ -507,6 +513,7 @@ describe("saves to files", () => {
       export type TestSubWrite = TestSubInsert | (TestSubUpdate & { id: TestSubId });
 
       export type TestSubConfig = {
+        item: TestSub;
         row: TestSubRow;
         insert: TestSubInsert;
         update: TestSubUpdate;
@@ -527,6 +534,7 @@ describe("saves to files", () => {
       export type TestSubNullableWrite = TestSubNullableInsert | (TestSubNullableUpdate & { id: TestSubNullableId });
 
       export type TestSubNullableConfig = {
+        item: TestSubNullable;
         row: TestSubNullableRow;
         insert: TestSubNullableInsert;
         update: TestSubNullableUpdate;
@@ -599,6 +607,7 @@ describe("saves to files", () => {
       export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
 
       export type TestConfig = {
+        item: Test;
         row: TestRow;
         insert: TestInsert;
         update: TestUpdate;
@@ -629,6 +638,7 @@ describe("saves to files", () => {
       export type TestNullableWrite = TestNullableInsert | (TestNullableUpdate & { id: TestNullableId });
 
       export type TestNullableConfig = {
+        item: TestNullable;
         row: TestNullableRow;
         insert: TestNullableInsert;
         update: TestNullableUpdate;
@@ -660,6 +670,7 @@ describe("saves to files", () => {
       export type TestSubWrite = TestSubInsert | (TestSubUpdate & { id: TestSubId });
 
       export type TestSubConfig = {
+        item: TestSub;
         row: TestSubRow;
         insert: TestSubInsert;
         update: TestSubUpdate;
@@ -691,6 +702,7 @@ describe("saves to files", () => {
       export type TestSubNullableWrite = TestSubNullableInsert | (TestSubNullableUpdate & { id: TestSubNullableId });
 
       export type TestSubNullableConfig = {
+        item: TestSubNullable;
         row: TestSubNullableRow;
         insert: TestSubNullableInsert;
         update: TestSubNullableUpdate;
@@ -814,6 +826,7 @@ describe("saves to files", () => {
       export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
 
       export type TestConfig = {
+        item: Test;
         row: TestRow;
         params: TestParams;
         insert: TestInsert;
@@ -860,6 +873,7 @@ describe("saves to files", () => {
       export type TestNullableWrite = TestNullableInsert | (TestNullableUpdate & { id: TestNullableId });
 
       export type TestNullableConfig = {
+        item: TestNullable;
         row: TestNullableRow;
         params: TestNullableParams;
         insert: TestNullableInsert;
@@ -910,6 +924,7 @@ describe("saves to files", () => {
       export type TestSubWrite = TestSubInsert | (TestSubUpdate & { id: TestSubId });
 
       export type TestSubConfig = {
+        item: TestSub;
         row: TestSubRow;
         params: TestSubParams;
         insert: TestSubInsert;
@@ -959,6 +974,7 @@ describe("saves to files", () => {
       export type TestSubNullableWrite = TestSubNullableInsert | (TestSubNullableUpdate & { id: TestSubNullableId });
 
       export type TestSubNullableConfig = {
+        item: TestSubNullable;
         row: TestSubNullableRow;
         params: TestSubNullableParams;
         insert: TestSubNullableInsert;
@@ -1068,6 +1084,7 @@ describe("saves to files", () => {
       export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
 
       export type TestConfig = {
+        item: Test;
         row: TestRow;
         params: TestParams;
         insert: TestInsert;
@@ -1176,6 +1193,7 @@ describe("saves to files", () => {
       export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
 
       export type TestConfig = {
+        item: Test;
         row: TestRow;
         params: TestParams;
         insert: TestInsert;
@@ -1219,6 +1237,7 @@ describe("saves to files", () => {
       export type TypeWrite = TypeInsert | (TypeUpdate & { id: TypeId });
 
       export type TypeConfig = {
+        item: Type;
         row: TypeRow;
         params: TypeParams;
         insert: TypeInsert;
@@ -1329,6 +1348,7 @@ describe("saves to files", () => {
       export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
 
       export type TestConfig = {
+        item: Test;
         row: TestRow;
         params: TestParams;
         insert: TestInsert;
@@ -1372,6 +1392,7 @@ describe("saves to files", () => {
       export type TypeWrite = TypeInsert | (TypeUpdate & { id: TypeId });
 
       export type TypeConfig = {
+        item: Type;
         row: TypeRow;
         params: TypeParams;
         insert: TypeInsert;
@@ -1495,6 +1516,7 @@ describe("saves to files", () => {
       export type SaveTestTableWrite = SaveTestTableInsert | (SaveTestTableUpdate & { id: SaveTestTableId });
 
       export type SaveTestTableConfig = {
+        item: SaveTestTable;
         row: SaveTestTableRow;
         insert: SaveTestTableInsert;
         update: SaveTestTableUpdate;
@@ -1513,6 +1535,7 @@ describe("saves to files", () => {
       export type LookupTableWrite = LookupTableInsert | (LookupTableUpdate & { id: LookupTableId });
 
       export type LookupTableConfig = {
+        item: LookupTable;
         row: LookupTableRow;
         insert: LookupTableInsert;
         update: LookupTableUpdate;
@@ -1535,6 +1558,7 @@ describe("saves to files", () => {
       export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
 
       export type TestConfig = {
+        item: Test;
         row: TestRow;
         insert: TestInsert;
         update: TestUpdate;
@@ -1556,6 +1580,7 @@ describe("saves to files", () => {
       export type TestNullableWrite = TestNullableInsert | (TestNullableUpdate & { id: TestNullableId });
 
       export type TestNullableConfig = {
+        item: TestNullable;
         row: TestNullableRow;
         insert: TestNullableInsert;
         update: TestNullableUpdate;
@@ -1576,6 +1601,7 @@ describe("saves to files", () => {
       export type TestSubWrite = TestSubInsert | (TestSubUpdate & { id: TestSubId });
 
       export type TestSubConfig = {
+        item: TestSub;
         row: TestSubRow;
         insert: TestSubInsert;
         update: TestSubUpdate;
@@ -1596,6 +1622,7 @@ describe("saves to files", () => {
       export type TestSubNullableWrite = TestSubNullableInsert | (TestSubNullableUpdate & { id: TestSubNullableId });
 
       export type TestSubNullableConfig = {
+        item: TestSubNullable;
         row: TestSubNullableRow;
         insert: TestSubNullableInsert;
         update: TestSubNullableUpdate;
@@ -1701,6 +1728,7 @@ describe("saves to files", () => {
       export type RecursiveWrite = RecursiveInsert | (RecursiveUpdate & { id: RecursiveId });
 
       export type RecursiveConfig = {
+        item: Recursive;
         row: RecursiveRow;
         params: RecursiveParams;
         insert: RecursiveInsert;
