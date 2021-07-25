@@ -329,7 +329,8 @@ export async function saveTsTypes(
       .join(" | ");
 
     let writeType = `${table.className}Row`;
-    if (includeRelations) writeType += ` & ${table.className}WriteRelations`;
+    if (includeRelations)
+      writeType += ` & Partial<${table.className}WriteRelations>`;
 
     let insertType = optionalFields.trim()
       ? `Optional<${writeType}, ${optionalFields}>`
