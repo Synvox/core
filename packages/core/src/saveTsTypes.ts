@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import { Table } from "./Table";
 import { postgresTypesToJSONTsTypes } from "./lookups";
+import { Column } from "./types";
 
 export async function saveTsTypes(
   tables: Table<any>[],
@@ -25,19 +26,10 @@ export async function saveTsTypes(
 
   if (includeKnex) {
     types += `import { Knex } from "knex";\n\n`;
-    types += `type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;\n\n`;
     types += `declare module 'knex/types/tables' {\n`;
     types += `  interface Tables {\n`;
     for (let table of tables) {
-      const optionalFields = Object.values(table.columns)
-        .filter((c) => c.nullable || Boolean(c.defaultValue))
-        .map((c) => JSON.stringify(c.name))
-        .join(" | ");
-      const insertType = optionalFields.trim()
-        ? `Optional<${table.className}, ${optionalFields}>`
-        : table.className;
-      const updateType = `Partial<${table.className}>`;
-      let type = `Knex.CompositeTableType<\n      ${table.className},\n      ${insertType},\n      ${updateType}\n    >`;
+      let type = `Knex.CompositeTableType<\n      ${table.className},\n      ${table.className}Insert,\n      ${table.className}Update\n    >`;
 
       if (table.schemaName === "public")
         types += `    "${table.tableName}": ${type};\n`;
@@ -46,6 +38,8 @@ export async function saveTsTypes(
     types += `  }\n`;
     types += `}\n\n`;
   }
+
+  types += `type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;\n\n`;
 
   if (includeParams) {
     types += "type CollectionParams = {\n";
@@ -78,11 +72,13 @@ export async function saveTsTypes(
   }
 
   for (let table of tables) {
-    types += `export type ${table.className} = {\n`;
     const { columns } = table;
+    const idColumn = Object.values(columns).find(
+      (column) => column.name === table.idColumnName
+    )!;
 
-    for (let columnName in columns) {
-      const column = columns[columnName];
+    const getDataType = (column: Column) => {
+      const columnName = column.name;
       let type = column.type;
       let array = false;
       if (type.endsWith("[]")) {
@@ -117,15 +113,32 @@ export async function saveTsTypes(
       }
 
       if (column.nullable) dataType += " | null";
+
+      return dataType;
+    };
+
+    types += `export type ${table.className}Id = ${getDataType(idColumn)};\n`;
+    types += `export type ${table.className}Row = {\n`;
+
+    for (let columnName in columns) {
+      const column = columns[columnName];
+
+      const dataType =
+        column.name === table.idColumnName
+          ? `${table.className}Id`
+          : getDataType(column);
+
       types += `  ${columnName}: ${dataType};\n`;
     }
 
+    types += `};\n\n`;
+
     if (includeLinks) {
+      const { hasOne, hasMany } = table.relatedTables;
+      types += `export type ${table.className}Links = {\n`;
       types += `  _url: string;\n`;
       types += `  _type: string;\n`;
       types += `  _links: {\n`;
-
-      const { hasOne, hasMany } = table.relatedTables;
 
       for (let [
         key,
@@ -142,10 +155,12 @@ export async function saveTsTypes(
       }
 
       types += `  };\n`;
+      types += `};\n\n`;
     }
 
     if (includeRelations) {
       const { hasOne, hasMany } = table.relatedTables;
+      types += `export type ${table.className}Relations = {\n`;
 
       for (let [
         key,
@@ -160,21 +175,39 @@ export async function saveTsTypes(
         types += ";\n";
       }
 
+      types += `};\n\n`;
+
+      types += `export type ${table.className}WriteRelations = {\n`;
+      for (let [
+        key,
+        {
+          relation: { columnName: column },
+          table,
+        },
+      ] of Object.entries(hasOne)) {
+        types += `  ${key}${columns[column].nullable ? "?" : ""}: ${
+          table.className
+        }Write`;
+        types += ";\n";
+      }
+      types += `};\n\n`;
+
+      types += `export type ${table.className}Getters = {\n`;
+
       for (let [key, { table }] of Object.entries(hasMany)) {
         types += `  ${key}: ${table.className}[];\n`;
         types += `  ${key}Count: number;\n`;
       }
 
       for (let key of Object.keys(table.eagerGetters)) {
-        types += `  ${key}: unknown;\n`;
+        types += `  ${key}: any;\n`;
       }
 
       for (let key of Object.keys(table.getters)) {
-        types += `  ${key}: unknown;\n`;
+        types += `  ${key}: any;\n`;
       }
+      types += `};\n\n`;
     }
-
-    types += `};\n\n`;
 
     if (includeParams) {
       const filtersType = `${table.className}Filters`;
@@ -204,14 +237,15 @@ export async function saveTsTypes(
           columnName === table.idColumnName &&
           table.lookupTableIds.length
         ) {
-          baseType = `${table.className}['${table.idColumnName}']`;
+          baseType = `${table.className}Id`;
           baseType = `${baseType} | ${baseType}[]`;
-        } else if (hasOne && hasOne.table !== table) {
-          baseType = hasOne.table.lookupTableIds
-            .map((id) => JSON.stringify(id))
-            .join(" | ");
-          baseType = `${hasOne.table.className}Filters['${hasOne.table.idColumnName}']`;
         } else {
+          if (columnName === table.idColumnName)
+            baseType = `${table.className}Id`;
+          else if (hasOne && hasOne.table === table) {
+            baseType = `${hasOne.table.className}Id`;
+          }
+
           if (baseType === "string") ops.push("fts");
           if (array) baseType += "[]";
           else baseType = `${baseType} | ${baseType}[]`;
@@ -288,7 +322,45 @@ export async function saveTsTypes(
       types += `    sort: SortParam<${table.className}> | SortParam<${table.className}>[];\n`;
       types += `  };\n\n`;
     }
+
+    const optionalFields = Object.values(table.columns)
+      .filter((c) => c.nullable || Boolean(c.defaultValue))
+      .map((c) => JSON.stringify(c.name))
+      .join(" | ");
+
+    let writeType = `${table.className}Row`;
+    if (includeRelations) writeType += ` & ${table.className}WriteRelations`;
+
+    let insertType = optionalFields.trim()
+      ? `Optional<${writeType}, ${optionalFields}>`
+      : table.className;
+
+    let updateType = `Partial<${writeType}>`;
+
+    if (includeLinks) {
+      insertType += ` & {_url: never, _links: never, _type: never}`;
+    }
+
+    let fullType = `${table.className}Row`;
+    if (includeLinks) fullType += ` & ${table.className}Links`;
+    if (includeRelations)
+      fullType += ` & ${table.className}Relations & ${table.className}Getters`;
+
+    types += `export type ${table.className} = ${fullType};\n`;
+    types += `export type ${table.className}Insert = ${insertType};\n`;
+    types += `export type ${table.className}Update = ${updateType};\n`;
+    types += `export type ${table.className}Write = ${table.className}Insert | (${table.className}Update & { ${table.idColumnName}: ${table.className}Id });\n\n`;
+    types += `export type ${table.className}Config = {\n`;
+    types += `  row: ${table.className}Row;\n`;
+    if (includeParams) types += `  params: ${table.className}Params;\n`;
+    types += `  insert: ${table.className}Insert;\n`;
+    types += `  update: ${table.className}Update;\n`;
+    types += `  id: ${table.className}Id;\n`;
+    types += `  idColumnName: "${table.idColumnName}";\n`;
+    types += `}\n\n`;
   }
 
-  await fs.writeFile(path, types.trim() + "\n");
+  const output = types.trim() + "\n";
+  const existing = await fs.readFile(path).catch(() => "");
+  if (output !== existing) await fs.writeFile(path, output);
 }

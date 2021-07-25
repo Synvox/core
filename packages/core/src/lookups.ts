@@ -86,7 +86,7 @@ export function postgresTypesToJSONTsTypes(type: string, useJsonTypes = true) {
       return "boolean";
     case "json":
     case "jsonb":
-      return "object";
+      return "any";
     default:
       return "any";
   }

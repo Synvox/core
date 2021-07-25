@@ -1,5 +1,19 @@
 import { AxiosInstance } from "axios";
 
+export type TableConfig<
+  Result extends Record<string, any>,
+  Params = DeepPartial<Result>,
+  InsertType = DeepPartial<Result>,
+  UpdateType = DeepPartial<Result>,
+  IDColumnName = number
+> = {
+  row: Result;
+  params?: Params;
+  insert?: InsertType;
+  update?: UpdateType;
+  idColumnName?: IDColumnName;
+};
+
 type DeepPartial<T> = {
   [P in keyof T]?: DeepPartial<T[P]>;
 };
@@ -64,6 +78,8 @@ export type Getter<Result, Params extends Record<string, any>, IDColumnName> = {
 export type Handlers<
   Result,
   Params extends Record<string, any>,
+  InsertType,
+  UpdateType,
   Extension,
   IDColumnName
 > = Extension &
@@ -73,12 +89,12 @@ export type Handlers<
     first: (params?: DeepPartial<Params>) => Result;
     put: (
       idOrQuery: ID<Result, IDColumnName> | DeepPartial<Params>,
-      payload: any,
+      payload: UpdateType,
       params?: DeepPartial<Params>
     ) => Promise<ChangeTo<Result>>;
     post: <R = ChangeTo<Result>>(
-      pathOrData: string | Record<string, any>,
-      dataOrParams?: any | DeepPartial<Params>,
+      pathOrData: string | InsertType,
+      dataOrParams?: InsertType | DeepPartial<Params>,
       params?: DeepPartial<Params>
     ) => Promise<R>;
     delete: (
@@ -98,17 +114,31 @@ export type Handlers<
     ) => Promise<Collection<ID<Result, IDColumnName>>>;
     rebind(
       getUrl: (url: string) => any
-    ): Handlers<Result, Params, Extension, IDColumnName>;
+    ): Handlers<
+      Result,
+      Params,
+      InsertType,
+      UpdateType,
+      Extension,
+      IDColumnName
+    >;
   };
 
-export type RouteFactory<Result, Params, Extension, ID> = (p: {
+export type RouteFactory<
+  Result,
+  Params,
+  InsertType,
+  UpdateType,
+  Extension,
+  ID
+> = (p: {
   getUrl: (url: string) => any;
   axios: AxiosInstance;
   touch: Touch<string>;
   blockUpdatesById: (id: string) => void;
   lock<T>(fn: () => Promise<T>): Promise<T>;
 }) => {
-  handlers: Handlers<Result, Params, Extension, ID>;
+  handlers: Handlers<Result, Params, InsertType, UpdateType, Extension, ID>;
 };
 
 export type Touch<Key> = (filter: (key: Key) => boolean) => Promise<void>;

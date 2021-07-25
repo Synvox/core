@@ -1,5 +1,12 @@
 import qs from "qs";
-import { Collection, Change, ChangeTo, Handlers, ID } from "./types";
+import {
+  Collection,
+  Change,
+  ChangeTo,
+  Handlers,
+  ID,
+  TableConfig,
+} from "./types";
 import { AxiosInstance } from "axios";
 import { CoreCache } from "./CoreCache";
 
@@ -14,7 +21,7 @@ type Options = {
   shouldTouch?: (change: Change, url: string) => boolean;
 };
 
-class Table<Result, Params, Extension, IDColumnName> {
+class Table<Result, Params, InsertType, UpdateType, Extension, IDColumnName> {
   path: string;
 
   blockUpdatesById: (id: string) => void;
@@ -44,7 +51,14 @@ class Table<Result, Params, Extension, IDColumnName> {
     getUrl: (url: string) => any;
     axios: AxiosInstance;
     handleChanges: (changes: Change[]) => Promise<void>;
-  }): Handlers<Result, Params, Extension, IDColumnName> {
+  }): Handlers<
+    Result,
+    Params,
+    InsertType,
+    UpdateType,
+    Extension,
+    IDColumnName
+  > {
     const { path, lock, blockUpdatesById } = this;
 
     function getUrl(url: string) {
@@ -220,18 +234,37 @@ class Table<Result, Params, Extension, IDColumnName> {
 }
 
 export function table<
-  T,
-  P,
-  E = {},
-  IDColumnName extends string | number = "id"
+  Config extends TableConfig<{}, unknown, unknown, unknown, string>,
+  Extension = {},
+  Row = Config extends TableConfig<infer Row, any, any, any, any> ? Row : never,
+  Params = Config extends TableConfig<any, infer Params, any, any, any>
+    ? Params
+    : never,
+  Insert = Config extends TableConfig<any, any, infer Insert, any, any>
+    ? Insert
+    : never,
+  Update = Config extends TableConfig<any, any, any, infer Update, any>
+    ? Update
+    : never,
+  IDColumnName = Config extends TableConfig<
+    any,
+    any,
+    any,
+    any,
+    infer IDColumnName
+  >
+    ? IDColumnName
+    : never
 >(path: string, options: Options = {}) {
-  return new Table<T, P, E, IDColumnName>(path, options);
+  return new Table<Row, Params, Insert, Update, Extension, IDColumnName>(
+    path,
+    options
+  );
 }
 
-export function core<Routes extends Record<string, Table<any, any, {}, any>>>(
-  axios: AxiosInstance,
-  routes: Routes
-) {
+export function core<
+  Routes extends Record<string, Table<any, any, any, any, {}, any>>
+>(axios: AxiosInstance, routes: Routes) {
   const cache = new CoreCache(axios);
 
   const handledChangeIds: string[] = [];
@@ -314,10 +347,19 @@ export function core<Routes extends Record<string, Table<any, any, {}, any>>>(
       [name in keyof Routes]: Routes[name] extends Table<
         infer Result,
         infer Params,
+        infer InsertType,
+        infer UpdateType,
         infer Extension,
         infer ID
       >
-        ? Handlers<Result, Partial<Params>, Extension, ID>
+        ? Handlers<
+            Result,
+            Partial<Params>,
+            InsertType,
+            UpdateType,
+            Extension,
+            ID
+          >
         : never;
     } {
       const getUrl = cache.useGet();

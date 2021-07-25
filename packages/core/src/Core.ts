@@ -570,7 +570,9 @@ export async function saveSchemaToFile(tables: Table<any>[], path: string) {
     return acc;
   }, {} as Record<string, SavedTable>);
 
-  await fs.writeFile(path, JSON.stringify(deepSort(json), null, 2));
+  const output = JSON.stringify(deepSort(json), null, 2);
+  const existing = await fs.readFile(path).catch(() => "");
+  if (output !== existing) await fs.writeFile(path, output);
 }
 
 function deepSort(obj: any): any {

@@ -300,12 +300,18 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "export type Test = {
-        id: number;
+      "type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
+
+      export type TestId = number;
+      export type TestRow = {
+        id: TestId;
         isBoolean: boolean;
         numberCount: number;
         text: string;
         typeId: string;
+      };
+
+      export type TestLinks = {
         _url: string;
         _type: string;
         _links: {
@@ -314,21 +320,55 @@ describe("saves to files", () => {
         };
       };
 
-      export type TestNullable = {
-        id: number;
+      export type Test = TestRow & TestLinks;
+      export type TestInsert = Optional<TestRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\"> & {_url: never, _links: never, _type: never};
+      export type TestUpdate = Partial<TestRow>;
+      export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
+
+      export type TestConfig = {
+        row: TestRow;
+        insert: TestInsert;
+        update: TestUpdate;
+        id: TestId;
+        idColumnName: \\"id\\";
+      }
+
+      export type TestNullableId = number;
+      export type TestNullableRow = {
+        id: TestNullableId;
         isBoolean: boolean;
         numberCount: number;
         text: string;
+      };
+
+      export type TestNullableLinks = {
         _url: string;
         _type: string;
         _links: {
         };
       };
 
-      export type TestSub = {
-        id: number;
+      export type TestNullable = TestNullableRow & TestNullableLinks;
+      export type TestNullableInsert = Optional<TestNullableRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\"> & {_url: never, _links: never, _type: never};
+      export type TestNullableUpdate = Partial<TestNullableRow>;
+      export type TestNullableWrite = TestNullableInsert | (TestNullableUpdate & { id: TestNullableId });
+
+      export type TestNullableConfig = {
+        row: TestNullableRow;
+        insert: TestNullableInsert;
+        update: TestNullableUpdate;
+        id: TestNullableId;
+        idColumnName: \\"id\\";
+      }
+
+      export type TestSubId = number;
+      export type TestSubRow = {
+        id: TestSubId;
         parentId: number;
         arr: number[] | null;
+      };
+
+      export type TestSubLinks = {
         _url: string;
         _type: string;
         _links: {
@@ -336,16 +376,46 @@ describe("saves to files", () => {
         };
       };
 
-      export type TestSubNullable = {
-        id: number;
+      export type TestSub = TestSubRow & TestSubLinks;
+      export type TestSubInsert = Optional<TestSubRow, \\"id\\" | \\"arr\\"> & {_url: never, _links: never, _type: never};
+      export type TestSubUpdate = Partial<TestSubRow>;
+      export type TestSubWrite = TestSubInsert | (TestSubUpdate & { id: TestSubId });
+
+      export type TestSubConfig = {
+        row: TestSubRow;
+        insert: TestSubInsert;
+        update: TestSubUpdate;
+        id: TestSubId;
+        idColumnName: \\"id\\";
+      }
+
+      export type TestSubNullableId = number;
+      export type TestSubNullableRow = {
+        id: TestSubNullableId;
         parentId: number | null;
         arr: number[] | null;
+      };
+
+      export type TestSubNullableLinks = {
         _url: string;
         _type: string;
         _links: {
           parent?: string;
         };
       };
+
+      export type TestSubNullable = TestSubNullableRow & TestSubNullableLinks;
+      export type TestSubNullableInsert = Optional<TestSubNullableRow, \\"id\\" | \\"parentId\\" | \\"arr\\"> & {_url: never, _links: never, _type: never};
+      export type TestSubNullableUpdate = Partial<TestSubNullableRow>;
+      export type TestSubNullableWrite = TestSubNullableInsert | (TestSubNullableUpdate & { id: TestSubNullableId });
+
+      export type TestSubNullableConfig = {
+        row: TestSubNullableRow;
+        insert: TestSubNullableInsert;
+        update: TestSubNullableUpdate;
+        id: TestSubNullableId;
+        idColumnName: \\"id\\";
+      }
       "
     `);
   });
@@ -379,32 +449,90 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "export type Test = {
-        id: number;
+      "type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
+
+      export type TestId = number;
+      export type TestRow = {
+        id: TestId;
         isBoolean: boolean;
         numberCount: number;
         text: string;
         typeId: string;
       };
 
-      export type TestNullable = {
-        id: number;
+      export type Test = TestRow;
+      export type TestInsert = Optional<TestRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">;
+      export type TestUpdate = Partial<TestRow>;
+      export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
+
+      export type TestConfig = {
+        row: TestRow;
+        insert: TestInsert;
+        update: TestUpdate;
+        id: TestId;
+        idColumnName: \\"id\\";
+      }
+
+      export type TestNullableId = number;
+      export type TestNullableRow = {
+        id: TestNullableId;
         isBoolean: boolean;
         numberCount: number;
         text: string;
       };
 
-      export type TestSub = {
-        id: number;
+      export type TestNullable = TestNullableRow;
+      export type TestNullableInsert = Optional<TestNullableRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">;
+      export type TestNullableUpdate = Partial<TestNullableRow>;
+      export type TestNullableWrite = TestNullableInsert | (TestNullableUpdate & { id: TestNullableId });
+
+      export type TestNullableConfig = {
+        row: TestNullableRow;
+        insert: TestNullableInsert;
+        update: TestNullableUpdate;
+        id: TestNullableId;
+        idColumnName: \\"id\\";
+      }
+
+      export type TestSubId = number;
+      export type TestSubRow = {
+        id: TestSubId;
         parentId: number;
         arr: number[] | null;
       };
 
-      export type TestSubNullable = {
-        id: number;
+      export type TestSub = TestSubRow;
+      export type TestSubInsert = Optional<TestSubRow, \\"id\\" | \\"arr\\">;
+      export type TestSubUpdate = Partial<TestSubRow>;
+      export type TestSubWrite = TestSubInsert | (TestSubUpdate & { id: TestSubId });
+
+      export type TestSubConfig = {
+        row: TestSubRow;
+        insert: TestSubInsert;
+        update: TestSubUpdate;
+        id: TestSubId;
+        idColumnName: \\"id\\";
+      }
+
+      export type TestSubNullableId = number;
+      export type TestSubNullableRow = {
+        id: TestSubNullableId;
         parentId: number | null;
         arr: number[] | null;
       };
+
+      export type TestSubNullable = TestSubNullableRow;
+      export type TestSubNullableInsert = Optional<TestSubNullableRow, \\"id\\" | \\"parentId\\" | \\"arr\\">;
+      export type TestSubNullableUpdate = Partial<TestSubNullableRow>;
+      export type TestSubNullableWrite = TestSubNullableInsert | (TestSubNullableUpdate & { id: TestSubNullableId });
+
+      export type TestSubNullableConfig = {
+        row: TestSubNullableRow;
+        insert: TestSubNullableInsert;
+        update: TestSubNullableUpdate;
+        id: TestSubNullableId;
+        idColumnName: \\"id\\";
+      }
       "
     `);
   });
@@ -441,38 +569,134 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "export type Test = {
-        id: number;
+      "type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
+
+      export type TestId = number;
+      export type TestRow = {
+        id: TestId;
         isBoolean: boolean;
         numberCount: number;
         text: string;
         typeId: string;
+      };
+
+      export type TestRelations = {
+      };
+
+      export type TestWriteRelations = {
+      };
+
+      export type TestGetters = {
         testSub: TestSub[];
         testSubCount: number;
         testSubNullable: TestSubNullable[];
         testSubNullableCount: number;
       };
 
-      export type TestNullable = {
-        id: number;
+      export type Test = TestRow & TestRelations & TestGetters;
+      export type TestInsert = Optional<TestRow & TestWriteRelations, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">;
+      export type TestUpdate = Partial<TestRow & TestWriteRelations>;
+      export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
+
+      export type TestConfig = {
+        row: TestRow;
+        insert: TestInsert;
+        update: TestUpdate;
+        id: TestId;
+        idColumnName: \\"id\\";
+      }
+
+      export type TestNullableId = number;
+      export type TestNullableRow = {
+        id: TestNullableId;
         isBoolean: boolean;
         numberCount: number;
         text: string;
       };
 
-      export type TestSub = {
-        id: number;
+      export type TestNullableRelations = {
+      };
+
+      export type TestNullableWriteRelations = {
+      };
+
+      export type TestNullableGetters = {
+      };
+
+      export type TestNullable = TestNullableRow & TestNullableRelations & TestNullableGetters;
+      export type TestNullableInsert = Optional<TestNullableRow & TestNullableWriteRelations, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">;
+      export type TestNullableUpdate = Partial<TestNullableRow & TestNullableWriteRelations>;
+      export type TestNullableWrite = TestNullableInsert | (TestNullableUpdate & { id: TestNullableId });
+
+      export type TestNullableConfig = {
+        row: TestNullableRow;
+        insert: TestNullableInsert;
+        update: TestNullableUpdate;
+        id: TestNullableId;
+        idColumnName: \\"id\\";
+      }
+
+      export type TestSubId = number;
+      export type TestSubRow = {
+        id: TestSubId;
         parentId: number;
         arr: number[] | null;
+      };
+
+      export type TestSubRelations = {
         parent: Test;
       };
 
-      export type TestSubNullable = {
-        id: number;
+      export type TestSubWriteRelations = {
+        parent: TestWrite;
+      };
+
+      export type TestSubGetters = {
+      };
+
+      export type TestSub = TestSubRow & TestSubRelations & TestSubGetters;
+      export type TestSubInsert = Optional<TestSubRow & TestSubWriteRelations, \\"id\\" | \\"arr\\">;
+      export type TestSubUpdate = Partial<TestSubRow & TestSubWriteRelations>;
+      export type TestSubWrite = TestSubInsert | (TestSubUpdate & { id: TestSubId });
+
+      export type TestSubConfig = {
+        row: TestSubRow;
+        insert: TestSubInsert;
+        update: TestSubUpdate;
+        id: TestSubId;
+        idColumnName: \\"id\\";
+      }
+
+      export type TestSubNullableId = number;
+      export type TestSubNullableRow = {
+        id: TestSubNullableId;
         parentId: number | null;
         arr: number[] | null;
+      };
+
+      export type TestSubNullableRelations = {
         parent?: Test;
       };
+
+      export type TestSubNullableWriteRelations = {
+        parent?: TestWrite;
+      };
+
+      export type TestSubNullableGetters = {
+      };
+
+      export type TestSubNullable = TestSubNullableRow & TestSubNullableRelations & TestSubNullableGetters;
+      export type TestSubNullableInsert = Optional<TestSubNullableRow & TestSubNullableWriteRelations, \\"id\\" | \\"parentId\\" | \\"arr\\">;
+      export type TestSubNullableUpdate = Partial<TestSubNullableRow & TestSubNullableWriteRelations>;
+      export type TestSubNullableWrite = TestSubNullableInsert | (TestSubNullableUpdate & { id: TestSubNullableId });
+
+      export type TestSubNullableConfig = {
+        row: TestSubNullableRow;
+        insert: TestSubNullableInsert;
+        update: TestSubNullableUpdate;
+        id: TestSubNullableId;
+        idColumnName: \\"id\\";
+      }
       "
     `);
   });
@@ -516,7 +740,9 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "type CollectionParams = {
+      "type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
+
+      type CollectionParams = {
         cursor: string;
         page: number;
         limit: number;
@@ -543,19 +769,29 @@ describe("saves to files", () => {
 
       type SortParam<T> = Extract<keyof T, string> | \`-\${Extract<keyof T, string>}\`
 
-      export type Test = {
-        id: number;
+      export type TestId = number;
+      export type TestRow = {
+        id: TestId;
         isBoolean: boolean;
         numberCount: number;
         text: string;
         typeId: string;
+      };
+
+      export type TestRelations = {
+      };
+
+      export type TestWriteRelations = {
+      };
+
+      export type TestGetters = {
         testSub: TestSub[];
         testSubCount: number;
         testSubNullable: TestSubNullable[];
         testSubNullableCount: number;
       };
 
-      export type TestFilters = ColumnParam<\\"id\\", number | number[]> &
+      export type TestFilters = ColumnParam<\\"id\\", TestId | TestId[]> &
         ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
         ColumnParam<\\"numberCount\\", number | number[]> &
         ColumnParam<\\"text\\", string | string[]> &
@@ -572,14 +808,38 @@ describe("saves to files", () => {
           sort: SortParam<Test> | SortParam<Test>[];
         };
 
-      export type TestNullable = {
-        id: number;
+      export type Test = TestRow & TestRelations & TestGetters;
+      export type TestInsert = Optional<TestRow & TestWriteRelations, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">;
+      export type TestUpdate = Partial<TestRow & TestWriteRelations>;
+      export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
+
+      export type TestConfig = {
+        row: TestRow;
+        params: TestParams;
+        insert: TestInsert;
+        update: TestUpdate;
+        id: TestId;
+        idColumnName: \\"id\\";
+      }
+
+      export type TestNullableId = number;
+      export type TestNullableRow = {
+        id: TestNullableId;
         isBoolean: boolean;
         numberCount: number;
         text: string;
       };
 
-      export type TestNullableFilters = ColumnParam<\\"id\\", number | number[]> &
+      export type TestNullableRelations = {
+      };
+
+      export type TestNullableWriteRelations = {
+      };
+
+      export type TestNullableGetters = {
+      };
+
+      export type TestNullableFilters = ColumnParam<\\"id\\", TestNullableId | TestNullableId[]> &
         ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
         ColumnParam<\\"numberCount\\", number | number[]> &
         ColumnParam<\\"text\\", string | string[]> & {
@@ -594,15 +854,40 @@ describe("saves to files", () => {
           sort: SortParam<TestNullable> | SortParam<TestNullable>[];
         };
 
-      export type TestSub = {
-        id: number;
+      export type TestNullable = TestNullableRow & TestNullableRelations & TestNullableGetters;
+      export type TestNullableInsert = Optional<TestNullableRow & TestNullableWriteRelations, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">;
+      export type TestNullableUpdate = Partial<TestNullableRow & TestNullableWriteRelations>;
+      export type TestNullableWrite = TestNullableInsert | (TestNullableUpdate & { id: TestNullableId });
+
+      export type TestNullableConfig = {
+        row: TestNullableRow;
+        params: TestNullableParams;
+        insert: TestNullableInsert;
+        update: TestNullableUpdate;
+        id: TestNullableId;
+        idColumnName: \\"id\\";
+      }
+
+      export type TestSubId = number;
+      export type TestSubRow = {
+        id: TestSubId;
         parentId: number;
         arr: number[] | null;
+      };
+
+      export type TestSubRelations = {
         parent: Test;
       };
 
-      export type TestSubFilters = ColumnParam<\\"id\\", number | number[]> &
-        ColumnParam<\\"parentId\\", TestFilters['id']> &
+      export type TestSubWriteRelations = {
+        parent: TestWrite;
+      };
+
+      export type TestSubGetters = {
+      };
+
+      export type TestSubFilters = ColumnParam<\\"id\\", TestSubId | TestSubId[]> &
+        ColumnParam<\\"parentId\\", number | number[]> &
         ColumnParam<\\"arr\\", number[] | null> & {
           parent: TestFilters;
           \\"parent.not\\": TestFilters;
@@ -619,15 +904,40 @@ describe("saves to files", () => {
           sort: SortParam<TestSub> | SortParam<TestSub>[];
         };
 
-      export type TestSubNullable = {
-        id: number;
+      export type TestSub = TestSubRow & TestSubRelations & TestSubGetters;
+      export type TestSubInsert = Optional<TestSubRow & TestSubWriteRelations, \\"id\\" | \\"arr\\">;
+      export type TestSubUpdate = Partial<TestSubRow & TestSubWriteRelations>;
+      export type TestSubWrite = TestSubInsert | (TestSubUpdate & { id: TestSubId });
+
+      export type TestSubConfig = {
+        row: TestSubRow;
+        params: TestSubParams;
+        insert: TestSubInsert;
+        update: TestSubUpdate;
+        id: TestSubId;
+        idColumnName: \\"id\\";
+      }
+
+      export type TestSubNullableId = number;
+      export type TestSubNullableRow = {
+        id: TestSubNullableId;
         parentId: number | null;
         arr: number[] | null;
+      };
+
+      export type TestSubNullableRelations = {
         parent?: Test;
       };
 
-      export type TestSubNullableFilters = ColumnParam<\\"id\\", number | number[]> &
-        ColumnParam<\\"parentId\\", TestFilters['id'] | null> &
+      export type TestSubNullableWriteRelations = {
+        parent?: TestWrite;
+      };
+
+      export type TestSubNullableGetters = {
+      };
+
+      export type TestSubNullableFilters = ColumnParam<\\"id\\", TestSubNullableId | TestSubNullableId[]> &
+        ColumnParam<\\"parentId\\", number | number[] | null> &
         ColumnParam<\\"arr\\", number[] | null> & {
           parent: TestFilters;
           \\"parent.not\\": TestFilters;
@@ -642,6 +952,20 @@ describe("saves to files", () => {
           include: 'parent' | ('parent')[] | { parent: true | TestParams['include'] };
           sort: SortParam<TestSubNullable> | SortParam<TestSubNullable>[];
         };
+
+      export type TestSubNullable = TestSubNullableRow & TestSubNullableRelations & TestSubNullableGetters;
+      export type TestSubNullableInsert = Optional<TestSubNullableRow & TestSubNullableWriteRelations, \\"id\\" | \\"parentId\\" | \\"arr\\">;
+      export type TestSubNullableUpdate = Partial<TestSubNullableRow & TestSubNullableWriteRelations>;
+      export type TestSubNullableWrite = TestSubNullableInsert | (TestSubNullableUpdate & { id: TestSubNullableId });
+
+      export type TestSubNullableConfig = {
+        row: TestSubNullableRow;
+        params: TestSubNullableParams;
+        insert: TestSubNullableInsert;
+        update: TestSubNullableUpdate;
+        id: TestSubNullableId;
+        idColumnName: \\"id\\";
+      }
       "
     `);
   });
@@ -672,7 +996,9 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "type CollectionParams = {
+      "type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
+
+      type CollectionParams = {
         cursor: string;
         page: number;
         limit: number;
@@ -699,17 +1025,27 @@ describe("saves to files", () => {
 
       type SortParam<T> = Extract<keyof T, string> | \`-\${Extract<keyof T, string>}\`
 
-      export type Test = {
-        id: number;
+      export type TestId = number;
+      export type TestRow = {
+        id: TestId;
         isBoolean: boolean;
         numberCount: number;
         text: string;
         typeId: string;
-        getOtherThing: unknown;
-        getThing: unknown;
       };
 
-      export type TestFilters = ColumnParam<\\"id\\", number | number[]> &
+      export type TestRelations = {
+      };
+
+      export type TestWriteRelations = {
+      };
+
+      export type TestGetters = {
+        getOtherThing: any;
+        getThing: any;
+      };
+
+      export type TestFilters = ColumnParam<\\"id\\", TestId | TestId[]> &
         ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
         ColumnParam<\\"numberCount\\", number | number[]> &
         ColumnParam<\\"text\\", string | string[]> &
@@ -725,6 +1061,20 @@ describe("saves to files", () => {
           include: 'getThing' | 'getOtherThing' | ('getThing' | 'getOtherThing')[] | { getThing: true; getOtherThing: true };
           sort: SortParam<Test> | SortParam<Test>[];
         };
+
+      export type Test = TestRow & TestRelations & TestGetters;
+      export type TestInsert = Optional<TestRow & TestWriteRelations, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">;
+      export type TestUpdate = Partial<TestRow & TestWriteRelations>;
+      export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
+
+      export type TestConfig = {
+        row: TestRow;
+        params: TestParams;
+        insert: TestInsert;
+        update: TestUpdate;
+        id: TestId;
+        idColumnName: \\"id\\";
+      }
       "
     `);
   });
@@ -752,7 +1102,9 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "type CollectionParams = {
+      "type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
+
+      type CollectionParams = {
         cursor: string;
         page: number;
         limit: number;
@@ -779,20 +1131,31 @@ describe("saves to files", () => {
 
       type SortParam<T> = Extract<keyof T, string> | \`-\${Extract<keyof T, string>}\`
 
-      export type Test = {
-        id: number;
+      export type TestId = number;
+      export type TestRow = {
+        id: TestId;
         isBoolean: boolean;
         numberCount: number;
         text: string;
         typeId: \\"type1\\" | \\"type2\\" | \\"type3\\";
+      };
+
+      export type TestRelations = {
         type: Type;
       };
 
-      export type TestFilters = ColumnParam<\\"id\\", number | number[]> &
+      export type TestWriteRelations = {
+        type: TypeWrite;
+      };
+
+      export type TestGetters = {
+      };
+
+      export type TestFilters = ColumnParam<\\"id\\", TestId | TestId[]> &
         ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
         ColumnParam<\\"numberCount\\", number | number[]> &
         ColumnParam<\\"text\\", string | string[]> &
-        ColumnParam<\\"typeId\\", TypeFilters['id']> & {
+        ColumnParam<\\"typeId\\", string | string[]> & {
           type: TypeFilters;
           \\"type.not\\": TypeFilters;
           and: TestFilters | TestFilters[];
@@ -807,13 +1170,37 @@ describe("saves to files", () => {
           sort: SortParam<Test> | SortParam<Test>[];
         };
 
-      export type Type = {
-        id: \\"type1\\" | \\"type2\\" | \\"type3\\";
+      export type Test = TestRow & TestRelations & TestGetters;
+      export type TestInsert = Optional<TestRow & TestWriteRelations, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">;
+      export type TestUpdate = Partial<TestRow & TestWriteRelations>;
+      export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
+
+      export type TestConfig = {
+        row: TestRow;
+        params: TestParams;
+        insert: TestInsert;
+        update: TestUpdate;
+        id: TestId;
+        idColumnName: \\"id\\";
+      }
+
+      export type TypeId = \\"type1\\" | \\"type2\\" | \\"type3\\";
+      export type TypeRow = {
+        id: TypeId;
+      };
+
+      export type TypeRelations = {
+      };
+
+      export type TypeWriteRelations = {
+      };
+
+      export type TypeGetters = {
         test: Test[];
         testCount: number;
       };
 
-      export type TypeFilters = ColumnParam<\\"id\\", Type['id'] | Type['id'][]> & {
+      export type TypeFilters = ColumnParam<\\"id\\", TypeId | TypeId[]> & {
           and: TypeFilters | TypeFilters[];
           \\"not.and\\": TypeFilters | TypeFilters[];
           or: TypeFilters | TypeFilters[];
@@ -825,6 +1212,20 @@ describe("saves to files", () => {
           include: 'test' | 'testCount' | ('test' | 'testCount')[] | { test: true | TestParams['include']; testCount: true };
           sort: SortParam<Type> | SortParam<Type>[];
         };
+
+      export type Type = TypeRow & TypeRelations & TypeGetters;
+      export type TypeInsert = Type;
+      export type TypeUpdate = Partial<TypeRow & TypeWriteRelations>;
+      export type TypeWrite = TypeInsert | (TypeUpdate & { id: TypeId });
+
+      export type TypeConfig = {
+        row: TypeRow;
+        params: TypeParams;
+        insert: TypeInsert;
+        update: TypeUpdate;
+        id: TypeId;
+        idColumnName: \\"id\\";
+      }
       "
     `);
   });
@@ -854,7 +1255,9 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "type CollectionParams = {
+      "type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
+
+      type CollectionParams = {
         cursor: string;
         page: number;
         limit: number;
@@ -881,20 +1284,31 @@ describe("saves to files", () => {
 
       type SortParam<T> = Extract<keyof T, string> | \`-\${Extract<keyof T, string>}\`
 
-      export type Test = {
-        id: number;
+      export type TestId = number;
+      export type TestRow = {
+        id: TestId;
         isBoolean: boolean;
         numberCount: number;
         text: string;
         typeId: string;
+      };
+
+      export type TestRelations = {
         type: Type;
       };
 
-      export type TestFilters = ColumnParam<\\"id\\", number | number[]> &
+      export type TestWriteRelations = {
+        type: TypeWrite;
+      };
+
+      export type TestGetters = {
+      };
+
+      export type TestFilters = ColumnParam<\\"id\\", TestId | TestId[]> &
         ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
         ColumnParam<\\"numberCount\\", number | number[]> &
         ColumnParam<\\"text\\", string | string[]> &
-        ColumnParam<\\"typeId\\", TypeFilters['id']> & {
+        ColumnParam<\\"typeId\\", string | string[]> & {
           type: TypeFilters;
           \\"type.not\\": TypeFilters;
           and: TestFilters | TestFilters[];
@@ -909,13 +1323,37 @@ describe("saves to files", () => {
           sort: SortParam<Test> | SortParam<Test>[];
         };
 
-      export type Type = {
-        id: string;
+      export type Test = TestRow & TestRelations & TestGetters;
+      export type TestInsert = Optional<TestRow & TestWriteRelations, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">;
+      export type TestUpdate = Partial<TestRow & TestWriteRelations>;
+      export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
+
+      export type TestConfig = {
+        row: TestRow;
+        params: TestParams;
+        insert: TestInsert;
+        update: TestUpdate;
+        id: TestId;
+        idColumnName: \\"id\\";
+      }
+
+      export type TypeId = string;
+      export type TypeRow = {
+        id: TypeId;
+      };
+
+      export type TypeRelations = {
+      };
+
+      export type TypeWriteRelations = {
+      };
+
+      export type TypeGetters = {
         test: Test[];
         testCount: number;
       };
 
-      export type TypeFilters = ColumnParam<\\"id\\", string | string[]> & {
+      export type TypeFilters = ColumnParam<\\"id\\", TypeId | TypeId[]> & {
           and: TypeFilters | TypeFilters[];
           \\"not.and\\": TypeFilters | TypeFilters[];
           or: TypeFilters | TypeFilters[];
@@ -927,6 +1365,20 @@ describe("saves to files", () => {
           include: 'test' | 'testCount' | ('test' | 'testCount')[] | { test: true | TestParams['include']; testCount: true };
           sort: SortParam<Type> | SortParam<Type>[];
         };
+
+      export type Type = TypeRow & TypeRelations & TypeGetters;
+      export type TypeInsert = Type;
+      export type TypeUpdate = Partial<TypeRow & TypeWriteRelations>;
+      export type TypeWrite = TypeInsert | (TypeUpdate & { id: TypeId });
+
+      export type TypeConfig = {
+        row: TypeRow;
+        params: TypeParams;
+        insert: TypeInsert;
+        update: TypeUpdate;
+        id: TypeId;
+        idColumnName: \\"id\\";
+      }
       "
     `);
   });
@@ -988,84 +1440,168 @@ describe("saves to files", () => {
     expect(types).toMatchInlineSnapshot(`
       "import { Knex } from \\"knex\\";
 
-      type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
-
       declare module 'knex/types/tables' {
         interface Tables {
           \\"saveTestTable\\": Knex.CompositeTableType<
             SaveTestTable,
-            Optional<SaveTestTable, \\"id\\">,
-            Partial<SaveTestTable>
+            SaveTestTableInsert,
+            SaveTestTableUpdate
           >;
           \\"public.saveTestTable\\": Knex.CompositeTableType<
             SaveTestTable,
-            Optional<SaveTestTable, \\"id\\">,
-            Partial<SaveTestTable>
+            SaveTestTableInsert,
+            SaveTestTableUpdate
           >;
           \\"saveTest.lookupTable\\": Knex.CompositeTableType<
             LookupTable,
-            LookupTable,
-            Partial<LookupTable>
+            LookupTableInsert,
+            LookupTableUpdate
           >;
           \\"saveTest.test\\": Knex.CompositeTableType<
             Test,
-            Optional<Test, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">,
-            Partial<Test>
+            TestInsert,
+            TestUpdate
           >;
           \\"saveTest.testNullable\\": Knex.CompositeTableType<
             TestNullable,
-            Optional<TestNullable, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">,
-            Partial<TestNullable>
+            TestNullableInsert,
+            TestNullableUpdate
           >;
           \\"saveTest.testSub\\": Knex.CompositeTableType<
             TestSub,
-            Optional<TestSub, \\"id\\" | \\"arr\\">,
-            Partial<TestSub>
+            TestSubInsert,
+            TestSubUpdate
           >;
           \\"saveTest.testSubNullable\\": Knex.CompositeTableType<
             TestSubNullable,
-            Optional<TestSubNullable, \\"id\\" | \\"parentId\\" | \\"arr\\">,
-            Partial<TestSubNullable>
+            TestSubNullableInsert,
+            TestSubNullableUpdate
           >;
         }
       }
 
-      export type SaveTestTable = {
-        id: number;
+      type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
+
+      export type SaveTestTableId = number;
+      export type SaveTestTableRow = {
+        id: SaveTestTableId;
         createdAt: Date;
         numberResponse: number;
       };
 
-      export type LookupTable = {
-        id: string;
+      export type SaveTestTable = SaveTestTableRow;
+      export type SaveTestTableInsert = Optional<SaveTestTableRow, \\"id\\">;
+      export type SaveTestTableUpdate = Partial<SaveTestTableRow>;
+      export type SaveTestTableWrite = SaveTestTableInsert | (SaveTestTableUpdate & { id: SaveTestTableId });
+
+      export type SaveTestTableConfig = {
+        row: SaveTestTableRow;
+        insert: SaveTestTableInsert;
+        update: SaveTestTableUpdate;
+        id: SaveTestTableId;
+        idColumnName: \\"id\\";
+      }
+
+      export type LookupTableId = string;
+      export type LookupTableRow = {
+        id: LookupTableId;
       };
 
-      export type Test = {
-        id: number;
+      export type LookupTable = LookupTableRow;
+      export type LookupTableInsert = LookupTable;
+      export type LookupTableUpdate = Partial<LookupTableRow>;
+      export type LookupTableWrite = LookupTableInsert | (LookupTableUpdate & { id: LookupTableId });
+
+      export type LookupTableConfig = {
+        row: LookupTableRow;
+        insert: LookupTableInsert;
+        update: LookupTableUpdate;
+        id: LookupTableId;
+        idColumnName: \\"id\\";
+      }
+
+      export type TestId = number;
+      export type TestRow = {
+        id: TestId;
         isBoolean: boolean;
         numberCount: number;
         text: string;
         typeId: string;
       };
 
-      export type TestNullable = {
-        id: number;
+      export type Test = TestRow;
+      export type TestInsert = Optional<TestRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">;
+      export type TestUpdate = Partial<TestRow>;
+      export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
+
+      export type TestConfig = {
+        row: TestRow;
+        insert: TestInsert;
+        update: TestUpdate;
+        id: TestId;
+        idColumnName: \\"id\\";
+      }
+
+      export type TestNullableId = number;
+      export type TestNullableRow = {
+        id: TestNullableId;
         isBoolean: boolean;
         numberCount: number;
         text: string;
       };
 
-      export type TestSub = {
-        id: number;
+      export type TestNullable = TestNullableRow;
+      export type TestNullableInsert = Optional<TestNullableRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">;
+      export type TestNullableUpdate = Partial<TestNullableRow>;
+      export type TestNullableWrite = TestNullableInsert | (TestNullableUpdate & { id: TestNullableId });
+
+      export type TestNullableConfig = {
+        row: TestNullableRow;
+        insert: TestNullableInsert;
+        update: TestNullableUpdate;
+        id: TestNullableId;
+        idColumnName: \\"id\\";
+      }
+
+      export type TestSubId = number;
+      export type TestSubRow = {
+        id: TestSubId;
         parentId: number;
         arr: number[] | null;
       };
 
-      export type TestSubNullable = {
-        id: number;
+      export type TestSub = TestSubRow;
+      export type TestSubInsert = Optional<TestSubRow, \\"id\\" | \\"arr\\">;
+      export type TestSubUpdate = Partial<TestSubRow>;
+      export type TestSubWrite = TestSubInsert | (TestSubUpdate & { id: TestSubId });
+
+      export type TestSubConfig = {
+        row: TestSubRow;
+        insert: TestSubInsert;
+        update: TestSubUpdate;
+        id: TestSubId;
+        idColumnName: \\"id\\";
+      }
+
+      export type TestSubNullableId = number;
+      export type TestSubNullableRow = {
+        id: TestSubNullableId;
         parentId: number | null;
         arr: number[] | null;
       };
+
+      export type TestSubNullable = TestSubNullableRow;
+      export type TestSubNullableInsert = Optional<TestSubNullableRow, \\"id\\" | \\"parentId\\" | \\"arr\\">;
+      export type TestSubNullableUpdate = Partial<TestSubNullableRow>;
+      export type TestSubNullableWrite = TestSubNullableInsert | (TestSubNullableUpdate & { id: TestSubNullableId });
+
+      export type TestSubNullableConfig = {
+        row: TestSubNullableRow;
+        insert: TestSubNullableInsert;
+        update: TestSubNullableUpdate;
+        id: TestSubNullableId;
+        idColumnName: \\"id\\";
+      }
       "
     `);
   });
@@ -1095,7 +1631,9 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "type CollectionParams = {
+      "type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
+
+      type CollectionParams = {
         cursor: string;
         page: number;
         limit: number;
@@ -1122,16 +1660,27 @@ describe("saves to files", () => {
 
       type SortParam<T> = Extract<keyof T, string> | \`-\${Extract<keyof T, string>}\`
 
-      export type Recursive = {
-        id: number;
+      export type RecursiveId = number;
+      export type RecursiveRow = {
+        id: RecursiveId;
         parentId: number | null;
+      };
+
+      export type RecursiveRelations = {
         parent?: Recursive;
+      };
+
+      export type RecursiveWriteRelations = {
+        parent?: RecursiveWrite;
+      };
+
+      export type RecursiveGetters = {
         recursive: Recursive[];
         recursiveCount: number;
       };
 
-      export type RecursiveFilters = ColumnParam<\\"id\\", number | number[]> &
-        ColumnParam<\\"parentId\\", number | number[] | null> & {
+      export type RecursiveFilters = ColumnParam<\\"id\\", RecursiveId | RecursiveId[]> &
+        ColumnParam<\\"parentId\\", RecursiveId | RecursiveId[] | null> & {
           parent: RecursiveFilters;
           \\"parent.not\\": RecursiveFilters;
           and: RecursiveFilters | RecursiveFilters[];
@@ -1145,6 +1694,20 @@ describe("saves to files", () => {
           include: 'recursive' | 'recursiveCount' | 'parent' | ('recursive' | 'recursiveCount' | 'parent')[] | { recursive: true | RecursiveParams['include']; recursiveCount: true; parent: true | RecursiveParams['include'] };
           sort: SortParam<Recursive> | SortParam<Recursive>[];
         };
+
+      export type Recursive = RecursiveRow & RecursiveRelations & RecursiveGetters;
+      export type RecursiveInsert = Optional<RecursiveRow & RecursiveWriteRelations, \\"id\\" | \\"parentId\\">;
+      export type RecursiveUpdate = Partial<RecursiveRow & RecursiveWriteRelations>;
+      export type RecursiveWrite = RecursiveInsert | (RecursiveUpdate & { id: RecursiveId });
+
+      export type RecursiveConfig = {
+        row: RecursiveRow;
+        params: RecursiveParams;
+        insert: RecursiveInsert;
+        update: RecursiveUpdate;
+        id: RecursiveId;
+        idColumnName: \\"id\\";
+      }
       "
     `);
   });

@@ -138,14 +138,17 @@ describe("core", () => {
     };
 
     const { useCore, touch } = coreClient(axios, {
-      test: table<Test, Test & { include: "testSub" }>("/coreClientTest/test"),
-      testSub: table<TestSub, TestSub>("/coreClientTest/testSub"),
+      test: table<{ row: Test; params: Test & { include: "testSub" } }>(
+        "/coreClientTest/test"
+      ),
+      testSub: table<{ row: TestSub }>("/coreClientTest/testSub"),
     });
 
     const { result, waitForNextUpdate, rerender } = renderHook(
       ({ id }: { id: number }) => {
         const core = useCore();
         const result = core.test(id, { include: "testSub" });
+        expectType<Test>(result);
         return { result, testSub: result.testSub };
       },
       { initialProps: { id: 1 } }
@@ -241,6 +244,7 @@ describe("core", () => {
       } = renderHook(() => {
         const core = useCore();
         const result = core.test({ isBoolean: true });
+        expectType<Test[]>(result);
         return result;
       });
       await waitForNextUpdate();
@@ -253,6 +257,7 @@ describe("core", () => {
       } = renderHook(() => {
         const core = useCore();
         const result = core.test({ isBoolean: false });
+        expectType<Test[]>(result);
         return result;
       });
       await waitForNextUpdate();
@@ -283,6 +288,7 @@ describe("core", () => {
       } = renderHook(() => {
         const core = useCore();
         const result = core.test();
+        expectType<Test[]>(result);
         return result;
       });
       await waitForNextUpdate();
@@ -338,8 +344,10 @@ describe("core", () => {
     };
 
     const { useCore, touch } = coreClient(axios, {
-      test: table<Test, Test & { include: "testSub" }>("/coreClientTest/test"),
-      testSub: table<TestSub, TestSub>("/coreClientTest/testSub"),
+      test: table<{ row: Test; params: Test & { include?: "testSub" } }>(
+        "/coreClientTest/test"
+      ),
+      testSub: table<{ row: TestSub }>("/coreClientTest/testSub"),
     });
 
     const { result, waitForNextUpdate } = renderHook(() => {
@@ -356,6 +364,7 @@ describe("core", () => {
 
       return tryOr(() => {
         const [result] = core.test({ include: "testSub" });
+        expectType<Test>(result);
         return { result: result.testSub[0] };
       });
     });
@@ -413,12 +422,18 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, Test>("/coreClientTest/test"),
-      testSub: table<TestSub, any>("/coreClientTest/testSub"),
+      test: table<{
+        row: Test;
+        params: Partial<Test>;
+        update: Partial<Test>;
+        idColumnName: "id";
+      }>("/coreClientTest/test"),
+      testSub: table<{ row: TestSub }>("/coreClientTest/testSub"),
     });
 
     const { result, waitForNextUpdate } = renderHook(() => {
       const core = useCore();
+      expectType<Test[]>(core.test());
       return {
         test: core.test(),
         core,
@@ -618,7 +633,16 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, Test>("/coreClientTest/test"),
+      test: table<
+        { row: Test },
+        {
+          post(
+            url: "/action",
+            payload: { thing: string },
+            params: Partial<Test>
+          ): Promise<any>;
+        }
+      >("/coreClientTest/test"),
     });
 
     const { result, waitForNextUpdate } = renderHook(() => {
@@ -689,8 +713,10 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, Test & { include: "testSub" }>("/coreClientTest/test"),
-      testSub: table<TestSub, any>("/coreClientTest/testSub"),
+      test: table<{ row: Test; params: Test & { include: "testSub" } }>(
+        "/coreClientTest/test"
+      ),
+      testSub: table<{ row: TestSub }>("/coreClientTest/testSub"),
     });
 
     const { result, waitForNextUpdate } = renderHook(
@@ -777,8 +803,8 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, Test>("/coreClientTest/test"),
-      testSub: table<TestSub, any>("/coreClientTest/testSub"),
+      test: table<{ row: Test }>("/coreClientTest/test"),
+      testSub: table<{ row: TestSub }>("/coreClientTest/testSub"),
     });
 
     const { result, waitForNextUpdate } = renderHook(
@@ -844,7 +870,13 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, Test>("/coreClientTest/test"),
+      test: table<{
+        row: Test;
+        params: Test;
+        insert: Test;
+        update: Test;
+        idColumnName: "id";
+      }>("/coreClientTest/test"),
     });
 
     const { result, waitForNextUpdate } = renderHook(() => {
@@ -944,7 +976,7 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, Test>("/coreClientTest/test"),
+      test: table<{ row: Test }>("/coreClientTest/test"),
     });
 
     const { result, waitForNextUpdate } = renderHook(() => {
@@ -1031,7 +1063,7 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, Test>("/coreClientTest/test"),
+      test: table<{ row: Test }>("/coreClientTest/test"),
     });
 
     const { result, waitForNextUpdate } = renderHook(() => {
@@ -1093,7 +1125,7 @@ describe("core", () => {
     };
 
     const { useCore, sse } = coreClient(axios, {
-      test: table<Test, any>("/coreClientTest/test"),
+      test: table<{ row: Test }>("/coreClientTest/test"),
     });
 
     const eventSource = sse(`${url}/sse`);
@@ -1241,8 +1273,10 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, Test>("/coreClientTest/test"),
-      view: table<Test, Test>("/coreClientTest/view"),
+      test: table<{ row: Test; insert: Partial<Test>; params: Test }>(
+        "/coreClientTest/test"
+      ),
+      view: table<{ row: Test }>("/coreClientTest/view"),
     });
 
     const { result, waitForNextUpdate } = renderHook(() => {
@@ -1314,7 +1348,7 @@ describe("core", () => {
     };
 
     const { useCore } = coreClient(axios, {
-      test: table<Test, Test>("/coreClientTest/test"),
+      test: table<{ row: Test }>("/coreClientTest/test"),
     });
 
     const { result, waitForNextUpdate } = renderHook(() => {
@@ -1474,8 +1508,7 @@ describe("core", () => {
 
     const { useCore } = coreClient(axios, {
       test: table<
-        Test,
-        Test,
+        { row: Test },
         {
           post(url: `/${number}/do`, body: Result["body"]): Promise<Result>;
         }
