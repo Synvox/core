@@ -183,13 +183,13 @@ export async function saveTsTypes(
           ({ name: key, relation: { columnName: column }, table }) => {
             let types = "";
 
-            const required =
-              !columns[column].nullable && !columns[column].defaultValue;
+            const nullable = columns[column].nullable;
+            const required = !nullable && !columns[column].defaultValue;
 
             types += `{ ${key}: ${table.className}Write }`;
             types += ` | { ${column}${required ? "" : "?"}: ${
               table.className
-            }Id }`;
+            }Id ${nullable ? " | null" : ""}}`;
 
             return types;
           }

@@ -686,7 +686,7 @@ describe("saves to files", () => {
         parent?: Test;
       };
 
-      export type TestSubNullableWriteRelations = ({ parent: TestWrite } | { parentId?: TestId });
+      export type TestSubNullableWriteRelations = ({ parent: TestWrite } | { parentId?: TestId  | null});
 
       export type TestSubNullableGetters = {
       };
@@ -936,7 +936,7 @@ describe("saves to files", () => {
         parent?: Test;
       };
 
-      export type TestSubNullableWriteRelations = ({ parent: TestWrite } | { parentId?: TestId });
+      export type TestSubNullableWriteRelations = ({ parent: TestWrite } | { parentId?: TestId  | null});
 
       export type TestSubNullableGetters = {
       };
@@ -1680,7 +1680,7 @@ describe("saves to files", () => {
         parent?: Recursive;
       };
 
-      export type RecursiveWriteRelations = ({ parent: RecursiveWrite } | { parentId?: RecursiveId })&  
+      export type RecursiveWriteRelations = ({ parent: RecursiveWrite } | { parentId?: RecursiveId  | null})&  
       ({ recursive?: RecursiveWrite[] });
 
       export type RecursiveGetters = {
