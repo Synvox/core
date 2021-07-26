@@ -177,20 +177,34 @@ export async function saveTsTypes(
 
       types += `};\n\n`;
 
-      types += `export type ${table.className}WriteRelations = {\n`;
-      for (let [
-        key,
-        {
-          relation: { columnName: column },
-          table,
-        },
-      ] of Object.entries(hasOne)) {
-        types += `  ${key}${columns[column].nullable ? "?" : ""}: ${
-          table.className
-        }Write`;
-        types += ";\n";
-      }
-      types += `};\n\n`;
+      types += `export type ${table.className}WriteRelations = `;
+      const relations = [
+        Object.values(hasOne).map(
+          ({ name: key, relation: { columnName: column }, table }) => {
+            let types = "";
+
+            types += `{ ${key}: ${table.className}Write }`;
+            types += ` | { ${column}: ${table.className}Id }`;
+            if (columns[column].nullable) types += ` | undefined`;
+
+            return types;
+          }
+        ),
+        Object.values(hasMany).map(({ name: key, table }) => {
+          let types = "";
+
+          types += `{ ${key}?: ${table.className}Write[] }`;
+
+          return types;
+        }),
+      ]
+        .reduce((a, b) => a.concat(b), [])
+        .filter(Boolean)
+        .map((s) => `(${s})`)
+        .join("&  \n");
+      if (relations) types += relations;
+      else types += "{}";
+      types += `;\n\n`;
 
       types += `export type ${table.className}Getters = {\n`;
 
@@ -324,17 +338,25 @@ export async function saveTsTypes(
     }
 
     const optionalFields = Object.values(table.columns)
-      .filter((c) => c.nullable || Boolean(c.defaultValue))
+      .filter(
+        (c) =>
+          c.nullable ||
+          Boolean(c.defaultValue) ||
+          // make has one relations optional
+          Object.values(table.relatedTables.hasOne).some(
+            (t) => t.relation.columnName === c.name
+          )
+      )
       .map((c) => JSON.stringify(c.name))
       .join(" | ");
 
     let writeType = `${table.className}Row`;
-    if (includeRelations)
-      writeType += ` & Partial<${table.className}WriteRelations>`;
 
     let insertType = optionalFields.trim()
       ? `Optional<${writeType}, ${optionalFields}>`
       : table.className;
+
+    if (includeRelations) insertType += ` & ${table.className}WriteRelations`;
 
     let updateType = `Partial<${writeType}>`;
 
