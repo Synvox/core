@@ -19,18 +19,35 @@ export default function withTimestamps<T>(table: TableDef<T>): TableDef<T> {
       },
       ...table.queryModifiers,
     },
-    async enforcedParams(context, mode) {
-      const params = {
-        ...(table.enforcedParams
-          ? await table.enforcedParams(context, mode)
-          : {}),
-      };
-      const date = new Date(Date.now());
-      params.updatedAt = date;
-      if (mode === "insert") params.createdAt = date;
-      delete params.createdAt;
+    async afterUpdate(trx, context, mode, next, prev) {
+      const stmt = trx(this.tablePath);
+      if (next && (mode === "insert" || mode === "update")) {
+        stmt.where(this.idColumnName, next[this.idColumnName]);
 
-      return params;
+        if (this.tenantIdColumnName)
+          stmt.where(this.tenantIdColumnName, next[this.tenantIdColumnName]);
+
+        if (mode === "insert") {
+          if (
+            this.columns["createdAt"].defaultValue === null &&
+            this.columns["updatedAt"].defaultValue === null
+          ) {
+            stmt.update({
+              createdAt: trx.raw("now()"),
+              updatedAt: trx.raw("now()"),
+            });
+            await stmt;
+          }
+        } else if (mode === "update") {
+          stmt.update({
+            createdAt: trx.raw("now()"),
+          });
+          await stmt;
+        }
+      }
+
+      if (table.afterUpdate)
+        await table.afterUpdate.call(this, trx, context, mode, next, prev);
     },
   };
 }

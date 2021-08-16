@@ -114,7 +114,7 @@ describe("withTimestamps plugin", () => {
               "_url": "/testPlugins/users/1",
               "createdAt": 1999-01-08T10:05:06.000Z,
               "id": 1,
-              "updatedAt": 2021-01-01T01:01:00.000Z,
+              "updatedAt": 1999-01-08T10:05:06.000Z,
             },
             "views": undefined,
           },
@@ -130,7 +130,7 @@ describe("withTimestamps plugin", () => {
               "body": "",
               "createdAt": 1999-01-08T10:05:06.000Z,
               "id": 1,
-              "updatedAt": 2021-01-01T01:01:00.000Z,
+              "updatedAt": 1999-01-08T10:05:06.000Z,
               "userId": 1,
             },
             "views": undefined,
@@ -147,7 +147,7 @@ describe("withTimestamps plugin", () => {
               "body": "",
               "createdAt": 1999-01-08T10:05:06.000Z,
               "id": 2,
-              "updatedAt": 2021-01-01T01:01:00.000Z,
+              "updatedAt": 1999-01-08T10:05:06.000Z,
               "userId": 1,
             },
             "views": undefined,
@@ -172,7 +172,7 @@ describe("withTimestamps plugin", () => {
               "body": "",
               "createdAt": 1999-01-08T10:05:06.000Z,
               "id": 1,
-              "updatedAt": 2021-01-01T01:01:00.000Z,
+              "updatedAt": 1999-01-08T10:05:06.000Z,
               "userId": 1,
             },
             Object {
@@ -184,19 +184,19 @@ describe("withTimestamps plugin", () => {
               "body": "",
               "createdAt": 1999-01-08T10:05:06.000Z,
               "id": 2,
-              "updatedAt": 2021-01-01T01:01:00.000Z,
+              "updatedAt": 1999-01-08T10:05:06.000Z,
               "userId": 1,
             },
           ],
-          "updatedAt": 2021-01-01T01:01:00.000Z,
+          "updatedAt": 1999-01-08T10:05:06.000Z,
         },
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "insert into test_plugins.users (updated_at) values (?) returning *",
-        "insert into test_plugins.posts (updated_at, user_id) values (?, ?) returning *",
-        "insert into test_plugins.posts (updated_at, user_id) values (?, ?) returning *",
+        "insert into test_plugins.users default values returning *",
+        "insert into test_plugins.posts (user_id) values (?) returning *",
+        "insert into test_plugins.posts (user_id) values (?) returning *",
         "select users__base_table.id, users__base_table.updated_at, users__base_table.created_at from test_plugins.users users__base_table where users__base_table.id = ? limit ?",
         "select posts.id, posts.user_id, posts.body, posts.updated_at, posts.created_at from test_plugins.posts where posts.id = ? limit ?",
         "select posts.id, posts.user_id, posts.body, posts.updated_at, posts.created_at from test_plugins.posts where posts.id = ? limit ?",
@@ -232,7 +232,7 @@ describe("withTimestamps plugin", () => {
               "_url": "/testPlugins/users/1",
               "createdAt": 1999-01-08T10:05:06.000Z,
               "id": 1,
-              "updatedAt": 2021-01-02T01:01:00.000Z,
+              "updatedAt": 1999-01-08T10:05:06.000Z,
             },
             "views": undefined,
           },
@@ -246,7 +246,7 @@ describe("withTimestamps plugin", () => {
           "_url": "/testPlugins/users/1",
           "createdAt": 1999-01-08T10:05:06.000Z,
           "id": 1,
-          "updatedAt": 2021-01-02T01:01:00.000Z,
+          "updatedAt": 1999-01-08T10:05:06.000Z,
         },
       }
     `);
@@ -255,6 +255,7 @@ describe("withTimestamps plugin", () => {
         "select users.id, users.updated_at, users.created_at from test_plugins.users where (users.id = ?) limit ?",
         "select users__base_table.id, users__base_table.updated_at, users__base_table.created_at from test_plugins.users users__base_table where users__base_table.id = ? limit ?",
         "update test_plugins.users users__base_table set updated_at = ?, created_at = ? where users__base_table.id = ? returning *",
+        "update test_plugins.users set created_at = now() where id = ?",
         "select users__base_table.id, users__base_table.updated_at, users__base_table.created_at from test_plugins.users users__base_table where users__base_table.id = ? limit ?",
       ]
     `);
@@ -285,7 +286,7 @@ describe("withTimestamps plugin", () => {
               "body": "",
               "createdAt": 1999-01-08T10:05:06.000Z,
               "id": 1,
-              "updatedAt": 2021-01-01T01:01:00.000Z,
+              "updatedAt": 1999-01-08T10:05:06.000Z,
               "userId": 1,
             },
             "views": undefined,
@@ -337,7 +338,7 @@ describe("withTimestamps plugin", () => {
               "_url": "/testPlugins/items/1",
               "createdAt": 1999-01-08T10:05:06.000Z,
               "id": 1,
-              "updatedAt": 2021-01-02T01:01:00.000Z,
+              "updatedAt": 1999-01-08T10:05:06.000Z,
             },
             "views": undefined,
           },
@@ -348,13 +349,13 @@ describe("withTimestamps plugin", () => {
           "_url": "/testPlugins/items/1",
           "createdAt": 1999-01-08T10:05:06.000Z,
           "id": 1,
-          "updatedAt": 2021-01-02T01:01:00.000Z,
+          "updatedAt": 1999-01-08T10:05:06.000Z,
         },
       }
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "insert into test_plugins.items (updated_at) values (?) returning *",
+        "insert into test_plugins.items default values returning *",
         "select items__base_table.id, items__base_table.updated_at, items__base_table.created_at from test_plugins.items items__base_table where items__base_table.id = ? limit ?",
       ]
     `);
@@ -365,9 +366,7 @@ describe("withTimestamps plugin", () => {
             "context": "value",
           },
           "insert",
-          Object {
-            "updatedAt": 2021-01-02T01:01:00.000Z,
-          },
+          Object {},
           undefined,
         ],
       ]

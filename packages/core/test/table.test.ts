@@ -8065,7 +8065,7 @@ describe("batch updates", () => {
               "createdAt": 2021-01-01T01:01:00.000Z,
               "id": 1,
               "int": 100,
-              "updatedAt": 2021-01-02T01:01:00.000Z,
+              "updatedAt": 2021-01-01T01:01:00.000Z,
             },
             "views": undefined,
           },
@@ -8076,7 +8076,7 @@ describe("batch updates", () => {
               "createdAt": 2021-01-01T01:01:00.000Z,
               "id": 2,
               "int": 100,
-              "updatedAt": 2021-01-02T01:01:00.000Z,
+              "updatedAt": 2021-01-01T01:01:00.000Z,
             },
             "views": undefined,
           },
@@ -8087,7 +8087,7 @@ describe("batch updates", () => {
               "createdAt": 2021-01-01T01:01:00.000Z,
               "id": 3,
               "int": 100,
-              "updatedAt": 2021-01-02T01:01:00.000Z,
+              "updatedAt": 2021-01-01T01:01:00.000Z,
             },
             "views": undefined,
           },
@@ -8100,7 +8100,7 @@ describe("batch updates", () => {
             "createdAt": 2021-01-01T01:01:00.000Z,
             "id": 1,
             "int": 100,
-            "updatedAt": 2021-01-02T01:01:00.000Z,
+            "updatedAt": 2021-01-01T01:01:00.000Z,
           },
           Object {
             "_links": Object {},
@@ -8109,7 +8109,7 @@ describe("batch updates", () => {
             "createdAt": 2021-01-01T01:01:00.000Z,
             "id": 2,
             "int": 100,
-            "updatedAt": 2021-01-02T01:01:00.000Z,
+            "updatedAt": 2021-01-01T01:01:00.000Z,
           },
           Object {
             "_links": Object {},
@@ -8118,7 +8118,7 @@ describe("batch updates", () => {
             "createdAt": 2021-01-01T01:01:00.000Z,
             "id": 3,
             "int": 100,
-            "updatedAt": 2021-01-02T01:01:00.000Z,
+            "updatedAt": 2021-01-01T01:01:00.000Z,
           },
         ],
       }
@@ -8127,8 +8127,11 @@ describe("batch updates", () => {
       Array [
         "select count(*) from test.items items__base_table",
         "select items__base_table.id, items__base_table.int, items__base_table.created_at, items__base_table.updated_at from test.items items__base_table",
-        "update test.items items__base_table set int = ?, updated_at = ? where items__base_table.id in (select items__base_table.id from test.items items__base_table) returning *",
+        "update test.items items__base_table set int = ? where items__base_table.id in (select items__base_table.id from test.items items__base_table) returning *",
         "select count(*) from test.items items__base_table where items__base_table.id in (?, ?, ?)",
+        "update test.items set created_at = now() where id = ?",
+        "update test.items set created_at = now() where id = ?",
+        "update test.items set created_at = now() where id = ?",
       ]
     `);
   });
