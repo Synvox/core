@@ -360,12 +360,15 @@ export async function saveTsTypes(
       ? `Optional<${writeType}, ${optionalFields}>`
       : table.className;
 
-    if (includeRelations) insertType += ` & ${table.className}WriteRelations`;
-
     let updateType = `Partial<${writeType}>`;
+    if (includeRelations) {
+      insertType += ` & ${table.className}WriteRelations`;
+      updateType += ` & ${table.className}WriteRelations`;
+    }
 
     if (includeLinks) {
       insertType += ` & {_url: never, _links: never, _type: never}`;
+      updateType += ` & {_url: never, _links: never, _type: never}`;
     }
 
     let fullType = `${table.className}Row`;

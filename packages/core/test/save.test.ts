@@ -322,7 +322,7 @@ describe("saves to files", () => {
 
       export type Test = TestRow & TestLinks;
       export type TestInsert = Optional<TestRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\"> & {_url: never, _links: never, _type: never};
-      export type TestUpdate = Partial<TestRow>;
+      export type TestUpdate = Partial<TestRow> & {_url: never, _links: never, _type: never};
       export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
 
       export type TestConfig = {
@@ -351,7 +351,7 @@ describe("saves to files", () => {
 
       export type TestNullable = TestNullableRow & TestNullableLinks;
       export type TestNullableInsert = Optional<TestNullableRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\"> & {_url: never, _links: never, _type: never};
-      export type TestNullableUpdate = Partial<TestNullableRow>;
+      export type TestNullableUpdate = Partial<TestNullableRow> & {_url: never, _links: never, _type: never};
       export type TestNullableWrite = TestNullableInsert | (TestNullableUpdate & { id: TestNullableId });
 
       export type TestNullableConfig = {
@@ -380,7 +380,7 @@ describe("saves to files", () => {
 
       export type TestSub = TestSubRow & TestSubLinks;
       export type TestSubInsert = Optional<TestSubRow, \\"id\\" | \\"parentId\\" | \\"arr\\"> & {_url: never, _links: never, _type: never};
-      export type TestSubUpdate = Partial<TestSubRow>;
+      export type TestSubUpdate = Partial<TestSubRow> & {_url: never, _links: never, _type: never};
       export type TestSubWrite = TestSubInsert | (TestSubUpdate & { id: TestSubId });
 
       export type TestSubConfig = {
@@ -409,7 +409,7 @@ describe("saves to files", () => {
 
       export type TestSubNullable = TestSubNullableRow & TestSubNullableLinks;
       export type TestSubNullableInsert = Optional<TestSubNullableRow, \\"id\\" | \\"parentId\\" | \\"arr\\"> & {_url: never, _links: never, _type: never};
-      export type TestSubNullableUpdate = Partial<TestSubNullableRow>;
+      export type TestSubNullableUpdate = Partial<TestSubNullableRow> & {_url: never, _links: never, _type: never};
       export type TestSubNullableWrite = TestSubNullableInsert | (TestSubNullableUpdate & { id: TestSubNullableId });
 
       export type TestSubNullableConfig = {
@@ -603,7 +603,7 @@ describe("saves to files", () => {
 
       export type Test = TestRow & TestRelations & TestGetters;
       export type TestInsert = Optional<TestRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\"> & TestWriteRelations;
-      export type TestUpdate = Partial<TestRow>;
+      export type TestUpdate = Partial<TestRow> & TestWriteRelations;
       export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
 
       export type TestConfig = {
@@ -633,7 +633,7 @@ describe("saves to files", () => {
 
       export type TestNullable = TestNullableRow & TestNullableRelations & TestNullableGetters;
       export type TestNullableInsert = Optional<TestNullableRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\"> & TestNullableWriteRelations;
-      export type TestNullableUpdate = Partial<TestNullableRow>;
+      export type TestNullableUpdate = Partial<TestNullableRow> & TestNullableWriteRelations;
       export type TestNullableWrite = TestNullableInsert | (TestNullableUpdate & { id: TestNullableId });
 
       export type TestNullableConfig = {
@@ -663,7 +663,7 @@ describe("saves to files", () => {
 
       export type TestSub = TestSubRow & TestSubRelations & TestSubGetters;
       export type TestSubInsert = Optional<TestSubRow, \\"id\\" | \\"parentId\\" | \\"arr\\"> & TestSubWriteRelations;
-      export type TestSubUpdate = Partial<TestSubRow>;
+      export type TestSubUpdate = Partial<TestSubRow> & TestSubWriteRelations;
       export type TestSubWrite = TestSubInsert | (TestSubUpdate & { id: TestSubId });
 
       export type TestSubConfig = {
@@ -693,7 +693,7 @@ describe("saves to files", () => {
 
       export type TestSubNullable = TestSubNullableRow & TestSubNullableRelations & TestSubNullableGetters;
       export type TestSubNullableInsert = Optional<TestSubNullableRow, \\"id\\" | \\"parentId\\" | \\"arr\\"> & TestSubNullableWriteRelations;
-      export type TestSubNullableUpdate = Partial<TestSubNullableRow>;
+      export type TestSubNullableUpdate = Partial<TestSubNullableRow> & TestSubNullableWriteRelations;
       export type TestSubNullableWrite = TestSubNullableInsert | (TestSubNullableUpdate & { id: TestSubNullableId });
 
       export type TestSubNullableConfig = {
@@ -817,7 +817,7 @@ describe("saves to files", () => {
 
       export type Test = TestRow & TestRelations & TestGetters;
       export type TestInsert = Optional<TestRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\"> & TestWriteRelations;
-      export type TestUpdate = Partial<TestRow>;
+      export type TestUpdate = Partial<TestRow> & TestWriteRelations;
       export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
 
       export type TestConfig = {
@@ -863,7 +863,7 @@ describe("saves to files", () => {
 
       export type TestNullable = TestNullableRow & TestNullableRelations & TestNullableGetters;
       export type TestNullableInsert = Optional<TestNullableRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\"> & TestNullableWriteRelations;
-      export type TestNullableUpdate = Partial<TestNullableRow>;
+      export type TestNullableUpdate = Partial<TestNullableRow> & TestNullableWriteRelations;
       export type TestNullableWrite = TestNullableInsert | (TestNullableUpdate & { id: TestNullableId });
 
       export type TestNullableConfig = {
@@ -912,7 +912,7 @@ describe("saves to files", () => {
 
       export type TestSub = TestSubRow & TestSubRelations & TestSubGetters;
       export type TestSubInsert = Optional<TestSubRow, \\"id\\" | \\"parentId\\" | \\"arr\\"> & TestSubWriteRelations;
-      export type TestSubUpdate = Partial<TestSubRow>;
+      export type TestSubUpdate = Partial<TestSubRow> & TestSubWriteRelations;
       export type TestSubWrite = TestSubInsert | (TestSubUpdate & { id: TestSubId });
 
       export type TestSubConfig = {
@@ -960,7 +960,7 @@ describe("saves to files", () => {
 
       export type TestSubNullable = TestSubNullableRow & TestSubNullableRelations & TestSubNullableGetters;
       export type TestSubNullableInsert = Optional<TestSubNullableRow, \\"id\\" | \\"parentId\\" | \\"arr\\"> & TestSubNullableWriteRelations;
-      export type TestSubNullableUpdate = Partial<TestSubNullableRow>;
+      export type TestSubNullableUpdate = Partial<TestSubNullableRow> & TestSubNullableWriteRelations;
       export type TestSubNullableWrite = TestSubNullableInsert | (TestSubNullableUpdate & { id: TestSubNullableId });
 
       export type TestSubNullableConfig = {
@@ -1069,7 +1069,7 @@ describe("saves to files", () => {
 
       export type Test = TestRow & TestRelations & TestGetters;
       export type TestInsert = Optional<TestRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\"> & TestWriteRelations;
-      export type TestUpdate = Partial<TestRow>;
+      export type TestUpdate = Partial<TestRow> & TestWriteRelations;
       export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
 
       export type TestConfig = {
@@ -1176,7 +1176,7 @@ describe("saves to files", () => {
 
       export type Test = TestRow & TestRelations & TestGetters;
       export type TestInsert = Optional<TestRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\" | \\"typeId\\"> & TestWriteRelations;
-      export type TestUpdate = Partial<TestRow>;
+      export type TestUpdate = Partial<TestRow> & TestWriteRelations;
       export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
 
       export type TestConfig = {
@@ -1219,7 +1219,7 @@ describe("saves to files", () => {
 
       export type Type = TypeRow & TypeRelations & TypeGetters;
       export type TypeInsert = Type & TypeWriteRelations;
-      export type TypeUpdate = Partial<TypeRow>;
+      export type TypeUpdate = Partial<TypeRow> & TypeWriteRelations;
       export type TypeWrite = TypeInsert | (TypeUpdate & { id: TypeId });
 
       export type TypeConfig = {
@@ -1328,7 +1328,7 @@ describe("saves to files", () => {
 
       export type Test = TestRow & TestRelations & TestGetters;
       export type TestInsert = Optional<TestRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\" | \\"typeId\\"> & TestWriteRelations;
-      export type TestUpdate = Partial<TestRow>;
+      export type TestUpdate = Partial<TestRow> & TestWriteRelations;
       export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
 
       export type TestConfig = {
@@ -1371,7 +1371,7 @@ describe("saves to files", () => {
 
       export type Type = TypeRow & TypeRelations & TypeGetters;
       export type TypeInsert = Type & TypeWriteRelations;
-      export type TypeUpdate = Partial<TypeRow>;
+      export type TypeUpdate = Partial<TypeRow> & TypeWriteRelations;
       export type TypeWrite = TypeInsert | (TypeUpdate & { id: TypeId });
 
       export type TypeConfig = {
@@ -1706,7 +1706,7 @@ describe("saves to files", () => {
 
       export type Recursive = RecursiveRow & RecursiveRelations & RecursiveGetters;
       export type RecursiveInsert = Optional<RecursiveRow, \\"id\\" | \\"parentId\\"> & RecursiveWriteRelations;
-      export type RecursiveUpdate = Partial<RecursiveRow>;
+      export type RecursiveUpdate = Partial<RecursiveRow> & RecursiveWriteRelations;
       export type RecursiveWrite = RecursiveInsert | (RecursiveUpdate & { id: RecursiveId });
 
       export type RecursiveConfig = {
