@@ -363,7 +363,7 @@ export async function saveTsTypes(
     let updateType = `Partial<${writeType}>`;
     if (includeRelations) {
       insertType += ` & ${table.className}WriteRelations`;
-      updateType += ` & ${table.className}WriteRelations`;
+      updateType += ` & Partial<${table.className}WriteRelations>`;
     }
 
     if (includeLinks) {
