@@ -1146,7 +1146,7 @@ export class Table<Context, T = any> {
       const initialGraph = graph;
       graph = this.filterWritable(graph);
 
-      const row = await table
+      const readStmt = table
         .query(trx)
         .where(
           `${table.alias}.${[table.idColumnName]}`,
@@ -1161,6 +1161,9 @@ export class Table<Context, T = any> {
           }
         })
         .first();
+
+      await table.applyPolicy(readStmt, context, "update", trx);
+      const row = await readStmt;
 
       // if the row is deleted between validation and update
       if (!row) {
