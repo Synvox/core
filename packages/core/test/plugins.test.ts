@@ -85,113 +85,14 @@ describe("withTimestamps plugin", () => {
     users.linkTables([users, posts]);
     posts.linkTables([users, posts]);
 
-    jest
-      .spyOn(global.Date, "now")
-      .mockImplementation(() => Date.parse("2021-01-01T01:01:00.000Z"));
-
     queries = [];
-    expect(
-      await users.write(
-        knex,
-        {
-          posts: [{}, {}],
-        },
-        {}
-      )
-    ).toMatchInlineSnapshot(`
-      Object {
-        "changeId": "uuid-test-value",
-        "changes": Array [
-          Object {
-            "mode": "insert",
-            "path": "/testPlugins/users",
-            "row": Object {
-              "_links": Object {
-                "posts": "/testPlugins/posts?userId=1",
-                "postsCount": "/testPlugins/users/1/postsCount",
-              },
-              "_type": "testPlugins/users",
-              "_url": "/testPlugins/users/1",
-              "createdAt": 1999-01-08T10:05:06.000Z,
-              "id": 1,
-              "updatedAt": 1999-01-08T10:05:06.000Z,
-            },
-            "views": undefined,
-          },
-          Object {
-            "mode": "insert",
-            "path": "/testPlugins/posts",
-            "row": Object {
-              "_links": Object {
-                "user": "/testPlugins/users/1",
-              },
-              "_type": "testPlugins/posts",
-              "_url": "/testPlugins/posts/1",
-              "body": "",
-              "createdAt": 1999-01-08T10:05:06.000Z,
-              "id": 1,
-              "updatedAt": 1999-01-08T10:05:06.000Z,
-              "userId": 1,
-            },
-            "views": undefined,
-          },
-          Object {
-            "mode": "insert",
-            "path": "/testPlugins/posts",
-            "row": Object {
-              "_links": Object {
-                "user": "/testPlugins/users/1",
-              },
-              "_type": "testPlugins/posts",
-              "_url": "/testPlugins/posts/2",
-              "body": "",
-              "createdAt": 1999-01-08T10:05:06.000Z,
-              "id": 2,
-              "updatedAt": 1999-01-08T10:05:06.000Z,
-              "userId": 1,
-            },
-            "views": undefined,
-          },
-        ],
-        "result": Object {
-          "_links": Object {
-            "posts": "/testPlugins/posts?userId=1",
-            "postsCount": "/testPlugins/users/1/postsCount",
-          },
-          "_type": "testPlugins/users",
-          "_url": "/testPlugins/users/1",
-          "createdAt": 1999-01-08T10:05:06.000Z,
-          "id": 1,
-          "posts": Array [
-            Object {
-              "_links": Object {
-                "user": "/testPlugins/users/1",
-              },
-              "_type": "testPlugins/posts",
-              "_url": "/testPlugins/posts/1",
-              "body": "",
-              "createdAt": 1999-01-08T10:05:06.000Z,
-              "id": 1,
-              "updatedAt": 1999-01-08T10:05:06.000Z,
-              "userId": 1,
-            },
-            Object {
-              "_links": Object {
-                "user": "/testPlugins/users/1",
-              },
-              "_type": "testPlugins/posts",
-              "_url": "/testPlugins/posts/2",
-              "body": "",
-              "createdAt": 1999-01-08T10:05:06.000Z,
-              "id": 2,
-              "updatedAt": 1999-01-08T10:05:06.000Z,
-              "userId": 1,
-            },
-          ],
-          "updatedAt": 1999-01-08T10:05:06.000Z,
-        },
-      }
-    `);
+    await users.write(
+      knex,
+      {
+        posts: [{}, {}],
+      },
+      {}
+    );
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test_plugins.users default values returning *",
@@ -203,98 +104,33 @@ describe("withTimestamps plugin", () => {
       ]
     `);
 
-    jest
-      .spyOn(global.Date, "now")
-      .mockImplementation(() => Date.parse("2021-01-02T01:01:00.000Z"));
-
     queries = [];
-    expect(
-      await users.write(
-        knex,
-        {
-          id: 1,
-        },
-        {}
-      )
-    ).toMatchInlineSnapshot(`
-      Object {
-        "changeId": "uuid-test-value",
-        "changes": Array [
-          Object {
-            "mode": "update",
-            "path": "/testPlugins/users",
-            "row": Object {
-              "_links": Object {
-                "posts": "/testPlugins/posts?userId=1",
-                "postsCount": "/testPlugins/users/1/postsCount",
-              },
-              "_type": "testPlugins/users",
-              "_url": "/testPlugins/users/1",
-              "createdAt": 1999-01-08T10:05:06.000Z,
-              "id": 1,
-              "updatedAt": 1999-01-08T10:05:06.000Z,
-            },
-            "views": undefined,
-          },
-        ],
-        "result": Object {
-          "_links": Object {
-            "posts": "/testPlugins/posts?userId=1",
-            "postsCount": "/testPlugins/users/1/postsCount",
-          },
-          "_type": "testPlugins/users",
-          "_url": "/testPlugins/users/1",
-          "createdAt": 1999-01-08T10:05:06.000Z,
-          "id": 1,
-          "updatedAt": 1999-01-08T10:05:06.000Z,
-        },
-      }
-    `);
+    await users.write(
+      knex,
+      {
+        id: 1,
+      },
+      {}
+    );
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select users.id, users.updated_at, users.created_at from test_plugins.users where (users.id = ?) limit ?",
         "select users__base_table.id, users__base_table.updated_at, users__base_table.created_at from test_plugins.users users__base_table where users__base_table.id = ? limit ?",
         "update test_plugins.users users__base_table set updated_at = ?, created_at = ? where users__base_table.id = ? returning *",
-        "update test_plugins.users set created_at = now() where id = ?",
+        "update test_plugins.users set updated_at = now() where id = ?",
         "select users__base_table.id, users__base_table.updated_at, users__base_table.created_at from test_plugins.users users__base_table where users__base_table.id = ? limit ?",
       ]
     `);
 
     queries = [];
-    expect(
-      await posts.write(
-        knex,
-        {
-          id: 1,
-          _delete: true,
-        },
-        {}
-      )
-    ).toMatchInlineSnapshot(`
-      Object {
-        "changeId": "uuid-test-value",
-        "changes": Array [
-          Object {
-            "mode": "delete",
-            "path": "/testPlugins/posts",
-            "row": Object {
-              "_links": Object {
-                "user": "/testPlugins/users/1",
-              },
-              "_type": "testPlugins/posts",
-              "_url": "/testPlugins/posts/1",
-              "body": "",
-              "createdAt": 1999-01-08T10:05:06.000Z,
-              "id": 1,
-              "updatedAt": 1999-01-08T10:05:06.000Z,
-              "userId": 1,
-            },
-            "views": undefined,
-          },
-        ],
-        "result": null,
-      }
-    `);
+    await posts.write(
+      knex,
+      {
+        id: 1,
+        _delete: true,
+      },
+      {}
+    );
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select posts__base_table.id, posts__base_table.user_id, posts__base_table.body, posts__base_table.updated_at, posts__base_table.created_at from test_plugins.posts posts__base_table where posts__base_table.id = ? limit ?",
@@ -324,35 +160,7 @@ describe("withTimestamps plugin", () => {
     await items.init(knex);
 
     queries = [];
-    expect(await items.write(knex, {}, { context: "value" }))
-      .toMatchInlineSnapshot(`
-      Object {
-        "changeId": "uuid-test-value",
-        "changes": Array [
-          Object {
-            "mode": "insert",
-            "path": "/testPlugins/items",
-            "row": Object {
-              "_links": Object {},
-              "_type": "testPlugins/items",
-              "_url": "/testPlugins/items/1",
-              "createdAt": 1999-01-08T10:05:06.000Z,
-              "id": 1,
-              "updatedAt": 1999-01-08T10:05:06.000Z,
-            },
-            "views": undefined,
-          },
-        ],
-        "result": Object {
-          "_links": Object {},
-          "_type": "testPlugins/items",
-          "_url": "/testPlugins/items/1",
-          "createdAt": 1999-01-08T10:05:06.000Z,
-          "id": 1,
-          "updatedAt": 1999-01-08T10:05:06.000Z,
-        },
-      }
-    `);
+    await items.write(knex, {}, { context: "value" });
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "insert into test_plugins.items default values returning *",

@@ -1124,18 +1124,21 @@ export class Table<Context, T = any> {
     obj: any,
     context: Context,
     beforeCommitCallbacks: (() => Promise<void>)[],
-    changes: ChangeSummary<any>[],
-    verificationSteps: (() => Promise<void>)[]
-  ) {
+    changes: ChangeSummary<any>[]
+  ): Promise<{ id: any; get: () => Promise<T | null> }> {
     const recordChange = async (mode: Mode, row: any) => {
+      const updatedRow = await this.processTableRow({}, context, row);
+
       changes.push({
         path: `/${this.path}`,
         mode: mode,
-        row: await this.processTableRow({}, context, row),
+        row: updatedRow,
         views: this.views.length
           ? this.views.map((t) => `/${t.path}`)
           : undefined,
       });
+
+      return updatedRow;
     };
 
     const update = async (graph: any) => {
@@ -1143,10 +1146,8 @@ export class Table<Context, T = any> {
       const initialGraph = graph;
       graph = this.filterWritable(graph);
 
-      const readStmt = table.query(trx);
-      await table.applyPolicy(readStmt, context, "update", trx);
-
-      const row = await readStmt
+      const row = await table
+        .query(trx)
         .where(
           `${table.alias}.${[table.idColumnName]}`,
           graph[table.idColumnName]
@@ -1162,7 +1163,12 @@ export class Table<Context, T = any> {
         .first();
 
       // if the row is deleted between validation and update
-      if (!row) return null;
+      if (!row) {
+        return {
+          id: graph[table.idColumnName],
+          get: async () => null,
+        };
+      }
 
       graph = { ...row, ...graph };
 
@@ -1185,14 +1191,14 @@ export class Table<Context, T = any> {
         )
       );
 
-      const stmt = table.query(trx);
-
+      const didUpdate = Object.keys(filteredByChanged).length > 0;
       if (
-        Object.keys(filteredByChanged).length ||
+        didUpdate ||
         Object.keys(table.setters).some((key) => key in initialGraph)
       ) {
-        const [updatedRow] = Object.keys(filteredByChanged).length
-          ? await stmt
+        const [updatedRow] = didUpdate
+          ? await table
+              .query(trx)
               .where(
                 `${table.alias}.${[table.idColumnName]}`,
                 graph[table.idColumnName]
@@ -1211,30 +1217,6 @@ export class Table<Context, T = any> {
               .update(filteredByChanged)
               .returning("*")
           : [row];
-
-        verificationSteps.push(async () => {
-          const readStmt = table.query(trx);
-
-          readStmt
-            .where(
-              `${table.alias}.${table.idColumnName}`,
-              updatedRow[table.idColumnName]
-            )
-            .modify((builder) => {
-              if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
-                builder.where(
-                  `${table.alias}.${table.tenantIdColumnName}`,
-                  graph[table.tenantIdColumnName]
-                );
-              }
-            });
-          const verifyStmt = readStmt.clone();
-          await table.applyPolicy(verifyStmt, context, "update", trx);
-          const row = await verifyStmt.first();
-          if (!row) throw new UnauthorizedError();
-        });
-
-        await recordChange("update", updatedRow);
 
         for (let key in initialGraph) {
           if (table.setters[key]) {
@@ -1260,9 +1242,35 @@ export class Table<Context, T = any> {
             );
           });
         }
+      }
 
-        return updatedRow;
-      } else return row;
+      return {
+        id: graph[table.idColumnName],
+        get: async () => {
+          const verifyStmt = table
+            .query(trx)
+            .where(
+              `${table.alias}.${table.idColumnName}`,
+              graph[table.idColumnName]
+            )
+            .modify((builder) => {
+              if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
+                builder.where(
+                  `${table.alias}.${table.tenantIdColumnName}`,
+                  graph[table.tenantIdColumnName]
+                );
+              }
+            });
+
+          await table.applyPolicy(verifyStmt, context, "update", trx);
+          const row = await verifyStmt.first();
+          if (!row) throw new UnauthorizedError();
+
+          await recordChange("update", row);
+
+          return row;
+        },
+      };
     };
 
     const insert = async (graph: any) => {
@@ -1289,54 +1297,10 @@ export class Table<Context, T = any> {
         .insert(graph)
         .returning("*");
 
-      await recordChange("insert", updatedRow);
-
-      verificationSteps.push(async () => {
-        const stmt = table.query(trx);
-
-        stmt
-          .where(
-            `${table.alias}.${table.idColumnName}`,
-            updatedRow[table.idColumnName]
-          )
-          .modify((builder) => {
-            if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
-              builder.where(
-                `${table.alias}.${table.tenantIdColumnName}`,
-                graph[table.tenantIdColumnName]
-              );
-            }
-          });
-        const verifyStmt = stmt.clone();
-        await table.applyPolicy(verifyStmt, context, "insert", trx);
-        const row = await verifyStmt.first();
-        if (!row) throw new UnauthorizedError();
-      });
-
-      let didUseSetter = false;
       for (let key in initialGraph) {
         if (table.setters[key]) {
-          didUseSetter = true;
           await table.setters[key](trx, initialGraph[key], updatedRow, context);
         }
-      }
-
-      if (didUseSetter) {
-        updatedRow = await table
-          .query(trx)
-          .where(
-            `${table.alias}.${table.idColumnName}`,
-            updatedRow[table.idColumnName]
-          )
-          .modify((builder) => {
-            if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
-              builder.where(
-                `${table.alias}.${table.tenantIdColumnName}`,
-                graph[table.tenantIdColumnName]
-              );
-            }
-          })
-          .first();
       }
 
       if (table.afterUpdate) {
@@ -1352,7 +1316,33 @@ export class Table<Context, T = any> {
         });
       }
 
-      return updatedRow;
+      return {
+        id: updatedRow[table.idColumnName],
+        get: async () => {
+          const verifyStmt = table
+            .query(trx)
+            .where(
+              `${table.alias}.${table.idColumnName}`,
+              updatedRow[table.idColumnName]
+            )
+            .modify((builder) => {
+              if (table.tenantIdColumnName && graph[table.tenantIdColumnName]) {
+                builder.where(
+                  `${table.alias}.${table.tenantIdColumnName}`,
+                  graph[table.tenantIdColumnName]
+                );
+              }
+            });
+
+          await table.applyPolicy(verifyStmt, context, "insert", trx);
+          const row = await verifyStmt.first();
+          if (!row) throw new UnauthorizedError();
+
+          await recordChange("insert", row);
+
+          return row;
+        },
+      };
     };
 
     const del = async (
@@ -1445,26 +1435,34 @@ export class Table<Context, T = any> {
         .query(trx)
         .where(`${table.alias}.${table.idColumnName}`, id);
 
-      await recordChange("delete", row);
-
       if (table.tenantIdColumnName && tenantId !== undefined) {
         delStmt.where(`${table.alias}.${table.tenantIdColumnName}`, tenantId);
       }
 
+      await recordChange("delete", row);
       if (table.paranoid) {
         await delStmt.update({ deletedAt });
         await cascade(table);
       } else {
         await delStmt.delete();
       }
+
+      return {
+        id,
+        get: async () => {
+          return null;
+        },
+      };
     };
 
     if (obj._delete) {
-      await del(obj);
-      return null;
+      return await del(obj);
     }
 
-    let row: { [key: string]: any } = { [this.idColumnName]: null };
+    let id = null;
+    let get: (() => Promise<T>) | null = null;
+    const base: Record<string, any> = {};
+    const patches: (() => Promise<void>)[] = [];
 
     const { hasOne, hasMany } = this.relatedTables;
 
@@ -1478,39 +1476,30 @@ export class Table<Context, T = any> {
       const otherGraph = obj[key];
       if (otherGraph === undefined) continue;
 
-      const otherRow = await otherTable.updateDeep(
+      const { id: otherId, get: otherGet } = await otherTable.updateDeep(
         trx,
         otherGraph,
         context,
         beforeCommitCallbacks,
-        changes,
-        verificationSteps
+        changes
       );
 
-      if (otherRow && otherRow[otherTable.idColumnName]) {
-        obj[columnName] = otherRow[otherTable.idColumnName];
-        row[key] = otherRow;
-      }
+      obj[columnName] = otherId;
+      patches.push(async () => {
+        const otherRow = await otherGet();
+        base[key] = otherRow;
+      });
     }
 
     if (obj[this.idColumnName]) {
-      const updated = await update(obj);
-
-      // if the row could not be found (happens on cascade from a relation)
-      if (updated === null) return null;
-
-      row = {
-        ...row,
-        ...updated,
-      };
+      const out = await update(obj);
+      id = out.id;
+      get = out.get;
     } else {
-      row = {
-        ...row,
-        ...(await insert(obj)),
-      };
+      const out = await insert(obj);
+      id = out.id;
+      get = out.get;
     }
-
-    row = await this.processTableRow({}, context, row);
 
     for (let [
       key,
@@ -1522,26 +1511,41 @@ export class Table<Context, T = any> {
       const otherGraphs = obj[key];
       if (otherGraphs === undefined || !Array.isArray(otherGraphs)) continue;
 
-      row[key] = [];
+      base[key] = [];
 
-      for (let otherGraph of otherGraphs) {
-        const otherRow = await otherTable.updateDeep(
+      for (let i = 0; i < otherGraphs.length; i++) {
+        let otherGraph = otherGraphs[i];
+        const { get: getOtherRow } = await otherTable.updateDeep(
           trx,
           {
             ...otherGraph,
-            [columnName]: row[this.idColumnName],
+            [columnName]: id,
           },
           context,
           beforeCommitCallbacks,
-          changes,
-          verificationSteps
+          changes
         );
 
-        if (otherRow) row[key].push(otherRow);
+        patches.push(async () => {
+          const newRow = await getOtherRow();
+          if (newRow) base[key][i] = newRow;
+        });
       }
     }
 
-    return row as T;
+    return {
+      id,
+      get: async () => {
+        const updatedRow = await get!();
+        for (let patch of patches) await patch();
+        if (updatedRow === null) return null;
+        const processed = await this.processTableRow({}, context, {
+          ...base,
+          ...updatedRow,
+        });
+        return processed;
+      },
+    };
   }
 
   async count(knex: Knex, queryParams: Record<string, any>, context: Context) {
@@ -2100,9 +2104,7 @@ export class Table<Context, T = any> {
       // Needs to emit commit after this function finishes
       trxRef = trx;
 
-      const verificationSteps: (() => Promise<void>)[] = [];
-
-      const result = Array.isArray(obj)
+      const results = Array.isArray(obj)
         ? await Promise.all(
             obj.map((obj) =>
               table.updateDeep(
@@ -2110,25 +2112,25 @@ export class Table<Context, T = any> {
                 obj,
                 context,
                 beforeCommitCallbacks,
-                changes,
-                verificationSteps
+                changes
               )
             )
           )
-        : await table.updateDeep(
-            trx,
-            obj,
-            context,
-            beforeCommitCallbacks,
-            changes,
-            verificationSteps
-          );
+        : [
+            await table.updateDeep(
+              trx,
+              obj,
+              context,
+              beforeCommitCallbacks,
+              changes
+            ),
+          ];
 
       for (let cb of beforeCommitCallbacks) await cb();
 
-      await Promise.all(verificationSteps.map((fn) => fn()));
+      const items = await Promise.all(results.map((r) => r.get()));
 
-      return result;
+      return Array.isArray(obj) ? items : items[0];
     });
 
     trxRef!.emit("commit");

@@ -40,7 +40,7 @@ export default function withTimestamps<T>(table: TableDef<T>): TableDef<T> {
           }
         } else if (mode === "update") {
           stmt.update({
-            createdAt: trx.raw("now()"),
+            updatedAt: trx.raw("now()"),
           });
           await stmt;
         }

@@ -2177,21 +2177,6 @@ describe("without policies", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "/test/users",
-            "row": Object {
-              "_links": Object {
-                "posts": "/test/posts?userId=3",
-                "postsCount": "/test/users/3/postsCount",
-              },
-              "_type": "test/users",
-              "_url": "/test/users/3",
-              "id": 3,
-              "name": "a",
-            },
-            "views": undefined,
-          },
-          Object {
-            "mode": "insert",
             "path": "/test/posts",
             "row": Object {
               "_links": Object {
@@ -2202,6 +2187,21 @@ describe("without policies", () => {
               "body": "abc",
               "id": 3,
               "userId": 3,
+            },
+            "views": undefined,
+          },
+          Object {
+            "mode": "insert",
+            "path": "/test/users",
+            "row": Object {
+              "_links": Object {
+                "posts": "/test/posts?userId=3",
+                "postsCount": "/test/users/3/postsCount",
+              },
+              "_type": "test/users",
+              "_url": "/test/users/3",
+              "id": 3,
+              "name": "a",
             },
             "views": undefined,
           },
@@ -2232,8 +2232,8 @@ describe("without policies", () => {
       Array [
         "insert into test.users (name) values (?) returning *",
         "insert into test.posts (body, user_id) values (?, ?) returning *",
-        "select users.id, users.name from test.users where users.id = ? limit ?",
         "select posts__base_table.id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.id = ? limit ?",
+        "select users.id, users.name from test.users where users.id = ? limit ?",
       ]
     `);
 
@@ -2305,6 +2305,21 @@ describe("without policies", () => {
             },
             "views": undefined,
           },
+          Object {
+            "mode": "update",
+            "path": "/test/users",
+            "row": Object {
+              "_links": Object {
+                "posts": "/test/posts?userId=4",
+                "postsCount": "/test/users/4/postsCount",
+              },
+              "_type": "test/users",
+              "_url": "/test/users/4",
+              "id": 4,
+              "name": "Yo",
+            },
+            "views": undefined,
+          },
         ],
         "result": Object {
           "_links": Object {
@@ -2325,6 +2340,7 @@ describe("without policies", () => {
         "select users__base_table.id, users__base_table.name from test.users users__base_table where users__base_table.id = ? limit ?",
         "select posts.id, posts.user_id, posts.body from test.posts where posts.id = ? limit ?",
         "delete from test.posts where posts.id = ?",
+        "select users__base_table.id, users__base_table.name from test.users users__base_table where users__base_table.id = ? limit ?",
       ]
     `);
   });
@@ -3344,7 +3360,7 @@ describe("with policies", () => {
       Array [
         "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where (posts.id = ?) and posts.org_id = ? limit ?",
         "select users.id from test.users where users.id = ? and users.org_id = ? limit ?",
-        "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.org_id = ? and posts__base_table.id = ? limit ?",
+        "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.id = ? limit ?",
         "update test.posts posts__base_table set org_id = ? where posts__base_table.id = ? returning *",
         "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.id = ? and posts__base_table.org_id = ? limit ?",
       ]
@@ -3394,7 +3410,24 @@ describe("with policies", () => {
       .toMatchInlineSnapshot(`
       Object {
         "changeId": "uuid-test-value",
-        "changes": Array [],
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "path": "/test/posts",
+            "row": Object {
+              "_links": Object {
+                "user": "/test/users/1",
+              },
+              "_type": "test/posts",
+              "_url": "/test/posts/1",
+              "body": "",
+              "id": 1,
+              "orgId": 1,
+              "userId": 1,
+            },
+            "views": undefined,
+          },
+        ],
         "result": Object {
           "_links": Object {
             "user": "/test/users/1",
@@ -3412,7 +3445,8 @@ describe("with policies", () => {
       Array [
         "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where (posts.id = ?) and posts.org_id = ? limit ?",
         "select users.id from test.users where users.id = ? and users.org_id = ? limit ?",
-        "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.org_id = ? and posts__base_table.id = ? limit ?",
+        "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.id = ? limit ?",
+        "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.id = ? and posts__base_table.org_id = ? limit ?",
       ]
     `);
 
@@ -3461,7 +3495,7 @@ describe("with policies", () => {
       Array [
         "select posts.id, posts.org_id, posts.user_id, posts.body from test.posts where (posts.id = ?) and posts.org_id = ? limit ?",
         "select users.id from test.users where users.id = ? and users.org_id = ? limit ?",
-        "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.org_id = ? and posts__base_table.id = ? limit ?",
+        "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.id = ? limit ?",
         "update test.posts posts__base_table set body = ? where posts__base_table.id = ? returning *",
         "select posts__base_table.id, posts__base_table.org_id, posts__base_table.user_id, posts__base_table.body from test.posts posts__base_table where posts__base_table.id = ? and posts__base_table.org_id = ? limit ?",
       ]
@@ -4054,7 +4088,23 @@ describe("multitenancy", () => {
     ).toMatchInlineSnapshot(`
       Object {
         "changeId": "uuid-test-value",
-        "changes": Array [],
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "path": "/test/test",
+            "row": Object {
+              "_links": Object {
+                "org": "/test/orgs/1",
+              },
+              "_type": "test/test",
+              "_url": "/test/test/1?orgId=1",
+              "id": 1,
+              "orgId": 1,
+              "username": "abc",
+            },
+            "views": undefined,
+          },
+        ],
         "result": Object {
           "_links": Object {
             "org": "/test/orgs/1",
@@ -4073,6 +4123,7 @@ describe("multitenancy", () => {
         "select test.id, test.org_id, test.username from test.test where not (test.id = ? and test.org_id = ?) and test.org_id = ? and test.username = ? limit ?",
         "select test.id, test.org_id, test.username from test.test where not (test.id = ? and test.org_id = ?) and test.org_id = ? and test.username = ? limit ?",
         "select orgs.id from test.orgs where orgs.id = ? limit ?",
+        "select test__base_table.id, test__base_table.org_id, test__base_table.username from test.test test__base_table where test__base_table.id = ? and test__base_table.org_id = ? limit ?",
         "select test__base_table.id, test__base_table.org_id, test__base_table.username from test.test test__base_table where test__base_table.id = ? and test__base_table.org_id = ? limit ?",
       ]
     `);
@@ -4884,20 +4935,6 @@ describe("uuid columns", () => {
         "changes": Array [
           Object {
             "mode": "insert",
-            "path": "/test/items",
-            "row": Object {
-              "_links": Object {
-                "subitems": "/test/subitems?parentId=cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
-                "subitemsCount": "/test/items/cf688dba-747b-4fbe-8a02-ff8730e2a7c9/subitemsCount",
-              },
-              "_type": "test/items",
-              "_url": "/test/items/cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
-              "id": "cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
-            },
-            "views": undefined,
-          },
-          Object {
-            "mode": "insert",
             "path": "/test/subitems",
             "row": Object {
               "_links": Object {
@@ -4907,6 +4944,20 @@ describe("uuid columns", () => {
               "_url": "/test/subitems/bedaa8d1-20d2-4f09-adeb-d67ab0523af5",
               "id": "bedaa8d1-20d2-4f09-adeb-d67ab0523af5",
               "parentId": "cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
+            },
+            "views": undefined,
+          },
+          Object {
+            "mode": "insert",
+            "path": "/test/items",
+            "row": Object {
+              "_links": Object {
+                "subitems": "/test/subitems?parentId=cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
+                "subitemsCount": "/test/items/cf688dba-747b-4fbe-8a02-ff8730e2a7c9/subitemsCount",
+              },
+              "_type": "test/items",
+              "_url": "/test/items/cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
+              "id": "cf688dba-747b-4fbe-8a02-ff8730e2a7c9",
             },
             "views": undefined,
           },
@@ -4935,8 +4986,8 @@ describe("uuid columns", () => {
       Array [
         "insert into test.items (id) values (?) returning *",
         "insert into test.subitems (id, parent_id) values (?, ?) returning *",
-        "select items.id from test.items where items.id = ? limit ?",
         "select subitems__base_table.id, subitems__base_table.parent_id from test.subitems subitems__base_table where subitems__base_table.id = ? limit ?",
+        "select items.id from test.items where items.id = ? limit ?",
       ]
     `);
   });
@@ -4958,8 +5009,12 @@ describe("beforeCommit", () => {
     const items = new Table<Context>({
       schemaName: "test",
       tableName: "items",
-      async afterUpdate(_trx, context, mode, next, previous) {
+      async afterUpdate(trx, context, mode, next, previous) {
         results.push([context, mode, next, previous]);
+        if (mode === "update" || mode === "insert")
+          await trx("test.items")
+            .where("id", next.id)
+            .update("body", `${next.body} ${mode}`);
       },
     });
 
@@ -4976,7 +5031,7 @@ describe("beforeCommit", () => {
               "_links": Object {},
               "_type": "test/items",
               "_url": "/test/items/1",
-              "body": "",
+              "body": " insert",
               "id": 1,
             },
             "views": undefined,
@@ -4986,7 +5041,7 @@ describe("beforeCommit", () => {
           "_links": Object {},
           "_type": "test/items",
           "_url": "/test/items/1",
-          "body": "",
+          "body": " insert",
           "id": 1,
         },
       }
@@ -5020,7 +5075,7 @@ describe("beforeCommit", () => {
               "_links": Object {},
               "_type": "test/items",
               "_url": "/test/items/1",
-              "body": "abc",
+              "body": "abc update",
               "id": 1,
             },
             "views": undefined,
@@ -5030,7 +5085,7 @@ describe("beforeCommit", () => {
           "_links": Object {},
           "_type": "test/items",
           "_url": "/test/items/1",
-          "body": "abc",
+          "body": "abc update",
           "id": 1,
         },
       }
@@ -5047,7 +5102,7 @@ describe("beforeCommit", () => {
             "id": 1,
           },
           Object {
-            "body": "",
+            "body": " insert",
             "id": 1,
           },
         ],
@@ -5067,7 +5122,7 @@ describe("beforeCommit", () => {
               "_links": Object {},
               "_type": "test/items",
               "_url": "/test/items/1",
-              "body": "abc",
+              "body": "abc update",
               "id": 1,
             },
             "views": undefined,
@@ -5085,7 +5140,7 @@ describe("beforeCommit", () => {
           "delete",
           undefined,
           Object {
-            "body": "abc",
+            "body": "abc update",
             "id": 1,
           },
         ],
@@ -6855,7 +6910,20 @@ describe("readonly columns", () => {
       .toMatchInlineSnapshot(`
       Object {
         "changeId": "uuid-test-value",
-        "changes": Array [],
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "path": "/test/items",
+            "row": Object {
+              "_links": Object {},
+              "_type": "test/items",
+              "_url": "/test/items/1",
+              "id": 1,
+              "text": null,
+            },
+            "views": undefined,
+          },
+        ],
         "result": Object {
           "_links": Object {},
           "_type": "test/items",
@@ -6868,6 +6936,7 @@ describe("readonly columns", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select items.id, items.text from test.items where (items.id = ?) limit ?",
+        "select items__base_table.id, items__base_table.text from test.items items__base_table where items__base_table.id = ? limit ?",
         "select items__base_table.id, items__base_table.text from test.items items__base_table where items__base_table.id = ? limit ?",
       ]
     `);
@@ -6940,7 +7009,20 @@ describe("readonly columns", () => {
       .toMatchInlineSnapshot(`
       Object {
         "changeId": "uuid-test-value",
-        "changes": Array [],
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "path": "/test/items",
+            "row": Object {
+              "_links": Object {},
+              "_type": "test/items",
+              "_url": "/test/items/1",
+              "id": 1,
+              "orgId": null,
+            },
+            "views": undefined,
+          },
+        ],
         "result": Object {
           "_links": Object {},
           "_type": "test/items",
@@ -6953,6 +7035,7 @@ describe("readonly columns", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select items.id, items.org_id from test.items where (items.id = ?) limit ?",
+        "select items__base_table.id, items__base_table.org_id from test.items items__base_table where items__base_table.id = ? limit ?",
         "select items__base_table.id, items__base_table.org_id from test.items items__base_table where items__base_table.id = ? limit ?",
       ]
     `);
@@ -8129,9 +8212,9 @@ describe("batch updates", () => {
         "select items__base_table.id, items__base_table.int, items__base_table.created_at, items__base_table.updated_at from test.items items__base_table",
         "update test.items items__base_table set int = ? where items__base_table.id in (select items__base_table.id from test.items items__base_table) returning *",
         "select count(*) from test.items items__base_table where items__base_table.id in (?, ?, ?)",
-        "update test.items set created_at = now() where id = ?",
-        "update test.items set created_at = now() where id = ?",
-        "update test.items set created_at = now() where id = ?",
+        "update test.items set updated_at = now() where id = ?",
+        "update test.items set updated_at = now() where id = ?",
+        "update test.items set updated_at = now() where id = ?",
       ]
     `);
   });
@@ -8409,6 +8492,22 @@ describe("deep writes and integrity checks", () => {
         "changeId": "uuid-test-value",
         "changes": Array [
           Object {
+            "mode": "insert",
+            "path": "/test/mapper",
+            "row": Object {
+              "_links": Object {
+                "a": "/test/a/1",
+                "b": "/test/b/1",
+              },
+              "_type": "test/mapper",
+              "_url": "/test/mapper/1",
+              "aId": 1,
+              "bId": 1,
+              "id": 1,
+            },
+            "views": undefined,
+          },
+          Object {
             "mode": "update",
             "path": "/test/a",
             "row": Object {
@@ -8435,22 +8534,6 @@ describe("deep writes and integrity checks", () => {
               "_url": "/test/b/1",
               "id": 1,
               "text": "",
-            },
-            "views": undefined,
-          },
-          Object {
-            "mode": "insert",
-            "path": "/test/mapper",
-            "row": Object {
-              "_links": Object {
-                "a": "/test/a/1",
-                "b": "/test/b/1",
-              },
-              "_type": "test/mapper",
-              "_url": "/test/mapper/1",
-              "aId": 1,
-              "bId": 1,
-              "id": 1,
             },
             "views": undefined,
           },
@@ -8496,9 +8579,9 @@ describe("deep writes and integrity checks", () => {
         "update test.a set text = ? where a.id = ? returning *",
         "insert into test.b default values returning *",
         "insert into test.mapper (a_id, b_id) values (?, ?) returning *",
+        "select mapper__base_table.id, mapper__base_table.a_id, mapper__base_table.b_id from test.mapper mapper__base_table where mapper__base_table.id = ? limit ?",
         "select a.id, a.text from test.a where a.id = ? limit ?",
         "select b.id, b.text from test.b where b.id = ? and b.id in (select b_id from test.mapper where a_id = ?) limit ?",
-        "select mapper__base_table.id, mapper__base_table.a_id, mapper__base_table.b_id from test.mapper mapper__base_table where mapper__base_table.id = ? limit ?",
       ]
     `);
 
