@@ -28,21 +28,30 @@ export default function withTimestamps<T>(table: TableDef<T>): TableDef<T> {
           stmt.where(this.tenantIdColumnName, next[this.tenantIdColumnName]);
 
         if (mode === "insert") {
+          const patch = {};
           if (
-            this.columns["createdAt"].defaultValue === null &&
+            this.columns["createdAt"] &&
+            this.columns["createdAt"].defaultValue === null
+          ) {
+            Object.assign(patch, {
+              createdAt: trx.raw("now()"),
+            });
+          }
+
+          if (
+            this.columns["updatedAt"] &&
             this.columns["updatedAt"].defaultValue === null
           ) {
-            stmt.update({
-              createdAt: trx.raw("now()"),
+            Object.assign(patch, {
               updatedAt: trx.raw("now()"),
             });
-            await stmt;
           }
-        } else if (mode === "update") {
-          stmt.update({
+
+          if (Object.keys(patch).length) await stmt.update(patch);
+        } else if (mode === "update" && this.columns["updatedAt"]) {
+          await stmt.update({
             updatedAt: trx.raw("now()"),
           });
-          await stmt;
         }
       }
 
