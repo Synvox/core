@@ -6,7 +6,7 @@ type Entry<T> = {
   promise?: Promise<void>;
   error?: Error;
   subscribers: Set<Subscriber>;
-  removalTimeout?: ReturnType<typeof setTimeout>;
+  refreshTimeout?: ReturnType<typeof setTimeout>;
   loadedThrough: string;
 };
 
@@ -89,8 +89,8 @@ export class CoreCache {
         };
 
         if (this.cache[url].subscribers.size === 0)
-          this.cache[url].removalTimeout = setTimeout(() => {
-            delete this.cache[url];
+          this.cache[url].refreshTimeout = setTimeout(() => {
+            this.refresh(url);
           }, 1000 * 60 * 10);
       });
 
@@ -242,9 +242,9 @@ export class CoreCache {
       for (let url of used) {
         const entry = this.get(url);
         entry.subscribers.add(forceUpdate);
-        if (entry.removalTimeout) {
-          clearTimeout(entry.removalTimeout);
-          entry.removalTimeout = undefined;
+        if (entry.refreshTimeout) {
+          clearTimeout(entry.refreshTimeout);
+          entry.refreshTimeout = undefined;
         }
       }
 
@@ -253,8 +253,8 @@ export class CoreCache {
           const entry = this.get(url);
           entry.subscribers.delete(forceUpdate);
           if (entry.subscribers.size === 0) {
-            entry.removalTimeout = setTimeout(() => {
-              delete this.cache[url];
+            entry.refreshTimeout = setTimeout(() => {
+              this.refresh(url);
             }, 1000 * 60 * 10);
           }
         }
@@ -271,12 +271,20 @@ export class CoreCache {
       if (matcher(url)) matchedUrls.push(url);
     }
 
-    const pendingPromises: Record<string, Promise<() => Subscriber>> = {};
+    return await this.refresh(...matchedUrls);
+  }
 
+  async refresh(...matchedUrls: string[]) {
+    const pendingPromises: Record<string, Promise<() => Subscriber>> = {};
     for (let url of matchedUrls) {
       const entry = this.cache[url];
 
-      if (entry.subscribers.size === 0) {
+      if (
+        entry.subscribers.size === 0 &&
+        !Object.entries(this.cache).some(
+          ([key, { loadedThrough }]) => key !== url && loadedThrough === url
+        )
+      ) {
         delete this.cache[url];
         continue;
       }
