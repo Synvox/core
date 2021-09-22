@@ -278,6 +278,7 @@ export class CoreCache {
     const pendingPromises: Record<string, Promise<() => Subscriber>> = {};
     for (let url of matchedUrls) {
       const entry = this.cache[url];
+      if (!entry) continue;
 
       if (
         entry.subscribers.size === 0 &&
