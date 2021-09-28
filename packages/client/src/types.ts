@@ -147,3 +147,14 @@ export type RouteFactory<
 };
 
 export type Touch<Key> = (filter: (key: Key) => boolean) => Promise<void>;
+
+export type Entry<T> = {
+  data?: T;
+  promise?: Promise<void>;
+  error?: Error;
+  subscribers: Set<Subscriber>;
+  refreshTimeout?: ReturnType<typeof setTimeout>;
+  loadedThrough: string;
+};
+
+export type Subscriber = (number: number) => void;

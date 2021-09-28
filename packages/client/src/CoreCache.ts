@@ -1,16 +1,6 @@
 import { AxiosInstance } from "axios";
 import { useState, useEffect, useRef } from "react";
-
-type Entry<T> = {
-  data?: T;
-  promise?: Promise<void>;
-  error?: Error;
-  subscribers: Set<Subscriber>;
-  refreshTimeout?: ReturnType<typeof setTimeout>;
-  loadedThrough: string;
-};
-
-type Subscriber = (number: number) => void;
+import { Entry, Subscriber } from "./types";
 
 let updateNumber = 0;
 
@@ -29,9 +19,12 @@ export class CoreCache {
   axios: AxiosInstance;
   cache: Record<string, Entry<unknown>>;
 
-  constructor(axios: AxiosInstance) {
+  constructor(
+    axios: AxiosInstance,
+    cache: Record<string, Entry<unknown>> = {}
+  ) {
     this.axios = axios;
-    this.cache = {};
+    this.cache = cache;
   }
 
   get<T>(url: string) {

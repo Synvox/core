@@ -6,9 +6,11 @@ import {
   Handlers,
   ID,
   TableConfig,
+  Entry,
 } from "./types";
 import { AxiosInstance } from "axios";
 import { CoreCache } from "./CoreCache";
+import { createContext, ReactNode, useState, useContext } from "react";
 
 function qsStringify(val: any) {
   return qs.stringify(val, {
@@ -279,8 +281,28 @@ export function table<
 
 export function core<
   Routes extends Record<string, Table<any, any, any, any, any, {}, any>>
->(axios: AxiosInstance, routes: Routes) {
-  const cache = new CoreCache(axios);
+>(
+  axios: AxiosInstance,
+  routes: Routes,
+  {
+    cache: cacheObj = {},
+  }: {
+    cache?: Record<string, Entry<unknown>>;
+  } = {}
+) {
+  const cache = new CoreCache(axios, cacheObj);
+  const context = createContext(cache);
+
+  function Provider({
+    cache: cacheObj2 = cacheObj,
+    children,
+  }: {
+    cache: Record<string, Entry<unknown>>;
+    children: ReactNode;
+  }) {
+    const [cache] = useState(() => new CoreCache(axios, cacheObj2));
+    return <context.Provider value={cache}>{children}</context.Provider>;
+  }
 
   const handledChangeIds: string[] = [];
   let waitForUnlockPromise: Promise<void> | null = null;
@@ -348,15 +370,26 @@ export function core<
     return result;
   }
 
+  function useGetUrl() {
+    const cache = useContext(context);
+    return cache.useGet.bind(cache);
+  }
+
+  function useTouch() {
+    const cache = useContext(context);
+    return cache.touch.bind(cache);
+  }
+
   Object.values(routes).map((table) => {
     table.blockUpdatesById = blockUpdatesById;
     table.lock = lock;
   });
 
   return {
-    cache,
+    Provider,
+    useTouch,
     touch: cache.touch.bind(cache),
-    useGetUrl: cache.useGet.bind(cache),
+    useGetUrl,
     sse,
     useCore(): {
       [name in keyof Routes]: Routes[name] extends Table<
@@ -379,6 +412,7 @@ export function core<
           >
         : never;
     } {
+      const cache = useContext(context);
       const getUrl = cache.useGet();
 
       //@ts-expect-error
