@@ -24,7 +24,16 @@ export class CoreCache {
     cache: Record<string, Entry<unknown>> = {}
   ) {
     this.axios = axios;
-    this.cache = cache;
+    this.cache = Object.fromEntries(
+      Object.entries(cache).map(([key, entry]) => [
+        key,
+        {
+          data: entry.data,
+          loadedThrough: entry.loadedThrough,
+          subscribers: new Set(),
+        },
+      ])
+    );
   }
 
   get<T>(url: string) {
