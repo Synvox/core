@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Entry, Subscriber } from "./types";
 
 let updateNumber = 0;
+const isBrowser = typeof window !== "undefined";
 
 function nextUpdateNumber() {
   if (updateNumber >= Number.MAX_SAFE_INTEGER) updateNumber = 0;
@@ -90,13 +91,14 @@ export class CoreCache {
           loadedThrough: url,
         };
 
-        if (this.cache[url].subscribers.size === 0)
+        if (isBrowser && this.cache[url].subscribers.size === 0)
           this.cache[url].refreshTimeout = setTimeout(() => {
             this.refresh(url);
           }, 1000 * 60 * 10);
       });
 
       const update = () => {
+        if (!isBrowser) return;
         const subscribers = [...this.cache[url].subscribers];
         const num = nextUpdateNumber();
         for (let fn of subscribers) fn(num);
@@ -254,7 +256,7 @@ export class CoreCache {
         for (let url of used) {
           const entry = this.get(url);
           entry.subscribers.delete(forceUpdate);
-          if (entry.subscribers.size === 0) {
+          if (isBrowser && entry.subscribers.size === 0) {
             entry.refreshTimeout = setTimeout(() => {
               this.refresh(url);
             }, 1000 * 60 * 10);

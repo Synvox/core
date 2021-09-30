@@ -315,6 +315,131 @@ describe("core", () => {
     }
   });
 
+  it("reads with provider", async () => {
+    await knex("coreClientTest.test").insert({});
+    const core = new Core(knex, () => ({}));
+
+    core.table({
+      schemaName: "coreClientTest",
+      tableName: "test",
+    });
+
+    const app = express();
+    app.use(core.router);
+    const url = await listen(app);
+    const axios = Axios.create({ baseURL: url });
+
+    type Test = {
+      id: number;
+      isBoolean: boolean;
+      numberCount: number;
+      text: string;
+    };
+
+    const { useCore, Provider } = coreClient(axios, {
+      test: table<{
+        item: Test;
+        row: Test;
+        params: Test;
+      }>("/coreClientTest/test"),
+    });
+
+    const cache = {};
+    {
+      const { result, waitForNextUpdate } = renderHook(
+        ({ id }: { id: number }) => {
+          const core = useCore();
+          const result = core.test(id);
+          return { result };
+        },
+        {
+          initialProps: { id: 1 },
+          wrapper({ children }) {
+            return <Provider cache={cache}>{children}</Provider>;
+          },
+        }
+      );
+
+      expect(result.current).toMatchInlineSnapshot(`undefined`);
+      await waitForNextUpdate();
+      expect(result.current.result).toMatchInlineSnapshot(`
+        Object {
+          "id": 1,
+          "isBoolean": false,
+          "numberCount": 0,
+          "text": "text",
+        }
+      `);
+      expect(cache).toMatchInlineSnapshot(`
+        Object {
+          "/coreClientTest/test/1": Object {
+            "data": Object {
+              "_links": Object {},
+              "_type": "coreClientTest/test",
+              "_url": "/coreClientTest/test/1",
+              "id": 1,
+              "isBoolean": false,
+              "numberCount": 0,
+              "text": "text",
+            },
+            "error": undefined,
+            "loadedThrough": "/coreClientTest/test/1",
+            "promise": undefined,
+            "refreshTimeout": undefined,
+            "subscribers": Set {
+              [Function],
+            },
+          },
+        }
+      `);
+    }
+
+    console.log(JSON.stringify(cache));
+    {
+      const { result } = renderHook(
+        ({ id }: { id: number }) => {
+          const core = useCore();
+          const result = core.test(id);
+          return { result };
+        },
+        {
+          initialProps: { id: 1 },
+          wrapper({ children }) {
+            return <Provider cache={cache}>{children}</Provider>;
+          },
+        }
+      );
+
+      expect(result.current.result).toMatchInlineSnapshot(`
+        Object {
+          "id": 1,
+          "isBoolean": false,
+          "numberCount": 0,
+          "text": "text",
+        }
+      `);
+      expect(cache).toMatchInlineSnapshot(`
+        Object {
+          "/coreClientTest/test/1": Object {
+            "data": Object {
+              "_links": Object {},
+              "_type": "coreClientTest/test",
+              "_url": "/coreClientTest/test/1",
+              "id": 1,
+              "isBoolean": false,
+              "numberCount": 0,
+              "text": "text",
+            },
+            "loadedThrough": "/coreClientTest/test/1",
+            "subscribers": Set {
+              [Function],
+            },
+          },
+        }
+      `);
+    }
+  });
+
   it("doesn't keep a promise for a sub resource that does not match", async () => {
     const [parent] = await knex("coreClientTest.test").insert({}, "*");
     await knex("coreClientTest.testSub").insert({ parentId: parent.id });
