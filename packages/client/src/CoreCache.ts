@@ -24,16 +24,16 @@ export class CoreCache {
     cache: Record<string, Entry<unknown>> = {}
   ) {
     this.axios = axios;
-    this.cache = Object.fromEntries(
-      Object.entries(cache).map(([key, entry]) => [
-        key,
-        {
-          data: entry.data,
-          loadedThrough: entry.loadedThrough,
-          subscribers: new Set(),
-        },
-      ])
-    );
+    this.cache = cache;
+
+    for (let key in cache) {
+      const entry = cache[key];
+      cache[key] = {
+        data: entry.data,
+        loadedThrough: entry.loadedThrough,
+        subscribers: new Set(),
+      };
+    }
   }
 
   get<T>(url: string) {
