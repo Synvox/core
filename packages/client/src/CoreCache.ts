@@ -82,9 +82,9 @@ export class CoreCache {
     }
 
     const commit = () => {
-      Object.entries(changes).map(([url, change]) => {
-        this.cache[url] = {
-          ...(this.cache[url] ?? {
+      Object.entries(changes).map(([subUrl, change]) => {
+        this.cache[subUrl] = {
+          ...(this.cache[subUrl] ?? {
             subscribers: new Set(),
           }),
           ...change,

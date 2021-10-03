@@ -336,7 +336,7 @@ describe("core", () => {
       text: string;
     };
 
-    const { useCore, Provider } = coreClient(axios, {
+    const { useCore, Provider, useTouch } = coreClient(axios, {
       test: table<{
         item: Test;
         row: Test;
@@ -347,13 +347,12 @@ describe("core", () => {
     const cache = {};
     {
       const { result, waitForNextUpdate } = renderHook(
-        ({ id }: { id: number }) => {
+        () => {
           const core = useCore();
-          const result = core.test(id);
+          const result = core.test();
           return { result };
         },
         {
-          initialProps: { id: 1 },
           wrapper({ children }) {
             return <Provider cache={cache}>{children}</Provider>;
           },
@@ -363,15 +362,48 @@ describe("core", () => {
       expect(result.current).toMatchInlineSnapshot(`undefined`);
       await waitForNextUpdate();
       expect(result.current.result).toMatchInlineSnapshot(`
-        Object {
-          "id": 1,
-          "isBoolean": false,
-          "numberCount": 0,
-          "text": "text",
-        }
+        Array [
+          Object {
+            "id": 1,
+            "isBoolean": false,
+            "numberCount": 0,
+            "text": "text",
+          },
+        ]
       `);
       expect(cache).toMatchInlineSnapshot(`
         Object {
+          "/coreClientTest/test": Object {
+            "data": Object {
+              "_links": Object {
+                "count": "/coreClientTest/test/count",
+                "ids": "/coreClientTest/test/ids",
+              },
+              "_type": "coreClientTest/test",
+              "_url": "/coreClientTest/test",
+              "hasMore": false,
+              "items": Array [
+                Object {
+                  "_links": Object {},
+                  "_type": "coreClientTest/test",
+                  "_url": "/coreClientTest/test/1",
+                  "id": 1,
+                  "isBoolean": false,
+                  "numberCount": 0,
+                  "text": "text",
+                },
+              ],
+              "limit": 50,
+              "page": 0,
+            },
+            "error": undefined,
+            "loadedThrough": "/coreClientTest/test",
+            "promise": undefined,
+            "refreshTimeout": undefined,
+            "subscribers": Set {
+              [Function],
+            },
+          },
           "/coreClientTest/test/1": Object {
             "data": Object {
               "_links": Object {},
@@ -383,27 +415,23 @@ describe("core", () => {
               "text": "text",
             },
             "error": undefined,
-            "loadedThrough": "/coreClientTest/test/1",
+            "loadedThrough": "/coreClientTest/test",
             "promise": undefined,
-            "refreshTimeout": undefined,
-            "subscribers": Set {
-              [Function],
-            },
+            "subscribers": Set {},
           },
         }
       `);
     }
 
-    console.log(JSON.stringify(cache));
     {
-      const { result } = renderHook(
-        ({ id }: { id: number }) => {
+      const { result, waitForNextUpdate } = renderHook(
+        () => {
           const core = useCore();
-          const result = core.test(id);
-          return { result };
+          const touch = useTouch();
+          const result = core.test();
+          return { result, touch };
         },
         {
-          initialProps: { id: 1 },
           wrapper({ children }) {
             return <Provider cache={cache}>{children}</Provider>;
           },
@@ -411,15 +439,45 @@ describe("core", () => {
       );
 
       expect(result.current.result).toMatchInlineSnapshot(`
-        Object {
-          "id": 1,
-          "isBoolean": false,
-          "numberCount": 0,
-          "text": "text",
-        }
+        Array [
+          Object {
+            "id": 1,
+            "isBoolean": false,
+            "numberCount": 0,
+            "text": "text",
+          },
+        ]
       `);
       expect(cache).toMatchInlineSnapshot(`
         Object {
+          "/coreClientTest/test": Object {
+            "data": Object {
+              "_links": Object {
+                "count": "/coreClientTest/test/count",
+                "ids": "/coreClientTest/test/ids",
+              },
+              "_type": "coreClientTest/test",
+              "_url": "/coreClientTest/test",
+              "hasMore": false,
+              "items": Array [
+                Object {
+                  "_links": Object {},
+                  "_type": "coreClientTest/test",
+                  "_url": "/coreClientTest/test/1",
+                  "id": 1,
+                  "isBoolean": false,
+                  "numberCount": 0,
+                  "text": "text",
+                },
+              ],
+              "limit": 50,
+              "page": 0,
+            },
+            "loadedThrough": "/coreClientTest/test",
+            "subscribers": Set {
+              [Function],
+            },
+          },
           "/coreClientTest/test/1": Object {
             "data": Object {
               "_links": Object {},
@@ -430,10 +488,102 @@ describe("core", () => {
               "numberCount": 0,
               "text": "text",
             },
-            "loadedThrough": "/coreClientTest/test/1",
+            "loadedThrough": "/coreClientTest/test",
+            "subscribers": Set {},
+          },
+        }
+      `);
+      await knex("coreClientTest.test").insert({});
+      result.current.touch(() => true);
+      await waitForNextUpdate();
+      expect(result.current.result).toMatchInlineSnapshot(`
+        Array [
+          Object {
+            "id": 1,
+            "isBoolean": false,
+            "numberCount": 0,
+            "text": "text",
+          },
+          Object {
+            "id": 2,
+            "isBoolean": false,
+            "numberCount": 0,
+            "text": "text",
+          },
+        ]
+      `);
+      expect(cache).toMatchInlineSnapshot(`
+        Object {
+          "/coreClientTest/test": Object {
+            "data": Object {
+              "_links": Object {
+                "count": "/coreClientTest/test/count",
+                "ids": "/coreClientTest/test/ids",
+              },
+              "_type": "coreClientTest/test",
+              "_url": "/coreClientTest/test",
+              "hasMore": false,
+              "items": Array [
+                Object {
+                  "_links": Object {},
+                  "_type": "coreClientTest/test",
+                  "_url": "/coreClientTest/test/1",
+                  "id": 1,
+                  "isBoolean": false,
+                  "numberCount": 0,
+                  "text": "text",
+                },
+                Object {
+                  "_links": Object {},
+                  "_type": "coreClientTest/test",
+                  "_url": "/coreClientTest/test/2",
+                  "id": 2,
+                  "isBoolean": false,
+                  "numberCount": 0,
+                  "text": "text",
+                },
+              ],
+              "limit": 50,
+              "page": 0,
+            },
+            "error": undefined,
+            "loadedThrough": "/coreClientTest/test",
+            "promise": undefined,
+            "refreshTimeout": undefined,
             "subscribers": Set {
               [Function],
             },
+          },
+          "/coreClientTest/test/1": Object {
+            "data": Object {
+              "_links": Object {},
+              "_type": "coreClientTest/test",
+              "_url": "/coreClientTest/test/1",
+              "id": 1,
+              "isBoolean": false,
+              "numberCount": 0,
+              "text": "text",
+            },
+            "error": undefined,
+            "loadedThrough": "/coreClientTest/test",
+            "promise": undefined,
+            "refreshTimeout": 139,
+            "subscribers": Set {},
+          },
+          "/coreClientTest/test/2": Object {
+            "data": Object {
+              "_links": Object {},
+              "_type": "coreClientTest/test",
+              "_url": "/coreClientTest/test/2",
+              "id": 2,
+              "isBoolean": false,
+              "numberCount": 0,
+              "text": "text",
+            },
+            "error": undefined,
+            "loadedThrough": "/coreClientTest/test",
+            "promise": undefined,
+            "subscribers": Set {},
           },
         }
       `);
@@ -520,7 +670,11 @@ describe("core", () => {
       await touch((url: string) => url.startsWith("/coreClientTest/testSub"));
     });
 
-    expect(result.current).toMatchInlineSnapshot(`null`);
+    expect(result.current).toMatchInlineSnapshot(`
+      Object {
+        "result": undefined,
+      }
+    `);
   });
 
   it("writes", async () => {
