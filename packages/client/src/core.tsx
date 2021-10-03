@@ -307,7 +307,7 @@ export function core<
   const handledChangeIds: string[] = [];
   let waitForUnlockPromise: Promise<void> | null = null;
 
-  async function handleChanges(changes: Change[]) {
+  async function handleChanges(cache: CoreCache, changes: Change[]) {
     await cache.touch((url: string) => {
       const tables = Object.values(routes);
 
@@ -345,7 +345,7 @@ export function core<
         return;
       }
 
-      await handleChanges(changes);
+      await handleChanges(cache, changes);
     });
 
     return eventSource;
@@ -423,7 +423,8 @@ export function core<
             table.handlersFor({
               getUrl,
               axios,
-              handleChanges,
+              handleChanges: (changes: Change[]) =>
+                handleChanges(cache, changes),
             }),
           ];
         })
