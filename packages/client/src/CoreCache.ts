@@ -20,21 +20,54 @@ export class CoreCache {
   axios: AxiosInstance;
   cache: Record<string, Entry<unknown>>;
 
-  constructor(
-    axios: AxiosInstance,
-    cache: Record<string, Entry<unknown>> = {}
-  ) {
+  constructor(axios: AxiosInstance) {
     this.axios = axios;
-    this.cache = cache;
+    this.cache = {};
+  }
 
-    for (let key in cache) {
-      const entry = cache[key];
-      cache[key] = {
-        data: entry.data,
-        loadedThrough: entry.loadedThrough,
+  export() {
+    return Object.fromEntries(
+      Object.entries(this.cache)
+        .map(([key, { data, error, loadedThrough }]) => {
+          if (loadedThrough !== key) return [key, null];
+          return [
+            key,
+            {
+              data: JSON.parse(JSON.stringify(data)),
+              error: error ? error.message : undefined,
+            },
+          ];
+        })
+        .filter(([_, o]) => o)
+    );
+  }
+  static restore(axios: AxiosInstance, obj: Record<string, Entry<unknown>>) {
+    const coreCache = new CoreCache(axios);
+
+    for (let [url, { data, error }] of Object.entries(obj)) {
+      coreCache.cache[url] = {
+        data,
+        error: error ? new Error(String(error)) : undefined,
+        loadedThrough: url,
         subscribers: new Set(),
       };
+
+      if (error) continue;
+
+      const processed = coreCache.processResponse(data);
+
+      for (let subUrl in processed) {
+        const data = processed[url];
+
+        coreCache.cache[subUrl] = {
+          data,
+          loadedThrough: url,
+          subscribers: new Set(),
+        };
+      }
     }
+
+    return coreCache;
   }
 
   get<T>(url: string) {
@@ -320,7 +353,9 @@ export class CoreCache {
     }
 
     const num = nextUpdateNumber();
-    for (let update of updateFunctions) update(num);
+    for (let update of updateFunctions) {
+      update(num);
+    }
   }
 
   reset() {

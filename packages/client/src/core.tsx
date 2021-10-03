@@ -6,11 +6,9 @@ import {
   Handlers,
   ID,
   TableConfig,
-  Entry,
 } from "./types";
-import { AxiosInstance } from "axios";
 import { CoreCache } from "./CoreCache";
-import { createContext, ReactNode, useState, useContext } from "react";
+import { createContext, ReactNode, useContext } from "react";
 
 function qsStringify(val: any) {
   return qs.stringify(val, {
@@ -55,11 +53,11 @@ class Table<
 
   handlersFor({
     getUrl: realGetUrl,
-    axios,
+    cache,
     handleChanges,
   }: {
     getUrl: (url: string) => any;
-    axios: AxiosInstance;
+    cache: CoreCache;
     handleChanges: (changes: Change[]) => Promise<void>;
   }): Handlers<
     Item,
@@ -70,6 +68,7 @@ class Table<
     Extension,
     IDColumnName
   > {
+    const { axios } = cache;
     const { path, lock, blockUpdatesById } = this;
 
     function getUrl(url: string) {
@@ -235,7 +234,7 @@ class Table<
         rebind: (getUrl: (url: string) => any) => {
           return this.handlersFor({
             getUrl,
-            axios,
+            cache,
             handleChanges,
           });
         },
@@ -281,27 +280,23 @@ export function table<
 
 export function core<
   Routes extends Record<string, Table<any, any, any, any, any, {}, any>>
->(
-  axios: AxiosInstance,
-  routes: Routes,
-  {
-    cache: cacheObj = {},
-  }: {
-    cache?: Record<string, Entry<unknown>>;
-  } = {}
-) {
-  const cache = new CoreCache(axios, cacheObj);
-  const context = createContext(cache);
+>(routes: Routes) {
+  const context = createContext<null | CoreCache>(null);
 
   function Provider({
-    cache: cacheObj2 = cacheObj,
+    cache,
     children,
   }: {
-    cache: Record<string, Entry<unknown>>;
+    cache: CoreCache;
     children: ReactNode;
   }) {
-    const [cache] = useState(() => new CoreCache(axios, cacheObj2));
     return <context.Provider value={cache}>{children}</context.Provider>;
+  }
+
+  function useCache() {
+    const cache = useContext(context);
+    if (!cache) throw new Error("core provider not found");
+    return cache;
   }
 
   const handledChangeIds: string[] = [];
@@ -326,29 +321,32 @@ export function core<
     });
   }
 
-  function sse(url: string) {
-    const eventSource = new EventSource(url);
+  function useSSE() {
+    const cache = useCache();
+    return function sse(url: string) {
+      const eventSource = new EventSource(url);
 
-    eventSource.addEventListener("update", async (m: any) => {
-      const { changeId, changes } = JSON.parse(m.data) as {
-        changeId: string;
-        changes: Change[];
-      };
+      eventSource.addEventListener("update", async (m: any) => {
+        const { changeId, changes } = JSON.parse(m.data) as {
+          changeId: string;
+          changes: Change[];
+        };
 
-      if (waitForUnlockPromise) await waitForUnlockPromise;
+        if (waitForUnlockPromise) await waitForUnlockPromise;
 
-      if (handledChangeIds.includes(changeId)) {
-        handledChangeIds.splice(
-          handledChangeIds.findIndex((i) => i === changeId),
-          1
-        );
-        return;
-      }
+        if (handledChangeIds.includes(changeId)) {
+          handledChangeIds.splice(
+            handledChangeIds.findIndex((i) => i === changeId),
+            1
+          );
+          return;
+        }
 
-      await handleChanges(cache, changes);
-    });
+        await handleChanges(cache, changes);
+      });
 
-    return eventSource;
+      return eventSource;
+    };
   }
 
   function blockUpdatesById(id: string) {
@@ -371,12 +369,13 @@ export function core<
   }
 
   function useGetUrl() {
-    const cache = useContext(context);
+    const cache = useCache();
     return cache.useGet.bind(cache);
   }
 
   function useTouch() {
-    const cache = useContext(context);
+    const cache = useCache();
+
     return cache.touch.bind(cache);
   }
 
@@ -388,9 +387,8 @@ export function core<
   return {
     Provider,
     useTouch,
-    touch: cache.touch.bind(cache),
     useGetUrl,
-    sse,
+    useSSE,
     useCore(): {
       [name in keyof Routes]: Routes[name] extends Table<
         infer Item,
@@ -412,7 +410,7 @@ export function core<
           >
         : never;
     } {
-      const cache = useContext(context);
+      const cache = useCache();
       const getUrl = cache.useGet();
 
       //@ts-expect-error
@@ -422,7 +420,7 @@ export function core<
             key,
             table.handlersFor({
               getUrl,
-              axios,
+              cache,
               handleChanges: (changes: Change[]) =>
                 handleChanges(cache, changes),
             }),

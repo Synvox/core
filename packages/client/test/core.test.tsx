@@ -12,6 +12,7 @@ import EventSource from "eventsource";
 import uuid from "uuid";
 import { defer } from "../src/defer";
 import { useState } from "react";
+import { CoreCache } from "../src/CoreCache";
 
 function expectType<Type>(_: Type) {}
 
@@ -106,7 +107,7 @@ describe("core", () => {
       });
   });
 
-  it("reads", async () => {
+  it("reads tables", async () => {
     await knex("coreClientTest.test").insert({});
     const core = new Core(knex, () => ({}));
 
@@ -137,7 +138,7 @@ describe("core", () => {
       parentId: number;
     };
 
-    const { useCore, touch } = coreClient(axios, {
+    const { useCore, useTouch, Provider } = coreClient({
       test: table<{
         item: Test;
         row: Test;
@@ -148,14 +149,21 @@ describe("core", () => {
       ),
     });
 
+    const cache = new CoreCache(axios);
     const { result, waitForNextUpdate, rerender } = renderHook(
       ({ id }: { id: number }) => {
         const core = useCore();
         const result = core.test(id, { include: "testSub" });
         expectType<Test>(result);
-        return { result, testSub: result.testSub };
+        const touch = useTouch();
+        return { result, testSub: result.testSub, touch };
       },
-      { initialProps: { id: 1 } }
+      {
+        initialProps: { id: 1 },
+        wrapper({ children }) {
+          return <Provider cache={cache}>{children}</Provider>;
+        },
+      }
     );
 
     expect(result.current).toMatchInlineSnapshot(`undefined`);
@@ -185,6 +193,7 @@ describe("core", () => {
           "text": "text",
         },
         "testSub": Array [],
+        "touch": [Function],
       }
     `);
 
@@ -193,10 +202,11 @@ describe("core", () => {
     expect(result.error).toMatchInlineSnapshot(
       `[Error: Request failed with status code 404]`
     );
-
     await knex("coreClientTest.test").insert({});
+    rerender({ id: 1 });
+
     await act(async () => {
-      await touch(() => true);
+      await result.current.touch(() => true);
     });
     rerender({ id: 2 });
     await waitForNextUpdate();
@@ -210,12 +220,13 @@ describe("core", () => {
           "text": "text",
         },
         "testSub": Array [],
+        "touch": [Function],
       }
     `);
 
     await knex("coreClientTest.testSub").insert({ parentId: 2 });
     await act(async () => {
-      await touch(() => true);
+      await result.current.touch(() => true);
     });
     rerender({ id: 2 });
 
@@ -239,18 +250,27 @@ describe("core", () => {
             "parentId": 2,
           },
         ],
+        "touch": [Function],
       }
     `);
+
     {
       const {
         result: result,
         waitForNextUpdate: waitForNextUpdate,
-      } = renderHook(() => {
-        const core = useCore();
-        const result = core.test({ isBoolean: true });
-        expectType<Test[]>(result);
-        return result;
-      });
+      } = renderHook(
+        () => {
+          const core = useCore();
+          const result = core.test({ isBoolean: true });
+          expectType<Test[]>(result);
+          return result;
+        },
+        {
+          wrapper({ children }) {
+            return <Provider cache={cache}>{children}</Provider>;
+          },
+        }
+      );
       await waitForNextUpdate();
       expect(result.current).toMatchInlineSnapshot(`Array []`);
     }
@@ -258,12 +278,19 @@ describe("core", () => {
       const {
         result: result,
         waitForNextUpdate: waitForNextUpdate,
-      } = renderHook(() => {
-        const core = useCore();
-        const result = core.test({ isBoolean: false });
-        expectType<Test[]>(result);
-        return result;
-      });
+      } = renderHook(
+        () => {
+          const core = useCore();
+          const result = core.test({ isBoolean: false });
+          expectType<Test[]>(result);
+          return result;
+        },
+        {
+          wrapper({ children }) {
+            return <Provider cache={cache}>{children}</Provider>;
+          },
+        }
+      );
       await waitForNextUpdate();
       expect(result.current.hasMore).toMatchInlineSnapshot(`false`);
       expect(result.current.page).toMatchInlineSnapshot(`0`);
@@ -289,12 +316,19 @@ describe("core", () => {
       const {
         result: result,
         waitForNextUpdate: waitForNextUpdate,
-      } = renderHook(() => {
-        const core = useCore();
-        const result = core.test();
-        expectType<Test[]>(result);
-        return result;
-      });
+      } = renderHook(
+        () => {
+          const core = useCore();
+          const result = core.test();
+          expectType<Test[]>(result);
+          return result;
+        },
+        {
+          wrapper({ children }) {
+            return <Provider cache={cache}>{children}</Provider>;
+          },
+        }
+      );
       await waitForNextUpdate();
       expect(result.current).toMatchInlineSnapshot(`
         Array [
@@ -336,7 +370,7 @@ describe("core", () => {
       text: string;
     };
 
-    const { useCore, Provider, useTouch } = coreClient(axios, {
+    const { useCore, Provider, useTouch } = coreClient({
       test: table<{
         item: Test;
         row: Test;
@@ -344,7 +378,7 @@ describe("core", () => {
       }>("/coreClientTest/test"),
     });
 
-    const cache = {};
+    const cache = new CoreCache(axios);
     {
       const { result, waitForNextUpdate } = renderHook(
         () => {
@@ -371,7 +405,7 @@ describe("core", () => {
           },
         ]
       `);
-      expect(cache).toMatchInlineSnapshot(`
+      expect(cache.export()).toMatchInlineSnapshot(`
         Object {
           "/coreClientTest/test": Object {
             "data": Object {
@@ -397,34 +431,14 @@ describe("core", () => {
               "page": 0,
             },
             "error": undefined,
-            "loadedThrough": "/coreClientTest/test",
-            "promise": undefined,
-            "refreshTimeout": undefined,
-            "subscribers": Set {
-              [Function],
-            },
-          },
-          "/coreClientTest/test/1": Object {
-            "data": Object {
-              "_links": Object {},
-              "_type": "coreClientTest/test",
-              "_url": "/coreClientTest/test/1",
-              "id": 1,
-              "isBoolean": false,
-              "numberCount": 0,
-              "text": "text",
-            },
-            "error": undefined,
-            "loadedThrough": "/coreClientTest/test",
-            "promise": undefined,
-            "subscribers": Set {},
           },
         }
       `);
     }
 
     {
-      const { result, waitForNextUpdate } = renderHook(
+      const newCache = CoreCache.restore(axios, cache.export());
+      const { result } = renderHook(
         () => {
           const core = useCore();
           const touch = useTouch();
@@ -433,22 +447,12 @@ describe("core", () => {
         },
         {
           wrapper({ children }) {
-            return <Provider cache={cache}>{children}</Provider>;
+            return <Provider cache={newCache}>{children}</Provider>;
           },
         }
       );
 
-      expect(result.current.result).toMatchInlineSnapshot(`
-        Array [
-          Object {
-            "id": 1,
-            "isBoolean": false,
-            "numberCount": 0,
-            "text": "text",
-          },
-        ]
-      `);
-      expect(cache).toMatchInlineSnapshot(`
+      expect(newCache.export()).toMatchInlineSnapshot(`
         Object {
           "/coreClientTest/test": Object {
             "data": Object {
@@ -473,29 +477,14 @@ describe("core", () => {
               "limit": 50,
               "page": 0,
             },
-            "loadedThrough": "/coreClientTest/test",
-            "subscribers": Set {
-              [Function],
-            },
-          },
-          "/coreClientTest/test/1": Object {
-            "data": Object {
-              "_links": Object {},
-              "_type": "coreClientTest/test",
-              "_url": "/coreClientTest/test/1",
-              "id": 1,
-              "isBoolean": false,
-              "numberCount": 0,
-              "text": "text",
-            },
-            "loadedThrough": "/coreClientTest/test",
-            "subscribers": Set {},
+            "error": undefined,
           },
         }
       `);
       await knex("coreClientTest.test").insert({});
-      result.current.touch(() => true);
-      await waitForNextUpdate();
+      await act(async () => {
+        await result.current.touch(() => true);
+      });
       expect(result.current.result).toMatchInlineSnapshot(`
         Array [
           Object {
@@ -512,7 +501,7 @@ describe("core", () => {
           },
         ]
       `);
-      expect(cache).toMatchInlineSnapshot(`
+      expect(newCache.export()).toMatchInlineSnapshot(`
         Object {
           "/coreClientTest/test": Object {
             "data": Object {
@@ -547,43 +536,6 @@ describe("core", () => {
               "page": 0,
             },
             "error": undefined,
-            "loadedThrough": "/coreClientTest/test",
-            "promise": undefined,
-            "refreshTimeout": undefined,
-            "subscribers": Set {
-              [Function],
-            },
-          },
-          "/coreClientTest/test/1": Object {
-            "data": Object {
-              "_links": Object {},
-              "_type": "coreClientTest/test",
-              "_url": "/coreClientTest/test/1",
-              "id": 1,
-              "isBoolean": false,
-              "numberCount": 0,
-              "text": "text",
-            },
-            "error": undefined,
-            "loadedThrough": "/coreClientTest/test",
-            "promise": undefined,
-            "refreshTimeout": 139,
-            "subscribers": Set {},
-          },
-          "/coreClientTest/test/2": Object {
-            "data": Object {
-              "_links": Object {},
-              "_type": "coreClientTest/test",
-              "_url": "/coreClientTest/test/2",
-              "id": 2,
-              "isBoolean": false,
-              "numberCount": 0,
-              "text": "text",
-            },
-            "error": undefined,
-            "loadedThrough": "/coreClientTest/test",
-            "promise": undefined,
-            "subscribers": Set {},
           },
         }
       `);
@@ -622,7 +574,7 @@ describe("core", () => {
       parentId: number;
     };
 
-    const { useCore, touch } = coreClient(axios, {
+    const { useCore, useTouch, Provider } = coreClient({
       test: table<{
         item: Test;
         row: Test;
@@ -633,24 +585,34 @@ describe("core", () => {
       ),
     });
 
-    const { result, waitForNextUpdate } = renderHook(() => {
-      const core = useCore();
+    const cache = new CoreCache(axios);
 
-      function tryOr<T>(fn: () => T): T | null {
-        try {
-          return fn();
-        } catch (e) {
-          if (e.then) throw e;
-          return null;
+    const { result, waitForNextUpdate } = renderHook(
+      () => {
+        const core = useCore();
+        const touch = useTouch();
+
+        function tryOr<T>(fn: () => T): T | null {
+          try {
+            return fn();
+          } catch (e) {
+            if (e.then) throw e;
+            return null;
+          }
         }
-      }
 
-      return tryOr(() => {
-        const [result] = core.test({ include: "testSub" });
-        expectType<Test>(result);
-        return { result: result.testSub[0] };
-      });
-    });
+        return tryOr(() => {
+          const [result] = core.test({ include: "testSub" });
+          expectType<Test>(result);
+          return { result: result.testSub[0], touch };
+        });
+      },
+      {
+        wrapper({ children }) {
+          return <Provider cache={cache}>{children}</Provider>;
+        },
+      }
+    );
 
     expect(result.current).toMatchInlineSnapshot(`undefined`);
     await waitForNextUpdate();
@@ -661,18 +623,22 @@ describe("core", () => {
           "id": 1,
           "parentId": 1,
         },
+        "touch": [Function],
       }
     `);
 
     await knex("coreClientTest.testSub").del();
 
     await act(async () => {
-      await touch((url: string) => url.startsWith("/coreClientTest/testSub"));
+      await result.current!.touch((url: string) =>
+        url.startsWith("/coreClientTest/testSub")
+      );
     });
 
     expect(result.current).toMatchInlineSnapshot(`
       Object {
         "result": undefined,
+        "touch": [Function],
       }
     `);
   });
@@ -708,7 +674,8 @@ describe("core", () => {
       parentId: number;
     };
 
-    const { useCore } = coreClient(axios, {
+    const cache = new CoreCache(axios);
+    const { useCore, Provider } = coreClient({
       test: table<{
         item: Test;
         row: Test;
@@ -721,14 +688,21 @@ describe("core", () => {
       ),
     });
 
-    const { result, waitForNextUpdate } = renderHook(() => {
-      const core = useCore();
-      expectType<Test[]>(core.test());
-      return {
-        test: core.test(),
-        core,
-      };
-    });
+    const { result, waitForNextUpdate } = renderHook(
+      () => {
+        const core = useCore();
+        expectType<Test[]>(core.test());
+        return {
+          test: core.test(),
+          core,
+        };
+      },
+      {
+        wrapper({ children }) {
+          return <Provider cache={cache}>{children}</Provider>;
+        },
+      }
+    );
 
     expect(result.current).toMatchInlineSnapshot(`undefined`);
     await waitForNextUpdate();
@@ -922,7 +896,8 @@ describe("core", () => {
       text: string;
     };
 
-    const { useCore } = coreClient(axios, {
+    const cache = new CoreCache(axios);
+    const { useCore, Provider } = coreClient({
       test: table<
         { item: Test; row: Test },
         {
@@ -935,13 +910,20 @@ describe("core", () => {
       >("/coreClientTest/test"),
     });
 
-    const { result, waitForNextUpdate } = renderHook(() => {
-      const core = useCore();
-      return {
-        test: core.test(),
-        core,
-      };
-    });
+    const { result, waitForNextUpdate } = renderHook(
+      () => {
+        const core = useCore();
+        return {
+          test: core.test(),
+          core,
+        };
+      },
+      {
+        wrapper({ children }) {
+          return <Provider cache={cache}>{children}</Provider>;
+        },
+      }
+    );
 
     expect(result.current).toMatchInlineSnapshot(`undefined`);
     await waitForNextUpdate();
@@ -1002,7 +984,8 @@ describe("core", () => {
       parentId: number;
     };
 
-    const { useCore } = coreClient(axios, {
+    const cache = new CoreCache(axios);
+    const { useCore, Provider } = coreClient({
       test: table<{
         item: Test;
         row: Test;
@@ -1023,6 +1006,9 @@ describe("core", () => {
       },
       {
         initialProps: { id: 1 },
+        wrapper({ children }) {
+          return <Provider cache={cache}>{children}</Provider>;
+        },
       }
     );
 
@@ -1096,7 +1082,8 @@ describe("core", () => {
       parentId: number;
     };
 
-    const { useCore } = coreClient(axios, {
+    const cache = new CoreCache(axios);
+    const { useCore, Provider } = coreClient({
       test: table<{ item: Test; row: Test }>("/coreClientTest/test"),
       testSub: table<{ item: TestSub; row: TestSub }>(
         "/coreClientTest/testSub"
@@ -1111,6 +1098,9 @@ describe("core", () => {
       },
       {
         initialProps: { id: 1 },
+        wrapper({ children }) {
+          return <Provider cache={cache}>{children}</Provider>;
+        },
       }
     );
 
@@ -1165,7 +1155,8 @@ describe("core", () => {
       text: string;
     };
 
-    const { useCore } = coreClient(axios, {
+    const cache = new CoreCache(axios);
+    const { useCore, Provider } = coreClient({
       test: table<{
         item: Test;
         row: Test;
@@ -1176,13 +1167,20 @@ describe("core", () => {
       }>("/coreClientTest/test"),
     });
 
-    const { result, waitForNextUpdate } = renderHook(() => {
-      const core = useCore();
-      return {
-        r1: core.test.count(),
-        r2: core.test.count({ isBoolean: false }),
-      };
-    });
+    const { result, waitForNextUpdate } = renderHook(
+      () => {
+        const core = useCore();
+        return {
+          r1: core.test.count(),
+          r2: core.test.count({ isBoolean: false }),
+        };
+      },
+      {
+        wrapper({ children }) {
+          return <Provider cache={cache}>{children}</Provider>;
+        },
+      }
+    );
 
     expect(result.current).toMatchInlineSnapshot(`undefined`);
     await waitForNextUpdate();
@@ -1272,15 +1270,23 @@ describe("core", () => {
       text: string;
     };
 
-    const { useCore } = coreClient(axios, {
+    const cache = new CoreCache(axios);
+    const { useCore, Provider } = coreClient({
       test: table<{ item: Test; row: Test }>("/coreClientTest/test"),
     });
 
-    const { result, waitForNextUpdate } = renderHook(() => {
-      const core = useCore();
-      const { data = null } = defer(() => core.test());
-      return data;
-    });
+    const { result, waitForNextUpdate } = renderHook(
+      () => {
+        const core = useCore();
+        const { data = null } = defer(() => core.test());
+        return data;
+      },
+      {
+        wrapper({ children }) {
+          return <Provider cache={cache}>{children}</Provider>;
+        },
+      }
+    );
 
     expect(result.current).toMatchInlineSnapshot(`null`);
     await waitForNextUpdate();
@@ -1359,17 +1365,25 @@ describe("core", () => {
       text: string;
     };
 
-    const { useCore } = coreClient(axios, {
+    const cache = new CoreCache(axios);
+    const { useCore, Provider } = coreClient({
       test: table<{ item: Test; row: Test }>("/coreClientTest/test"),
     });
 
-    const { result, waitForNextUpdate } = renderHook(() => {
-      const core = useCore();
-      return {
-        r1: core.test.ids(),
-        r2: core.test.ids({ isBoolean: false }),
-      };
-    });
+    const { result, waitForNextUpdate } = renderHook(
+      () => {
+        const core = useCore();
+        return {
+          r1: core.test.ids(),
+          r2: core.test.ids({ isBoolean: false }),
+        };
+      },
+      {
+        wrapper({ children }) {
+          return <Provider cache={cache}>{children}</Provider>;
+        },
+      }
+    );
 
     expect(result.current).toMatchInlineSnapshot(`undefined`);
     await waitForNextUpdate();
@@ -1421,18 +1435,28 @@ describe("core", () => {
       text: string;
     };
 
-    const { useCore, sse } = coreClient(axios, {
+    const cache = new CoreCache(axios);
+    const { useCore, useSSE, Provider } = coreClient({
       test: table<{ item: Test; row: Test }>("/coreClientTest/test"),
     });
 
-    const eventSource = sse(`${url}/sse`);
+    let eventSource: any | null = null;
 
-    const { result, waitForNextUpdate } = renderHook(() => {
-      const core = useCore();
-      const result = core.test();
+    const { result, waitForNextUpdate } = renderHook(
+      () => {
+        const core = useCore();
+        const result = core.test();
+        const sse = useSSE();
+        eventSource = sse(`${url}/sse`);
 
-      return { result, core };
-    });
+        return { result, core };
+      },
+      {
+        wrapper({ children }) {
+          return <Provider cache={cache}>{children}</Provider>;
+        },
+      }
+    );
 
     expect(result.current).toMatchInlineSnapshot(`undefined`);
     await waitForNextUpdate();
@@ -1569,7 +1593,8 @@ describe("core", () => {
       text: string;
     };
 
-    const { useCore } = coreClient(axios, {
+    const cache = new CoreCache(axios);
+    const { useCore, Provider } = coreClient({
       test: table<{
         item: Test;
         row: Test;
@@ -1579,13 +1604,20 @@ describe("core", () => {
       view: table<{ item: Test; row: Test }>("/coreClientTest/view"),
     });
 
-    const { result, waitForNextUpdate } = renderHook(() => {
-      const core = useCore();
-      return {
-        view: core.view(),
-        core,
-      };
-    });
+    const { result, waitForNextUpdate } = renderHook(
+      () => {
+        const core = useCore();
+        return {
+          view: core.view(),
+          core,
+        };
+      },
+      {
+        wrapper({ children }) {
+          return <Provider cache={cache}>{children}</Provider>;
+        },
+      }
+    );
 
     expect(result.current).toMatchInlineSnapshot(`undefined`);
     await waitForNextUpdate();
@@ -1647,17 +1679,25 @@ describe("core", () => {
       text: string;
     };
 
-    const { useCore } = coreClient(axios, {
+    const cache = new CoreCache(axios);
+    const { useCore, Provider } = coreClient({
       test: table<{ item: Test; row: Test }>("/coreClientTest/test"),
     });
 
-    const { result, waitForNextUpdate } = renderHook(() => {
-      const core = useCore();
-      return {
-        test: core.test(),
-        core,
-      };
-    });
+    const { result, waitForNextUpdate } = renderHook(
+      () => {
+        const core = useCore();
+        return {
+          test: core.test(),
+          core,
+        };
+      },
+      {
+        wrapper({ children }) {
+          return <Provider cache={cache}>{children}</Provider>;
+        },
+      }
+    );
 
     await knex("coreClientTest.test").insert([
       { isBoolean: true },
@@ -1806,7 +1846,8 @@ describe("core", () => {
     const url = await listen(app);
     const axios = Axios.create({ baseURL: url });
 
-    const { useCore } = coreClient(axios, {
+    const cache = new CoreCache(axios);
+    const { useCore, Provider } = coreClient({
       test: table<
         { item: Test; row: Test },
         {
@@ -1815,13 +1856,20 @@ describe("core", () => {
       >("/coreClientTest/test"),
     });
 
-    const { result, waitForNextUpdate } = renderHook(() => {
-      const core = useCore();
-      return {
-        test: core.test(),
-        core,
-      };
-    });
+    const { result, waitForNextUpdate } = renderHook(
+      () => {
+        const core = useCore();
+        return {
+          test: core.test(),
+          core,
+        };
+      },
+      {
+        wrapper({ children }) {
+          return <Provider cache={cache}>{children}</Provider>;
+        },
+      }
+    );
 
     expect(result.current).toMatchInlineSnapshot(`undefined`);
     await waitForNextUpdate();
