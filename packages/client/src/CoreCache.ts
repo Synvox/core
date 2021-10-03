@@ -132,7 +132,7 @@ export class CoreCache {
 
       const update = () => {
         if (!isBrowser) return;
-        const subscribers = [...this.cache[url].subscribers];
+        const subscribers = Array.from(this.cache[url].subscribers);
         const num = nextUpdateNumber();
         for (let fn of subscribers) fn(num);
       };
