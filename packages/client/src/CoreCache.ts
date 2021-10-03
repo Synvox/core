@@ -57,7 +57,7 @@ export class CoreCache {
       const processed = coreCache.processResponse(data);
 
       for (let subUrl in processed) {
-        const data = processed[url];
+        const data = processed[subUrl];
 
         coreCache.cache[subUrl] = {
           data,
