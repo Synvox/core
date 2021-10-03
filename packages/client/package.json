@@ -9,7 +9,7 @@
   "unpkg": "dist/index.umd.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "microbundle --jsx React.createElement",
+    "build": "microbundle --jsx React.createElement --no-compress",
     "test": "jest",
     "prepublishOnly": "npm run build"
   },
