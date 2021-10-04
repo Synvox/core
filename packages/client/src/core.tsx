@@ -52,7 +52,7 @@ class Table<
   }
 
   handlersFor({
-    getUrl: realGetUrl,
+    getUrl,
     cache,
     handleChanges,
   }: {
@@ -70,10 +70,6 @@ class Table<
   > {
     const { axios } = cache;
     const { path, lock, blockUpdatesById } = this;
-
-    function getUrl(url: string) {
-      return realGetUrl(url);
-    }
 
     function get(
       idOrParams?: ID<Params, IDColumnName> | Params,
@@ -370,7 +366,7 @@ export function core<
 
   function useGetUrl() {
     const cache = useCache();
-    return cache.useGet.bind(cache);
+    return cache.useGet();
   }
 
   function useTouch() {
