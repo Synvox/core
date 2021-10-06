@@ -124,10 +124,13 @@ export class CoreCache {
           loadedThrough: url,
         };
 
-        if (isBrowser && this.cache[url].subscribers.size === 0)
+        if (isBrowser && this.cache[url].subscribers.size === 0) {
+          if (this.cache[url].refreshTimeout)
+            window.clearTimeout(this.cache[url].refreshTimeout);
           this.cache[url].refreshTimeout = setTimeout(() => {
             this.refresh(url);
           }, 1000 * 60 * 10);
+        }
       });
 
       const update = () => {
@@ -290,6 +293,7 @@ export class CoreCache {
           const entry = this.get(url);
           entry.subscribers.delete(forceUpdate);
           if (isBrowser && entry.subscribers.size === 0) {
+            if (entry.refreshTimeout) window.clearTimeout(entry.refreshTimeout);
             entry.refreshTimeout = setTimeout(() => {
               this.refresh(url);
             }, 1000 * 60 * 10);
@@ -311,19 +315,38 @@ export class CoreCache {
     return await this.refresh(...matchedUrls);
   }
 
+  isUrlDependedOn(url: string) {
+    return Object.entries(this.cache).some(
+      ([key, { loadedThrough }]) => key !== url && loadedThrough === url
+    );
+  }
+
   async refresh(...matchedUrls: string[]) {
     const pendingPromises: Record<string, Promise<() => Subscriber>> = {};
     for (let url of matchedUrls) {
       const entry = this.cache[url];
       if (!entry) continue;
 
-      if (
-        entry.subscribers.size === 0 &&
-        !Object.entries(this.cache).some(
-          ([key, { loadedThrough }]) => key !== url && loadedThrough === url
-        )
-      ) {
+      if (entry.refreshTimeout) {
+        window.clearTimeout(entry.refreshTimeout);
+        entry.refreshTimeout = undefined;
+      }
+
+      if (this.isUrlDependedOn(url)) {
+        // trying to refresh a
+        entry.refreshTimeout = setTimeout(() => {
+          this.refresh(url);
+        }, 1000 * 60 * 10);
+        continue;
+      }
+
+      if (entry.subscribers.size === 0) {
         delete this.cache[url];
+
+        if (entry.loadedThrough !== url && !this.isUrlDependedOn(url)) {
+          matchedUrls.push(entry.loadedThrough);
+        }
+
         continue;
       }
 
