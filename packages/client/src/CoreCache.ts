@@ -381,9 +381,8 @@ export class CoreCache {
 
       if (!promise) {
         debug("needs new promise", url);
-        promise = this.load(entry.loadedThrough);
+        promise = this.load(url);
         pendingPromises[url] = promise;
-        pendingPromises[entry.loadedThrough] = promise;
       }
 
       this.cache[url] = {
