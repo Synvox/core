@@ -337,10 +337,7 @@ export class CoreCache {
         entry.refreshTimeout = setTimeout(() => {
           this.refresh(url);
         }, 1000 * 60 * 10);
-        continue;
-      }
-
-      if (entry.subscribers.size === 0) {
+      } else if (entry.subscribers.size === 0) {
         delete this.cache[url];
 
         if (entry.loadedThrough !== url && !this.isUrlDependedOn(url)) {
