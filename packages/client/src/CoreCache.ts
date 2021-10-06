@@ -391,7 +391,9 @@ export class CoreCache {
       };
     }
 
-    const commitFunctions = await Promise.all(Object.values(pendingPromises));
+    const promisesToResolve = Object.values(pendingPromises);
+    debug("awaiting promises", promisesToResolve);
+    const commitFunctions = await Promise.all(promisesToResolve);
 
     debug("committing new changes");
     const updateFunctions = commitFunctions.map((commit) => commit());
