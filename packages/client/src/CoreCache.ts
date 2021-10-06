@@ -365,7 +365,8 @@ export class CoreCache {
 
       if (entry.loadedThrough !== url) {
         debug("url is part of larger entry", url);
-        if (!matchedUrls.includes(entry.loadedThrough)) matchedUrls.push(url);
+        if (!matchedUrls.includes(entry.loadedThrough))
+          matchedUrls.push(entry.loadedThrough);
         continue;
       }
 
