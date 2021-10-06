@@ -1,6 +1,9 @@
+import Debug from "debug";
 import { AxiosInstance } from "axios";
-import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Entry, Subscriber } from "./types";
+
+const debug = Debug("core");
 
 let updateNumber = 0;
 const isBrowser = typeof window !== "undefined";
@@ -71,6 +74,7 @@ export class CoreCache {
   }
 
   get<T>(url: string) {
+    debug("get from cache", url);
     const entry = this.cache[url];
     if (entry) return entry;
 
@@ -91,6 +95,7 @@ export class CoreCache {
   }
 
   async load(url: string) {
+    debug("loading", url);
     let changes: Record<string, Partial<Entry<unknown>>> = {};
     try {
       const { data } = await this.axios.get(url);
@@ -98,6 +103,7 @@ export class CoreCache {
       const processed = this.processResponse(data);
       changes = { [url]: { promise: undefined, error: undefined, data } };
       for (let url in processed) {
+        debug("staging resource", url);
         changes[url] = {
           promise: undefined,
           error: undefined,
@@ -115,6 +121,7 @@ export class CoreCache {
     }
 
     const commit = () => {
+      debug("commit");
       Object.entries(changes).map(([subUrl, change]) => {
         this.cache[subUrl] = {
           ...(this.cache[subUrl] ?? {
@@ -134,6 +141,7 @@ export class CoreCache {
       });
 
       const update = () => {
+        debug("update");
         if (!isBrowser) return;
         const subscribers = Array.from(this.cache[url].subscribers);
         const num = nextUpdateNumber();
@@ -278,10 +286,23 @@ export class CoreCache {
       throw new Error("unreachable");
     };
 
-    useLayoutEffect(() => {
+    useEffect(() => {
+      debug("subscribing to", used);
+      for (let url of used) {
+        const entry = this.cache[url];
+        if (!entry) continue;
+        entry.subscribers.add(forceUpdate);
+        if (entry.refreshTimeout) {
+          clearTimeout(entry.refreshTimeout);
+          entry.refreshTimeout = undefined;
+        }
+      }
+
       return () => {
+        debug("unsubscribing from", used);
         for (let url of used) {
-          const entry = this.get(url);
+          const entry = this.cache[url];
+          if (!entry) continue;
           entry.subscribers.delete(forceUpdate);
           if (isBrowser && entry.subscribers.size === 0) {
             if (entry.refreshTimeout) window.clearTimeout(entry.refreshTimeout);
@@ -291,18 +312,6 @@ export class CoreCache {
           }
         }
       };
-      [];
-    });
-
-    useEffect(() => {
-      for (let url of used) {
-        const entry = this.get(url);
-        entry.subscribers.add(forceUpdate);
-        if (entry.refreshTimeout) {
-          clearTimeout(entry.refreshTimeout);
-          entry.refreshTimeout = undefined;
-        }
-      }
     });
 
     return get;
@@ -315,6 +324,7 @@ export class CoreCache {
       if (matcher(url)) matchedUrls.push(url);
     }
 
+    debug("touch matched", matchedUrls);
     return await this.refresh(...matchedUrls);
   }
 
@@ -326,9 +336,14 @@ export class CoreCache {
 
   async refresh(...matchedUrls: string[]) {
     const pendingPromises: Record<string, Promise<() => Subscriber>> = {};
+    debug("refreshing", matchedUrls);
     for (let url of matchedUrls) {
+      debug("refreshing", url);
       const entry = this.cache[url];
-      if (!entry) continue;
+      if (!entry) {
+        debug("no entry exists for", url);
+        continue;
+      }
 
       if (entry.refreshTimeout) {
         window.clearTimeout(entry.refreshTimeout);
@@ -336,24 +351,32 @@ export class CoreCache {
       }
 
       if (this.isUrlDependedOn(url)) {
+        debug("entry is depended on, skipping", url);
         // trying to refresh a
         entry.refreshTimeout = setTimeout(() => {
           this.refresh(url);
         }, 1000 * 60 * 10);
       } else if (entry.subscribers.size === 0) {
+        debug("entry is not used on page, deleting", url);
         delete this.cache[url];
 
-        if (entry.loadedThrough !== url && !this.isUrlDependedOn(url)) {
+        if (
+          entry.loadedThrough !== url &&
+          !this.isUrlDependedOn(entry.loadedThrough)
+        ) {
+          debug("adding refresh for parent", url);
           matchedUrls.push(entry.loadedThrough);
         }
 
         continue;
       }
 
+      debug("now refreshing", url);
       let promise =
         pendingPromises[entry.loadedThrough] || pendingPromises[url];
 
       if (!promise) {
+        debug("needs new promise", url);
         promise = this.load(entry.loadedThrough);
         pendingPromises[url] = promise;
         pendingPromises[entry.loadedThrough] = promise;
@@ -366,6 +389,8 @@ export class CoreCache {
     }
 
     const commitFunctions = await Promise.all(Object.values(pendingPromises));
+
+    debug("committing new changes");
     const updateFunctions = commitFunctions.map((commit) => commit());
 
     for (let url in pendingPromises) {
@@ -376,6 +401,7 @@ export class CoreCache {
     }
 
     const num = nextUpdateNumber();
+    debug("updating page");
     for (let update of updateFunctions) {
       update(num);
     }
