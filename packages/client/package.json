@@ -48,5 +48,9 @@
   "np": {
     "yarn": false,
     "contents": "dist"
+  },
+  "gitHead": "4056cd8178cef18e0b4a95eb206df07d34cf0d43",
+  "devDependencies": {
+    "@types/debug": "^4.1.7"
   }
 }
