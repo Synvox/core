@@ -1,5 +1,5 @@
 import { AxiosInstance } from "axios";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Entry, Subscriber } from "./types";
 
 let updateNumber = 0;
@@ -278,16 +278,7 @@ export class CoreCache {
       throw new Error("unreachable");
     };
 
-    useEffect(() => {
-      for (let url of used) {
-        const entry = this.get(url);
-        entry.subscribers.add(forceUpdate);
-        if (entry.refreshTimeout) {
-          clearTimeout(entry.refreshTimeout);
-          entry.refreshTimeout = undefined;
-        }
-      }
-
+    useLayoutEffect(() => {
       return () => {
         for (let url of used) {
           const entry = this.get(url);
@@ -300,6 +291,18 @@ export class CoreCache {
           }
         }
       };
+      [];
+    });
+
+    useEffect(() => {
+      for (let url of used) {
+        const entry = this.get(url);
+        entry.subscribers.add(forceUpdate);
+        if (entry.refreshTimeout) {
+          clearTimeout(entry.refreshTimeout);
+          entry.refreshTimeout = undefined;
+        }
+      }
     });
 
     return get;
