@@ -336,10 +336,10 @@ export class CoreCache {
 
   async refresh(...matchedUrls: string[]) {
     const pendingPromises: Record<string, Promise<() => Subscriber>> = {};
-    debug("refreshing", matchedUrls);
+    debug("refresh urls", matchedUrls);
     for (let url of matchedUrls) {
-      debug("refreshing", url);
       const entry = this.cache[url];
+      debug("checking entry", url, entry);
       if (!entry) {
         debug("no entry exists for", url);
         continue;
@@ -351,7 +351,7 @@ export class CoreCache {
       }
 
       if (this.isUrlDependedOn(url)) {
-        debug("entry is depended on, skipping", url);
+        debug("entry is depended on", url);
         // trying to refresh a
         entry.refreshTimeout = setTimeout(() => {
           this.refresh(url);
@@ -371,7 +371,7 @@ export class CoreCache {
         continue;
       }
 
-      debug("now refreshing", url);
+      debug("refreshing", url);
       let promise =
         pendingPromises[entry.loadedThrough] || pendingPromises[url];
 
