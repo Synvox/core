@@ -126,7 +126,7 @@ export class CoreCache {
 
         if (isBrowser && this.cache[url].subscribers.size === 0) {
           if (this.cache[url].refreshTimeout)
-            window.clearTimeout(this.cache[url].refreshTimeout);
+            window.clearTimeout(this.cache[url].refreshTimeout!);
           this.cache[url].refreshTimeout = setTimeout(() => {
             this.refresh(url);
           }, 1000 * 60 * 10);
