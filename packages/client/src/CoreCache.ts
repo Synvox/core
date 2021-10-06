@@ -330,8 +330,21 @@ export class CoreCache {
 
   isUrlDependedOn(url: string) {
     return Object.entries(this.cache).some(
-      ([key, { loadedThrough }]) => key !== url && loadedThrough === url
+      ([key, { loadedThrough, subscribers }]) =>
+        key !== url && loadedThrough === url && subscribers.size > 0
     );
+  }
+
+  deleteKey(key: string) {
+    for (let url in this.cache) {
+      if (url === key) {
+        debug("delete", url);
+        delete this.cache[url];
+      } else if (this.cache[url].loadedThrough === key) {
+        debug("delete sub resource", url);
+        delete this.cache[url];
+      }
+    }
   }
 
   async refresh(...matchedUrls: string[]) {
@@ -350,24 +363,15 @@ export class CoreCache {
         entry.refreshTimeout = undefined;
       }
 
-      if (this.isUrlDependedOn(url)) {
-        debug("entry is depended on", url);
-        // trying to refresh a
-        entry.refreshTimeout = setTimeout(() => {
-          this.refresh(url);
-        }, 1000 * 60 * 10);
-      } else if (entry.subscribers.size === 0) {
+      if (entry.loadedThrough !== url) {
+        debug("url is part of larger entry", url);
+        if (!matchedUrls.includes(entry.loadedThrough)) matchedUrls.push(url);
+        continue;
+      }
+
+      if (entry.subscribers.size === 0 && !this.isUrlDependedOn(url)) {
         debug("entry is not used on page, deleting", url);
-        delete this.cache[url];
-
-        if (
-          entry.loadedThrough !== url &&
-          !this.isUrlDependedOn(entry.loadedThrough)
-        ) {
-          debug("adding refresh for parent", url);
-          matchedUrls.push(entry.loadedThrough);
-        }
-
+        this.deleteKey(url);
         continue;
       }
 
