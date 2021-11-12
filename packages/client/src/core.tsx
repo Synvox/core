@@ -203,9 +203,7 @@ class Table<
 
           return result;
         },
-        async getFirstAsync(
-          params?: Params
-        ) {
+        async firstAsync(params?: Params) {
           let fullPath = `${path}/first`;
           if (params) {
             fullPath += `?${qsStringify(params)}`;
