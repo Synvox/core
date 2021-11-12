@@ -203,6 +203,20 @@ class Table<
 
           return result;
         },
+        async getFirstAsync(
+          params?: Params
+        ) {
+          let fullPath = `${path}/first`;
+          if (params) {
+            fullPath += `?${qsStringify(params)}`;
+          }
+
+          const { data: result } = await axios.get(fullPath, {
+            params: undefined,
+          });
+
+          return result;
+        },
         async countAsync(params?: Params) {
           let fullPath = `${path}/count`;
           if (params && Object.keys(params).length > 0) {
