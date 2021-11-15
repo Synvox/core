@@ -184,6 +184,15 @@ export class Table<Context, T = any> {
     if (Object.keys(columns).length === 0)
       throw new Error(`The table ${this.tablePath} did not have any columns.`);
 
+    for (let column of this.hiddenColumns) {
+      if (columns[column]) delete columns[column];
+      for (let [key, relation] of Object.entries(relations)) {
+        if (relation.columnName === column) {
+          delete relations[key];
+        }
+      }
+    }
+
     this.columns = {
       ...columns,
       ...this.columns,
@@ -573,10 +582,7 @@ export class Table<Context, T = any> {
     const result: { [key: string]: any } = {};
 
     for (let key of Object.keys(obj).filter((key) => key in this.columns)) {
-      if (
-        !this.readOnlyColumns.includes(key) &&
-        !this.hiddenColumns.includes(key)
-      ) {
+      if (!this.readOnlyColumns.includes(key)) {
         result[key] = obj[key];
       }
     }
@@ -654,7 +660,7 @@ export class Table<Context, T = any> {
 
     let outputRow: any = {};
     for (let key in row) {
-      if (row.hasOwnProperty(key) && !this.hiddenColumns.includes(key)) {
+      if (row.hasOwnProperty(key)) {
         outputRow[key] = row[key];
       }
     }

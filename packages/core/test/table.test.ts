@@ -4571,6 +4571,88 @@ describe("hidden columns", () => {
       }
     `);
   });
+
+  it("does not allow relations through hidden columns", async () => {
+    await knex.schema.withSchema("test").createTable("related_rows", (t) => {
+      t.bigIncrements("id").primary();
+    });
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("related_id")
+        .references("id")
+        .inTable("test.related_rows")
+        .notNullable();
+    });
+
+    const [related] = await knex("test.related_rows").insert({}, "*");
+
+    await knex("test.items").insert({
+      related_id: related.id,
+    });
+
+    const items = new Table({
+      schemaName: "test",
+      tableName: "items",
+      hiddenColumns: ["relatedId"],
+    });
+
+    const relatedTable = new Table({
+      schemaName: "test",
+      tableName: "relatedRows",
+      hiddenColumns: ["relatedId"],
+    });
+
+    await items.init(knex);
+    await relatedTable.init(knex);
+
+    items.linkTables([relatedTable]);
+    relatedTable.linkTables([items]);
+
+    expect(await items.readMany(knex, {}, {})).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/test/items/count",
+          "ids": "/test/items/ids",
+        },
+        "_type": "test/items",
+        "_url": "/test/items",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/items",
+            "_url": "/test/items/1",
+            "id": 1,
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+
+    expect(await relatedTable.readMany(knex, {}, {})).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/test/relatedRows/count",
+          "ids": "/test/relatedRows/ids",
+        },
+        "_type": "test/relatedRows",
+        "_url": "/test/relatedRows",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {},
+            "_type": "test/relatedRows",
+            "_url": "/test/relatedRows/1",
+            "id": 1,
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+  });
+
   it("does not write hidden columns", async () => {
     await knex.schema.withSchema("test").createTable("items", (t) => {
       t.bigIncrements("id").primary();
