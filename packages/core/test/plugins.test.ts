@@ -342,13 +342,10 @@ describe("withQuery plugin", () => {
     ]);
 
     const users = new Table(
-      withQuery(
-        {
-          schemaName: "testPlugins",
-          tableName: "users",
-        },
-        ["firstName", "lastName", "email"]
-      )
+      withQuery(["firstName", "lastName", "email"], {
+        schemaName: "testPlugins",
+        tableName: "users",
+      })
     );
 
     queries = [];

@@ -9,8 +9,8 @@ import { TableDef } from "../types";
  * @param table
  */
 export default function withQuery<T>(
-  table: TableDef<T>,
-  searchColumns: string[]
+  searchColumns: string[],
+  table: TableDef<T>
 ): TableDef<T> {
   return {
     ...table,
