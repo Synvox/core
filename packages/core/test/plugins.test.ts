@@ -1,6 +1,7 @@
 import Knex from "knex";
 import { knexHelpers, Table, withTimestamps } from "../src";
 import uuid from "uuid";
+import withQuery from "../src/plugins/withQuery";
 
 let queries: string[] = [];
 
@@ -309,6 +310,172 @@ describe("withTimestamps plugin", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select items__base_table.id, items__base_table.updated_at, items__base_table.created_at from test_plugins.items items__base_table order by items__base_table.id asc limit ?",
+      ]
+    `);
+  });
+});
+
+describe("withQuery plugin", () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("allows search on multiple columns", async () => {
+    await knex.schema.withSchema("test_plugins").createTable("users", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("first_name");
+      t.text("last_name");
+      t.text("email");
+    });
+
+    await knex("test_plugins.users").insert([
+      {
+        firstName: "Billy",
+        lastName: "Bob",
+        email: "billy@bobjones.com",
+      },
+      {
+        firstName: "John",
+        lastName: "Doe",
+        email: "johndoe@domain.com",
+      },
+    ]);
+
+    const users = new Table(
+      withQuery(
+        {
+          schemaName: "testPlugins",
+          tableName: "users",
+        },
+        ["firstName", "lastName", "email"]
+      )
+    );
+
+    queries = [];
+    expect(await users.readMany(knex, { query: "Billy" }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/testPlugins/users/count?query=Billy",
+          "ids": "/testPlugins/users/ids?query=Billy",
+        },
+        "_type": "testPlugins/users",
+        "_url": "/testPlugins/users?query=Billy",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {},
+            "_type": "testPlugins/users",
+            "_url": "/testPlugins/users/1",
+            "email": "billy@bobjones.com",
+            "firstName": "Billy",
+            "id": 1,
+            "lastName": "Bob",
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select * from test_plugins.users users__base_table where to_tsvector(users__base_table.first_name) || to_tsvector(users__base_table.last_name) || to_tsvector(users__base_table.email) @@ to_tsquery('simple', ? || ':*') order by users__base_table.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(await users.readMany(knex, { query: "Billy Bob" }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/testPlugins/users/count?query=Billy%20Bob",
+          "ids": "/testPlugins/users/ids?query=Billy%20Bob",
+        },
+        "_type": "testPlugins/users",
+        "_url": "/testPlugins/users?query=Billy%20Bob",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {},
+            "_type": "testPlugins/users",
+            "_url": "/testPlugins/users/1",
+            "email": "billy@bobjones.com",
+            "firstName": "Billy",
+            "id": 1,
+            "lastName": "Bob",
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select * from test_plugins.users users__base_table where to_tsvector(users__base_table.first_name) || to_tsvector(users__base_table.last_name) || to_tsvector(users__base_table.email) @@ to_tsquery('simple', ? || ':*' || ' & ' || ? || ':*') order by users__base_table.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(await users.readMany(knex, { query: "jo" }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/testPlugins/users/count?query=jo",
+          "ids": "/testPlugins/users/ids?query=jo",
+        },
+        "_type": "testPlugins/users",
+        "_url": "/testPlugins/users?query=jo",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {},
+            "_type": "testPlugins/users",
+            "_url": "/testPlugins/users/2",
+            "email": "johndoe@domain.com",
+            "firstName": "John",
+            "id": 2,
+            "lastName": "Doe",
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select * from test_plugins.users users__base_table where to_tsvector(users__base_table.first_name) || to_tsvector(users__base_table.last_name) || to_tsvector(users__base_table.email) @@ to_tsquery('simple', ? || ':*') order by users__base_table.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(await users.readMany(knex, { query: "johndoe@domain.com" }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/testPlugins/users/count?query=johndoe%40domain.com",
+          "ids": "/testPlugins/users/ids?query=johndoe%40domain.com",
+        },
+        "_type": "testPlugins/users",
+        "_url": "/testPlugins/users?query=johndoe%40domain.com",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {},
+            "_type": "testPlugins/users",
+            "_url": "/testPlugins/users/2",
+            "email": "johndoe@domain.com",
+            "firstName": "John",
+            "id": 2,
+            "lastName": "Doe",
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select * from test_plugins.users users__base_table where to_tsvector(users__base_table.first_name) || to_tsvector(users__base_table.last_name) || to_tsvector(users__base_table.email) @@ to_tsquery('simple', ? || ':*') order by users__base_table.id asc limit ?",
       ]
     `);
   });

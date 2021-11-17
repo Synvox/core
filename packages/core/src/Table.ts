@@ -42,6 +42,7 @@ import { toSnakeCase } from "./case";
 import { Result, CollectionResult, ChangeResult } from "./Result";
 import { qsStringify } from "./qsStringify";
 import { validateAgainst } from "./validate";
+import { ftsSearchModifier } from "./plugins/withQuery";
 
 export type SavedTable = {
   columns: Columns;
@@ -489,9 +490,11 @@ export class Table<Context, T = any> {
         const op = operands[0];
         if (op === "fts") {
           onStmt((stmt) => {
-            stmt.whereRaw(
-              (not ? "not " : "") + "to_tsvector(??.??) @@ plainto_tsquery(?)",
-              [this.alias, columnName, value]
+            stmt.modify(
+              ftsSearchModifier,
+              [`${this.alias}.${columnName}`],
+              value,
+              not
             );
           });
         } else if (Array.isArray(value)) {

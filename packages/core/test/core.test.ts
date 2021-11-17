@@ -1841,7 +1841,7 @@ describe("handles advanced queries", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (to_tsvector(test__base_table.text) @@ plainto_tsquery(?)) order by test__base_table.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (to_tsvector(test__base_table.text) @@ to_tsquery('simple', ? || ':*')) order by test__base_table.id asc limit ?",
       ]
     `);
 
@@ -1887,7 +1887,7 @@ describe("handles advanced queries", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (not to_tsvector(test__base_table.text) @@ plainto_tsquery(?)) order by test__base_table.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (not to_tsvector(test__base_table.text) @@ to_tsquery('simple', ? || ':*')) order by test__base_table.id asc limit ?",
       ]
     `);
 
@@ -1919,7 +1919,7 @@ describe("handles advanced queries", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (to_tsvector(test__base_table.text) @@ plainto_tsquery(?)) order by test__base_table.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (to_tsvector(test__base_table.text) @@ to_tsquery('simple', ? || ':*' || ' & ' || ? || ':*')) order by test__base_table.id asc limit ?",
       ]
     `);
   });
@@ -1963,7 +1963,7 @@ describe("handles advanced queries", () => {
     );
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (to_tsvector(test__base_table.text) @@ plainto_tsquery(?) or (test__base_table.number_count = ?) or (test__base_table.number_count < ?)) order by test__base_table.id asc limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text from core_test.test test__base_table where (to_tsvector(test__base_table.text) @@ to_tsquery('simple', ? || ':*') or (test__base_table.number_count = ?) or (test__base_table.number_count < ?)) order by test__base_table.id asc limit ?",
       ]
     `);
 
