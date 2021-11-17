@@ -413,6 +413,38 @@ describe("withQuery plugin", () => {
     `);
 
     queries = [];
+    expect(await users.readMany(knex, { query: "Billy " }, {}))
+      .toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/testPlugins/users/count?query=Billy%20",
+          "ids": "/testPlugins/users/ids?query=Billy%20",
+        },
+        "_type": "testPlugins/users",
+        "_url": "/testPlugins/users?query=Billy%20",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {},
+            "_type": "testPlugins/users",
+            "_url": "/testPlugins/users/1",
+            "email": "billy@bobjones.com",
+            "firstName": "Billy",
+            "id": 1,
+            "lastName": "Bob",
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select * from test_plugins.users users__base_table where to_tsvector(users__base_table.first_name) || to_tsvector(users__base_table.last_name) || to_tsvector(users__base_table.email) @@ to_tsquery('simple', ? || ':*') order by users__base_table.id asc limit ?",
+      ]
+    `);
+
+    queries = [];
     expect(await users.readMany(knex, { query: "jo" }, {}))
       .toMatchInlineSnapshot(`
       Object {

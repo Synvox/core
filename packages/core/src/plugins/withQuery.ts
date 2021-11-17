@@ -35,7 +35,10 @@ export function ftsSearchModifier(
 ) {
   const inner = searchColumns.map(() => `to_tsvector(??)`).join(" || ");
 
-  const words = value.replace(/\s+/g, " ").split(" ");
+  const words = value
+    .replace(/\s+/g, " ")
+    .split(" ")
+    .filter((x) => x.trim());
   const tsQuery = words.map(() => `? || ':*'`).join(" || ' & ' || ");
 
   stmt.whereRaw(
