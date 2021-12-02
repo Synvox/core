@@ -507,7 +507,7 @@ describe("listens on server", () => {
     expect(queries).toMatchInlineSnapshot(`
       Array [
         "select test_sub__base_table.id, test_sub__base_table.parent_id from core_test.test_sub test_sub__base_table where (test_sub__base_table.id = ?) limit ?",
-        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text, array(select row_to_json(test_sub__alias_0_sub_query) from (select test_sub__alias_0.id, test_sub__alias_0.parent_id from core_test.test_sub test_sub__alias_0 where test_sub__alias_0.parent_id = test__base_table.id order by id asc limit ?) test_sub__alias_0_sub_query) as test_sub from core_test.test test__base_table where (test__base_table.id = ?) limit ?",
+        "select test__base_table.id, test__base_table.is_boolean, test__base_table.number_count, test__base_table.text, array(select row_to_json(test_sub__alias_0_sub_query) from (select test_sub__alias_0.id, test_sub__alias_0.parent_id from core_test.test_sub test_sub__alias_0 where test_sub__alias_0.parent_id = test__base_table.id order by test_sub__alias_0.id asc limit ?) test_sub__alias_0_sub_query) as test_sub from core_test.test test__base_table where (test__base_table.id = ?) limit ?",
       ]
     `);
 

@@ -1708,9 +1708,9 @@ export class Table<Context, T = any> {
             columnName = columnName.slice(1);
           }
 
-          subQuery.orderBy(columnName, order);
+          subQuery.orderBy(`${alias}.${columnName}`, order);
         } else {
-          subQuery.orderBy(refTable.idColumnName, "asc");
+          subQuery.orderBy(`${alias}.${refTable.idColumnName}`, "asc");
         }
 
         subQuery

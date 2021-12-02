@@ -251,7 +251,7 @@ describe("works with views", () => {
     `);
     expect(queries).toMatchInlineSnapshot(`
       Array [
-        "select orgs__base_table.id, array(select row_to_json(view__alias_0_sub_query) from (select view__alias_0.id, view__alias_0.is_boolean, view__alias_0.number_count, view__alias_0.body, view__alias_0.body_appended, view__alias_0.org_id from view_test.view view__alias_0 where view__alias_0.org_id = orgs__base_table.id order by id asc limit ?) view__alias_0_sub_query) as view from view_test.orgs orgs__base_table order by orgs__base_table.id asc limit ?",
+        "select orgs__base_table.id, array(select row_to_json(view__alias_0_sub_query) from (select view__alias_0.id, view__alias_0.is_boolean, view__alias_0.number_count, view__alias_0.body, view__alias_0.body_appended, view__alias_0.org_id from view_test.view view__alias_0 where view__alias_0.org_id = orgs__base_table.id order by view__alias_0.id asc limit ?) view__alias_0_sub_query) as view from view_test.orgs orgs__base_table order by orgs__base_table.id asc limit ?",
       ]
     `);
 
