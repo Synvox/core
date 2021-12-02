@@ -1699,6 +1699,20 @@ export class Table<Context, T = any> {
             knex.ref(`${this.alias}.${this.idColumnName}`)
           );
       } else {
+        if (refTable.defaultSortColumn) {
+          let columnName = refTable.defaultSortColumn;
+          let order: "asc" | "desc" = "asc";
+
+          if (columnName.startsWith("-")) {
+            order = "desc";
+            columnName = columnName.slice(1);
+          }
+
+          subQuery.orderBy(columnName, order);
+        } else {
+          subQuery.orderBy(refTable.idColumnName, "asc");
+        }
+
         subQuery
           .where(
             `${alias}.${ref.relation.columnName}`,
