@@ -1887,35 +1887,22 @@ describe("core", () => {
     expectType<ChangeTo<Test>>(r1);
     expectType<Result>(r2);
 
-    expect(r1).toMatchInlineSnapshot(`
-      Object {
-        "changeId": "uuid-test-value",
-        "changes": Array [
-          Object {
-            "mode": "insert",
-            "path": "/coreClientTest/test",
-            "row": Object {
-              "_links": Object {},
-              "_type": "coreClientTest/test",
-              "_url": "/coreClientTest/test/1",
-              "id": 1,
-              "isBoolean": false,
-              "numberCount": 0,
-              "text": "text",
-            },
+    expect(r1.changes).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "mode": "insert",
+          "path": "/coreClientTest/test",
+          "row": Object {
+            "_links": Object {},
+            "_type": "coreClientTest/test",
+            "_url": "/coreClientTest/test/1",
+            "id": 1,
+            "isBoolean": false,
+            "numberCount": 0,
+            "text": "text",
           },
-        ],
-        "result": Object {
-          "_links": Object {},
-          "_type": "coreClientTest/test",
-          "_url": "/coreClientTest/test/1",
-          "id": 1,
-          "isBoolean": false,
-          "numberCount": 0,
-          "text": "text",
         },
-        "update": [Function],
-      }
+      ]
     `);
     expect(r2).toMatchInlineSnapshot(`
       Object {

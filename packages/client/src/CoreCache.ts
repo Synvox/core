@@ -130,14 +130,6 @@ export class CoreCache {
           ...change,
           loadedThrough: url,
         };
-
-        if (isBrowser && this.cache[url].subscribers.size === 0) {
-          if (this.cache[url].refreshTimeout)
-            window.clearTimeout(this.cache[url].refreshTimeout!);
-          this.cache[url].refreshTimeout = setTimeout(() => {
-            this.refresh(url);
-          }, 1000 * 60 * 10);
-        }
       });
 
       const update = () => {
@@ -292,10 +284,6 @@ export class CoreCache {
         const entry = this.cache[url];
         if (!entry) continue;
         entry.subscribers.add(forceUpdate);
-        if (entry.refreshTimeout) {
-          clearTimeout(entry.refreshTimeout);
-          entry.refreshTimeout = undefined;
-        }
       }
 
       return () => {
@@ -304,12 +292,6 @@ export class CoreCache {
           const entry = this.cache[url];
           if (!entry) continue;
           entry.subscribers.delete(forceUpdate);
-          if (isBrowser && entry.subscribers.size === 0) {
-            if (entry.refreshTimeout) window.clearTimeout(entry.refreshTimeout);
-            entry.refreshTimeout = setTimeout(() => {
-              this.refresh(url);
-            }, 1000 * 60 * 10);
-          }
         }
       };
     });
@@ -356,11 +338,6 @@ export class CoreCache {
       if (!entry) {
         debug("no entry exists for", url);
         continue;
-      }
-
-      if (entry.refreshTimeout) {
-        window.clearTimeout(entry.refreshTimeout);
-        entry.refreshTimeout = undefined;
       }
 
       if (entry.loadedThrough !== url) {

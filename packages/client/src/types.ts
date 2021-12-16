@@ -39,7 +39,6 @@ export type CacheEntry<Key, Result, LoaderOptions> = {
   promise?: Promise<Result>;
   error?: Error;
   destroyTimeout?: number;
-  refreshTimeout?: number;
   loaderOptions: LoaderOptions;
 };
 
