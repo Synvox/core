@@ -110,6 +110,7 @@ export type Handlers<
       params?: Params
     ) => Promise<Row>) &
       ((idOrParams?: Params) => Promise<Collection<Row>>);
+    firstAsync: (params?: DeepPartial<Params>) => Promise<Row>;
     countAsync: (params?: DeepPartial<Params>) => Promise<number>;
     idsAsync: (
       params?: DeepPartial<Params>
