@@ -183,61 +183,63 @@ class Table<
           }
           return getUrl(fullPath) as Collection<ID<Row, IDColumnName>>;
         },
-        async getAsync(
-          idOrParams?: ID<Params, IDColumnName> | Params,
-          params?: Params
-        ) {
-          let fullPath = path;
+        async: {
+          async get(
+            idOrParams?: ID<Params, IDColumnName> | Params,
+            params?: Params
+          ) {
+            let fullPath = path;
 
-          if (idOrParams && typeof idOrParams !== "object")
-            fullPath += `/${idOrParams}`;
-          else params = idOrParams as Params;
+            if (idOrParams && typeof idOrParams !== "object")
+              fullPath += `/${idOrParams}`;
+            else params = idOrParams as Params;
 
-          if (params && Object.keys(params).length > 0) {
-            fullPath += `?${qsStringify(params)}`;
-          }
+            if (params && Object.keys(params).length > 0) {
+              fullPath += `?${qsStringify(params)}`;
+            }
 
-          const { data: result } = await axios.get(fullPath, {
-            params: undefined,
-          });
+            const { data: result } = await axios.get(fullPath, {
+              params: undefined,
+            });
 
-          return result;
-        },
-        async firstAsync(params?: Params) {
-          let fullPath = `${path}/first`;
-          if (params) {
-            fullPath += `?${qsStringify(params)}`;
-          }
+            return result;
+          },
+          async first(params?: Params) {
+            let fullPath = `${path}/first`;
+            if (params) {
+              fullPath += `?${qsStringify(params)}`;
+            }
 
-          const { data: result } = await axios.get(fullPath, {
-            params: undefined,
-          });
+            const { data: result } = await axios.get(fullPath, {
+              params: undefined,
+            });
 
-          return result;
-        },
-        async countAsync(params?: Params) {
-          let fullPath = `${path}/count`;
-          if (params && Object.keys(params).length > 0) {
-            fullPath += `?${qsStringify(params)}`;
-          }
+            return result;
+          },
+          async count(params?: Params) {
+            let fullPath = `${path}/count`;
+            if (params && Object.keys(params).length > 0) {
+              fullPath += `?${qsStringify(params)}`;
+            }
 
-          const { data: result } = await axios.get(fullPath, {
-            params: undefined,
-          });
+            const { data: result } = await axios.get(fullPath, {
+              params: undefined,
+            });
 
-          return result;
-        },
-        async idsAsync(params?: Params) {
-          let fullPath = `${path}/ids`;
-          if (params && Object.keys(params).length > 0) {
-            fullPath += `?${qsStringify(params)}`;
-          }
+            return result;
+          },
+          async ids(params?: Params) {
+            let fullPath = `${path}/ids`;
+            if (params && Object.keys(params).length > 0) {
+              fullPath += `?${qsStringify(params)}`;
+            }
 
-          const { data: result } = await axios.get(fullPath, {
-            params: undefined,
-          });
+            const { data: result } = await axios.get(fullPath, {
+              params: undefined,
+            });
 
-          return result;
+            return result;
+          },
         },
         rebind: (getUrl: (url: string) => any) => {
           return this.handlersFor({

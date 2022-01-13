@@ -105,16 +105,18 @@ export type Handlers<
     ) => Promise<ChangeTo<Row>>;
     count: (params?: DeepPartial<Params>) => number;
     ids: (params?: DeepPartial<Params>) => Collection<ID<Row, IDColumnName>>;
-    getAsync: ((
-      idOrParams: ID<Params, IDColumnName>,
-      params?: Params
-    ) => Promise<Row>) &
-      ((idOrParams?: Params) => Promise<Collection<Row>>);
-    firstAsync: (params?: DeepPartial<Params>) => Promise<Row>;
-    countAsync: (params?: DeepPartial<Params>) => Promise<number>;
-    idsAsync: (
-      params?: DeepPartial<Params>
-    ) => Promise<Collection<ID<Row, IDColumnName>>>;
+    async: {
+      get: ((
+        idOrParams: ID<Params, IDColumnName>,
+        params?: Params
+      ) => Promise<Row>) &
+        ((idOrParams?: Params) => Promise<Collection<Row>>);
+      first: (params?: DeepPartial<Params>) => Promise<Row>;
+      count: (params?: DeepPartial<Params>) => Promise<number>;
+      ids: (
+        params?: DeepPartial<Params>
+      ) => Promise<Collection<ID<Row, IDColumnName>>>;
+    };
     rebind(
       getUrl: (url: string) => any
     ): Handlers<

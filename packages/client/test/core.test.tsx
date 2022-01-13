@@ -1706,7 +1706,7 @@ describe("core", () => {
 
     expect(result.current).toMatchInlineSnapshot(`undefined`);
     await waitForNextUpdate();
-    expect(await result.current.core.test.getAsync()).toMatchInlineSnapshot(`
+    expect(await result.current.core.test.async.get()).toMatchInlineSnapshot(`
       Object {
         "_links": Object {
           "count": "/coreClientTest/test/count",
@@ -1739,7 +1739,7 @@ describe("core", () => {
         "page": 0,
       }
     `);
-    expect(await result.current.core.test.getAsync({ isBoolean: true }))
+    expect(await result.current.core.test.async.get({ isBoolean: true }))
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {
@@ -1764,7 +1764,7 @@ describe("core", () => {
         "page": 0,
       }
     `);
-    expect(await result.current.core.test.getAsync(1)).toMatchInlineSnapshot(`
+    expect(await result.current.core.test.async.get(1)).toMatchInlineSnapshot(`
       Object {
         "_links": Object {},
         "_type": "coreClientTest/test",
@@ -1775,13 +1775,13 @@ describe("core", () => {
         "text": "text",
       }
     `);
-    expect(await result.current.core.test.countAsync()).toMatchInlineSnapshot(
+    expect(await result.current.core.test.async.count()).toMatchInlineSnapshot(
       `2`
     );
     expect(
-      await result.current.core.test.countAsync({ isBoolean: true })
+      await result.current.core.test.async.count({ isBoolean: true })
     ).toMatchInlineSnapshot(`1`);
-    expect(await result.current.core.test.idsAsync()).toMatchInlineSnapshot(`
+    expect(await result.current.core.test.async.ids()).toMatchInlineSnapshot(`
       Object {
         "_links": Object {},
         "_url": "/coreClientTest/test/ids",
@@ -1794,7 +1794,7 @@ describe("core", () => {
         "page": 0,
       }
     `);
-    expect(await result.current.core.test.idsAsync({ isBoolean: true }))
+    expect(await result.current.core.test.async.ids({ isBoolean: true }))
       .toMatchInlineSnapshot(`
       Object {
         "_links": Object {},
