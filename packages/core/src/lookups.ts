@@ -27,6 +27,7 @@ export function postgresTypesToYupType(type: string): BaseSchema {
     case "oid":
     case "bigint":
     case "integer":
+    case "double precision":
       return number();
     case "bool":
     case "boolean":

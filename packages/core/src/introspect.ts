@@ -54,19 +54,32 @@ export async function getColumnInfo(
 
   return formatted;
 }
-export async function getUniqueColumnIndexes(
+export async function getUniqueColumns(
   knex: Knex,
   schemaName: string,
   tableName: string
 ) {
-  return await knex("pg_catalog.pg_constraint as con")
-    .join("pg_catalog.pg_class as rel", "rel.oid", "con.conrelid")
-    .join("pg_catalog.pg_namespace as nsp", "nsp.oid", "connamespace")
-    .where("nsp.nspname", toSnakeCase(schemaName))
-    .where("rel.relname", toSnakeCase(tableName))
-    .where("con.contype", "u")
-    .select("con.conkey as indexes")
-    .then((rows) => rows.map((r) => r.indexes as number[]));
+  const { rows } = await knex.raw(
+    `
+      select json_agg(a.attname) as indexes
+      from pg_catalog.pg_constraint as con
+      join pg_catalog.pg_class as rel on rel.oid=con.conrelid
+      join pg_catalog.pg_namespace as nsp on nsp.oid=connamespace
+      cross join lateral unnest(con.conkey) ak(k)
+      inner join pg_attribute a
+        on a.attrelid = con.conrelid
+        and a.attnum = ak.k
+      where con.contype = 'u'
+      and nsp.nspname=?
+      and rel.relname=?
+      group by con.conkey
+  `,
+    [toSnakeCase(schemaName), toSnakeCase(tableName)]
+  );
+
+  return rows.map(({ indexes }: { indexes: string[] }) =>
+    indexes.map((x) => toCamelCase(x))
+  );
 }
 export async function getRelations(
   knex: Knex,

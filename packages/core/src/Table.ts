@@ -26,11 +26,7 @@ import {
   Methods,
   StaticMethods,
 } from "./types";
-import {
-  getColumnInfo,
-  getUniqueColumnIndexes,
-  getRelations,
-} from "./introspect";
+import { getColumnInfo, getUniqueColumns, getRelations } from "./introspect";
 import {
   BadRequestError,
   UnauthorizedError,
@@ -161,13 +157,13 @@ export class Table<Context, T = any> {
   }
 
   async init(knex: Knex) {
-    const [columns, uniqueConstraintIndexes, relations] = await Promise.all([
+    const [columns, uniqueColumns, relations] = await Promise.all([
       getColumnInfo(
         knex,
         toSnakeCase(this.schemaName),
         toSnakeCase(this.tableName)
       ),
-      getUniqueColumnIndexes(
+      getUniqueColumns(
         knex,
         toSnakeCase(this.schemaName),
         toSnakeCase(this.tableName)
@@ -199,18 +195,7 @@ export class Table<Context, T = any> {
       ...this.columns,
     };
 
-    this.uniqueColumns = [
-      ...uniqueConstraintIndexes.map((indexes) =>
-        indexes.map(
-          (index: number) =>
-            Object.keys(this.columns)[
-              index - 1
-              // table is 1 indexed in postgres
-            ]
-        )
-      ),
-      ...this.uniqueColumns,
-    ];
+    this.uniqueColumns = [...uniqueColumns, ...this.uniqueColumns];
 
     Object.values(this.relations).forEach((relation) => {
       relation.tableName = this.tableName;
