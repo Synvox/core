@@ -1,4 +1,4 @@
-import { AxiosInstance } from "axios";
+import { AxiosInstance, AxiosPromise } from "axios";
 
 export type TableConfig<
   Item,
@@ -110,12 +110,10 @@ export type Handlers<
         idOrParams: ID<Params, IDColumnName>,
         params?: Params
       ) => Promise<Row>) &
-        ((idOrParams?: Params) => Promise<Collection<Row>>);
-      first: (params?: DeepPartial<Params>) => Promise<Row>;
-      count: (params?: DeepPartial<Params>) => Promise<number>;
-      ids: (
-        params?: DeepPartial<Params>
-      ) => Promise<Collection<ID<Row, IDColumnName>>>;
+        ((idOrParams?: Params) => AxiosPromise);
+      first: (params?: DeepPartial<Params>) => AxiosPromise;
+      count: (params?: DeepPartial<Params>) => AxiosPromise;
+      ids: (params?: DeepPartial<Params>) => AxiosPromise;
     };
     rebind(
       getUrl: (url: string) => any
