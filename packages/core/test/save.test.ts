@@ -937,7 +937,7 @@ describe("saves to files", () => {
     expect(types).toMatchInlineSnapshot(`
       "import { Knex } from \\"knex\\";
 
-      type MaybeRaw<T> = {[K in keyof T]: T[K] | Knex.RawBuilder};declare module 'knex/types/tables' {
+      type MaybeRaw<T> = {[K in keyof T]: T[K] | Knex.Raw};declare module 'knex/types/tables' {
         interface Tables {
           \\"saveTestTable\\": Knex.CompositeTableType<
             SaveTestTableRow,

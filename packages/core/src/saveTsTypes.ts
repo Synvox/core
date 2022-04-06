@@ -22,7 +22,7 @@ export async function saveTsTypes(
 
   if (includeKnex) {
     types += `import { Knex } from "knex";\n\n`;
-    types += `type MaybeRaw<T> = {[K in keyof T]: T[K] | Knex.RawBuilder};`;
+    types += `type MaybeRaw<T> = {[K in keyof T]: T[K] | Knex.Raw};`;
     types += `declare module 'knex/types/tables' {\n`;
     types += `  interface Tables {\n`;
     for (let table of tables) {
