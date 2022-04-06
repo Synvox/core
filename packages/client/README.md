@@ -13,9 +13,7 @@ if (process.env.NODE_ENV !== "production") {
     await core.saveTsTypes(
       path.resolve(__dirname, "/project/client/types.ts"),
       {
-        includeLinks: false,
         includeRelations: true,
-        includeParams: true,
       }
     );
   });

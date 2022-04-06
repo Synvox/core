@@ -300,160 +300,7 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
-
-      export type TestId = number;
-      export type TestRow = {
-        id: TestId;
-        isBoolean: boolean;
-        numberCount: number;
-        text: string;
-        typeId: string;
-      };
-
-      export type TestLinks = {
-        _url: string;
-        _type: string;
-        _links: {
-          testSub: string;
-          testSubNullable: string;
-        };
-      };
-
-      export type Test = TestRow & TestLinks;
-      export type TestInsert = Optional<TestRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\"> & {_url: never, _links: never, _type: never};
-      export type TestUpdate = Partial<TestRow> & {_url: never, _links: never, _type: never};
-      export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
-
-      export type TestConfig = {
-        item: Test;
-        row: TestRow;
-        insert: TestInsert;
-        update: TestUpdate;
-        id: TestId;
-        idColumnName: \\"id\\";
-      }
-
-      export type TestNullableId = number;
-      export type TestNullableRow = {
-        id: TestNullableId;
-        isBoolean: boolean;
-        numberCount: number;
-        text: string;
-      };
-
-      export type TestNullableLinks = {
-        _url: string;
-        _type: string;
-        _links: {
-        };
-      };
-
-      export type TestNullable = TestNullableRow & TestNullableLinks;
-      export type TestNullableInsert = Optional<TestNullableRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\"> & {_url: never, _links: never, _type: never};
-      export type TestNullableUpdate = Partial<TestNullableRow> & {_url: never, _links: never, _type: never};
-      export type TestNullableWrite = TestNullableInsert | (TestNullableUpdate & { id: TestNullableId });
-
-      export type TestNullableConfig = {
-        item: TestNullable;
-        row: TestNullableRow;
-        insert: TestNullableInsert;
-        update: TestNullableUpdate;
-        id: TestNullableId;
-        idColumnName: \\"id\\";
-      }
-
-      export type TestSubId = number;
-      export type TestSubRow = {
-        id: TestSubId;
-        parentId: number;
-        arr: number[] | null;
-      };
-
-      export type TestSubLinks = {
-        _url: string;
-        _type: string;
-        _links: {
-          parent: string;
-        };
-      };
-
-      export type TestSub = TestSubRow & TestSubLinks;
-      export type TestSubInsert = Optional<TestSubRow, \\"id\\" | \\"parentId\\" | \\"arr\\"> & {_url: never, _links: never, _type: never};
-      export type TestSubUpdate = Partial<TestSubRow> & {_url: never, _links: never, _type: never};
-      export type TestSubWrite = TestSubInsert | (TestSubUpdate & { id: TestSubId });
-
-      export type TestSubConfig = {
-        item: TestSub;
-        row: TestSubRow;
-        insert: TestSubInsert;
-        update: TestSubUpdate;
-        id: TestSubId;
-        idColumnName: \\"id\\";
-      }
-
-      export type TestSubNullableId = number;
-      export type TestSubNullableRow = {
-        id: TestSubNullableId;
-        parentId: number | null;
-        arr: number[] | null;
-      };
-
-      export type TestSubNullableLinks = {
-        _url: string;
-        _type: string;
-        _links: {
-          parent?: string;
-        };
-      };
-
-      export type TestSubNullable = TestSubNullableRow & TestSubNullableLinks;
-      export type TestSubNullableInsert = Optional<TestSubNullableRow, \\"id\\" | \\"parentId\\" | \\"arr\\"> & {_url: never, _links: never, _type: never};
-      export type TestSubNullableUpdate = Partial<TestSubNullableRow> & {_url: never, _links: never, _type: never};
-      export type TestSubNullableWrite = TestSubNullableInsert | (TestSubNullableUpdate & { id: TestSubNullableId });
-
-      export type TestSubNullableConfig = {
-        item: TestSubNullable;
-        row: TestSubNullableRow;
-        insert: TestSubNullableInsert;
-        update: TestSubNullableUpdate;
-        id: TestSubNullableId;
-        idColumnName: \\"id\\";
-      }
-      "
-    `);
-  });
-
-  it("saves types without links", async () => {
-    const path = Path.resolve(__dirname, "./test.ignore2.ts");
-
-    const core = new Core(knex, () => ({}));
-
-    core.table({
-      schemaName: "saveTest",
-      tableName: "test",
-    });
-
-    core.table({
-      schemaName: "saveTest",
-      tableName: "testSub",
-    });
-
-    core.table({
-      schemaName: "saveTest",
-      tableName: "testNullable",
-    });
-
-    core.table({
-      schemaName: "saveTest",
-      tableName: "testSubNullable",
-    });
-
-    await core.saveTsTypes(path, { includeLinks: false });
-
-    const types = await fs.readFile(path, { encoding: "utf8" });
-    expect(types).toMatchInlineSnapshot(`
-      "type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
+      "type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
 
       export type TestId = number;
       export type TestRow = {
@@ -465,15 +312,12 @@ describe("saves to files", () => {
       };
 
       export type Test = TestRow;
-      export type TestInsert = Optional<TestRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">;
-      export type TestUpdate = Partial<TestRow>;
-      export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
-
       export type TestConfig = {
         item: Test;
         row: TestRow;
-        insert: TestInsert;
-        update: TestUpdate;
+        insert: DeepPartial<Test>;
+        update: DeepPartial<Test>;
+        params: any;
         id: TestId;
         idColumnName: \\"id\\";
       }
@@ -487,57 +331,48 @@ describe("saves to files", () => {
       };
 
       export type TestNullable = TestNullableRow;
-      export type TestNullableInsert = Optional<TestNullableRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">;
-      export type TestNullableUpdate = Partial<TestNullableRow>;
-      export type TestNullableWrite = TestNullableInsert | (TestNullableUpdate & { id: TestNullableId });
-
       export type TestNullableConfig = {
         item: TestNullable;
         row: TestNullableRow;
-        insert: TestNullableInsert;
-        update: TestNullableUpdate;
+        insert: DeepPartial<TestNullable>;
+        update: DeepPartial<TestNullable>;
+        params: any;
         id: TestNullableId;
         idColumnName: \\"id\\";
       }
 
       export type TestSubId = number;
       export type TestSubRow = {
+        arr: number[] | null;
         id: TestSubId;
         parentId: number;
-        arr: number[] | null;
       };
 
       export type TestSub = TestSubRow;
-      export type TestSubInsert = Optional<TestSubRow, \\"id\\" | \\"parentId\\" | \\"arr\\">;
-      export type TestSubUpdate = Partial<TestSubRow>;
-      export type TestSubWrite = TestSubInsert | (TestSubUpdate & { id: TestSubId });
-
       export type TestSubConfig = {
         item: TestSub;
         row: TestSubRow;
-        insert: TestSubInsert;
-        update: TestSubUpdate;
+        insert: DeepPartial<TestSub>;
+        update: DeepPartial<TestSub>;
+        params: any;
         id: TestSubId;
         idColumnName: \\"id\\";
       }
 
       export type TestSubNullableId = number;
       export type TestSubNullableRow = {
+        arr: number[] | null;
         id: TestSubNullableId;
         parentId: number | null;
-        arr: number[] | null;
       };
 
       export type TestSubNullable = TestSubNullableRow;
-      export type TestSubNullableInsert = Optional<TestSubNullableRow, \\"id\\" | \\"parentId\\" | \\"arr\\">;
-      export type TestSubNullableUpdate = Partial<TestSubNullableRow>;
-      export type TestSubNullableWrite = TestSubNullableInsert | (TestSubNullableUpdate & { id: TestSubNullableId });
-
       export type TestSubNullableConfig = {
         item: TestSubNullable;
         row: TestSubNullableRow;
-        insert: TestSubNullableInsert;
-        update: TestSubNullableUpdate;
+        insert: DeepPartial<TestSubNullable>;
+        update: DeepPartial<TestSubNullable>;
+        params: any;
         id: TestSubNullableId;
         idColumnName: \\"id\\";
       }
@@ -572,12 +407,11 @@ describe("saves to files", () => {
 
     await core.saveTsTypes(path, {
       includeRelations: true,
-      includeLinks: false,
     });
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
+      "type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
 
       export type TestId = number;
       export type TestRow = {
@@ -591,9 +425,6 @@ describe("saves to files", () => {
       export type TestRelations = {
       };
 
-      export type TestWriteRelations = ({ testSub?: TestSubWrite[] })&  
-      ({ testSubNullable?: TestSubNullableWrite[] });
-
       export type TestGetters = {
         testSub: TestSub[];
         testSubCount: number;
@@ -602,15 +433,12 @@ describe("saves to files", () => {
       };
 
       export type Test = TestRow & TestRelations & TestGetters;
-      export type TestInsert = Optional<TestRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\"> & TestWriteRelations;
-      export type TestUpdate = Partial<TestRow> & Partial<TestWriteRelations>;
-      export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
-
       export type TestConfig = {
         item: Test;
         row: TestRow;
-        insert: TestInsert;
-        update: TestUpdate;
+        insert: DeepPartial<Test>;
+        update: DeepPartial<Test>;
+        params: any;
         id: TestId;
         idColumnName: \\"id\\";
       }
@@ -626,81 +454,66 @@ describe("saves to files", () => {
       export type TestNullableRelations = {
       };
 
-      export type TestNullableWriteRelations = {};
-
       export type TestNullableGetters = {
       };
 
       export type TestNullable = TestNullableRow & TestNullableRelations & TestNullableGetters;
-      export type TestNullableInsert = Optional<TestNullableRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\"> & TestNullableWriteRelations;
-      export type TestNullableUpdate = Partial<TestNullableRow> & Partial<TestNullableWriteRelations>;
-      export type TestNullableWrite = TestNullableInsert | (TestNullableUpdate & { id: TestNullableId });
-
       export type TestNullableConfig = {
         item: TestNullable;
         row: TestNullableRow;
-        insert: TestNullableInsert;
-        update: TestNullableUpdate;
+        insert: DeepPartial<TestNullable>;
+        update: DeepPartial<TestNullable>;
+        params: any;
         id: TestNullableId;
         idColumnName: \\"id\\";
       }
 
       export type TestSubId = number;
       export type TestSubRow = {
+        arr: number[] | null;
         id: TestSubId;
         parentId: number;
-        arr: number[] | null;
       };
 
       export type TestSubRelations = {
         parent: Test;
       };
 
-      export type TestSubWriteRelations = ({ parent: TestWrite } | { parentId: TestId });
-
       export type TestSubGetters = {
       };
 
       export type TestSub = TestSubRow & TestSubRelations & TestSubGetters;
-      export type TestSubInsert = Optional<TestSubRow, \\"id\\" | \\"parentId\\" | \\"arr\\"> & TestSubWriteRelations;
-      export type TestSubUpdate = Partial<TestSubRow> & Partial<TestSubWriteRelations>;
-      export type TestSubWrite = TestSubInsert | (TestSubUpdate & { id: TestSubId });
-
       export type TestSubConfig = {
         item: TestSub;
         row: TestSubRow;
-        insert: TestSubInsert;
-        update: TestSubUpdate;
+        insert: DeepPartial<TestSub>;
+        update: DeepPartial<TestSub>;
+        params: any;
         id: TestSubId;
         idColumnName: \\"id\\";
       }
 
       export type TestSubNullableId = number;
       export type TestSubNullableRow = {
+        arr: number[] | null;
         id: TestSubNullableId;
         parentId: number | null;
-        arr: number[] | null;
       };
 
       export type TestSubNullableRelations = {
         parent?: Test;
       };
 
-      export type TestSubNullableWriteRelations = ({ parent: TestWrite } | { parentId?: TestId  | null});
-
       export type TestSubNullableGetters = {
       };
 
       export type TestSubNullable = TestSubNullableRow & TestSubNullableRelations & TestSubNullableGetters;
-      export type TestSubNullableInsert = Optional<TestSubNullableRow, \\"id\\" | \\"parentId\\" | \\"arr\\"> & TestSubNullableWriteRelations;
-      export type TestSubNullableUpdate = Partial<TestSubNullableRow> & Partial<TestSubNullableWriteRelations>;
-      export type TestSubNullableWrite = TestSubNullableInsert | (TestSubNullableUpdate & { id: TestSubNullableId });
-
       export type TestSubNullableConfig = {
         item: TestSubNullable;
         row: TestSubNullableRow;
-        insert: TestSubNullableInsert;
-        update: TestSubNullableUpdate;
+        insert: DeepPartial<TestSubNullable>;
+        update: DeepPartial<TestSubNullable>;
+        params: any;
         id: TestSubNullableId;
         idColumnName: \\"id\\";
       }
@@ -741,40 +554,11 @@ describe("saves to files", () => {
 
     await core.saveTsTypes(path, {
       includeRelations: true,
-      includeLinks: false,
-      includeParams: true,
     });
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
-
-      type CollectionParams = {
-        cursor: string;
-        page: number;
-        limit: number;
-      };
-
-      type ColumnParam<Name extends string, Type> = Record<
-        | Name
-        | \`\${Name}.not\`
-        | \`\${Name}.eq\`
-        | \`\${Name}.not.eq\`
-        | \`\${Name}.neq\`
-        | \`\${Name}.lt\`
-        | \`\${Name}.not.lt\`
-        | \`\${Name}.lte\`
-        | \`\${Name}.not.lte\`
-        | \`\${Name}.gt\`
-        | \`\${Name}.not.gt\`
-        | \`\${Name}.gte\`
-        | \`\${Name}.not.gte\`,
-        Type
-      > &
-        (Type extends string ? Record<\`\${Name}.fts\`, Type> : {}) &
-        (Type extends null ? Record<\`\${Name}.null\` | \`\${Name}.not.null\`, any> : {});
-
-      type SortParam<T> = Extract<keyof T, string> | \`-\${Extract<keyof T, string>}\`
+      "type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
 
       export type TestId = number;
       export type TestRow = {
@@ -788,9 +572,6 @@ describe("saves to files", () => {
       export type TestRelations = {
       };
 
-      export type TestWriteRelations = ({ testSub?: TestSubWrite[] })&  
-      ({ testSubNullable?: TestSubNullableWrite[] });
-
       export type TestGetters = {
         testSub: TestSub[];
         testSubCount: number;
@@ -798,34 +579,13 @@ describe("saves to files", () => {
         testSubNullableCount: number;
       };
 
-      export type TestFilters = ColumnParam<\\"id\\", TestId | TestId[]> &
-        ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
-        ColumnParam<\\"numberCount\\", number | number[]> &
-        ColumnParam<\\"text\\", string | string[]> &
-        ColumnParam<\\"typeId\\", string | string[]> & {
-          and: TestFilters | TestFilters[];
-          \\"not.and\\": TestFilters | TestFilters[];
-          or: TestFilters | TestFilters[];
-          \\"not.or\\": TestFilters | TestFilters[];
-        };
-
-      export type TestParams = TestFilters &
-        CollectionParams & {
-          include: 'testSub' | 'testSubNullable' | 'testSubCount' | 'testSubNullableCount' | ('testSub' | 'testSubNullable' | 'testSubCount' | 'testSubNullableCount')[] | { testSub: true | TestSubParams['include']; testSubNullable: true | TestSubNullableParams['include']; testSubCount: true; testSubNullableCount: true };
-          sort: SortParam<Test> | SortParam<Test>[];
-        };
-
       export type Test = TestRow & TestRelations & TestGetters;
-      export type TestInsert = Optional<TestRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\"> & TestWriteRelations;
-      export type TestUpdate = Partial<TestRow> & Partial<TestWriteRelations>;
-      export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
-
       export type TestConfig = {
         item: Test;
         row: TestRow;
-        params: TestParams;
-        insert: TestInsert;
-        update: TestUpdate;
+        insert: DeepPartial<Test>;
+        update: DeepPartial<Test>;
+        params: any;
         id: TestId;
         idColumnName: \\"id\\";
       }
@@ -841,134 +601,66 @@ describe("saves to files", () => {
       export type TestNullableRelations = {
       };
 
-      export type TestNullableWriteRelations = {};
-
       export type TestNullableGetters = {
       };
 
-      export type TestNullableFilters = ColumnParam<\\"id\\", TestNullableId | TestNullableId[]> &
-        ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
-        ColumnParam<\\"numberCount\\", number | number[]> &
-        ColumnParam<\\"text\\", string | string[]> & {
-          and: TestNullableFilters | TestNullableFilters[];
-          \\"not.and\\": TestNullableFilters | TestNullableFilters[];
-          or: TestNullableFilters | TestNullableFilters[];
-          \\"not.or\\": TestNullableFilters | TestNullableFilters[];
-        };
-
-      export type TestNullableParams = (TestNullableFilters | { id: \\"me\\" }) &
-        CollectionParams & {
-          sort: SortParam<TestNullable> | SortParam<TestNullable>[];
-        };
-
       export type TestNullable = TestNullableRow & TestNullableRelations & TestNullableGetters;
-      export type TestNullableInsert = Optional<TestNullableRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\"> & TestNullableWriteRelations;
-      export type TestNullableUpdate = Partial<TestNullableRow> & Partial<TestNullableWriteRelations>;
-      export type TestNullableWrite = TestNullableInsert | (TestNullableUpdate & { id: TestNullableId });
-
       export type TestNullableConfig = {
         item: TestNullable;
         row: TestNullableRow;
-        params: TestNullableParams;
-        insert: TestNullableInsert;
-        update: TestNullableUpdate;
+        insert: DeepPartial<TestNullable>;
+        update: DeepPartial<TestNullable>;
+        params: any;
         id: TestNullableId;
         idColumnName: \\"id\\";
       }
 
       export type TestSubId = number;
       export type TestSubRow = {
+        arr: number[] | null;
         id: TestSubId;
         parentId: number;
-        arr: number[] | null;
       };
 
       export type TestSubRelations = {
         parent: Test;
       };
 
-      export type TestSubWriteRelations = ({ parent: TestWrite } | { parentId: TestId });
-
       export type TestSubGetters = {
       };
 
-      export type TestSubFilters = ColumnParam<\\"id\\", TestSubId | TestSubId[]> &
-        ColumnParam<\\"parentId\\", number | number[]> &
-        ColumnParam<\\"arr\\", number[] | null> & {
-          parent: TestFilters;
-          \\"parent.not\\": TestFilters;
-          and: TestSubFilters | TestSubFilters[];
-          \\"not.and\\": TestSubFilters | TestSubFilters[];
-          or: TestSubFilters | TestSubFilters[];
-          \\"not.or\\": TestSubFilters | TestSubFilters[];
-        };
-
-      export type TestSubParams = TestSubFilters &
-        CollectionParams & {
-          thing: unknown;
-          include: 'parent' | ('parent')[] | { parent: true | TestParams['include'] };
-          sort: SortParam<TestSub> | SortParam<TestSub>[];
-        };
-
       export type TestSub = TestSubRow & TestSubRelations & TestSubGetters;
-      export type TestSubInsert = Optional<TestSubRow, \\"id\\" | \\"parentId\\" | \\"arr\\"> & TestSubWriteRelations;
-      export type TestSubUpdate = Partial<TestSubRow> & Partial<TestSubWriteRelations>;
-      export type TestSubWrite = TestSubInsert | (TestSubUpdate & { id: TestSubId });
-
       export type TestSubConfig = {
         item: TestSub;
         row: TestSubRow;
-        params: TestSubParams;
-        insert: TestSubInsert;
-        update: TestSubUpdate;
+        insert: DeepPartial<TestSub>;
+        update: DeepPartial<TestSub>;
+        params: any;
         id: TestSubId;
         idColumnName: \\"id\\";
       }
 
       export type TestSubNullableId = number;
       export type TestSubNullableRow = {
+        arr: number[] | null;
         id: TestSubNullableId;
         parentId: number | null;
-        arr: number[] | null;
       };
 
       export type TestSubNullableRelations = {
         parent?: Test;
       };
 
-      export type TestSubNullableWriteRelations = ({ parent: TestWrite } | { parentId?: TestId  | null});
-
       export type TestSubNullableGetters = {
       };
 
-      export type TestSubNullableFilters = ColumnParam<\\"id\\", TestSubNullableId | TestSubNullableId[]> &
-        ColumnParam<\\"parentId\\", number | number[] | null> &
-        ColumnParam<\\"arr\\", number[] | null> & {
-          parent: TestFilters;
-          \\"parent.not\\": TestFilters;
-          and: TestSubNullableFilters | TestSubNullableFilters[];
-          \\"not.and\\": TestSubNullableFilters | TestSubNullableFilters[];
-          or: TestSubNullableFilters | TestSubNullableFilters[];
-          \\"not.or\\": TestSubNullableFilters | TestSubNullableFilters[];
-        };
-
-      export type TestSubNullableParams = TestSubNullableFilters &
-        CollectionParams & {
-          include: 'parent' | ('parent')[] | { parent: true | TestParams['include'] };
-          sort: SortParam<TestSubNullable> | SortParam<TestSubNullable>[];
-        };
-
       export type TestSubNullable = TestSubNullableRow & TestSubNullableRelations & TestSubNullableGetters;
-      export type TestSubNullableInsert = Optional<TestSubNullableRow, \\"id\\" | \\"parentId\\" | \\"arr\\"> & TestSubNullableWriteRelations;
-      export type TestSubNullableUpdate = Partial<TestSubNullableRow> & Partial<TestSubNullableWriteRelations>;
-      export type TestSubNullableWrite = TestSubNullableInsert | (TestSubNullableUpdate & { id: TestSubNullableId });
-
       export type TestSubNullableConfig = {
         item: TestSubNullable;
         row: TestSubNullableRow;
-        params: TestSubNullableParams;
-        insert: TestSubNullableInsert;
-        update: TestSubNullableUpdate;
+        insert: DeepPartial<TestSubNullable>;
+        update: DeepPartial<TestSubNullable>;
+        params: any;
         id: TestSubNullableId;
         idColumnName: \\"id\\";
       }
@@ -996,40 +688,11 @@ describe("saves to files", () => {
 
     await core.saveTsTypes(path, {
       includeRelations: true,
-      includeLinks: false,
-      includeParams: true,
     });
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
-
-      type CollectionParams = {
-        cursor: string;
-        page: number;
-        limit: number;
-      };
-
-      type ColumnParam<Name extends string, Type> = Record<
-        | Name
-        | \`\${Name}.not\`
-        | \`\${Name}.eq\`
-        | \`\${Name}.not.eq\`
-        | \`\${Name}.neq\`
-        | \`\${Name}.lt\`
-        | \`\${Name}.not.lt\`
-        | \`\${Name}.lte\`
-        | \`\${Name}.not.lte\`
-        | \`\${Name}.gt\`
-        | \`\${Name}.not.gt\`
-        | \`\${Name}.gte\`
-        | \`\${Name}.not.gte\`,
-        Type
-      > &
-        (Type extends string ? Record<\`\${Name}.fts\`, Type> : {}) &
-        (Type extends null ? Record<\`\${Name}.null\` | \`\${Name}.not.null\`, any> : {});
-
-      type SortParam<T> = Extract<keyof T, string> | \`-\${Extract<keyof T, string>}\`
+      "type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
 
       export type TestId = number;
       export type TestRow = {
@@ -1043,41 +706,18 @@ describe("saves to files", () => {
       export type TestRelations = {
       };
 
-      export type TestWriteRelations = {};
-
       export type TestGetters = {
         getOtherThing: any;
         getThing: any;
       };
 
-      export type TestFilters = ColumnParam<\\"id\\", TestId | TestId[]> &
-        ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
-        ColumnParam<\\"numberCount\\", number | number[]> &
-        ColumnParam<\\"text\\", string | string[]> &
-        ColumnParam<\\"typeId\\", string | string[]> & {
-          and: TestFilters | TestFilters[];
-          \\"not.and\\": TestFilters | TestFilters[];
-          or: TestFilters | TestFilters[];
-          \\"not.or\\": TestFilters | TestFilters[];
-        };
-
-      export type TestParams = TestFilters &
-        CollectionParams & {
-          include: 'getThing' | 'getOtherThing' | ('getThing' | 'getOtherThing')[] | { getThing: true; getOtherThing: true };
-          sort: SortParam<Test> | SortParam<Test>[];
-        };
-
       export type Test = TestRow & TestRelations & TestGetters;
-      export type TestInsert = Optional<TestRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\"> & TestWriteRelations;
-      export type TestUpdate = Partial<TestRow> & Partial<TestWriteRelations>;
-      export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
-
       export type TestConfig = {
         item: Test;
         row: TestRow;
-        params: TestParams;
-        insert: TestInsert;
-        update: TestUpdate;
+        insert: DeepPartial<Test>;
+        update: DeepPartial<Test>;
+        params: any;
         id: TestId;
         idColumnName: \\"id\\";
       }
@@ -1102,40 +742,11 @@ describe("saves to files", () => {
 
     await core.saveTsTypes(path, {
       includeRelations: true,
-      includeLinks: false,
-      includeParams: true,
     });
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
-
-      type CollectionParams = {
-        cursor: string;
-        page: number;
-        limit: number;
-      };
-
-      type ColumnParam<Name extends string, Type> = Record<
-        | Name
-        | \`\${Name}.not\`
-        | \`\${Name}.eq\`
-        | \`\${Name}.not.eq\`
-        | \`\${Name}.neq\`
-        | \`\${Name}.lt\`
-        | \`\${Name}.not.lt\`
-        | \`\${Name}.lte\`
-        | \`\${Name}.not.lte\`
-        | \`\${Name}.gt\`
-        | \`\${Name}.not.gt\`
-        | \`\${Name}.gte\`
-        | \`\${Name}.not.gte\`,
-        Type
-      > &
-        (Type extends string ? Record<\`\${Name}.fts\`, Type> : {}) &
-        (Type extends null ? Record<\`\${Name}.null\` | \`\${Name}.not.null\`, any> : {});
-
-      type SortParam<T> = Extract<keyof T, string> | \`-\${Extract<keyof T, string>}\`
+      "type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
 
       export type TestId = number;
       export type TestRow = {
@@ -1150,41 +761,16 @@ describe("saves to files", () => {
         type: Type;
       };
 
-      export type TestWriteRelations = ({ type: TypeWrite } | { typeId: TypeId });
-
       export type TestGetters = {
       };
 
-      export type TestFilters = ColumnParam<\\"id\\", TestId | TestId[]> &
-        ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
-        ColumnParam<\\"numberCount\\", number | number[]> &
-        ColumnParam<\\"text\\", string | string[]> &
-        ColumnParam<\\"typeId\\", string | string[]> & {
-          type: TypeFilters;
-          \\"type.not\\": TypeFilters;
-          and: TestFilters | TestFilters[];
-          \\"not.and\\": TestFilters | TestFilters[];
-          or: TestFilters | TestFilters[];
-          \\"not.or\\": TestFilters | TestFilters[];
-        };
-
-      export type TestParams = TestFilters &
-        CollectionParams & {
-          include: 'type' | ('type')[] | { type: true | TypeParams['include'] };
-          sort: SortParam<Test> | SortParam<Test>[];
-        };
-
       export type Test = TestRow & TestRelations & TestGetters;
-      export type TestInsert = Optional<TestRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\" | \\"typeId\\"> & TestWriteRelations;
-      export type TestUpdate = Partial<TestRow> & Partial<TestWriteRelations>;
-      export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
-
       export type TestConfig = {
         item: Test;
         row: TestRow;
-        params: TestParams;
-        insert: TestInsert;
-        update: TestUpdate;
+        insert: DeepPartial<Test>;
+        update: DeepPartial<Test>;
+        params: any;
         id: TestId;
         idColumnName: \\"id\\";
       }
@@ -1197,37 +783,18 @@ describe("saves to files", () => {
       export type TypeRelations = {
       };
 
-      export type TypeWriteRelations = ({ test?: TestWrite[] });
-
       export type TypeGetters = {
         test: Test[];
         testCount: number;
       };
 
-      export type TypeFilters = ColumnParam<\\"id\\", TypeId | TypeId[]> & {
-          and: TypeFilters | TypeFilters[];
-          \\"not.and\\": TypeFilters | TypeFilters[];
-          or: TypeFilters | TypeFilters[];
-          \\"not.or\\": TypeFilters | TypeFilters[];
-        };
-
-      export type TypeParams = TypeFilters &
-        CollectionParams & {
-          include: 'test' | 'testCount' | ('test' | 'testCount')[] | { test: true | TestParams['include']; testCount: true };
-          sort: SortParam<Type> | SortParam<Type>[];
-        };
-
       export type Type = TypeRow & TypeRelations & TypeGetters;
-      export type TypeInsert = Type & TypeWriteRelations;
-      export type TypeUpdate = Partial<TypeRow> & Partial<TypeWriteRelations>;
-      export type TypeWrite = TypeInsert | (TypeUpdate & { id: TypeId });
-
       export type TypeConfig = {
         item: Type;
         row: TypeRow;
-        params: TypeParams;
-        insert: TypeInsert;
-        update: TypeUpdate;
+        insert: DeepPartial<Type>;
+        update: DeepPartial<Type>;
+        params: any;
         id: TypeId;
         idColumnName: \\"id\\";
       }
@@ -1254,40 +821,11 @@ describe("saves to files", () => {
 
     await core.saveTsTypes(path, {
       includeRelations: true,
-      includeLinks: false,
-      includeParams: true,
     });
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
-
-      type CollectionParams = {
-        cursor: string;
-        page: number;
-        limit: number;
-      };
-
-      type ColumnParam<Name extends string, Type> = Record<
-        | Name
-        | \`\${Name}.not\`
-        | \`\${Name}.eq\`
-        | \`\${Name}.not.eq\`
-        | \`\${Name}.neq\`
-        | \`\${Name}.lt\`
-        | \`\${Name}.not.lt\`
-        | \`\${Name}.lte\`
-        | \`\${Name}.not.lte\`
-        | \`\${Name}.gt\`
-        | \`\${Name}.not.gt\`
-        | \`\${Name}.gte\`
-        | \`\${Name}.not.gte\`,
-        Type
-      > &
-        (Type extends string ? Record<\`\${Name}.fts\`, Type> : {}) &
-        (Type extends null ? Record<\`\${Name}.null\` | \`\${Name}.not.null\`, any> : {});
-
-      type SortParam<T> = Extract<keyof T, string> | \`-\${Extract<keyof T, string>}\`
+      "type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
 
       export type TestId = number;
       export type TestRow = {
@@ -1302,41 +840,16 @@ describe("saves to files", () => {
         type: Type;
       };
 
-      export type TestWriteRelations = ({ type: TypeWrite } | { typeId: TypeId });
-
       export type TestGetters = {
       };
 
-      export type TestFilters = ColumnParam<\\"id\\", TestId | TestId[]> &
-        ColumnParam<\\"isBoolean\\", boolean | boolean[]> &
-        ColumnParam<\\"numberCount\\", number | number[]> &
-        ColumnParam<\\"text\\", string | string[]> &
-        ColumnParam<\\"typeId\\", string | string[]> & {
-          type: TypeFilters;
-          \\"type.not\\": TypeFilters;
-          and: TestFilters | TestFilters[];
-          \\"not.and\\": TestFilters | TestFilters[];
-          or: TestFilters | TestFilters[];
-          \\"not.or\\": TestFilters | TestFilters[];
-        };
-
-      export type TestParams = TestFilters &
-        CollectionParams & {
-          include: 'type' | ('type')[] | { type: true | TypeParams['include'] };
-          sort: SortParam<Test> | SortParam<Test>[];
-        };
-
       export type Test = TestRow & TestRelations & TestGetters;
-      export type TestInsert = Optional<TestRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\" | \\"typeId\\"> & TestWriteRelations;
-      export type TestUpdate = Partial<TestRow> & Partial<TestWriteRelations>;
-      export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
-
       export type TestConfig = {
         item: Test;
         row: TestRow;
-        params: TestParams;
-        insert: TestInsert;
-        update: TestUpdate;
+        insert: DeepPartial<Test>;
+        update: DeepPartial<Test>;
+        params: any;
         id: TestId;
         idColumnName: \\"id\\";
       }
@@ -1349,37 +862,18 @@ describe("saves to files", () => {
       export type TypeRelations = {
       };
 
-      export type TypeWriteRelations = ({ test?: TestWrite[] });
-
       export type TypeGetters = {
         test: Test[];
         testCount: number;
       };
 
-      export type TypeFilters = ColumnParam<\\"id\\", TypeId | TypeId[]> & {
-          and: TypeFilters | TypeFilters[];
-          \\"not.and\\": TypeFilters | TypeFilters[];
-          or: TypeFilters | TypeFilters[];
-          \\"not.or\\": TypeFilters | TypeFilters[];
-        };
-
-      export type TypeParams = TypeFilters &
-        CollectionParams & {
-          include: 'test' | 'testCount' | ('test' | 'testCount')[] | { test: true | TestParams['include']; testCount: true };
-          sort: SortParam<Type> | SortParam<Type>[];
-        };
-
       export type Type = TypeRow & TypeRelations & TypeGetters;
-      export type TypeInsert = Type & TypeWriteRelations;
-      export type TypeUpdate = Partial<TypeRow> & Partial<TypeWriteRelations>;
-      export type TypeWrite = TypeInsert | (TypeUpdate & { id: TypeId });
-
       export type TypeConfig = {
         item: Type;
         row: TypeRow;
-        params: TypeParams;
-        insert: TypeInsert;
-        update: TypeUpdate;
+        insert: DeepPartial<Type>;
+        update: DeepPartial<Type>;
+        params: any;
         id: TypeId;
         idColumnName: \\"id\\";
       }
@@ -1435,7 +929,6 @@ describe("saves to files", () => {
     });
 
     await core.saveTsTypes(path, {
-      includeLinks: false,
       includeKnex: true,
       useJsonTypes: false,
     });
@@ -1444,65 +937,62 @@ describe("saves to files", () => {
     expect(types).toMatchInlineSnapshot(`
       "import { Knex } from \\"knex\\";
 
-      declare module 'knex/types/tables' {
+      type MaybeRaw<T> = {[K in keyof T]: T[K] | Knex.RawBuilder};declare module 'knex/types/tables' {
         interface Tables {
           \\"saveTestTable\\": Knex.CompositeTableType<
-            SaveTestTable,
-            SaveTestTableInsert,
-            SaveTestTableUpdate
+            SaveTestTableRow,
+            MaybeRaw<Partial<SaveTestTableRow>>,
+            MaybeRaw<Partial<SaveTestTableRow>>
           >;
           \\"public.saveTestTable\\": Knex.CompositeTableType<
-            SaveTestTable,
-            SaveTestTableInsert,
-            SaveTestTableUpdate
+            SaveTestTableRow,
+            MaybeRaw<Partial<SaveTestTableRow>>,
+            MaybeRaw<Partial<SaveTestTableRow>>
           >;
           \\"saveTest.lookupTable\\": Knex.CompositeTableType<
-            LookupTable,
-            LookupTableInsert,
-            LookupTableUpdate
+            LookupTableRow,
+            MaybeRaw<Partial<LookupTableRow>>,
+            MaybeRaw<Partial<LookupTableRow>>
           >;
           \\"saveTest.test\\": Knex.CompositeTableType<
-            Test,
-            TestInsert,
-            TestUpdate
+            TestRow,
+            MaybeRaw<Partial<TestRow>>,
+            MaybeRaw<Partial<TestRow>>
           >;
           \\"saveTest.testNullable\\": Knex.CompositeTableType<
-            TestNullable,
-            TestNullableInsert,
-            TestNullableUpdate
+            TestNullableRow,
+            MaybeRaw<Partial<TestNullableRow>>,
+            MaybeRaw<Partial<TestNullableRow>>
           >;
           \\"saveTest.testSub\\": Knex.CompositeTableType<
-            TestSub,
-            TestSubInsert,
-            TestSubUpdate
+            TestSubRow,
+            MaybeRaw<Partial<TestSubRow>>,
+            MaybeRaw<Partial<TestSubRow>>
           >;
           \\"saveTest.testSubNullable\\": Knex.CompositeTableType<
-            TestSubNullable,
-            TestSubNullableInsert,
-            TestSubNullableUpdate
+            TestSubNullableRow,
+            MaybeRaw<Partial<TestSubNullableRow>>,
+            MaybeRaw<Partial<TestSubNullableRow>>
           >;
         }
       }
 
-      type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
+      type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
 
       export type SaveTestTableId = number;
       export type SaveTestTableRow = {
-        id: SaveTestTableId;
         createdAt: Date;
+        id: SaveTestTableId;
         numberResponse: number;
       };
 
       export type SaveTestTable = SaveTestTableRow;
-      export type SaveTestTableInsert = Optional<SaveTestTableRow, \\"id\\">;
-      export type SaveTestTableUpdate = Partial<SaveTestTableRow>;
-      export type SaveTestTableWrite = SaveTestTableInsert | (SaveTestTableUpdate & { id: SaveTestTableId });
-
       export type SaveTestTableConfig = {
         item: SaveTestTable;
         row: SaveTestTableRow;
-        insert: SaveTestTableInsert;
-        update: SaveTestTableUpdate;
+        insert: DeepPartial<SaveTestTable>;
+        update: DeepPartial<SaveTestTable>;
+        params: any;
         id: SaveTestTableId;
         idColumnName: \\"id\\";
       }
@@ -1513,15 +1003,12 @@ describe("saves to files", () => {
       };
 
       export type LookupTable = LookupTableRow;
-      export type LookupTableInsert = LookupTable;
-      export type LookupTableUpdate = Partial<LookupTableRow>;
-      export type LookupTableWrite = LookupTableInsert | (LookupTableUpdate & { id: LookupTableId });
-
       export type LookupTableConfig = {
         item: LookupTable;
         row: LookupTableRow;
-        insert: LookupTableInsert;
-        update: LookupTableUpdate;
+        insert: DeepPartial<LookupTable>;
+        update: DeepPartial<LookupTable>;
+        params: any;
         id: LookupTableId;
         idColumnName: \\"id\\";
       }
@@ -1536,15 +1023,12 @@ describe("saves to files", () => {
       };
 
       export type Test = TestRow;
-      export type TestInsert = Optional<TestRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">;
-      export type TestUpdate = Partial<TestRow>;
-      export type TestWrite = TestInsert | (TestUpdate & { id: TestId });
-
       export type TestConfig = {
         item: Test;
         row: TestRow;
-        insert: TestInsert;
-        update: TestUpdate;
+        insert: DeepPartial<Test>;
+        update: DeepPartial<Test>;
+        params: any;
         id: TestId;
         idColumnName: \\"id\\";
       }
@@ -1558,57 +1042,48 @@ describe("saves to files", () => {
       };
 
       export type TestNullable = TestNullableRow;
-      export type TestNullableInsert = Optional<TestNullableRow, \\"id\\" | \\"isBoolean\\" | \\"numberCount\\" | \\"text\\">;
-      export type TestNullableUpdate = Partial<TestNullableRow>;
-      export type TestNullableWrite = TestNullableInsert | (TestNullableUpdate & { id: TestNullableId });
-
       export type TestNullableConfig = {
         item: TestNullable;
         row: TestNullableRow;
-        insert: TestNullableInsert;
-        update: TestNullableUpdate;
+        insert: DeepPartial<TestNullable>;
+        update: DeepPartial<TestNullable>;
+        params: any;
         id: TestNullableId;
         idColumnName: \\"id\\";
       }
 
       export type TestSubId = number;
       export type TestSubRow = {
+        arr: number[] | null;
         id: TestSubId;
         parentId: number;
-        arr: number[] | null;
       };
 
       export type TestSub = TestSubRow;
-      export type TestSubInsert = Optional<TestSubRow, \\"id\\" | \\"parentId\\" | \\"arr\\">;
-      export type TestSubUpdate = Partial<TestSubRow>;
-      export type TestSubWrite = TestSubInsert | (TestSubUpdate & { id: TestSubId });
-
       export type TestSubConfig = {
         item: TestSub;
         row: TestSubRow;
-        insert: TestSubInsert;
-        update: TestSubUpdate;
+        insert: DeepPartial<TestSub>;
+        update: DeepPartial<TestSub>;
+        params: any;
         id: TestSubId;
         idColumnName: \\"id\\";
       }
 
       export type TestSubNullableId = number;
       export type TestSubNullableRow = {
+        arr: number[] | null;
         id: TestSubNullableId;
         parentId: number | null;
-        arr: number[] | null;
       };
 
       export type TestSubNullable = TestSubNullableRow;
-      export type TestSubNullableInsert = Optional<TestSubNullableRow, \\"id\\" | \\"parentId\\" | \\"arr\\">;
-      export type TestSubNullableUpdate = Partial<TestSubNullableRow>;
-      export type TestSubNullableWrite = TestSubNullableInsert | (TestSubNullableUpdate & { id: TestSubNullableId });
-
       export type TestSubNullableConfig = {
         item: TestSubNullable;
         row: TestSubNullableRow;
-        insert: TestSubNullableInsert;
-        update: TestSubNullableUpdate;
+        insert: DeepPartial<TestSubNullable>;
+        update: DeepPartial<TestSubNullable>;
+        params: any;
         id: TestSubNullableId;
         idColumnName: \\"id\\";
       }
@@ -1635,40 +1110,11 @@ describe("saves to files", () => {
 
     await core.saveTsTypes(path, {
       includeRelations: true,
-      includeLinks: false,
-      includeParams: true,
     });
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "type Optional<T, K extends keyof T> = Omit<T, K> & Partial<T>;
-
-      type CollectionParams = {
-        cursor: string;
-        page: number;
-        limit: number;
-      };
-
-      type ColumnParam<Name extends string, Type> = Record<
-        | Name
-        | \`\${Name}.not\`
-        | \`\${Name}.eq\`
-        | \`\${Name}.not.eq\`
-        | \`\${Name}.neq\`
-        | \`\${Name}.lt\`
-        | \`\${Name}.not.lt\`
-        | \`\${Name}.lte\`
-        | \`\${Name}.not.lte\`
-        | \`\${Name}.gt\`
-        | \`\${Name}.not.gt\`
-        | \`\${Name}.gte\`
-        | \`\${Name}.not.gte\`,
-        Type
-      > &
-        (Type extends string ? Record<\`\${Name}.fts\`, Type> : {}) &
-        (Type extends null ? Record<\`\${Name}.null\` | \`\${Name}.not.null\`, any> : {});
-
-      type SortParam<T> = Extract<keyof T, string> | \`-\${Extract<keyof T, string>}\`
+      "type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
 
       export type RecursiveId = number;
       export type RecursiveRow = {
@@ -1680,41 +1126,18 @@ describe("saves to files", () => {
         parent?: Recursive;
       };
 
-      export type RecursiveWriteRelations = ({ parent: RecursiveWrite } | { parentId?: RecursiveId  | null})&  
-      ({ recursive?: RecursiveWrite[] });
-
       export type RecursiveGetters = {
         recursive: Recursive[];
         recursiveCount: number;
       };
 
-      export type RecursiveFilters = ColumnParam<\\"id\\", RecursiveId | RecursiveId[]> &
-        ColumnParam<\\"parentId\\", RecursiveId | RecursiveId[] | null> & {
-          parent: RecursiveFilters;
-          \\"parent.not\\": RecursiveFilters;
-          and: RecursiveFilters | RecursiveFilters[];
-          \\"not.and\\": RecursiveFilters | RecursiveFilters[];
-          or: RecursiveFilters | RecursiveFilters[];
-          \\"not.or\\": RecursiveFilters | RecursiveFilters[];
-        };
-
-      export type RecursiveParams = RecursiveFilters &
-        CollectionParams & {
-          include: 'recursive' | 'recursiveCount' | 'parent' | ('recursive' | 'recursiveCount' | 'parent')[] | { recursive: true | RecursiveParams['include']; recursiveCount: true; parent: true | RecursiveParams['include'] };
-          sort: SortParam<Recursive> | SortParam<Recursive>[];
-        };
-
       export type Recursive = RecursiveRow & RecursiveRelations & RecursiveGetters;
-      export type RecursiveInsert = Optional<RecursiveRow, \\"id\\" | \\"parentId\\"> & RecursiveWriteRelations;
-      export type RecursiveUpdate = Partial<RecursiveRow> & Partial<RecursiveWriteRelations>;
-      export type RecursiveWrite = RecursiveInsert | (RecursiveUpdate & { id: RecursiveId });
-
       export type RecursiveConfig = {
         item: Recursive;
         row: RecursiveRow;
-        params: RecursiveParams;
-        insert: RecursiveInsert;
-        update: RecursiveUpdate;
+        insert: DeepPartial<Recursive>;
+        update: DeepPartial<Recursive>;
+        params: any;
         id: RecursiveId;
         idColumnName: \\"id\\";
       }
