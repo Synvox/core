@@ -49,7 +49,7 @@ export async function saveTsTypes(
       (column) => column.name === table.idColumnName
     )!;
 
-    const getDataType = (column: Column) => {
+    const getDataType = (column: Column, required = false) => {
       const columnName = column.name;
       let type = column.type;
       let array = false;
@@ -84,12 +84,15 @@ export async function saveTsTypes(
         if (array) dataType += "[]";
       }
 
-      if (column.nullable) dataType += " | null";
+      if (column.nullable && !required) dataType += " | null";
 
       return dataType;
     };
 
-    types += `export type ${table.className}Id = ${getDataType(idColumn)};\n`;
+    types += `export type ${table.className}Id = ${getDataType(
+      idColumn,
+      true
+    )};\n`;
     types += `export type ${table.className}Row = {\n`;
 
     for (let column of columns) {
