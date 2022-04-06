@@ -113,7 +113,7 @@ export async function saveTsTypes(
           relation: { columnName: column },
           table,
         },
-      ] of Object.entries(hasOne)) {
+      ] of Object.entries(hasOne).sort(([a], [b]) => a.localeCompare(b))) {
         types += `  ${key}${rawColumns[column].nullable ? "?" : ""}: ${
           table.className
         }`;
@@ -124,20 +124,28 @@ export async function saveTsTypes(
 
       types += `export type ${table.className}Getters = {\n`;
 
-      for (let [key, { table }] of Object.entries(hasMany)) {
+      for (let [key, { table }] of Object.entries(hasMany).sort(([a], [b]) =>
+        a.localeCompare(b)
+      )) {
         types += `  ${key}: ${table.className}[];\n`;
         types += `  ${key}Count: number;\n`;
       }
 
-      for (let key of Object.keys(table.eagerGetters)) {
+      for (let key of Object.keys(table.eagerGetters).sort((a, b) =>
+        a.localeCompare(b)
+      )) {
         types += `  ${key}: any;\n`;
       }
 
-      for (let key of Object.keys(table.getters)) {
+      for (let key of Object.keys(table.getters).sort((a, b) =>
+        a.localeCompare(b)
+      )) {
         types += `  ${key}: any;\n`;
       }
 
-      for (let key of Object.keys(table.setters)) {
+      for (let key of Object.keys(table.setters).sort((a, b) =>
+        a.localeCompare(b)
+      )) {
         types += `  ${key}: any;\n`;
       }
 
