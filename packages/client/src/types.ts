@@ -72,8 +72,8 @@ export type ChangeTo<T> = {
 };
 
 export type Getter<Result, Params extends Record<string, any>, IDColumnName> = {
-  (idOrParams?: Params): Collection<Result>;
   (idOrParams: ID<Params, IDColumnName>, params?: Params): Result;
+  (idOrParams?: Params): Collection<Result>;
 };
 
 export type Handlers<
