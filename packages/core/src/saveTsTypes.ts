@@ -36,7 +36,7 @@ export async function saveTsTypes(
     types += `}\n\n`;
   }
 
-  types += `type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };\n\n`;
+  types += `type DeepPartial<T> = T extends any ? any: { [P in keyof T]?: DeepPartial<T[P]> };\n\n`;
 
   for (let table of tables) {
     let { columns: rawColumns } = table;

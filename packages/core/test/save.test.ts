@@ -300,7 +300,7 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
+      "type DeepPartial<T> = T extends any ? any: { [P in keyof T]?: DeepPartial<T[P]> };
 
       export type TestId = number;
       export type TestRow = {
@@ -411,7 +411,7 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
+      "type DeepPartial<T> = T extends any ? any: { [P in keyof T]?: DeepPartial<T[P]> };
 
       export type TestId = number;
       export type TestRow = {
@@ -558,7 +558,7 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
+      "type DeepPartial<T> = T extends any ? any: { [P in keyof T]?: DeepPartial<T[P]> };
 
       export type TestId = number;
       export type TestRow = {
@@ -692,7 +692,7 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
+      "type DeepPartial<T> = T extends any ? any: { [P in keyof T]?: DeepPartial<T[P]> };
 
       export type TestId = number;
       export type TestRow = {
@@ -746,7 +746,7 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
+      "type DeepPartial<T> = T extends any ? any: { [P in keyof T]?: DeepPartial<T[P]> };
 
       export type TestId = number;
       export type TestRow = {
@@ -825,7 +825,7 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
+      "type DeepPartial<T> = T extends any ? any: { [P in keyof T]?: DeepPartial<T[P]> };
 
       export type TestId = number;
       export type TestRow = {
@@ -977,7 +977,7 @@ describe("saves to files", () => {
         }
       }
 
-      type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
+      type DeepPartial<T> = T extends any ? any: { [P in keyof T]?: DeepPartial<T[P]> };
 
       export type SaveTestTableId = number;
       export type SaveTestTableRow = {
@@ -1114,7 +1114,7 @@ describe("saves to files", () => {
 
     const types = await fs.readFile(path, { encoding: "utf8" });
     expect(types).toMatchInlineSnapshot(`
-      "type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
+      "type DeepPartial<T> = T extends any ? any: { [P in keyof T]?: DeepPartial<T[P]> };
 
       export type RecursiveId = number;
       export type RecursiveRow = {

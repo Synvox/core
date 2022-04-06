@@ -16,9 +16,9 @@ export type TableConfig<
   idColumnName?: IDColumnName;
 };
 
-type DeepPartial<T> = {
-  [P in keyof T]?: DeepPartial<T[P]>;
-};
+type DeepPartial<T> = T extends any
+  ? any
+  : { [P in keyof T]?: DeepPartial<T[P]> };
 
 export type IDColumnType<T, IDColumnName> = IDColumnName extends keyof T
   ? T[IDColumnName]
