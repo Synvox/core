@@ -582,8 +582,12 @@ export class Table<Context, T = any> {
     queryParams: Record<string, any>,
     context: Context,
     inputRow: any,
-    include: string[] = []
+    include: Record<string, true | object> = {}
   ): Promise<Result<T> & T> {
+    if (typeof include === "string") include = { [include]: true };
+    if (Array.isArray(include))
+      include = Object.fromEntries(include.map((inc) => [inc, true]));
+
     let tenantId = this.tenantIdColumnName
       ? inputRow[this.tenantIdColumnName]
       : null;
@@ -655,7 +659,7 @@ export class Table<Context, T = any> {
 
     let selectedGetters = [];
     for (let getterName in this.getters) {
-      if (include.includes(getterName)) {
+      if (getterName in include) {
         selectedGetters.push(getterName);
         outputRow[getterName] = await this.getters[getterName].call(
           this,
