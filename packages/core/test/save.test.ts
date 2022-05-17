@@ -317,7 +317,7 @@ describe("saves to files", () => {
         row: TestRow;
         insert: DeepPartial<Test>;
         update: DeepPartial<Test>;
-        params: any;
+        params: object;
         id: TestId;
         idColumnName: \\"id\\";
       }
@@ -336,7 +336,7 @@ describe("saves to files", () => {
         row: TestNullableRow;
         insert: DeepPartial<TestNullable>;
         update: DeepPartial<TestNullable>;
-        params: any;
+        params: object;
         id: TestNullableId;
         idColumnName: \\"id\\";
       }
@@ -354,7 +354,7 @@ describe("saves to files", () => {
         row: TestSubRow;
         insert: DeepPartial<TestSub>;
         update: DeepPartial<TestSub>;
-        params: any;
+        params: object;
         id: TestSubId;
         idColumnName: \\"id\\";
       }
@@ -372,7 +372,7 @@ describe("saves to files", () => {
         row: TestSubNullableRow;
         insert: DeepPartial<TestSubNullable>;
         update: DeepPartial<TestSubNullable>;
-        params: any;
+        params: object;
         id: TestSubNullableId;
         idColumnName: \\"id\\";
       }
@@ -438,7 +438,7 @@ describe("saves to files", () => {
         row: TestRow;
         insert: DeepPartial<Test>;
         update: DeepPartial<Test>;
-        params: any;
+        params: object;
         id: TestId;
         idColumnName: \\"id\\";
       }
@@ -463,7 +463,7 @@ describe("saves to files", () => {
         row: TestNullableRow;
         insert: DeepPartial<TestNullable>;
         update: DeepPartial<TestNullable>;
-        params: any;
+        params: object;
         id: TestNullableId;
         idColumnName: \\"id\\";
       }
@@ -488,7 +488,7 @@ describe("saves to files", () => {
         row: TestSubRow;
         insert: DeepPartial<TestSub>;
         update: DeepPartial<TestSub>;
-        params: any;
+        params: object;
         id: TestSubId;
         idColumnName: \\"id\\";
       }
@@ -513,7 +513,7 @@ describe("saves to files", () => {
         row: TestSubNullableRow;
         insert: DeepPartial<TestSubNullable>;
         update: DeepPartial<TestSubNullable>;
-        params: any;
+        params: object;
         id: TestSubNullableId;
         idColumnName: \\"id\\";
       }
@@ -585,7 +585,7 @@ describe("saves to files", () => {
         row: TestRow;
         insert: DeepPartial<Test>;
         update: DeepPartial<Test>;
-        params: any;
+        params: object;
         id: TestId;
         idColumnName: \\"id\\";
       }
@@ -610,7 +610,7 @@ describe("saves to files", () => {
         row: TestNullableRow;
         insert: DeepPartial<TestNullable>;
         update: DeepPartial<TestNullable>;
-        params: any;
+        params: object;
         id: TestNullableId;
         idColumnName: \\"id\\";
       }
@@ -635,7 +635,7 @@ describe("saves to files", () => {
         row: TestSubRow;
         insert: DeepPartial<TestSub>;
         update: DeepPartial<TestSub>;
-        params: any;
+        params: object;
         id: TestSubId;
         idColumnName: \\"id\\";
       }
@@ -660,7 +660,7 @@ describe("saves to files", () => {
         row: TestSubNullableRow;
         insert: DeepPartial<TestSubNullable>;
         update: DeepPartial<TestSubNullable>;
-        params: any;
+        params: object;
         id: TestSubNullableId;
         idColumnName: \\"id\\";
       }
@@ -717,7 +717,7 @@ describe("saves to files", () => {
         row: TestRow;
         insert: DeepPartial<Test>;
         update: DeepPartial<Test>;
-        params: any;
+        params: object;
         id: TestId;
         idColumnName: \\"id\\";
       }
@@ -770,7 +770,7 @@ describe("saves to files", () => {
         row: TestRow;
         insert: DeepPartial<Test>;
         update: DeepPartial<Test>;
-        params: any;
+        params: object;
         id: TestId;
         idColumnName: \\"id\\";
       }
@@ -794,7 +794,7 @@ describe("saves to files", () => {
         row: TypeRow;
         insert: DeepPartial<Type>;
         update: DeepPartial<Type>;
-        params: any;
+        params: object;
         id: TypeId;
         idColumnName: \\"id\\";
       }
@@ -849,7 +849,7 @@ describe("saves to files", () => {
         row: TestRow;
         insert: DeepPartial<Test>;
         update: DeepPartial<Test>;
-        params: any;
+        params: object;
         id: TestId;
         idColumnName: \\"id\\";
       }
@@ -873,7 +873,7 @@ describe("saves to files", () => {
         row: TypeRow;
         insert: DeepPartial<Type>;
         update: DeepPartial<Type>;
-        params: any;
+        params: object;
         id: TypeId;
         idColumnName: \\"id\\";
       }
@@ -992,7 +992,7 @@ describe("saves to files", () => {
         row: SaveTestTableRow;
         insert: DeepPartial<SaveTestTable>;
         update: DeepPartial<SaveTestTable>;
-        params: any;
+        params: object;
         id: SaveTestTableId;
         idColumnName: \\"id\\";
       }
@@ -1008,7 +1008,7 @@ describe("saves to files", () => {
         row: LookupTableRow;
         insert: DeepPartial<LookupTable>;
         update: DeepPartial<LookupTable>;
-        params: any;
+        params: object;
         id: LookupTableId;
         idColumnName: \\"id\\";
       }
@@ -1028,7 +1028,7 @@ describe("saves to files", () => {
         row: TestRow;
         insert: DeepPartial<Test>;
         update: DeepPartial<Test>;
-        params: any;
+        params: object;
         id: TestId;
         idColumnName: \\"id\\";
       }
@@ -1047,7 +1047,7 @@ describe("saves to files", () => {
         row: TestNullableRow;
         insert: DeepPartial<TestNullable>;
         update: DeepPartial<TestNullable>;
-        params: any;
+        params: object;
         id: TestNullableId;
         idColumnName: \\"id\\";
       }
@@ -1065,7 +1065,7 @@ describe("saves to files", () => {
         row: TestSubRow;
         insert: DeepPartial<TestSub>;
         update: DeepPartial<TestSub>;
-        params: any;
+        params: object;
         id: TestSubId;
         idColumnName: \\"id\\";
       }
@@ -1083,7 +1083,7 @@ describe("saves to files", () => {
         row: TestSubNullableRow;
         insert: DeepPartial<TestSubNullable>;
         update: DeepPartial<TestSubNullable>;
-        params: any;
+        params: object;
         id: TestSubNullableId;
         idColumnName: \\"id\\";
       }
@@ -1137,7 +1137,7 @@ describe("saves to files", () => {
         row: RecursiveRow;
         insert: DeepPartial<Recursive>;
         update: DeepPartial<Recursive>;
-        params: any;
+        params: object;
         id: RecursiveId;
         idColumnName: \\"id\\";
       }

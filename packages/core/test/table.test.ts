@@ -492,6 +492,158 @@ describe("without policies", () => {
     `);
   });
 
+  it("can sort on count column", async () => {
+    await knex.schema.withSchema("test").createTable("users", (t) => {
+      t.bigIncrements("id").primary();
+    });
+
+    await knex.schema.withSchema("test").createTable("posts", (t) => {
+      t.bigIncrements("id").primary();
+      t.bigInteger("user_id").references("id").inTable("test.users");
+    });
+
+    const users = new Table({
+      schemaName: "test",
+      tableName: "users",
+    });
+
+    const posts = new Table({
+      schemaName: "test",
+      tableName: "posts",
+    });
+
+    await users.init(knex);
+    await posts.init(knex);
+    users.linkTables([users, posts]);
+    posts.linkTables([users, posts]);
+
+    const [user] = await knex("test.users").insert({}).returning("*");
+
+    await knex("test.posts").insert({ userId: user.id }).returning("*");
+
+    queries = [];
+    expect(
+      await users.readMany(
+        knex,
+        {
+          include: "postsCount",
+          sort: "postsCount",
+        },
+        {}
+      )
+    ).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/test/users/count?include=postsCount&sort=postsCount",
+          "ids": "/test/users/ids?include=postsCount&sort=postsCount",
+        },
+        "_type": "test/users",
+        "_url": "/test/users?include=postsCount&sort=postsCount",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {
+              "posts": "/test/posts?userId=1",
+              "postsCount": "/test/users/1/postsCount",
+            },
+            "_type": "test/users",
+            "_url": "/test/users/1",
+            "id": 1,
+            "postsCount": 1,
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select users__base_table.id, (select count(posts__alias_0.*) from test.posts posts__alias_0 where posts__alias_0.user_id = users__base_table.id) as posts_count from test.users users__base_table order by posts_count asc limit ?",
+      ]
+    `);
+
+    queries = [];
+    expect(
+      await users.readMany(
+        knex,
+        {
+          include: "postsCount",
+          sort: "-postsCount",
+        },
+        {}
+      )
+    ).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/test/users/count?include=postsCount&sort=-postsCount",
+          "ids": "/test/users/ids?include=postsCount&sort=-postsCount",
+        },
+        "_type": "test/users",
+        "_url": "/test/users?include=postsCount&sort=-postsCount",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {
+              "posts": "/test/posts?userId=1",
+              "postsCount": "/test/users/1/postsCount",
+            },
+            "_type": "test/users",
+            "_url": "/test/users/1",
+            "id": 1,
+            "postsCount": 1,
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select users__base_table.id, (select count(posts__alias_0.*) from test.posts posts__alias_0 where posts__alias_0.user_id = users__base_table.id) as posts_count from test.users users__base_table order by posts_count desc limit ?",
+      ]
+    `);
+
+    // sorting only works when included
+    queries = [];
+    expect(
+      await users.readMany(
+        knex,
+        {
+          sort: "-postsCount",
+        },
+        {}
+      )
+    ).toMatchInlineSnapshot(`
+      Object {
+        "_links": Object {
+          "count": "/test/users/count?sort=-postsCount",
+          "ids": "/test/users/ids?sort=-postsCount",
+        },
+        "_type": "test/users",
+        "_url": "/test/users?sort=-postsCount",
+        "hasMore": false,
+        "items": Array [
+          Object {
+            "_links": Object {
+              "posts": "/test/posts?userId=1",
+              "postsCount": "/test/users/1/postsCount",
+            },
+            "_type": "test/users",
+            "_url": "/test/users/1",
+            "id": 1,
+          },
+        ],
+        "limit": 50,
+        "page": 0,
+      }
+    `);
+    expect(queries).toMatchInlineSnapshot(`
+      Array [
+        "select users__base_table.id from test.users users__base_table order by users__base_table.id asc limit ?",
+      ]
+    `);
+  });
+
   it("forwards query params to relations", async () => {
     await knex.schema.withSchema("test").createTable("users", (t) => {
       t.bigIncrements("id").primary();

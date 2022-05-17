@@ -1870,7 +1870,11 @@ export class Table<Context, T = any> {
       const page = Number(queryParams.page || 0);
       const limit = Math.max(0, Math.min(250, Number(queryParams.limit) || 50));
 
-      const sorts: { columnName: string; order: "asc" | "desc" }[] = [];
+      const sorts: {
+        columnName: string;
+        order: "asc" | "desc";
+        indirect?: boolean;
+      }[] = [];
       if (sort) {
         if (!Array.isArray(sort)) sort = [sort];
 
@@ -1881,11 +1885,24 @@ export class Table<Context, T = any> {
             columnName = columnName.slice(1);
           }
 
-          if (
-            columnName in table.columns! &&
-            (order === "asc" || order === "desc")
-          ) {
+          if (order !== "asc" && order !== "desc") return;
+
+          if (columnName in table.columns!) {
             sorts.push({ columnName, order });
+          } else {
+            for (let key in this.relatedTables.hasMany) {
+              if (
+                `${key}Count` === columnName &&
+                include.includes(columnName)
+              ) {
+                sorts.push({
+                  columnName: columnName,
+                  order,
+                  indirect: true,
+                });
+                break;
+              }
+            }
           }
         });
       }
@@ -1929,7 +1946,7 @@ export class Table<Context, T = any> {
         }
 
         sorts.push({
-          columnName,
+          columnName: columnName,
           order,
         });
 
@@ -1942,7 +1959,10 @@ export class Table<Context, T = any> {
       }
 
       sorts.forEach((s) =>
-        statement.orderBy(`${table.alias}.${s.columnName}`, s.order)
+        statement.orderBy(
+          s.indirect ? s.columnName : `${table.alias}.${s.columnName}`,
+          s.order
+        )
       );
 
       const results = await statement;

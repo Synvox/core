@@ -165,7 +165,7 @@ export async function saveTsTypes(
     types += `  row: ${table.className}Row;\n`;
     types += `  insert: DeepPartial<${table.className}>;\n`;
     types += `  update: DeepPartial<${table.className}>;\n`;
-    types += `  params: any;\n`;
+    types += `  params: object;\n`;
     types += `  id: ${table.className}Id;\n`;
     types += `  idColumnName: "${table.idColumnName}";\n`;
     types += `}\n\n`;
