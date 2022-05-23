@@ -71,9 +71,9 @@ export type ChangeTo<T> = {
   update: () => Promise<void>;
 };
 
-export type Getter<Result, Params extends Record<string, any>, IDColumnName> = {
+export type Getter<Result, Params extends Record<string, any>> = {
   (idOrParams?: Params): Collection<Result>;
-  (idOrParams: ID<Params, IDColumnName>, params?: Params): Result;
+  (idOrParams: string | number, params?: Params): Result;
 };
 
 export type Handlers<
@@ -85,8 +85,8 @@ export type Handlers<
   Extension,
   IDColumnName
 > = Extension &
-  Getter<Item, DeepPartial<Params>, ID<Params, IDColumnName>> & {
-    get: Getter<Item, DeepPartial<Params>, ID<Params, IDColumnName>>;
+  Getter<Item, DeepPartial<Params>> & {
+    get: Getter<Item, DeepPartial<Params>>;
     getUrl: (url: string) => any;
     first: (params?: DeepPartial<Params>) => Item;
     put: (
