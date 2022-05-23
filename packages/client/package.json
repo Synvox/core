@@ -1,6 +1,6 @@
 {
   "name": "@synvox/core-client",
-  "version": "2.5.0-alpha.74",
+  "version": "2.5.0-alpha.75",
   "license": "MIT",
   "description": "",
   "source": "src/index.ts",
