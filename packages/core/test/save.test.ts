@@ -315,11 +315,6 @@ describe("saves to files", () => {
       export type TestConfig = {
         item: Test;
         row: TestRow;
-        insert: DeepPartial<Test>;
-        update: DeepPartial<Test>;
-        params: object;
-        id: TestId;
-        idColumnName: \\"id\\";
       }
 
       export type TestNullableId = number;
@@ -334,11 +329,6 @@ describe("saves to files", () => {
       export type TestNullableConfig = {
         item: TestNullable;
         row: TestNullableRow;
-        insert: DeepPartial<TestNullable>;
-        update: DeepPartial<TestNullable>;
-        params: object;
-        id: TestNullableId;
-        idColumnName: \\"id\\";
       }
 
       export type TestSubId = number;
@@ -352,11 +342,6 @@ describe("saves to files", () => {
       export type TestSubConfig = {
         item: TestSub;
         row: TestSubRow;
-        insert: DeepPartial<TestSub>;
-        update: DeepPartial<TestSub>;
-        params: object;
-        id: TestSubId;
-        idColumnName: \\"id\\";
       }
 
       export type TestSubNullableId = number;
@@ -370,11 +355,6 @@ describe("saves to files", () => {
       export type TestSubNullableConfig = {
         item: TestSubNullable;
         row: TestSubNullableRow;
-        insert: DeepPartial<TestSubNullable>;
-        update: DeepPartial<TestSubNullable>;
-        params: object;
-        id: TestSubNullableId;
-        idColumnName: \\"id\\";
       }
       "
     `);
@@ -436,11 +416,6 @@ describe("saves to files", () => {
       export type TestConfig = {
         item: Test;
         row: TestRow;
-        insert: DeepPartial<Test>;
-        update: DeepPartial<Test>;
-        params: object;
-        id: TestId;
-        idColumnName: \\"id\\";
       }
 
       export type TestNullableId = number;
@@ -461,11 +436,6 @@ describe("saves to files", () => {
       export type TestNullableConfig = {
         item: TestNullable;
         row: TestNullableRow;
-        insert: DeepPartial<TestNullable>;
-        update: DeepPartial<TestNullable>;
-        params: object;
-        id: TestNullableId;
-        idColumnName: \\"id\\";
       }
 
       export type TestSubId = number;
@@ -486,11 +456,6 @@ describe("saves to files", () => {
       export type TestSubConfig = {
         item: TestSub;
         row: TestSubRow;
-        insert: DeepPartial<TestSub>;
-        update: DeepPartial<TestSub>;
-        params: object;
-        id: TestSubId;
-        idColumnName: \\"id\\";
       }
 
       export type TestSubNullableId = number;
@@ -511,11 +476,6 @@ describe("saves to files", () => {
       export type TestSubNullableConfig = {
         item: TestSubNullable;
         row: TestSubNullableRow;
-        insert: DeepPartial<TestSubNullable>;
-        update: DeepPartial<TestSubNullable>;
-        params: object;
-        id: TestSubNullableId;
-        idColumnName: \\"id\\";
       }
       "
     `);
@@ -583,11 +543,6 @@ describe("saves to files", () => {
       export type TestConfig = {
         item: Test;
         row: TestRow;
-        insert: DeepPartial<Test>;
-        update: DeepPartial<Test>;
-        params: object;
-        id: TestId;
-        idColumnName: \\"id\\";
       }
 
       export type TestNullableId = number;
@@ -608,11 +563,6 @@ describe("saves to files", () => {
       export type TestNullableConfig = {
         item: TestNullable;
         row: TestNullableRow;
-        insert: DeepPartial<TestNullable>;
-        update: DeepPartial<TestNullable>;
-        params: object;
-        id: TestNullableId;
-        idColumnName: \\"id\\";
       }
 
       export type TestSubId = number;
@@ -633,11 +583,6 @@ describe("saves to files", () => {
       export type TestSubConfig = {
         item: TestSub;
         row: TestSubRow;
-        insert: DeepPartial<TestSub>;
-        update: DeepPartial<TestSub>;
-        params: object;
-        id: TestSubId;
-        idColumnName: \\"id\\";
       }
 
       export type TestSubNullableId = number;
@@ -658,11 +603,6 @@ describe("saves to files", () => {
       export type TestSubNullableConfig = {
         item: TestSubNullable;
         row: TestSubNullableRow;
-        insert: DeepPartial<TestSubNullable>;
-        update: DeepPartial<TestSubNullable>;
-        params: object;
-        id: TestSubNullableId;
-        idColumnName: \\"id\\";
       }
       "
     `);
@@ -715,11 +655,6 @@ describe("saves to files", () => {
       export type TestConfig = {
         item: Test;
         row: TestRow;
-        insert: DeepPartial<Test>;
-        update: DeepPartial<Test>;
-        params: object;
-        id: TestId;
-        idColumnName: \\"id\\";
       }
       "
     `);
@@ -768,11 +703,6 @@ describe("saves to files", () => {
       export type TestConfig = {
         item: Test;
         row: TestRow;
-        insert: DeepPartial<Test>;
-        update: DeepPartial<Test>;
-        params: object;
-        id: TestId;
-        idColumnName: \\"id\\";
       }
 
       export type TypeId = \\"type1\\" | \\"type2\\" | \\"type3\\";
@@ -792,11 +722,6 @@ describe("saves to files", () => {
       export type TypeConfig = {
         item: Type;
         row: TypeRow;
-        insert: DeepPartial<Type>;
-        update: DeepPartial<Type>;
-        params: object;
-        id: TypeId;
-        idColumnName: \\"id\\";
       }
       "
     `);
@@ -847,11 +772,6 @@ describe("saves to files", () => {
       export type TestConfig = {
         item: Test;
         row: TestRow;
-        insert: DeepPartial<Test>;
-        update: DeepPartial<Test>;
-        params: object;
-        id: TestId;
-        idColumnName: \\"id\\";
       }
 
       export type TypeId = string;
@@ -871,11 +791,6 @@ describe("saves to files", () => {
       export type TypeConfig = {
         item: Type;
         row: TypeRow;
-        insert: DeepPartial<Type>;
-        update: DeepPartial<Type>;
-        params: object;
-        id: TypeId;
-        idColumnName: \\"id\\";
       }
       "
     `);
@@ -990,11 +905,6 @@ describe("saves to files", () => {
       export type SaveTestTableConfig = {
         item: SaveTestTable;
         row: SaveTestTableRow;
-        insert: DeepPartial<SaveTestTable>;
-        update: DeepPartial<SaveTestTable>;
-        params: object;
-        id: SaveTestTableId;
-        idColumnName: \\"id\\";
       }
 
       export type LookupTableId = string;
@@ -1006,11 +916,6 @@ describe("saves to files", () => {
       export type LookupTableConfig = {
         item: LookupTable;
         row: LookupTableRow;
-        insert: DeepPartial<LookupTable>;
-        update: DeepPartial<LookupTable>;
-        params: object;
-        id: LookupTableId;
-        idColumnName: \\"id\\";
       }
 
       export type TestId = number;
@@ -1026,11 +931,6 @@ describe("saves to files", () => {
       export type TestConfig = {
         item: Test;
         row: TestRow;
-        insert: DeepPartial<Test>;
-        update: DeepPartial<Test>;
-        params: object;
-        id: TestId;
-        idColumnName: \\"id\\";
       }
 
       export type TestNullableId = number;
@@ -1045,11 +945,6 @@ describe("saves to files", () => {
       export type TestNullableConfig = {
         item: TestNullable;
         row: TestNullableRow;
-        insert: DeepPartial<TestNullable>;
-        update: DeepPartial<TestNullable>;
-        params: object;
-        id: TestNullableId;
-        idColumnName: \\"id\\";
       }
 
       export type TestSubId = number;
@@ -1063,11 +958,6 @@ describe("saves to files", () => {
       export type TestSubConfig = {
         item: TestSub;
         row: TestSubRow;
-        insert: DeepPartial<TestSub>;
-        update: DeepPartial<TestSub>;
-        params: object;
-        id: TestSubId;
-        idColumnName: \\"id\\";
       }
 
       export type TestSubNullableId = number;
@@ -1081,11 +971,6 @@ describe("saves to files", () => {
       export type TestSubNullableConfig = {
         item: TestSubNullable;
         row: TestSubNullableRow;
-        insert: DeepPartial<TestSubNullable>;
-        update: DeepPartial<TestSubNullable>;
-        params: object;
-        id: TestSubNullableId;
-        idColumnName: \\"id\\";
       }
       "
     `);
@@ -1135,11 +1020,6 @@ describe("saves to files", () => {
       export type RecursiveConfig = {
         item: Recursive;
         row: RecursiveRow;
-        insert: DeepPartial<Recursive>;
-        update: DeepPartial<Recursive>;
-        params: object;
-        id: RecursiveId;
-        idColumnName: \\"id\\";
       }
       "
     `);

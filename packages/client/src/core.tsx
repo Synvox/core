@@ -6,6 +6,7 @@ import {
   Handlers,
   ID,
   TableConfig,
+  Params,
 } from "./types";
 import { CoreCache } from "./CoreCache";
 import { createContext, ReactNode, useContext } from "react";
@@ -21,15 +22,7 @@ type Options = {
   shouldTouch?: (change: Change, url: string) => boolean;
 };
 
-class Table<
-  Item,
-  Row,
-  Params,
-  InsertType,
-  UpdateType,
-  Extension,
-  IDColumnName
-> {
+class Table<Item, Row, Extension> {
   path: string;
 
   blockUpdatesById: (id: string) => void;
@@ -59,22 +52,11 @@ class Table<
     getUrl: (url: string) => any;
     cache: CoreCache;
     handleChanges: (changes: Change[]) => Promise<void>;
-  }): Handlers<
-    Item,
-    Row,
-    Params,
-    InsertType,
-    UpdateType,
-    Extension,
-    IDColumnName
-  > {
+  }): Handlers<Item, Row, Extension> {
     const { axios } = cache;
     const { path, lock, blockUpdatesById } = this;
 
-    function get(
-      idOrParams?: ID<Params, IDColumnName> | Params,
-      params?: Params
-    ) {
+    function get(idOrParams?: ID | Params, params?: Params) {
       if (typeof idOrParams === "object") {
         return getUrl(`${path}?${qsStringify(idOrParams)}`) as Item;
       } else {
@@ -92,8 +74,7 @@ class Table<
 
     //@ts-expect-error
     return Object.assign(
-      (idOrParams?: ID<Params, IDColumnName> | Params, params?: Params) =>
-        get(idOrParams, params),
+      (idOrParams?: ID | Params, params?: Params) => get(idOrParams, params),
       {
         get: get,
         getUrl: getUrl,
@@ -106,7 +87,7 @@ class Table<
           return getUrl(fullPath) as Item;
         },
         async put(
-          idOrQuery: ID<Row, IDColumnName> | Params,
+          idOrQuery: ID | Params,
           data: Record<string, any>,
           params?: Params
         ) {
@@ -155,7 +136,7 @@ class Table<
             return result as ReturnValue;
           });
         },
-        async delete(id: ID<Params, IDColumnName>, params?: Params) {
+        async delete(id: ID, params?: Params) {
           let fullPath = `${path}/${id}`;
           if (params && Object.keys(params).length > 0) {
             fullPath += `?${qsStringify(params)}`;
@@ -181,13 +162,10 @@ class Table<
           if (params && Object.keys(params).length > 0) {
             fullPath += `?${qsStringify(params)}`;
           }
-          return getUrl(fullPath) as Collection<ID<Row, IDColumnName>>;
+          return getUrl(fullPath) as Collection<ID>;
         },
         async: {
-          async get(
-            idOrParams?: ID<Params, IDColumnName> | Params,
-            params?: Params
-          ) {
+          async get(idOrParams?: ID | Params, params?: Params) {
             let fullPath = path;
 
             if (idOrParams && typeof idOrParams !== "object")
@@ -254,43 +232,17 @@ class Table<
 }
 
 export function table<
-  Config extends TableConfig<{}, {}, unknown, unknown, unknown, string>,
+  Config extends TableConfig<{}, {}>,
   Extension = {},
-  Item = Config extends TableConfig<infer Item, any, any, any, any, any>
-    ? Item
-    : never,
-  Row = Config extends TableConfig<any, infer Row, any, any, any, any>
-    ? Row
-    : never,
-  Params = Config extends TableConfig<any, any, infer Params, any, any, any>
-    ? Params
-    : never,
-  Insert = Config extends TableConfig<any, any, any, infer Insert, any, any>
-    ? Insert
-    : never,
-  Update = Config extends TableConfig<any, any, any, any, infer Update, any>
-    ? Update
-    : never,
-  IDColumnName = Config extends TableConfig<
-    any,
-    any,
-    any,
-    any,
-    any,
-    infer IDColumnName
-  >
-    ? IDColumnName
-    : never
+  Item = Config extends TableConfig<infer Item, any> ? Item : never,
+  Row = Config extends TableConfig<any, infer Row> ? Row : never
 >(path: string, options: Options = {}) {
-  return new Table<Item, Row, Params, Insert, Update, Extension, IDColumnName>(
-    path,
-    options
-  );
+  return new Table<Item, Row, Extension>(path, options);
 }
 
-export function core<
-  Routes extends Record<string, Table<any, any, any, any, any, {}, any>>
->(routes: Routes) {
+export function core<Routes extends Record<string, Table<any, any, {}>>>(
+  routes: Routes
+) {
   const context = createContext<null | CoreCache>(null);
 
   function Provider({
@@ -403,21 +355,9 @@ export function core<
       [name in keyof Routes]: Routes[name] extends Table<
         infer Item,
         infer Row,
-        infer Params,
-        infer InsertType,
-        infer UpdateType,
-        infer Extension,
-        infer ID
+        infer Extension
       >
-        ? Handlers<
-            Item,
-            Row,
-            Partial<Params>,
-            InsertType,
-            UpdateType,
-            Extension,
-            ID
-          >
+        ? Handlers<Item, Row, Extension>
         : never;
     } {
       const cache = useCache();

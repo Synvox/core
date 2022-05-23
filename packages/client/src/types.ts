@@ -1,34 +1,15 @@
 import { AxiosInstance, AxiosPromise } from "axios";
 
-export type TableConfig<
-  Item,
-  Row extends Record<string, any>,
-  Params = DeepPartial<Row>,
-  InsertType = DeepPartial<Row>,
-  UpdateType = DeepPartial<Row>,
-  IDColumnName = number
-> = {
+export type TableConfig<Item, Row extends Record<string, any>> = {
   item: Item;
   row: Row;
-  params?: Params;
-  insert?: InsertType;
-  update?: UpdateType;
-  idColumnName?: IDColumnName;
 };
-
-type DeepPartial<T> = T extends any
-  ? any
-  : { [P in keyof T]?: DeepPartial<T[P]> };
 
 export type IDColumnType<T, IDColumnName> = IDColumnName extends keyof T
   ? T[IDColumnName]
   : unknown;
 
 export type NotArray<T> = T extends unknown[] ? never : T;
-
-export type ID<T, IDColumnName = "id"> = NotArray<
-  IDColumnType<T, IDColumnName>
->;
 
 export type SubscriptionCallback = () => void;
 
@@ -71,79 +52,49 @@ export type ChangeTo<T> = {
   update: () => Promise<void>;
 };
 
-export type Getter<Result, Params extends Record<string, any>> = {
+export type Params = Record<string, any>;
+export type ID = string | number;
+export type Getter<Result> = {
   (idOrParams?: Params): Collection<Result>;
-  (idOrParams: string | number, params?: Params): Result;
+  (idOrParams: ID, params?: Params): Result;
 };
 
-export type Handlers<
-  Item,
-  Row,
-  Params extends Record<string, any>,
-  InsertType,
-  UpdateType,
-  Extension,
-  IDColumnName
-> = Extension &
-  Getter<Item, DeepPartial<Params>> & {
-    get: Getter<Item, DeepPartial<Params>>;
+export type Handlers<Item, Row, Extension> = Extension &
+  Getter<Item> & {
+    get: Getter<Item>;
     getUrl: (url: string) => any;
-    first: (params?: DeepPartial<Params>) => Item;
+    first: (params?: Params) => Item;
     put: (
-      idOrQuery: ID<Row, IDColumnName> | DeepPartial<Params>,
-      payload: UpdateType,
-      params?: DeepPartial<Params>
+      idOrQuery: ID | Params,
+      payload: any,
+      params?: Params
     ) => Promise<ChangeTo<Row>>;
     post: <R = ChangeTo<Row>>(
-      pathOrData: string | InsertType,
-      dataOrParams?: InsertType | DeepPartial<Params>,
-      params?: DeepPartial<Params>
+      pathOrData: string | any,
+      dataOrParams?: any | Params,
+      params?: Params
     ) => Promise<R>;
-    delete: (
-      id: ID<Row, IDColumnName>,
-      params?: DeepPartial<Params>
-    ) => Promise<ChangeTo<Row>>;
-    count: (params?: DeepPartial<Params>) => number;
-    ids: (params?: DeepPartial<Params>) => Collection<ID<Row, IDColumnName>>;
+    delete: (id: ID, params?: Params) => Promise<ChangeTo<Row>>;
+    count: (params?: Params) => number;
+    ids: <I = ID>(params?: Params) => Collection<I>;
     async: {
-      get: ((
-        idOrParams: ID<Params, IDColumnName>,
-        params?: Params
-      ) => Promise<Row>) &
+      get: ((idOrParams: ID, params?: Params) => Promise<Row>) &
         ((idOrParams?: Params) => AxiosPromise);
-      first: (params?: DeepPartial<Params>) => AxiosPromise;
-      count: (params?: DeepPartial<Params>) => AxiosPromise;
-      ids: (params?: DeepPartial<Params>) => AxiosPromise;
+      first: (params?: Params) => AxiosPromise;
+      count: (params?: Params) => AxiosPromise;
+      ids: (params?: Params) => AxiosPromise;
     };
-    rebind(
-      getUrl: (url: string) => any
-    ): Handlers<
-      Item,
-      Row,
-      Params,
-      InsertType,
-      UpdateType,
-      Extension,
-      IDColumnName
-    >;
+    rebind(getUrl: (url: string) => any): Handlers<Item, Row, Extension>;
   };
 
-export type RouteFactory<
-  Item,
-  Row,
-  Params,
-  InsertType,
-  UpdateType,
-  Extension,
-  ID
-> = (p: {
+export type RouteFactory<Item, Row, Extension> = (p: {
   getUrl: (url: string) => any;
   axios: AxiosInstance;
   touch: Touch<string>;
   blockUpdatesById: (id: string) => void;
   lock<T>(fn: () => Promise<T>): Promise<T>;
 }) => {
-  handlers: Handlers<Item, Row, Params, InsertType, UpdateType, Extension, ID>;
+  handlers: Handlers<Item, Row, Extension>;
 };
 
 export type Touch<Key> = (filter: (key: Key) => boolean) => Promise<void>;
