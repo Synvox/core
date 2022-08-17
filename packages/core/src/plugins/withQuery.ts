@@ -36,6 +36,7 @@ export function ftsSearchModifier(
   const inner = searchColumns.map(() => `to_tsvector(??)`).join(" || ");
 
   const words = value
+    .replace(/[\(\)\|\&\:\*\!]/g, " ")
     .replace(/\s+/g, " ")
     .split(" ")
     .filter((x) => x.trim());
