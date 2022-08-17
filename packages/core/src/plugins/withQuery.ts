@@ -42,8 +42,9 @@ export function ftsSearchModifier(
     .filter((x) => x.trim());
   const tsQuery = words.map(() => `? || ':*'`).join(" || ' & ' || ");
 
-  stmt.whereRaw(
-    `${not ? "not " : ""}${inner} @@ to_tsquery('simple', ${tsQuery})`,
-    [...searchColumns, ...words]
-  );
+  if (words.length)
+    stmt.whereRaw(
+      `${not ? "not " : ""}${inner} @@ to_tsquery('simple', ${tsQuery})`,
+      [...searchColumns, ...words]
+    );
 }
