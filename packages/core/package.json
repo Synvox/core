@@ -1,5 +1,5 @@
 {
-  "version": "2.5.0-alpha.78",
+  "version": "2.5.0-alpha.79",
   "license": "MIT",
   "main": "./dist/index.js",
   "source": "./src/index.ts",
