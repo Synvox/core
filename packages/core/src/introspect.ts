@@ -88,31 +88,65 @@ export async function getRelations(
 ) {
   const { rows: refs } = await knex.raw(
     `
-      select
-        kcu.table_schema,
-        kcu.table_name,
-        kcu.column_name as column_name,
-        rel_kcu.table_schema as references_schema,
-        rel_kcu.table_name as references_table,
-        rel_kcu.column_name as references_column_name,
-        rco.update_rule,
-        rco.delete_rule
-      from information_schema.table_constraints tco
-      join information_schema.key_column_usage kcu
-        on tco.constraint_schema = kcu.constraint_schema
-        and tco.constraint_name = kcu.constraint_name
-      join information_schema.referential_constraints rco
-        on tco.constraint_schema = rco.constraint_schema
-        and tco.constraint_name = rco.constraint_name
-      join information_schema.key_column_usage rel_kcu
-        on rco.unique_constraint_schema = rel_kcu.constraint_schema
-        and rco.unique_constraint_name = rel_kcu.constraint_name
-        and kcu.ordinal_position = rel_kcu.ordinal_position
-      where tco.constraint_type = 'FOREIGN KEY'
-        and rel_kcu.table_name is not null
-        and rel_kcu.column_name = 'id'
-      and kcu.table_schema = ?
-      and kcu.table_name = ?
+    with refs as (
+    select
+      pg_class.oid as oid,
+      ref_class.oid as ref_oid,
+      pg_constraint.oid as con_oid,
+      pg_namespace.nspname as schema_name,
+      pg_class.relname as table_name,
+      ref_namespace.nspname as references_schema,
+      ref_class.relname as references_table,
+      confupdtype as update_rule,
+      confdeltype as delete_rule,
+      unnest(conkey) as column_index,
+      unnest(confkey) as ref_column_index
+    from pg_constraint
+    join pg_class on pg_class.oid = pg_constraint.conrelid
+    join pg_namespace on pg_namespace.oid = pg_class.relnamespace
+    join pg_class ref_class on pg_constraint.confrelid = ref_class.oid
+    join pg_namespace ref_namespace on ref_namespace.oid = ref_class.relnamespace
+    where pg_namespace.nspname = ?
+    and pg_class.relname = ?
+    and pg_constraint.contype = 'f'
+    )
+    select
+      refs.schema_name,
+      refs.table_name,
+      refs.references_schema,
+      refs.references_table,
+      case
+        when update_rule = 'a' then 'NO ACTION'
+        when update_rule = 'r' then 'RESTRICT'
+        when update_rule = 'c' then 'CASCADE'
+        when update_rule = 'n' then 'SET NULL'
+        when update_rule = 'd' then 'SET DEFAULT'
+        else ''
+      end	as update_rule,
+      case
+        when delete_rule = 'a' then 'NO ACTION'
+        when delete_rule = 'r' then 'RESTRICT'
+        when delete_rule = 'c' then 'CASCADE'
+        when delete_rule = 'n' then 'SET NULL'
+        when delete_rule = 'd' then 'SET DEFAULT'
+        else ''
+      end	as delete_rule,
+      (array_agg(pg_attribute1.attname))[1] as column_name,
+      (array_agg(pg_attribute2.attname))[1] as references_column_name
+    from refs
+    join pg_attribute pg_attribute1 on pg_attribute1.attrelid = refs.oid and pg_attribute1.attnum = column_index
+    join pg_attribute pg_attribute2 on pg_attribute2.attrelid = refs.ref_oid and pg_attribute2.attnum = ref_column_index
+    where pg_attribute1.attname <> pg_attribute2.attname
+    and pg_attribute1.attname <> 'id'
+    and pg_attribute2.attname = 'id'
+    group by
+      refs.con_oid,
+      refs.schema_name,
+      refs.table_name,
+      refs.references_schema,
+      refs.references_table,
+      update_rule,
+      delete_rule
     `
       .replace(/\s\s+/g, " ")
       .trim(),
