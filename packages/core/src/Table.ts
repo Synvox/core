@@ -176,7 +176,9 @@ export class Table<Context, T = any> {
     ]);
 
     if (this.isLookupTable)
-      this.lookupTableIds = await knex(this.tablePath).pluck(this.idColumnName);
+      this.lookupTableIds = await knex(this.tablePath)
+        .pluck(this.idColumnName)
+        .orderBy(this.idColumnName);
 
     if (Object.keys(columns).length === 0)
       throw new Error(`The table ${this.tablePath} did not have any columns.`);
