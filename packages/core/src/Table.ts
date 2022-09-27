@@ -1241,7 +1241,10 @@ export class Table<Context, T = any> {
               context,
               "update",
               updatedRow,
-              row
+              row,
+              (x) => {
+                beforeCommitCallbacks.push(x);
+              }
             );
           });
         }
@@ -1314,7 +1317,10 @@ export class Table<Context, T = any> {
             context,
             "insert",
             updatedRow,
-            undefined
+            undefined,
+            (x) => {
+              beforeCommitCallbacks.push(x);
+            }
           );
         });
       }
@@ -1392,7 +1398,10 @@ export class Table<Context, T = any> {
             context,
             "delete",
             undefined,
-            row
+            row,
+            (x) => {
+              beforeCommitCallbacks.push(x);
+            }
           );
         });
 
@@ -2299,7 +2308,10 @@ export class Table<Context, T = any> {
                   context,
                   mode,
                   previousRow,
-                  row
+                  row,
+                  (x) => {
+                    beforeCommitCallbacks.push(x);
+                  }
                 );
               });
             }

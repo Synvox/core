@@ -19,7 +19,7 @@ export default function withTimestamps<T>(table: TableDef<T>): TableDef<T> {
       },
       ...table.queryModifiers,
     },
-    async afterUpdate(trx, context, mode, next, prev) {
+    async afterUpdate(trx, context, mode, next, prev, schedule) {
       const stmt = trx(this.tablePath);
       if (next && (mode === "insert" || mode === "update")) {
         stmt.where(this.idColumnName, next[this.idColumnName]);
@@ -56,7 +56,15 @@ export default function withTimestamps<T>(table: TableDef<T>): TableDef<T> {
       }
 
       if (table.afterUpdate)
-        await table.afterUpdate.call(this, trx, context, mode, next, prev);
+        await table.afterUpdate.call(
+          this,
+          trx,
+          context,
+          mode,
+          next,
+          prev,
+          schedule
+        );
     },
   };
 }

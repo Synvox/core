@@ -5381,6 +5381,181 @@ describe("beforeCommit", () => {
       ]
     `);
   });
+  it("calls before commit with an added callback", async () => {
+    await knex.schema.withSchema("test").createTable("items", (t) => {
+      t.bigIncrements("id").primary();
+      t.text("body").defaultTo("").notNullable();
+    });
+
+    type Context = {
+      id: number;
+    };
+
+    let results: [Context, Mode, any, any][] = [];
+    let addedCallbackResults: boolean[] = [];
+
+    const items = new Table<Context>({
+      schemaName: "test",
+      tableName: "items",
+      async afterUpdate(trx, context, mode, next, previous, schedule) {
+        results.push([context, mode, next, previous]);
+        schedule(async () => {
+          await new Promise((r) => setTimeout(r, 1));
+          addedCallbackResults.push(true);
+        });
+        if (mode === "update" || mode === "insert")
+          await trx("test.items")
+            .where("id", next.id)
+            .update("body", `${next.body} ${mode}`);
+      },
+    });
+
+    await items.init(knex);
+
+    expect(await items.write(knex, {}, { id: 1 })).toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "insert",
+            "path": "/test/items",
+            "row": Object {
+              "_links": Object {},
+              "_type": "test/items",
+              "_url": "/test/items/1",
+              "body": " insert",
+              "id": 1,
+            },
+            "views": undefined,
+          },
+        ],
+        "result": Object {
+          "_links": Object {},
+          "_type": "test/items",
+          "_url": "/test/items/1",
+          "body": " insert",
+          "id": 1,
+        },
+      }
+    `);
+    expect(results).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          Object {
+            "id": 1,
+          },
+          "insert",
+          Object {
+            "body": "",
+            "id": 1,
+          },
+          undefined,
+        ],
+      ]
+    `);
+    expect(addedCallbackResults).toMatchInlineSnapshot(`
+      Array [
+        true,
+      ]
+    `);
+
+    results = [];
+    addedCallbackResults = [];
+    expect(await items.write(knex, { id: 1, body: "abc" }, { id: 1 }))
+      .toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "update",
+            "path": "/test/items",
+            "row": Object {
+              "_links": Object {},
+              "_type": "test/items",
+              "_url": "/test/items/1",
+              "body": "abc update",
+              "id": 1,
+            },
+            "views": undefined,
+          },
+        ],
+        "result": Object {
+          "_links": Object {},
+          "_type": "test/items",
+          "_url": "/test/items/1",
+          "body": "abc update",
+          "id": 1,
+        },
+      }
+    `);
+    expect(results).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          Object {
+            "id": 1,
+          },
+          "update",
+          Object {
+            "body": "abc",
+            "id": 1,
+          },
+          Object {
+            "body": " insert",
+            "id": 1,
+          },
+        ],
+      ]
+    `);
+    expect(addedCallbackResults).toMatchInlineSnapshot(`
+      Array [
+        true,
+      ]
+    `);
+
+    results = [];
+    addedCallbackResults = [];
+    expect(await items.write(knex, { id: 1, _delete: true }, { id: 1 }))
+      .toMatchInlineSnapshot(`
+      Object {
+        "changeId": "uuid-test-value",
+        "changes": Array [
+          Object {
+            "mode": "delete",
+            "path": "/test/items",
+            "row": Object {
+              "_links": Object {},
+              "_type": "test/items",
+              "_url": "/test/items/1",
+              "body": "abc update",
+              "id": 1,
+            },
+            "views": undefined,
+          },
+        ],
+        "result": null,
+      }
+    `);
+    expect(results).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          Object {
+            "id": 1,
+          },
+          "delete",
+          undefined,
+          Object {
+            "body": "abc update",
+            "id": 1,
+          },
+        ],
+      ]
+    `);
+    expect(addedCallbackResults).toMatchInlineSnapshot(`
+      Array [
+        true,
+      ]
+    `);
+  });
 });
 
 describe("self references", () => {

@@ -118,7 +118,8 @@ export type AfterUpdate<Context> = (
   context: ReturnType<ContextFactory<Context>>,
   mode: "insert" | "update" | "delete",
   next: any,
-  previous: any
+  previous: any,
+  scheduleAnother: (cb: () => Promise<void>) => void
 ) => Promise<void>;
 
 export type Column = {
