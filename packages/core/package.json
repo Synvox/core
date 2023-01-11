@@ -13,10 +13,10 @@
   "name": "@synvox/core",
   "author": "Ryan Allred",
   "peerDependencies": {
-    "express": "~4.17.1",
-    "knex": "^1.0.5",
-    "pg": "^8.6.0",
-    "yup": "~0.32.9"
+    "express": "*",
+    "knex": "*",
+    "pg": "*",
+    "yup": "*"
   },
   "dependencies": {
     "aws-sdk": "^2.868.0",
